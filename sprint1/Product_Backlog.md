@@ -7,8 +7,8 @@
   - Kao korisnik, želim da se prijavim na sistem kako bih pristupio svom accountu (LOG IN)
   - Kao student, želim da unesem osnovne lične podatke potrebne za praksu (ime, prezime, broj indeksa, godina studija, odsjek) kako bih finalizirao svoj profil
   - Kao predstavnik kompanije, želim da kreiram profil kompanije radi objavljivanja oglasa za praksu
-  - Kao koordinator, želim imati pristup sistemu sa odgovarajućim privilegijama te na taj način upravljati procesom odobravanja 
-
+  - Kao koordinator, želim imati pristup sistemu sa odgovarajućim privilegijama kako bih mogao pregledati prijave studenata i upravljati procesom odobravanja
+  
 **Oglasi za praksu**
   - Kao kompanija, želimo da kreiramo oglas za praksu sa osnovnim informacijama (opis, trajanje, broj mjesta, uslovi) kako bismo studentima predstavili praksu i naše zahtjeve
   - Kao student, želim da pregledam listu dostupnih praksi radi pronalaska odgovarajuće prilike za sebe
@@ -25,7 +25,7 @@
   - Kao student, želim da potvrdim učešće na praksi kako bih formalno započeo praksu
 
 **Generisanje ugovora**
-  - Kao sistem, želim da generišem ugovor o praksi i da na taj način proces formalizujem i u vidu dokumenta
+  - Kao kordinator, želim da sistem automatski generiše ugovor o praksi i da na taj način proces formalizujem i u vidu dokumenta
   - Kao student, želim da preuzmem ugovor o praksi radi evidencije
 
 **Praćenje prakse**
