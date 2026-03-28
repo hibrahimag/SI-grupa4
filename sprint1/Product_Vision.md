@@ -2,13 +2,13 @@
 
 ## Sistem za upravljanje studentskim praksama
 
-Sistem za upravljanje studentskim praksama predstavlja digitalnu platformu koja omogućava upravljanje kompletnim procesom realizacije prakse — od prijave, odobravanja i praćenja, do komunikacije, evaluacije i izvještavanja.
+Sistem za upravljanje studentskim praksama predstavlja digitalnu platformu koja omogućava upravljanje kompletnim procesom realizacije prakse - od prijave, odobravanja i praćenja, do komunikacije, evaluacije i izvještavanja.
 
 Cilj sistema je objedinjavanje svih dostupnih praksi na jednom mjestu, uključujući prakse koje nude kompanije u saradnji sa univerzitetima, fakultetima i drugim obrazovnim i istraživačkim institucijama. Na taj način, sistem omogućava centralizovan i pregledan pristup informacijama o praksama.
 
 Platforma je zamišljena tako da studentima pruži jasan i sistematičan pregled dostupnih praksi, kao i jednostavan i efikasan proces prijavljivanja u skladu sa njihovim interesovanjima i kvalifikacijama.
 
-Glavni cilj sistema je rješavanje konkretnih problema koji postoje u trenutnom načinu organizacije i realizacije studentskih praksi. Sistem nastoji unaprijediti proces za sve učesnike — studente, kompanije i fakultete — kroz digitalizaciju, automatizaciju i standardizaciju ključnih aktivnosti.
+Glavni cilj sistema je rješavanje konkretnih problema koji postoje u trenutnom načinu organizacije i realizacije studentskih praksi. Sistem nastoji unaprijediti proces za sve učesnike (studente, kompanije i fakultete) kroz digitalizaciju, automatizaciju i standardizaciju ključnih aktivnosti.
 
 ### Glavni problemi
 
@@ -41,13 +41,13 @@ Vrijednost koju ovaj sistem donosi organizaciji ogleda se u transparentnosti (sv
 ### Vrijednost sistema po korisnicima
 
 - **Studenti:**
-  Praksa predstavlja važan korak ka zapošljavanju i profesionalnom razvoju. Sistem omogućava uštedu vremena, brže odgovore, lakši pristup informacijama, jasan pregled rokova, uslova i statusa prijava, kao i uvid u evaluaciju njihovog rada (znanje, vještine, profesionalnost).
+  Praksa predstavlja važan korak ka zapošljavanju i profesionalnom razvoju. Sistem omogućava uštedu vremena, brže odgovore, lakši pristup informacijama, jasan pregled rokova, uslova i statusa prijava, kao i uvid u evaluaciju njihovog rada (znanje, vještine, profesionalnost...).
 
 - **Fakulteti:**
   Sistem omogućava vođenje evidencije i centralizovan pregled podataka o studentima i praksama, čime se olakšava praćenje procesa i izrada izvještaja.
 
 - **Kompanije:**
-  Platforma omogućava jednostavno upravljanje prijavama, praćenje većeg broja kandidata i efikasno davanje povratnih informacija studentima.
+  Ključna vrijednost koju kompanije dobijaju ovakvim jednim sistemom jeste lakši pristup kvalifikovanoj i motivisanoj mladoj radnoj snazi. Platforma omogućava jednostavno upravljanje prijavama, praćenje većeg broja kandidata i efikasno davanje povratnih informacija studentima. Također, sistem pruža uvid u profil studenta, uključujući i informacije o studijskom programu, relevantnim vještinama i prethodnim aktivnostima. Shodno tome, na osnovu tih podataka, kompanije mogu lakše procijeniti kompatibilnost studenta sa ponuđenom praksom, te postaviti jansija očekivanja i donijeti bolje odluke prilikom slekcije kandidata.
 
 ---
 
@@ -56,7 +56,8 @@ Vrijednost koju ovaj sistem donosi organizaciji ogleda se u transparentnosti (sv
 ### Autentifikacija i upravljanje korisnicima
 
 - Registracija i prijava korisnika (email/lozinka)
-- Upravljanje profilima (studenti — unos indeksa, godine studija)
+- Upravljanje profilima (primjer: studenti - unos indeksa, godine studija...)
+- Verifikacija prijave
 - Pristup u zavisnosti od vrste korisnika
 
 ### Oglasi
