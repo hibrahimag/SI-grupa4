@@ -47,7 +47,7 @@ Vrijednost koju ovaj sistem donosi organizaciji ogleda se u transparentnosti (sv
   Sistem omogućava vođenje evidencije i centralizovan pregled podataka o studentima i praksama, čime se olakšava praćenje procesa i izrada izvještaja.
 
 - **Kompanije:**
-  Ključna vrijednost koju kompanije dobijaju ovakvim jednim sistemom jeste lakši pristup kvalifikovanoj i motivisanoj mladoj radnoj snazi. Platforma omogućava jednostavno upravljanje prijavama, praćenje većeg broja kandidata i efikasno davanje povratnih informacija studentima. Također, sistem pruža uvid u profil studenta, uključujući i informacije o studijskom programu, relevantnim vještinama i prethodnim aktivnostima. Shodno tome, na osnovu tih podataka, kompanije mogu lakše procijeniti kompatibilnost studenta sa ponuđenom praksom, te postaviti jansija očekivanja i donijeti bolje odluke prilikom slekcije kandidata.
+  Ključna vrijednost koju kompanije dobijaju ovakvim jednim sistemom jeste lakši pristup kvalifikovanoj i motivisanoj mladoj radnoj snazi. Platforma omogućava jednostavno upravljanje prijavama, praćenje većeg broja kandidata i efikasno davanje povratnih informacija studentima. Također, sistem pruža uvid u profil studenta, uključujući i informacije o studijskom programu, relevantnim vještinama i prethodnim aktivnostima. Shodno tome, na osnovu tih podataka, kompanije mogu lakše procijeniti kompatibilnost studenta sa ponuđenom praksom, te postaviti jasnija očekivanja i donijeti bolje odluke prilikom selekcije kandidata.
 
 ---
 
@@ -81,7 +81,7 @@ Vrijednost koju ovaj sistem donosi organizaciji ogleda se u transparentnosti (sv
 
 ### Evaluacija
 
-- Kompanija popunjava standardizovani obrazac za evaluaciju (podrazumijeva ocjenivanje studenta po predefinisanim kriterijima)
+- Kompanija popunjava standardizovani obrazac za evaluaciju (podrazumijeva ocjenjivanje studenta po predefinisanim kriterijima)
 - Student ocjenjuje kompanije
 - Zatvaranje prakse
 
