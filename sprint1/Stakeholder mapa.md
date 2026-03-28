@@ -87,15 +87,6 @@ Uprava fakulteta (dekan, prodekan, upravni odbor) koristi sistem na strateškom 
 - Zapošljivost studenata  
 - Kvalitet saradnje sa privredom  
 
----
-
-## 3. Finansijska služba
-
-U slučajevima kada su prakse plaćene ili uključuju ugovorne obaveze, finansijska služba može imati ulogu u:
-
-- Evidenciji ugovora  
-- Obračunu naknada  
-- Poreznoj dokumentaciji  
 
 ---
 
