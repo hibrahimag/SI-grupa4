@@ -1,0 +1,89 @@
+Sistem za upravljanje studentskim praksama povezuje više različitih grupa korisnika — studente, kompanije, fakultetske službe i regulatorna tijela, 
+zbog čega je analiza stakeholdera od posebnog značaja. 
+U nastavku su detaljno opisane sve relevantne interesne grupe.
+
+- Primarni stakeholderi -
+Primarni stakeholderi su oni bez kojih sistem ne bi mogao funkcionisati, jer ga direktno koriste ili upravljaju njegovim ključnim procesima.
+
+1. Studenti
+Studenti su krajnji korisnici sistema i imaju najdirektniji interes za njegovu funkcionalnost i kvalitet. 
+Njihov osnovni cilj je jednostavan i transparentan proces prijave na praksu.
+Od sistema očekuju:
+ -pregled dostupnih praksi
+ -online prijavu na željenu praksu
+ -praćenje statusa prijave
+ -komunikaciju sa kompanijom i fakultetskim koordinatorom
+ -upload završnog izvještaja
+ -uvid u evaluaciju i potvrdu realizovane prakse
+
+
+2. Kompanije (HR i mentori)
+Kompanije predstavljaju ključne partnere fakulteta, jer omogućavaju realizaciju prakse. Unutar kompanija razlikuju se dvije važne uloge:
+ 1. HR predstavnici (upravljanje prijavama i administracija)
+ 2. Mentori (direktan rad sa studentima i evaluacija)
+Kompanije od sistema očekuju:
+ -jednostavno objavljivanje oglasa za praksu
+ -pregled i filtriranje prijavljenih kandidata
+ -komunikaciju sa studentima
+ -unos evaluacije nakon završetka prakse
+
+3. Fakultetski koordinator za praksu
+Fakultetski koordinator ima centralnu ulogu u sistemu i predstavlja ključnog stakeholdera.
+Njegove odgovornosti uključuju:
+ -odobravanje prijava studenata
+ -praćenje realizacije prakse
+ -validaciju dokumentacije
+ -rješavanje eventualnih problema
+ -generisanje izvještaja
+
+
+- Institucionalni stakeholderi -
+Ova grupa obuhvata interne organizacione strukture fakulteta koje indirektno koriste sistem ili zavise od podataka koje on generiše.
+
+1. Studentska služba / Administracija
+Administracija koristi sistem radi:
+ -evidencije realizovanih praksi
+ -arhiviranja dokumentacije
+ -unosa podataka u studentske evidencije
+
+2. Uprava fakulteta
+Uprava fakulteta (dekan, prodekan, upravni odbor) koristi sistem na strateškom nivou.
+Njih interesuju:
+ -statistike realizovanih praksi
+ -broj partnerskih kompanija
+ -zapošljivost studenata
+ -kvalitet saradnje sa privredom
+
+3. Finansijska služba
+U slučajevima kada su prakse plaćene ili uključuju ugovorne obaveze, finansijska služba može imati ulogu u:
+ -evidenciji ugovora
+ -obračunu naknada
+ -poreznoj dokumentaciji
+
+
+- Tehnički stakeholderi -
+Tehnički stakeholderi omogućavaju da sistem funkcioniše stabilno, sigurno i pouzdano.
+
+1. IT administrator
+On je odgovoran za:
+ -sigurnost podataka
+ -backup sistema
+ -upravljanje korisničkim nalozima
+ -tehničku podršku
+
+2. Razvojni tim
+Razvojni tim (interni ili eksterni) odgovoran je za:
+ -implementaciju funkcionalnosti
+ -održavanje sistema
+ -ispravke grešaka
+ -buduće nadogradnje
+
+
+- Regulatorni i eksterni stakeholderi -
+Ova grupa ima indirektan, ali značajan uticaj na sistem.
+
+1.Ministarstvo obrazovanja
+Ministarstvo definiše propise i standarde studijskih programa, uključujući obaveznu praksu. Njihova moć je visoka, jer zakonodavni okvir 
+direktno utječe na strukturu sistema.
+
+
