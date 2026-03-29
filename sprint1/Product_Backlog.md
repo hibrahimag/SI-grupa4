@@ -1,40 +1,251 @@
 **PRODUCT BACKLOG**
 
-**User Stories**
+### 1 - Registracija korisnika
+- Opis: Omogućiti korisniku registraciju putem email adrese i lozinke  
+- Tip: Feature  
+- Prioritet: High  
+- Procjena složenosti: 3  
+- Status: To Do  
+- Sprint: Sprint 1  
+- Napomena: SIGN UP  
 
-**Upravljanje korisnicima**
-  - Kao korisnik, želim da se registrujem u sistem unoseći email adresu i lozinku i na taj način omogućim korištenje sistema (SIGN UP)
-  - Kao korisnik, želim da se prijavim na sistem kako bih pristupio svom accountu (LOG IN)
-  - Kao student, želim da unesem osnovne lične podatke potrebne za praksu (ime, prezime, broj indeksa, godina studija, odsjek) kako bih finalizirao svoj profil
-  - Kao predstavnik kompanije, želim da kreiram profil kompanije radi objavljivanja oglasa za praksu
-  - Kao koordinator, želim imati pristup sistemu sa odgovarajućim privilegijama kako bih mogao pregledati prijave studenata i upravljati procesom odobravanja
-  
-**Oglasi za praksu**
-  - Kao kompanija, želimo da kreiramo oglas za praksu sa osnovnim informacijama (opis, trajanje, broj mjesta, uslovi) kako bismo studentima predstavili praksu i naše zahtjeve
-  - Kao student, želim da pregledam listu dostupnih praksi radi pronalaska odgovarajuće prilike za sebe
-  - Kao student, želim da vidim detalje svake prakse kako bih mogao donijeti odluku o prijavi
+---
 
-**Prijava na praksu**
-  - Kao student, želim da se prijavim na praksu i time učestvujem u procesu odabira
-  - Kao student, želim da priložim svoj CV i motivaciono pismo kako bih predstavio svoje sposobnosti i kvalifikacije
-  - Kao kompanija, želimo da pregledamo prijave studenata kako bismo odabrali odgovarajuće kandidate
+### 2 - Prijava korisnika
+- Opis: Omogućiti korisniku prijavu na sistem  
+- Tip: Feature  
+- Prioritet: High  
+- Procjena složenosti: 2  
+- Status: To Do  
+- Sprint: Sprint 1  
+- Napomena: LOG IN  
 
-**Proces odobravanja**
-  - Kao kompanija, želimo da evidentiramo uži krug studenata koji ispunjavaju uslove kako bismo pokrenuli proces odobravanja
-  - Kao koordinator, želim da odobrim praksu kako bi student mogao započeti sa radom
-  - Kao student, želim da potvrdim učešće na praksi kako bih formalno započeo praksu
+---
 
-**Generisanje ugovora**
-  - Kao kordinator, želim da sistem automatski generiše ugovor o praksi i da na taj način proces formalizujem i u vidu dokumenta
-  - Kao student, želim da preuzmem ugovor o praksi radi evidencije
+### 3 - Profil studenta
+- Opis: Unos osnovnih podataka (ime, prezime, indeks, godina studija, odsjek)  
+- Tip: Feature  
+- Prioritet: High  
+- Procjena složenosti: 3  
+- Status: To Do  
+- Sprint: Sprint 1  
 
-**Praćenje prakse**
-  - Kao student, želim da unosim dnevne/sedmične aktivnosti kako bih evidentirao svoj rad
-  - Kao kompanija, želimo da unosimo prisustvo studenta kako bismo pratili njegov angažman
+---
 
-**Evaluacija**
-  - Kao kompanija, želimo da evaluiramo studenta putem standardizovanog obrasca (npr. znanje studenta, njegov angažman, komunikacijske sposobnosti, timski rad, itd) da bismo objektivno procijenili njegov rad	
-  - Kao student, želim da evaluiram kompaniju kako bih dao povratnu informaciju (npr. ocijeniti kvalitet mentora, radno okruženje, korisnost prakse, itd)
+### 4 - Profil kompanije
+- Opis: Kreiranje profila kompanije za objavljivanje oglasa  
+- Tip: Feature  
+- Prioritet: High  
+- Procjena složenosti: 3  
+- Status: To Do  
+- Sprint: Sprint 1  
 
-**Izvještavanje**
-  - Kao koordinator, želim da generišem izvještaje o realizovanim praksama kako bih imao potreban pregled i evidenciju
+---
+
+### 5 - Pristup koordinatora
+- Opis: Omogućiti koordinatoru pristup sa posebnim privilegijama  
+- Tip: Feature  
+- Prioritet: High  
+- Procjena složenosti: 2  
+- Status: To Do  
+- Sprint: Sprint 1  
+
+---
+
+### 6 - Kreiranje oglasa
+- Opis: Kompanija kreira oglas sa opisom, trajanjem, brojem mjesta i uslovima  
+- Tip: Feature  
+- Prioritet: High  
+- Procjena složenosti: 5  
+- Status: To Do  
+- Sprint: Sprint 1  
+
+---
+
+### 7 - Pregled oglasa
+- Opis: Student može pregledati listu dostupnih praksi  
+- Tip: Feature  
+- Prioritet: High  
+- Procjena složenosti: 3  
+- Status: To Do  
+- Sprint: Sprint 1  
+
+---
+
+### 8 - Detalji oglasa
+- Opis: Student može vidjeti detalje pojedinačne prakse  
+- Tip: Feature  
+- Prioritet: Medium  
+- Procjena složenosti: 2  
+- Status: To Do  
+- Sprint: Sprint 1  
+
+---
+
+### 9 - Prijava na praksu
+- Opis: Student se prijavljuje na praksu  
+- Tip: Feature  
+- Prioritet: High  
+- Procjena složenosti: 3  
+- Status: To Do  
+- Sprint: Sprint 1  
+
+---
+
+### 10 - Upload dokumentacije
+- Opis: Student prilaže CV i motivaciono pismo  
+- Tip: Feature  
+- Prioritet: High  
+- Procjena složenosti: 3  
+- Status: To Do  
+- Sprint: Sprint 1  
+
+---
+
+### 11 - Pregled prijava
+- Opis: Kompanija pregledava prijave studenata  
+- Tip: Feature  
+- Prioritet: High  
+- Procjena složenosti: 3  
+- Status: To Do  
+- Sprint: Sprint 1  
+
+---
+
+### 12 - Selekcija kandidata
+- Opis: Kompanija evidentira uži izbor kandidata  
+- Tip: Feature  
+- Prioritet: High  
+- Procjena složenosti: 3  
+- Status: To Do  
+- Sprint: Sprint 1  
+
+---
+
+### 13 - Odobravanje prakse
+- Opis: Koordinator odobrava praksu  
+- Tip: Feature  
+- Prioritet: High  
+- Procjena složenosti: 2  
+- Status: To Do  
+- Sprint: Sprint 1  
+
+---
+
+### 14 - Potvrda studenta
+- Opis: Student potvrđuje učešće na praksi  
+- Tip: Feature  
+- Prioritet: High  
+- Procjena složenosti: 1  
+- Status: To Do  
+- Sprint: Sprint 1  
+
+---
+
+### 15 - Postavljanje baze podataka
+- Opis: Dizajnirati i implementirati bazu podataka za korisnike, oglase i prijave  
+- Tip: Technical Task  
+- Prioritet: High  
+- Procjena složenosti: 5  
+- Status: To Do  
+- Sprint: Sprint 1  
+
+---
+
+### 16 - Implementacija autentifikacije
+- Opis: Implementirati login i registraciju (backend i sigurnost)  
+- Tip: Technical Task  
+- Prioritet: High  
+- Procjena složenosti: 5  
+- Status: To Do  
+- Sprint: Sprint 1  
+
+---
+
+### 17 - Generisanje ugovora
+- Opis: Sistem automatski generiše ugovor o praksi  
+- Tip: Feature  
+- Prioritet: Medium  
+- Procjena složenosti: 5  
+- Status: To Do  
+- Sprint: Sprint 2  
+
+---
+
+### 18 - Preuzimanje ugovora
+- Opis: Student preuzima ugovor o praksi  
+- Tip: Feature  
+- Prioritet: Medium  
+- Procjena složenosti: 2  
+- Status: To Do  
+- Sprint: Sprint 2  
+
+---
+
+### 19 - Evidencija aktivnosti
+- Opis: Student unosi dnevne ili sedmične aktivnosti  
+- Tip: Feature  
+- Prioritet: Medium  
+- Procjena složenosti: 5  
+- Status: To Do  
+- Sprint: Sprint 2  
+
+---
+
+### 20 - Praćenje prisustva
+- Opis: Kompanija evidentira prisustvo studenta  
+- Tip: Feature  
+- Prioritet: Medium  
+- Procjena složenosti: 3  
+- Status: To Do  
+- Sprint: Sprint 2  
+
+---
+
+### 21 - Evaluacija studenta
+- Opis: Kompanija evaluira studenta prema definisanim kriterijima  
+- Tip: Feature  
+- Prioritet: Medium  
+- Procjena složenosti: 3  
+- Status: To Do  
+- Sprint: Sprint 2  
+
+---
+
+### 22 - Evaluacija kompanije
+- Opis: Student evaluira kompaniju  
+- Tip: Feature  
+- Prioritet: Medium  
+- Procjena složenosti: 2  
+- Status: To Do  
+- Sprint: Sprint 2  
+
+---
+
+### 23 - Izvještaji
+- Opis: Koordinator generiše izvještaje o praksama  
+- Tip: Feature  
+- Prioritet: Medium  
+- Procjena složenosti: 5  
+- Status: To Do  
+- Sprint: Sprint 2  
+
+---
+
+### 24 - Analiza postojećih rješenja
+- Opis: Istražiti postojeće sisteme za upravljanje praksama  
+- Tip: Research  
+- Prioritet: Medium  
+- Procjena složenosti: 2  
+- Status: To Do  
+- Sprint: Sprint 1  
+
+---
+
+### 25 - Dokumentacija sistema
+- Opis: Dokumentovati funkcionalnosti i strukturu sistema  
+- Tip: Documentation  
+- Prioritet: Medium  
+- Procjena složenosti: 3  
+- Status: To Do  
+- Sprint: Sprint 2
