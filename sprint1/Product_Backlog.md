@@ -42,8 +42,8 @@
 
 ---
 
-### 5 - Pristup koordinatora
-- Opis: Omogućiti koordinatoru pristup sa posebnim privilegijama  
+### 5 - Pristup koordinatora i administratora
+- Opis: Omogućiti koordinatoru pristup sa posebnim privilegijama, a administratoru mogućnost upravljanja korisničkim računima  
 - Tip: Feature  
 - Prioritet: High  
 - Procjena složenosti: 2  
