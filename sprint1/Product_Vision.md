@@ -69,8 +69,8 @@ Vrijednost koju ovaj sistem donosi organizaciji ogleda se u transparentnosti (sv
 ### Proces odobravanja
 
 - Student se prijavljuje
-- Kompanija pregleda prijavu
-- Koordinator odobrava
+- Kompanija pregleda prijavu i selektuje kandidata
+- Koordinator fakulteta odobrava praksu
 - Student potvrđuje prisustvovanje praksi
 - Generisanje ugovora o praksi
 
