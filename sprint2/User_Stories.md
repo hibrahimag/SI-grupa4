@@ -110,60 +110,67 @@ Acceptence criteria: [TODO]
 ---
 
 ### 10. Kreiranje oglasa
--Opis: Kao kompanija želim da kreiram i objavim oglas kako bih pronašao validne kandidate za praksu
+-Opis: Kao kompanija želim da kreiram i objavim oglas kako bih studentima predstavio praksu i naše zahtjeve
+
 -Poslovne vrijednosti: Omogućava kompaniji objavljivanje oglasa za praksu
 što omogućava povezivanje studenata s kompanijama
 -Prioritet: Medium
 -Pretpostavka i otvorena pitanja: 
   - Kompanija je prijavljena i odobrena u sistemu
 Veza sa drugim storijima ili zavisnostima:
-  - Zavisi od 4(Prijava studenta)
+  - Zavisi od 6(Prijava kompanije)
 
 Acceptence criteria: [TODO]
 ---
 
 ### 11. Pregled oglasa
--Opis: Kao student želim da unesem/uređujem osnovne lične podatke potrebne za praksu (odsjek, godina studije, CV)
--Poslovne vrijednosti: [TODO]
+-Opis: Kao student želim da imam mogućnost pregleda svih dostupnih praksi 
+-Poslovne vrijednosti: Student ima konstantan uvid u dostupne prakse
 -Prioritet: Medium
 -Pretpostavka i otvorena pitanja: 
-  - Korisnik mora biti prijavljen da mogao uređivati profil
+  - Student mora biti prijavljen da bi pristupio pregledu praksi
 Veza sa drugim storijima ili zavisnostima:
+  - U vezi sa 10(Student ima uvid u kreirane/objavljene prakse)
   - Zavisi od 4(Prijava studenta)
 
 Acceptence criteria: [TODO]
 ---
 
 ### 12. Pregled detalja oglasa
--Opis: Kao student želim da unesem/uređujem osnovne lične podatke potrebne za praksu (odsjek, godina studije, CV)
--Poslovne vrijednosti: [TODO]
+-Opis: Kao student želim da imam uvid u detalje prakse s ciljem odluke prijavljivanja na istu
+-Poslovne vrijednosti: Student ima dublji uvid u zahtjeve za određenu praksu(vrijeme trajanja, tražena zanja), što mu pomaže u donošenju odluke o prijavljivanje na istu
 -Prioritet: Medium
 -Pretpostavka i otvorena pitanja: 
-  - Korisnik mora biti prijavljen da mogao uređivati profil
+  - Student mora biti prijavljen da bi pristupio detaljima prakse
 Veza sa drugim storijima ili zavisnostima:
   - Zavisi od 4(Prijava studenta)
+  - Zavisi od 11 (Pregled oglasa)
+
 
 Acceptence criteria: [TODO]
 ---
 
 ### 13. Prijava na praksu
--Opis: Kao student želim da unesem/uređujem osnovne lične podatke potrebne za praksu (odsjek, godina studije, CV)
--Poslovne vrijednosti: [TODO]
+-Opis: Kao student želim da se prijavim na praksu s ciljem učestvovanja u procesu odabira
+-Poslovne vrijednosti: Omogućava studentu formalno učešće u procesu odabiru za poziciju na praksi
 -Prioritet: Medium
 -Pretpostavka i otvorena pitanja: 
-  - Korisnik mora biti prijavljen da mogao uređivati profil
+  - Student mora biti prijavljen
+  - Oglas mora biti aktivan
 Veza sa drugim storijima ili zavisnostima:
   - Zavisi od 4(Prijava studenta)
+  - Zavisi od 11(Pregled oglasa)
+  - Zavisi od 12(Pregled detalja oglasa)
 
 Acceptence criteria: [TODO]
 ---
 
 ### 14. Upload dokumentacije
--Opis: Kao student želim da unesem/uređujem osnovne lične podatke potrebne za praksu (odsjek, godina studije, CV)
--Poslovne vrijednosti: [TODO]
+-Opis: Kao student želim da upload-ujem potrebne dokumente (CV i motivaciono pismo) kako bih predstavio svoje sposobnosti i kvalifikacije
+-Poslovne vrijednosti: Omogućava studentu predstavljanje kvalifikacija kompaniji kroz standardizovan proces 
 -Prioritet: Medium
 -Pretpostavka i otvorena pitanja: 
-  - Korisnik mora biti prijavljen da mogao uređivati profil
+  - Korisnik mora biti prijavljen da mogao uploadovao dokumente
 Veza sa drugim storijima ili zavisnostima:
   - Zavisi od 4(Prijava studenta)
 
@@ -171,25 +178,29 @@ Acceptence criteria: [TODO]
 ---
 
 ### 15. Pregled prijava na praksu
--Opis: Kao student želim da unesem/uređujem osnovne lične podatke potrebne za praksu (odsjek, godina studije, CV)
--Poslovne vrijednosti: [TODO]
+-Opis: Kao kompsnija, želim da pregledam listu prijavljenih studenata kako bih odabrao odgovarajuće kandidate
+-Poslovne vrijednosti: Kompanija ima uvid u sve prijavljene studente što im olakšava efikasniji odabir kandidata
 -Prioritet: Medium
 -Pretpostavka i otvorena pitanja: 
-  - Korisnik mora biti prijavljen da mogao uređivati profil
+  - Kompanija mora biti prijavljena
+  - Oglas mora biti aktivan
 Veza sa drugim storijima ili zavisnostima:
-  - Zavisi od 4(Prijava studenta)
+  - Zavisi od 6(Prijava kompanije)
+  - Zavisi od 13(Prijava na praksu)
 
 Acceptence criteria: [TODO]
 ---
 
 ### 16. Selekcija prijavljenih kandidata na praksu
--Opis: Kao student želim da unesem/uređujem osnovne lične podatke potrebne za praksu (odsjek, godina studije, CV)
--Poslovne vrijednosti: [TODO]
+-Opis: Kao kompanija želim da mogu evidentirati studente koji prolaze u uži krug s ciljem boljeg uvida u njihovu kvalifikaciju
+-Poslovne vrijednosti: OMoguća kompaniji efikasnije i brži odabir užeg kruga studenata koji prolaze u idući krug
 -Prioritet: Medium
 -Pretpostavka i otvorena pitanja: 
-  - Korisnik mora biti prijavljen da mogao uređivati profil
+  - Kompanija mora biti prijavljena da bi evidentirali uži krug studenata
+  - Oglas mora biti aktivan
 Veza sa drugim storijima ili zavisnostima:
-  - Zavisi od 4(Prijava studenta)
+  - Zavisi od 6(Prijava kompanije)
+  - Zavisi od 13(Prijava na praksu)
 
 Acceptence criteria: [TODO]
 ---
