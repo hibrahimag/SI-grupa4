@@ -124,8 +124,8 @@ Ova grupa ima indirektan, ali značajan uticaj na sistem.
 
 ---
 
-## 1. Ministarstvo obrazovanja
+## 1. Univerzitet
 
-Ministarstvo definiše propise i standarde studijskih programa, uključujući obaveznu praksu.  
+Univerzitet definiše okvir i pravila u okviru kojih se realizuju studentske prakse.  
 
-Njihova moć je visoka, jer zakonodavni okvir direktno utiče na strukturu sistema.
+Njegova uloga je značajna jer utiče na organizaciju procesa prakse i način na koji se podaci koriste na višem nivou (analize, izvještaji, unapređenje studijskih programa).
