@@ -126,6 +126,6 @@ Ova grupa ima indirektan, ali značajan uticaj na sistem.
 
 ## 1. Univerzitet
 
-Univerzitet definiše okvir i pravila u okviru kojih se realizuju studentske prakse.  
+Univerzitet definiše okvir i pravila u okviru kojih se realizuju studentske prakse.     
 
 Njegova uloga je značajna jer utiče na organizaciju procesa prakse i način na koji se podaci koriste na višem nivou (analize, izvještaji, unapređenje studijskih programa).
