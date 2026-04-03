@@ -26,13 +26,12 @@ Finalni izvještaj generiše kompanija nakon završetka prakse. Koordinator faku
 ## Sprint 2
 
 Ažurirani Product Backlog:
-- 
+
 
 Set prioritetnih User Stories:
-- 
+
 
 Acceptance Criteria:
-- 
+
 
 Početna lista NFR zahtjeva:
-- 
