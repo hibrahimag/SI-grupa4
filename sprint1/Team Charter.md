@@ -9,7 +9,7 @@
 - Zerina Pandža (broj indeksa: 19538, email: zpandza1@etf.unsa.ba)
 - Irma Lemeš (broj indeksa: 19522, email: ilemes1@etf.unsa.ba)
 - Amna Glamoč (broj indeksa: 19678, email: aglamoc1@etf.unsa.ba)
-- Haris Tucaković (broj indeksa: 19590, email: htucakvic1@etf.unsa.ba)
+- Haris Tucaković (broj indeksa: 19590, email: htucakovic1@etf.unsa.ba)
 - Haris Husić (broj indeksa: 19662, email: hhusic1@etf.unsa.ba) 
 - Hana Hodžić (broj indeksa: 19720, email: hhodzic9@etf.unsa.ba)
 
