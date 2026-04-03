@@ -223,7 +223,7 @@
 ---
 
 ### 23 - Izvještaji
-- Opis: Koordinator generiše izvještaje o praksama  
+- Opis: Kompanija generiše izvještaje o praksama  
 - Tip: Feature  
 - Prioritet: Medium  
 - Procjena složenosti: 5  
