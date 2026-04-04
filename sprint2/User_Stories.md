@@ -327,3 +327,222 @@
     sistem mora ažurirati status prijave
   - Sistem mora obavijestiti studenta 
     o promjeni statusa njegove prijave  
+
+---
+
+## 17. Odobravanje prakse
+- **Opis:** Kao koordinator, želim da odobrim studentsku prijavu za praksu
+- **Poslovne vrijednosti:** Omogućava koordinatoru upravljanje studentskim praksama
+- **Prioritet:** High  
+- **Pretpostavke i otvorena pitanja:**
+  - Koordinator je uposlenik fakulteta  
+- **Veza sa drugim storijima ili zavisnostima:** 
+  - Zavisi od 8 i 15
+- **Acceptance criteria:** 
+  - Sistem mora omogućiti koordinatoru odobravanje
+    studentskih prijava na praksi
+  - Kada koordinator odobri praksu, 
+    sistem mora ažurirati status prijave
+  - Sistem mora obavijestiti studenta 
+    o promjeni statusa njegove prijave  
+---
+
+## 18. Odbijanje prakse
+- **Opis:** Kao koordinator, želim da odbijem studentsku prijavu za praksu
+- **Poslovne vrijednosti:** Omogućava koordinatoru upravljanje studentskim praksama
+- **Prioritet:** High
+- **Pretpostavke i otvorena pitanja:**
+  - Koordinator je uposlenik fakulteta  
+- **Veza sa drugim storijima ili zavisnostima:** 
+  - Zavisi od 8 i 15
+- **Acceptance criteria:** 
+  - Sistem mora omogućiti koordinatoru odbijanje
+    studentskih prijava na praksi
+  - Kada koordinator odobri praksu, 
+    sistem mora ažurirati status prijave
+  - Sistem mora obavijestiti studenta 
+    o promjeni statusa njegove prijave  
+---
+
+## 19. Potvrda studenta
+- **Opis:** Kao student, želim da potvrdim učešće na prijavu za praksu
+- **Poslovne vrijednosti:** Omogućava studentu prihvatanje odobrene studentske prakse
+- **Prioritet:** High
+- **Pretpostavke i otvorena pitanja:**
+  - Student mora biti prijavljen  
+  - Oglas mora biti aktivan 
+- **Veza sa drugim storijima ili zavisnostima:** 
+  - Zavisi od 13 i 17
+- **Acceptance criteria:** 
+  - Sistem mora omogućiti studentu prihvatanje
+    učešća na odobrenoj praksi
+  - Kada student prihvati praksu, 
+    sistem mora ažurirati status prijave
+  - Sistem mora obavijestiti kompaniju i koordinatora 
+    o promjeni statusa njegove prijave
+---
+
+## 20. Dizajn baze podataka
+- **Opis:** Osmisliti šemu baze podataka sistema
+- **Poslovne vrijednosti:** Omogućava lakšu implementaciju baze podataka
+- **Prioritet:** High
+- **Pretpostavke i otvorena pitanja:**
+  - 
+- **Veza sa drugim storijima ili zavisnostima:** 
+  -
+- **Acceptance criteria:** 
+  - Dizajn mora obuhvatati glavne entite sistema:
+    koordinatore, studente, kompanije, prakse
+  - Dizajn treba uspostaviti relacije između
+    entiteta
+  - Dizajn treba čuvati sve neophodne podatke o 
+    entitetima
+---
+
+## 21. Implementacija baze podataka
+- **Opis:** Implementirati bazu podataka sistema
+- **Poslovne vrijednosti:** Omogućava lakše upravljanje i pohranjivanje podataka neophodnih za rad sistema
+- **Prioritet:** High
+- **Pretpostavke i otvorena pitanja:**
+  - Osmišljen je dizajn baze podataka
+  - Koju bazu podataka koristiti?
+- **Veza sa drugim storijima ili zavisnostima:** 
+  - Zavisi od 20
+- **Acceptance criteria:** 
+  - Sistem mora omogućiti skladištenje podataka 
+    u bazi
+---
+
+## 22. Generisanje ugovora
+- **Opis:** Sistem generiše ugovor o praksi za studenta
+- **Poslovne vrijednosti:** Omogućava automatsko generisanje ugovora koji pravno reguliše praksu studenta kod kompanije
+- **Prioritet:** Medium
+- **Pretpostavke i otvorena pitanja:**
+  - Student je potvrdio praksu
+  - Kompanija je saglasna sa prijavom
+- **Veza sa drugim storijima ili zavisnostima:** 
+  - Zavisi od 16 i 19
+- **Acceptance criteria:** 
+  - Sistem mora omogućiti generisanje ugovora o praksi
+  - Sistem mora omogućiti studentu 
+    i kompaniji uvid u ugovor
+---
+
+## 23. Preuzimanje ugovora
+- **Opis:** Student može preuzeti digitalni primjerak ugovora o praksi
+- **Poslovne vrijednosti:** Omogućava studentu pregled ugovora o praksi
+- **Prioritet:** Medium
+- **Pretpostavke i otvorena pitanja:**
+  - Student je potvrdio praksu
+  - Kompanija je saglasna sa prijavom
+  - Ugovor je generisan
+- **Veza sa drugim storijima ili zavisnostima:** 
+  - Zavisi od 16, 19, 22
+- **Acceptance criteria:** 
+  - Sistem mora omogućiti studentu 
+    i kompaniji uvid u ugovor
+  - Sistem mora omogućiti studentu preuzimanje
+    digitalne kopije ugovora
+---
+
+## 24. Evidencija aktivnosti
+- **Opis:** Student unosi dnevne/sedmične aktivnosti na praksi
+- **Poslovne vrijednosti:** Omogućava evidentiranje i praćenje aktivnosti studenta na praksi
+- **Prioritet:** Medium
+- **Pretpostavke i otvorena pitanja:**
+  - Student je potpisao važeći ugovor o praksi
+  - Studentska praksa je u toku
+  - Ko treba da vidi ovu evidenciju: kompanije i/ili koordinator
+- **Veza sa drugim storijima ili zavisnostima:** 
+  - Zavisi od 16 i 19
+- **Acceptance criteria:** 
+  - Sistem mora omogućiti studentu 
+    evidentiranje aktivnosti na praksi
+  - Sistem mora omogućiti pregled 
+    evidentiranih aktivnosti kompaniji i/ili koordinatoru
+---
+
+## 25. Praćenje prisustva
+- **Opis:** Kompanija evidentira prisustvo studenta na praksi
+- **Poslovne vrijednosti:** Kompanija može pratiti prisustvo studenta
+- **Prioritet:** Medium
+- **Pretpostavke i otvorena pitanja:**
+  - Student je potpisao važeći ugovor o praksi
+  - Studentska praksa je u toku
+- **Veza sa drugim storijima ili zavisnostima:** 
+  - Zavisi od 24
+- **Acceptance criteria:** 
+  - Sistem mora omogućiti evidentiranje prisustva
+  - Sistem mora omogućiti studentu 
+    i kompaniji uvid u prisustvo studenta
+---
+
+## 26. Evaluacija studenta
+- **Opis:** Kompanija evaluira rad studenta na osnovu definisanih kriterija
+- **Poslovne vrijednosti:** Kompanija može evaluirati rad studenta na praksi dajući uvid u njegovo zalaganje i trud. Student može dobiti feedback za svoj rad.
+- **Prioritet:** Medium
+- **Pretpostavke i otvorena pitanja:**
+  - Student je potpisao važeći ugovor o praksi
+  - Da li se evaluacija vrši tokom prakse ili na kraju?
+- **Veza sa drugim storijima ili zavisnostima:** 
+  - Zavisi od 24
+- **Acceptance criteria:** 
+  - Sistem mora omogućiti evaluaciju studenta kroz
+    predefinisani formular
+  - Sistem mora omogućiti studentu 
+    pregled evaluacije studenta
+---
+
+## 27. Evaluacija kompanije
+- **Opis:** Student evaluira kompaniju u kojoj je odradio praksu
+- **Poslovne vrijednosti:** Student može iznijeti mišljenje o kompaniji kod koje je radio praksu. Kompanija može vidjeti dojam studenta o praksi, te izvršiti korekcije po potrebi.
+- **Prioritet:** Medium
+- **Pretpostavke i otvorena pitanja:**
+  - Student je potpisao važeći ugovor o praksi
+- **Veza sa drugim storijima ili zavisnostima:** 
+  - 
+- **Acceptance criteria:** 
+  - Sistem mora omogućiti studentu evaluaciju
+    kompanije kroz predefinisani formular
+  - Sistem mora omogućiti kompaniji
+    pregled evaluacije kompanije
+---
+
+## 28. Izvještaji
+- **Opis:** Kompanija generiše izvještaj o praksi
+- **Poslovne vrijednosti:** Kompanija može generisati izvještaj o praksi
+- **Prioritet:** Medium
+- **Pretpostavke i otvorena pitanja:**
+  - Student je potpisao važeći ugovor o praksi
+  - Za koga je namjenjen ovaj izvještaj i šta sadrži?
+- **Veza sa drugim storijima ili zavisnostima:** 
+  - 25, 26
+- **Acceptance criteria:** 
+  - Sistem mora omogućiti studentu evaluaciju
+---
+
+## 29. Analiza postojećih rješenja
+- **Opis:** Istražiti postojeća sisteme za upravljanje praksama
+- **Poslovne vrijednosti:**  Vidjeti šta nedostaje drugim sistemima, a šta je dobro za implementirati
+- **Prioritet:** Medium
+- **Pretpostavke i otvorena pitanja:**
+  
+- **Veza sa drugim storijima ili zavisnostima:** 
+  - 
+- **Acceptance criteria:** 
+  - 
+---
+
+## 30. Dokumentacija sistema
+- **Opis:** Dokumentovati fukncionalnosti i strukturu sistema
+- **Poslovne vrijednosti:** Dokumentacija omogućava struktuirani pregled sistema
+- **Prioritet:** Medium
+- **Pretpostavke i otvorena pitanja:**
+  - Dokumentacija se aktivno održava
+- **Veza sa drugim storijima ili zavisnostima:** 
+  - Zavisi od svih stavki
+- **Acceptance criteria:** 
+  - Promjene moraju biti redovno dokumentovane
+  - Dokumentacija omogućava pregled dizajna 
+    i plana rada na sistemu
+---
