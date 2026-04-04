@@ -6,7 +6,6 @@
 - Prioritet: High  
 - Procjena složenosti: 3  
 - Status: To Do  
-- Sprint: Sprint 1  
 - Napomena: SIGN UP  
 
 ---
@@ -16,8 +15,7 @@
 - Tip: Feature  
 - Prioritet: High  
 - Procjena složenosti: 2  
-- Status: To Do  
-- Sprint: Sprint 1  
+- Status: To Do   
 - Napomena: LOG IN  
 
 ---
@@ -27,8 +25,7 @@
 - Tip: Feature  
 - Prioritet: High  
 - Procjena složenosti: 3  
-- Status: To Do  
-- Sprint: Sprint 1  
+- Status: To Do   
 
 ---
 
@@ -37,8 +34,7 @@
 - Tip: Feature  
 - Prioritet: High  
 - Procjena složenosti: 3  
-- Status: To Do  
-- Sprint: Sprint 1  
+- Status: To Do    
 
 ---
 
@@ -48,8 +44,6 @@
 - Prioritet: High  
 - Procjena složenosti: 2  
 - Status: To Do  
-- Sprint: Sprint 1  
-
 ---
 
 ### 6 - Kreiranje oglasa
@@ -57,8 +51,7 @@
 - Tip: Feature  
 - Prioritet: High  
 - Procjena složenosti: 5  
-- Status: To Do  
-- Sprint: Sprint 1  
+- Status: To Do   
 
 ---
 
@@ -68,8 +61,6 @@
 - Prioritet: High  
 - Procjena složenosti: 3  
 - Status: To Do  
-- Sprint: Sprint 1  
-
 ---
 
 ### 8 - Detalji oglasa
@@ -78,7 +69,6 @@
 - Prioritet: Medium  
 - Procjena složenosti: 2  
 - Status: To Do  
-- Sprint: Sprint 1  
 
 ---
 
@@ -87,9 +77,7 @@
 - Tip: Feature  
 - Prioritet: High  
 - Procjena složenosti: 3  
-- Status: To Do  
-- Sprint: Sprint 1  
-
+- Status: To Do   
 ---
 
 ### 10 - Upload dokumentacije
@@ -98,8 +86,6 @@
 - Prioritet: High  
 - Procjena složenosti: 3  
 - Status: To Do  
-- Sprint: Sprint 1  
-
 ---
 
 ### 11 - Pregled prijava
@@ -108,8 +94,6 @@
 - Prioritet: High  
 - Procjena složenosti: 3  
 - Status: To Do  
-- Sprint: Sprint 1  
-
 ---
 
 ### 12 - Selekcija kandidata
@@ -118,8 +102,6 @@
 - Prioritet: High  
 - Procjena složenosti: 3  
 - Status: To Do  
-- Sprint: Sprint 1  
-
 ---
 
 ### 13 - Odobravanje prakse
@@ -128,8 +110,6 @@
 - Prioritet: High  
 - Procjena složenosti: 2  
 - Status: To Do  
-- Sprint: Sprint 1  
-
 ---
 
 ### 14 - Potvrda studenta
@@ -138,8 +118,6 @@
 - Prioritet: High  
 - Procjena složenosti: 1  
 - Status: To Do  
-- Sprint: Sprint 1  
-
 ---
 
 ### 15 - Postavljanje baze podataka
@@ -148,8 +126,6 @@
 - Prioritet: High  
 - Procjena složenosti: 5  
 - Status: To Do  
-- Sprint: Sprint 1  
-
 ---
 
 ### 16 - Implementacija autentifikacije
@@ -158,8 +134,6 @@
 - Prioritet: High  
 - Procjena složenosti: 5  
 - Status: To Do  
-- Sprint: Sprint 1  
-
 ---
 
 ### 17 - Generisanje ugovora
@@ -168,8 +142,6 @@
 - Prioritet: Medium  
 - Procjena složenosti: 5  
 - Status: To Do  
-- Sprint: Sprint 2  
-
 ---
 
 ### 18 - Preuzimanje ugovora
@@ -178,8 +150,6 @@
 - Prioritet: Medium  
 - Procjena složenosti: 2  
 - Status: To Do  
-- Sprint: Sprint 2  
-
 ---
 
 ### 19 - Evidencija aktivnosti
@@ -188,8 +158,6 @@
 - Prioritet: Medium  
 - Procjena složenosti: 5  
 - Status: To Do  
-- Sprint: Sprint 2  
-
 ---
 
 ### 20 - Praćenje prisustva
@@ -198,8 +166,6 @@
 - Prioritet: Medium  
 - Procjena složenosti: 3  
 - Status: To Do  
-- Sprint: Sprint 2  
-
 ---
 
 ### 21 - Evaluacija studenta
@@ -208,8 +174,6 @@
 - Prioritet: Medium  
 - Procjena složenosti: 3  
 - Status: To Do  
-- Sprint: Sprint 2  
-
 ---
 
 ### 22 - Evaluacija kompanije
@@ -218,8 +182,6 @@
 - Prioritet: Medium  
 - Procjena složenosti: 2  
 - Status: To Do  
-- Sprint: Sprint 2  
-
 ---
 
 ### 23 - Izvještaji
@@ -228,8 +190,6 @@
 - Prioritet: Medium  
 - Procjena složenosti: 5  
 - Status: To Do  
-- Sprint: Sprint 2  
-
 ---
 
 ### 24 - Analiza postojećih rješenja
@@ -238,8 +198,6 @@
 - Prioritet: Medium  
 - Procjena složenosti: 2  
 - Status: To Do  
-- Sprint: Sprint 1  
-
 ---
 
 ### 25 - Dokumentacija sistema
@@ -248,4 +206,3 @@
 - Prioritet: Medium  
 - Procjena složenosti: 3  
 - Status: To Do  
-- Sprint: Sprint 2
