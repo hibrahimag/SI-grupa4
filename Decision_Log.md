@@ -4,7 +4,7 @@
 
 Stakeholder map usvojen sa sljedećim izmjenama:
 - Izbačena finansijska služba kao institucionalni stakeholder
-- Ministarstvo obrazovanja zamjenjeno sa Univerzitetom
+- Ministarstvo obrazovanja zamijenjeno sa Univerzitetom
 
 Product vision usvojen sa sljedećim izmjenama:
 - Dodane dodatne vrijednosti sistema za kompanije
