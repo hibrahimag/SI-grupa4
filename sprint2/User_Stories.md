@@ -8,7 +8,6 @@
 - **Prioritet:** High  
 - **Pretpostavke i otvorena pitanja:**
   - Student posjeduje fakultetski email  
-  - Da li je potrebna verifikacija od strane fakulteta/koordinatora  
 - **Veza sa drugim storijima ili zavisnostima:**  
 - **Acceptance criteria:**
   - Sistem mora omogućiti unos podataka: ime, prezime, 
@@ -17,6 +16,8 @@
     korisnik treba dobiti potvrdu o registraciji na ekranu
   - Sistem ne smije dozvoliti registraciju 
     s već postojećim emailom
+  - Sistem ne smije odobriti profil prije verifikacije od strane     
+  fakulteta
   - Sistem ne smije dozvoliti završetak registracije 
     bez popunjenih obaveznih polja
 
@@ -49,7 +50,6 @@
 - **Prioritet:** High  
 - **Pretpostavke i otvorena pitanja:**
   - Kompanija mora biti odobrena od strane fakulteta  
-  - Da li admin dodjeljuje rolu kompanije ili se automatski dodjeljuje nekim drugim putem?  
 - **Veza sa drugim storijima ili zavisnostima:**
   - Zavisi od 9
 - **Acceptance criteria:**
@@ -170,15 +170,13 @@
 - **Prioritet:** High  
 - **Pretpostavke i otvorena pitanja:**
   - Administrator se ne registruje kao ostali korisnici  
-  - Da li postoji više administratora?  
-  - Da li se administrator kreira manuelno?  
 - **Veza sa drugim storijima ili zavisnostima:**
   - U vezi sa 2 i 3 (Davanje role koordinatora/kompanije korisniku)  
 - **Acceptance criteria:**
   - Sistem mora omogućiti administratoru pregled 
     svih korisnika sistema
   - Sistem mora omogućiti dodjelu rola 
-    koordinatoru i kompaniji
+    drugom adminu, koordinatoru i kompaniji
   - Korisnik treba dobiti potvrdu nakon 
     svake akcije odobravanja ili odbijanja
   - Sistem ne smije dozvoliti pristup 
