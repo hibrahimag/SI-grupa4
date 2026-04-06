@@ -452,14 +452,13 @@
 - **Pretpostavke i otvorena pitanja:**
   - Student je potpisao važeći ugovor o praksi
   - Studentska praksa je u toku
-  - Ko treba da vidi ovu evidenciju: kompanije i/ili koordinator
 - **Veza sa drugim storijima ili zavisnostima:** 
   - Zavisi od 16 i 19
 - **Acceptance criteria:** 
   - Sistem mora omogućiti studentu 
     evidentiranje aktivnosti na praksi
   - Sistem mora omogućiti pregled 
-    evidentiranih aktivnosti kompaniji i/ili koordinatoru
+    evidentiranih aktivnosti kompaniji i koordinatoru
 ---
 
 ## 25. Praćenje prisustva
@@ -483,12 +482,11 @@
 - **Prioritet:** Medium
 - **Pretpostavke i otvorena pitanja:**
   - Student je potpisao važeći ugovor o praksi
-  - Da li se evaluacija vrši tokom prakse ili na kraju?
 - **Veza sa drugim storijima ili zavisnostima:** 
   - Zavisi od 24
 - **Acceptance criteria:** 
-  - Sistem mora omogućiti evaluaciju studenta kroz
-    predefinisani formular
+  - Sistem mora omogućiti evaluaciju studenta 
+    na kraju prakse kroz predefinisani formular
   - Sistem mora omogućiti studentu 
     pregled evaluacije studenta
 ---
@@ -510,11 +508,10 @@
 
 ## 28. Izvještaji
 - **Opis:** Kompanija generiše izvještaj o praksi
-- **Poslovne vrijednosti:** Kompanija može generisati izvještaj o praksi
+- **Poslovne vrijednosti:** Kompanija može generisati izvještaj o praksi koji služi studentu kao dokaz o pohađanju prakse
 - **Prioritet:** Medium
 - **Pretpostavke i otvorena pitanja:**
   - Student je potpisao važeći ugovor o praksi
-  - Za koga je namjenjen ovaj izvještaj i šta sadrži?
 - **Veza sa drugim storijima ili zavisnostima:** 
   - 25, 26
 - **Acceptance criteria:** 
@@ -545,4 +542,18 @@
   - Promjene moraju biti redovno dokumentovane
   - Dokumentacija omogućava pregled dizajna 
     i plana rada na sistemu
+---
+
+
+## 31. Zatvaranje oglasa
+- **Opis:** Kao kompanija želim zatvoriti oglas za praksu koji sam prethodno objavila
+- **Poslovne vrijednosti:** Oglas za praksu se zatvara kako ne bi pristizale nove prijave
+- **Prioritet:** Medium
+- **Pretpostavke i otvorena pitanja:**
+  - Oglas je prethodno objavljen
+- **Veza sa drugim storijima ili zavisnostima:** 
+  - Zavisi od 10, 12, 13
+- **Acceptance criteria:** 
+  - Na zatvoreni oglas se ne može više prijavljivati
+  - Zatvoreni oglas se ne pojavljuje u listi aktivnih oglasa
 ---
