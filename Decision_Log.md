@@ -4,7 +4,7 @@
 
 Stakeholder map usvojen sa sljedećim izmjenama:
 - Izbačena finansijska služba kao institucionalni stakeholder
-- Ministarstvo obrazovanja zamjenjeno sa Univerzitetom
+- Ministarstvo obrazovanja zamijenjeno sa Univerzitetom
 
 Product vision usvojen sa sljedećim izmjenama:
 - Dodane dodatne vrijednosti sistema za kompanije
@@ -25,13 +25,22 @@ Finalni izvještaj generiše kompanija nakon završetka prakse. Koordinator faku
 
 ## Sprint 2
 
-Ažurirani Product Backlog:
 
+Odluke nakon sastanka tima:
 
 Set prioritetnih User Stories:
-
-
-Acceptance Criteria:
-
+- Registraciju usera mora verifikovati koordinator
+- Administrator odobrava registraciju kompanije
+- Koordinator ima uvid u sve podatke studenta
+- Sistem podržava više administratora  
+- Evidenciju aktivnosti studenta vide kompanija i koordinator
+- Evaluacija studenta se vrši na kraju prakse  
+- Dodano zatvaranje oglasa
+- Izvjestaj je krajnja potvrda o praksi bez mnogo detalja
 
 Početna lista NFR zahtjeva:
+- Izbačen admin panel i praćenje aktivnosti korisnika  
+- Dodane notifikacije kao novi zahtjev 
+
+Pitanje za Product Owner-a:  
+Na koji način implementirati izmjene akademskih podataka studenta (indeks, godina, odsjek). Da li koordinator mora odobriti svaku promjenu i kako riješiti slučaj promjene fakulteta odnosno kojem koordinatoru ide zahtjev?
