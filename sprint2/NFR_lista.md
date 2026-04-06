@@ -2,248 +2,219 @@
 
 
 - **ID:** NFR-01
-- **Kategorija:** 
-- **Opis zahtjeva:** 
-- **Način provjere:** 
-- **Prioritet:** 
+- **Kategorija:** Performanse
+- **Opis zahtjeva:** Sistem mora omogućiti da student može pregledati i prijaviti se na praksu u roku od najviše 4 sekunde.
+- **Način provjere:** Load testiranje
+- **Prioritet:** Visok
 - **Napomena:** 
 
 ---
 
-## NFR-02
 - **ID:** NFR-02
-- **Kategorija:** 
-- **Opis zahtjeva:** 
-- **Kako će se provjeravati:** 
-- **Prioritet:** 
+- **Kategorija:** Sigurnost
+- **Opis zahtjeva:** Sistem mora automatski odjaviti korisnika nakon 15 minuta neaktivnosti kako bi se spriječio neovlašten pristup.
+- **Način provjere:** Test sesije
+- **Prioritet:** Srednji
 - **Napomena:** 
 
 ---
 
-## NFR-03
 - **ID:** NFR-03
-- **Kategorija:** 
-- **Opis zahtjeva:** 
-- **Kako će se provjeravati:** 
-- **Prioritet:** 
-- **Napomena:** 
+- **Kategorija:** Sigurnost
+- **Opis zahtjeva:** Sistem mora osigurati autentifikaciju i zaštitu podataka. 
+- **Način provjere:** Penetracijsko testiranje, enkripcija
+- **Prioritet:** Visok
+- **Napomena:** Pristup je ograničen samo ovlaštenim osobama.
 
 ---
 
-## NFR-04
 - **ID:** NFR-04
-- **Kategorija:** 
-- **Opis zahtjeva:** 
-- **Kako će se provjeravati:** 
-- **Prioritet:** 
+- **Kategorija:** Pouzdanost
+- **Opis zahtjeva:** Sistem mora pouzdano raditi bez gubitka podataka o prijavama i evaluacijama pri prekidu rada ili grešci.
+- **Način provjere:** Provjera integriteta baze
+- **Prioritet:** Visok
 - **Napomena:** 
 
 ---
 
-## NFR-05
 - **ID:** NFR-05
-- **Kategorija:** 
-- **Opis zahtjeva:** 
-- **Kako će se provjeravati:** 
-- **Prioritet:** 
+- **Kategorija:** Pouzdanost
+- **Opis zahtjeva:** Sistem mora omogućiti automatsko spremanje unosa u cilju zaštite gubitka podataka.
+- **Način provjere:** Simulacija prekida
+- **Prioritet:** Srednji
 - **Napomena:** 
 
 ---
 
-## NFR-05
-- **ID:** NFR-05
-- **Kategorija:** 
-- **Opis zahtjeva:** 
-- **Kako će se provjeravati:** 
-- **Prioritet:** 
+- **ID:** NFR-06
+- **Kategorija:** Upotrebljivost
+- **Opis zahtjeva:** Sistem mora imati intuitivan interfejs kako bi ga korisnici jednostavno koristili bez dodatne obuke.
+- **Način provjere:** User testiranje
+- **Prioritet:** Srednji
 - **Napomena:** 
 
 ---
 
-## NFR-05
-- **ID:** NFR-05
-- **Kategorija:** 
-- **Opis zahtjeva:** 
-- **Kako će se provjeravati:** 
-- **Prioritet:** 
+- **ID:** NFR-07
+- **Kategorija:** Upotrebljivost
+- **Opis zahtjeva:** Sistem mora jasno prikazati status prijave studenta.
+- **Način provjere:** User test
+- **Prioritet:** Nizak
 - **Napomena:** 
 
 ---
 
-## NFR-05
-- **ID:** NFR-05
-- **Kategorija:** 
-- **Opis zahtjeva:** 
-- **Kako će se provjeravati:** 
-- **Prioritet:** 
+- **ID:** NFR-08
+- **Kategorija:** Skalabilnost
+- **Opis zahtjeva:** Sistem mora omogućiti paralelni rad više koordinatora bez usporavanja sistema.
+- **Način provjere:** User test
+- **Prioritet:** Srednji
 - **Napomena:** 
 
 ---
 
-## NFR-05
-- **ID:** NFR-05
-- **Kategorija:** 
-- **Opis zahtjeva:** 
-- **Kako će se provjeravati:** 
-- **Prioritet:** 
+- **ID:** NFR-09
+- **Kategorija:** Skalabilnost
+- **Opis zahtjeva:** Sistem mora podržati povećanje broja aktivnih korisnika bez uticaja na preformanse.
+- **Način provjere:** Stress testiranje
+- **Prioritet:** Visok
 - **Napomena:** 
 
 ---
 
-## NFR-05
-- **ID:** NFR-05
-- **Kategorija:** 
-- **Opis zahtjeva:** 
-- **Kako će se provjeravati:** 
-- **Prioritet:** 
+- **ID:** NFR-10
+- **Kategorija:** Privatnost
+- **Opis zahtjeva:** Lični podaci studenta moraju biti dostupni samo ovlaštenim licima.
+- **Način provjere:** Provjera prava pristupa
+- **Prioritet:** Visok
 - **Napomena:** 
 
 ---
 
-## NFR-05
-- **ID:** NFR-05
-- **Kategorija:** 
-- **Opis zahtjeva:** 
-- **Kako će se provjeravati:** 
-- **Prioritet:** 
+- **ID:** NFR-11
+- **Kategorija:** Privatnost
+- **Opis zahtjeva:** Student mora imati uvid samo u vlastite prijave, izvještaje i evaluacije, bez mogućnosti pristupa tuđim podacima.
+- **Način provjere:** Pokušaj neovlaštenog pristupa
+- **Prioritet:** Srednji
 - **Napomena:** 
 
 ---
 
-## NFR-05
-- **ID:** NFR-05
-- **Kategorija:** 
-- **Opis zahtjeva:** 
-- **Kako će se provjeravati:** 
-- **Prioritet:** 
+- **ID:** NFR-12
+- **Kategorija:** Održivost
+- **Opis zahtjeva:** Sistem mora imati jasno odvojene slojeve radi lakšeg održavanja i nadogradnje. 
+- **Način provjere:** Code review
+- **Prioritet:** Srednji
+- **Napomena:** Odvojenost slojeva odnosi se na frontend, backend i bazu podataka.
+
+---
+
+- **ID:** NFR-13
+- **Kategorija:** Održivost
+- **Opis zahtjeva:** Sistem mora biti podijeljen na nezavisne cjeline kako bi se lako dodavale nove funkcionalnosti.
+- **Način provjere:** Code review
+- **Prioritet:** Srednji
 - **Napomena:** 
 
 ---
 
-## NFR-05
-- **ID:** NFR-05
-- **Kategorija:** 
-- **Opis zahtjeva:** 
-- **Kako će se provjeravati:** 
-- **Prioritet:** 
+- **ID:** NFR-14
+- **Kategorija:** Dostupnost
+- **Opis zahtjeva:** Sistem mora biti dostupan korisnicima 24 sata neometano, bez greške, u 95% slučajeva upotrebe, naročito u periodima prijave i evaluacije. 
+- **Način provjere:** Testiranje pristupa u različitim intervalima
+- **Prioritet:** Visok
+- **Napomena:** +
+
+---
+
+- **ID:** NFR-15
+- **Kategorija:** Prenosivost
+- **Opis zahtjeva:** Sistem mora biti dostupan putem web preglednika.
+- **Način provjere:** Testiranje promjene browsera
+- **Prioritet:** Srednje
+- **Napomena:** +
+
+---
+
+- **ID:** NFR-16
+- **Kategorija:** Prenosivost
+- **Opis zahtjeva:** Sistem mora biti responzivan.
+- **Način provjere:** Testiranje UI na različitim rezolucijama
+- **Prioritet:** Srednje
+- **Napomena:** +
+
+---
+
+- **ID:** NFR-17
+- **Kategorija:** Prenosivost
+- **Opis zahtjeva:** Sistem mora biti podržan na različitim uređajima.
+- **Način provjere:** Promjena uređaja
+- **Prioritet:** Srednje
+- **Napomena:** +
+
+---
+
+- **ID:** NFR-18
+- **Kategorija:** Kompatibilnost
+- **Opis zahtjeva:** Sistem mora omogućiti slanje notifikacija putem email servisa. 
+- **Način provjere:** Provjera isporuke poruke
+- **Prioritet:** Srednji
 - **Napomena:** 
 
 ---
 
-## NFR-05
-- **ID:** NFR-05
-- **Kategorija:** 
-- **Opis zahtjeva:** 
-- **Kako će se provjeravati:** 
-- **Prioritet:** 
+- **ID:** NFR-19
+- **Kategorija:** Kompatibilnost
+- **Opis zahtjeva:** Sistem mora omogućiti integraciju sa drugim servisima.
+- **Način provjere:** API testiranje
+- **Prioritet:** Srednji
+- **Napomena:** Navedeni servisi uključuju studentsku službu ili kompanije.
+
+---
+
+- **ID:** NFR-20
+- **Kategorija:** Lokalizacija
+- **Opis zahtjeva:** Sistem može podržavati više jezika za strane kompanije i studente u inostranstvu.
+- **Način provjere:** Provjera prevoda
+- **Prioritet:** Nizak
 - **Napomena:** 
 
 ---
 
-## NFR-05
-- **ID:** NFR-05
-- **Kategorija:** 
-- **Opis zahtjeva:** 
-- **Kako će se provjeravati:** 
-- **Prioritet:** 
+- **ID:** NFR-21
+- **Kategorija:** Konzistentnost
+- **Opis zahtjeva:** Interfejs treba biti vizuelno konzistentan.
+- **Način provjere:** UI testiranje
+- **Prioritet:** Nizak
+- **Napomena:** Isti stil, fontovi, usklađene boje kroz čitav sistem.
+
+---
+
+- **ID:** NFR-22
+- **Kategorija:** Pouzdanost
+- **Opis zahtjeva:** Sistem mora omogućiti generisanje i prikaz notifikacija unutar aplikacije za  studente, koordinatore, te kompanije u vezi sa važnim događajima u sistemu u realnom vremenu.
+- **Način provjere:** Manuelno testiranje
+- **Prioritet:** Srednji
 - **Napomena:** 
 
 ---
 
-## NFR-05
-- **ID:** NFR-05
-- **Kategorija:** 
-- **Opis zahtjeva:** 
-- **Kako će se provjeravati:** 
-- **Prioritet:** 
-- **Napomena:** 
+- **ID:** NFR-23
+- **Kategorija:** Dostupnost
+- **Opis zahtjeva:** Sistem mora omogućiti oporavak u slučaju pada bez gubitka podataka.
+- **Način provjere:** Simulacija pada
+- **Prioritet:** Visok
+- **Napomena:** Nakon ponovnog pokretanja svi prethodno sačuvani podaci i stanje sistema su vraćeni.
 
 ---
 
-## NFR-05
-- **ID:** NFR-05
-- **Kategorija:** 
-- **Opis zahtjeva:** 
-- **Kako će se provjeravati:** 
-- **Prioritet:** 
-- **Napomena:** 
+- **ID:** NFR-24
+- **Kategorija:** Performanse
+- **Opis zahtjeva:** Sistem mora omogućiti učitavanje liste dostupnih praksi i filtriranje ispod 3 sekunde u 90% pretraga u normalnim uslovima.
+- **Način provjere:** Testiranje vremena filtriranja
+- **Prioritet:** Srednji
+- **Napomena:** Normalni uslovi podrazumijevaju standardno opterećenje sistema.
 
 ---
 
-## NFR-05
-- **ID:** NFR-05
-- **Kategorija:** 
-- **Opis zahtjeva:** 
-- **Kako će se provjeravati:** 
-- **Prioritet:** 
-- **Napomena:** 
 
----
-
-## NFR-05
-- **ID:** NFR-05
-- **Kategorija:** 
-- **Opis zahtjeva:** 
-- **Kako će se provjeravati:** 
-- **Prioritet:** 
-- **Napomena:** 
-
----
-
-## NFR-05
-- **ID:** NFR-05
-- **Kategorija:** 
-- **Opis zahtjeva:** 
-- **Kako će se provjeravati:** 
-- **Prioritet:** 
-- **Napomena:** 
-
----
-
-## NFR-05
-- **ID:** NFR-05
-- **Kategorija:** 
-- **Opis zahtjeva:** 
-- **Kako će se provjeravati:** 
-- **Prioritet:** 
-- **Napomena:** 
-
----
-
-## NFR-05
-- **ID:** NFR-05
-- **Kategorija:** 
-- **Opis zahtjeva:** 
-- **Kako će se provjeravati:** 
-- **Prioritet:** 
-- **Napomena:** 
-
----
-
-## NFR-05
-- **ID:** NFR-05
-- **Kategorija:** 
-- **Opis zahtjeva:** 
-- **Kako će se provjeravati:** 
-- **Prioritet:** 
-- **Napomena:** 
-
----
-
-## NFR-05
-- **ID:** NFR-05
-- **Kategorija:** 
-- **Opis zahtjeva:** 
-- **Kako će se provjeravati:** 
-- **Prioritet:** 
-- **Napomena:** 
-
----
-
-## NFR-05
-- **ID:** NFR-05
-- **Kategorija:** 
-- **Opis zahtjeva:** 
-- **Kako će se provjeravati:** 
-- **Prioritet:** 
-- **Napomena:** 
