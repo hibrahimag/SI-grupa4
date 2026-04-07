@@ -6,7 +6,6 @@
 - **Opis zahtjeva:** Sistem mora omogućiti da student može pregledati i prijaviti se na praksu u roku od najviše 4 sekunde.
 - **Način provjere:** Load testiranje
 - **Prioritet:** Visok
-- **Napomena:** 
 
 ---
 
@@ -15,7 +14,6 @@
 - **Opis zahtjeva:** Sistem mora automatski odjaviti korisnika nakon 15 minuta neaktivnosti kako bi se spriječio neovlašten pristup.
 - **Način provjere:** Test sesije
 - **Prioritet:** Srednji
-- **Napomena:** 
 
 ---
 
@@ -33,7 +31,7 @@
 - **Opis zahtjeva:** Sistem mora pouzdano raditi bez gubitka podataka o prijavama i evaluacijama pri prekidu rada ili grešci.
 - **Način provjere:** Provjera integriteta baze
 - **Prioritet:** Visok
-- **Napomena:** 
+- **Napomena:** Implementacija automatskog spremanja, backup i rollback
 
 ---
 
@@ -42,16 +40,15 @@
 - **Opis zahtjeva:** Sistem mora omogućiti automatsko spremanje unosa u cilju zaštite gubitka podataka.
 - **Način provjere:** Simulacija prekida
 - **Prioritet:** Srednji
-- **Napomena:** 
 
 ---
 
 - **ID:** NFR-06
 - **Kategorija:** Upotrebljivost
-- **Opis zahtjeva:** Sistem mora imati intuitivan interfejs kako bi ga korisnici jednostavno koristili bez dodatne obuke.
+- **Opis zahtjeva:** Sistem mora imati intuitivan interfejs kako bi ga korisnici mogli jednostavno koristiti.
 - **Način provjere:** User testiranje
 - **Prioritet:** Srednji
-- **Napomena:** 
+- **Napomena:** Jednostavno korištenje sistema podrazumijeva da nije potrebna nikakva dodatna obuka za njegovo korištenje.
 
 ---
 
@@ -60,16 +57,15 @@
 - **Opis zahtjeva:** Sistem mora jasno prikazati status prijave studenta.
 - **Način provjere:** User test
 - **Prioritet:** Nizak
-- **Napomena:** 
+- **Napomena:** Status mora biti uvijek vidljiv u realnom vremenu, te nakon promjene. Status uključuje da je prijava poslana, u obradi, prihvaćena ili odbijena.
 
 ---
 
 - **ID:** NFR-08
 - **Kategorija:** Skalabilnost
 - **Opis zahtjeva:** Sistem mora omogućiti paralelni rad više koordinatora bez usporavanja sistema.
-- **Način provjere:** User test
+- **Način provjere:** User test, load test sa simulacijom rada više korisnika
 - **Prioritet:** Srednji
-- **Napomena:** 
 
 ---
 
@@ -78,7 +74,7 @@
 - **Opis zahtjeva:** Sistem mora podržati povećanje broja aktivnih korisnika bez uticaja na preformanse.
 - **Način provjere:** Stress testiranje
 - **Prioritet:** Visok
-- **Napomena:** 
+- **Napomena:** Brzina, stabilnost, kao i čitanje/pisanje u bazu ne smiju biti promijenjeni.
 
 ---
 
@@ -87,7 +83,6 @@
 - **Opis zahtjeva:** Lični podaci studenta moraju biti dostupni samo ovlaštenim licima.
 - **Način provjere:** Provjera prava pristupa
 - **Prioritet:** Visok
-- **Napomena:** 
 
 ---
 
@@ -96,7 +91,6 @@
 - **Opis zahtjeva:** Student mora imati uvid samo u vlastite prijave, izvještaje i evaluacije, bez mogućnosti pristupa tuđim podacima.
 - **Način provjere:** Pokušaj neovlaštenog pristupa
 - **Prioritet:** Srednji
-- **Napomena:** 
 
 ---
 
@@ -114,16 +108,16 @@
 - **Opis zahtjeva:** Sistem mora biti podijeljen na nezavisne cjeline kako bi se lako dodavale nove funkcionalnosti.
 - **Način provjere:** Code review
 - **Prioritet:** Srednji
-- **Napomena:** 
+- **Napomena:** Odvojeni moduli za prijave, izvještaje, notifikacije itd.
 
 ---
 
 - **ID:** NFR-14
 - **Kategorija:** Dostupnost
-- **Opis zahtjeva:** Sistem mora biti dostupan korisnicima 24 sata neometano, bez greške, u 95% slučajeva upotrebe, naročito u periodima prijave i evaluacije. 
+- **Opis zahtjeva:** Sistem mora biti dostupan korisnicima 24 sata neometano, bez greške, u 95% slučajeva upotrebe. 
 - **Način provjere:** Testiranje pristupa u različitim intervalima
 - **Prioritet:** Visok
-- **Napomena:** +
+- **Napomena:** Naročito u periodima prijave i evaluacije.
 
 ---
 
@@ -132,7 +126,7 @@
 - **Opis zahtjeva:** Sistem mora biti dostupan putem web preglednika.
 - **Način provjere:** Testiranje promjene browsera
 - **Prioritet:** Srednje
-- **Napomena:** +
+- **Napomena:** Sistem treba raditi za Google Chrome, Edge, Safari
 
 ---
 
@@ -141,16 +135,15 @@
 - **Opis zahtjeva:** Sistem mora biti responzivan.
 - **Način provjere:** Testiranje UI na različitim rezolucijama
 - **Prioritet:** Srednje
-- **Napomena:** +
+- **Napomena:** Responzivnost se odnosi na prilagođenost različitim rezolucijama i veličinama ekrana, kao što su laptopi, mobiteli, tableti
 
 ---
 
 - **ID:** NFR-17
 - **Kategorija:** Prenosivost
-- **Opis zahtjeva:** Sistem mora biti podržan na različitim uređajima.
+- **Opis zahtjeva:** Sistem mora biti podržan na različitim uređajima i operativnim sistemima.
 - **Način provjere:** Promjena uređaja
 - **Prioritet:** Srednje
-- **Napomena:** +
 
 ---
 
@@ -159,7 +152,6 @@
 - **Opis zahtjeva:** Sistem mora omogućiti slanje notifikacija putem email servisa. 
 - **Način provjere:** Provjera isporuke poruke
 - **Prioritet:** Srednji
-- **Napomena:** 
 
 ---
 
@@ -177,7 +169,6 @@
 - **Opis zahtjeva:** Sistem može podržavati više jezika za strane kompanije i studente u inostranstvu.
 - **Način provjere:** Provjera prevoda
 - **Prioritet:** Nizak
-- **Napomena:** 
 
 ---
 
@@ -195,7 +186,7 @@
 - **Opis zahtjeva:** Sistem mora omogućiti generisanje i prikaz notifikacija unutar aplikacije za  studente, koordinatore, te kompanije u vezi sa važnim događajima u sistemu u realnom vremenu.
 - **Način provjere:** Manuelno testiranje
 - **Prioritet:** Srednji
-- **Napomena:** 
+- **Napomena:** Zahtjeva prijavu korisnika.
 
 ---
 
