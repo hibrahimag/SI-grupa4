@@ -2,6 +2,22 @@
 
 ---
 
+> ## Izmjene sa konsultacija (drugi sprint)
+>
+> Dodani sljedeći user storiji:
+>
+> - **32. Uređivanje oglasa**
+> - **33. Odustajanje od prakse**
+> - **34. Obnavljanje lozinke** 
+> - **35. Student dashboard** 
+> - **36. Filtriranje oglasa** 
+> - **37. Notifikacije o statusu prakse** 
+> - **38. Verifikacija email adrese** 
+> - **39. Pretraživanje oglasa** 
+> - **40. Deaktivacija/brisanje korisničkog računa** 
+
+---
+
 ## 1. Registracija studenta
 - **Opis:** Kao student, želim da se registrujem u sistem kako bih kreirao svoj profil  
 - **Poslovne vrijednosti:** Omogućava studentu pristup sistemu i njegovim osnovim funkcionalnostima  
@@ -555,3 +571,164 @@
   - Na zatvoreni oglas se ne može više prijavljivati
   - Zatvoreni oglas se ne pojavljuje u listi aktivnih oglasa
 ---
+
+
+## 32. Uređivanje oglasa
+- **Opis:** Kao kompanija, želim da izmijenim postojeći oglas kako bih ispravila greške ili ažurirala informacije (npr. datum, broj mjesta, uslove)
+- **Poslovne vrijednosti:** Omogućava kompaniji održavanje oglasa ažurnim bez potrebe brisanja i ponovnog kreiranja
+- **Prioritet:** Medium
+- **Pretpostavke i otvorena pitanja:**
+  - Oglas je prethodno kreiran i aktivan
+  - Da li izmjena oglasa obavještava studente koji su već prijavljeni?
+  - Da li je moguće urediti oglas nakon što su pristigle prijave?
+- **Veza sa drugim storijima ili zavisnostima:**
+  - Zavisi od 10 (Kreiranje oglasa)
+- **Acceptance criteria:**
+  - Sistem mora omogućiti izmjenu podataka oglasa: naziv, opis, trajanje, broj mjesta, uslovi, datum
+  - Kada kompanija uspješno izmijeni oglas, sistem mora sačuvati promjene i prikazati ažurirane podatke
+  - Korisnik treba dobiti potvrdu o uspješnom ažuriranju oglasa
+  - Sistem ne smije dozvoliti uređivanje zatvorenog oglasa
+  - Sistem ne smije dozvoliti uređivanje oglasa bez popunjenih obaveznih polja
+---
+
+
+## 33. Odustajanje od prakse
+- **Opis:** Kao student, želim da odustanem od prijavljene ili odobrene prakse kako bih oslobodio mjesto za drugog kandidata
+- **Poslovne vrijednosti:** Omogućava studentu fleksibilnost u upravljanju prijavam
+- **Prioritet:** Medium
+- **Pretpostavke i otvorena pitanja:**
+  - Student je prijavljen na praksu
+  - Do kada student može odustati (prije ili nakon odobrenja)?
+  - Da li odustajanje zahtijeva razlog ili potvrdu?
+- **Veza sa drugim storijima ili zavisnostima:**
+  - Zavisi od 9 (Prijava na praksu), 13 (Odobravanje prakse), 19 (Potvrda studenta)
+- **Acceptance criteria:**
+  - Sistem mora omogućiti studentu odustajanje od prakse u statusu "na čekanju" ili "odobrena"
+  - Kada student odustane, sistem mora ažurirati status prijave
+  - Sistem mora obavijestiti kompaniju i koordinatora o odustajanju studenta
+  - Sistem ne smije dozvoliti odustajanje od prakse koja je već završena
+---
+
+
+## 34. Obnavljanje lozinke
+- **Opis:** Kao korisnik, želim da obnovim lozinku u slučaju zaboravljanja kako bih ponovo pristupio svom nalogu
+- **Poslovne vrijednosti:** Osigurava kontinuiran pristup sistemu svim korisnicima bez potrebe za administratorskom intervencijom
+- **Prioritet:** High
+- **Pretpostavke i otvorena pitanja:**
+  - Korisnik posjeduje pristup registrovanom email nalogu
+  - Koliko dugo reset link ostaje aktivan?
+- **Veza sa drugim storijima ili zavisnostima:**
+  - Zavisi od 1, 2, 3 (Registracija korisnika), 4, 5, 6 (Prijava korisnika)
+- **Acceptance criteria:**
+  - Sistem mora omogućiti unos email adrese za slanje linka za resetovanje lozinke
+  - Sistem mora poslati email sa reset linkom na registrovanu adresu
+  - Reset link mora isteći nakon određenog vremenskog perioda (npr. 30 minuta)
+  - Kada korisnik uspješno postavi novu lozinku, sistem ga mora preusmjeriti na stranicu za prijavu
+  - Sistem ne smije otkriti da li email postoji u bazi u slučaju nepostojećeg emaila (sigurnost)
+---
+
+
+## 35. Student dashboard
+- **Opis:** Kao student, želim da imam centralizovani pregled svih svojih prijava na prakse, uključujući status svake prijave
+- **Poslovne vrijednosti:** Studentu pruža jasan i brz uvid u stanje svih prijava na jednom mjestu, čime se poboljšava korisničko iskustvo
+- **Prioritet:** High
+- **Pretpostavke i otvorena pitanja:**
+  - Student je prijavljen u sistem
+  - Koje sve informacije treba prikazati na dashboardu?
+- **Veza sa drugim storijima ili zavisnostima:**
+  - Zavisi od 4 (Prijava studenta), 9 (Prijava na praksu)
+- **Acceptance criteria:**
+  - Sistem mora prikazati listu svih praksi na koje je student prijavljen
+  - Sistem mora prikazati trenutni status svake prijave (npr. na čekanju, odobrena, odbijena, potvrđena)
+  - Sistem mora omogućiti studentu brzi pristup detaljima svake prijave
+  - Sistem mora prikazati obavještenja o nedavnim promjenama statusa
+  - Sistem ne smije prikazivati prijave koje ne pripadaju prijavljenom studentu
+---
+
+
+## 36. Filtriranje oglasa
+- **Opis:** Kao student, želim da filtriram dostupne oglase po određenim kriterijima kako bih pronašao praksu koja odgovara mojim interesima i potrebama 
+- **Poslovne vrijednosti:** Poboljšava korisničko iskustvo ubrzavanjem pretrage i smanjenjem irelevantnih rezultata
+- **Prioritet:** Medium
+- **Pretpostavke i otvorena pitanja:**
+  - Postoje oglasi objavljeni u sistemu
+  - Koje kategorije filtriranja su prioritetne za implementaciju?
+- **Veza sa drugim storijima ili zavisnostima:**
+  - Zavisi od 7 (Pregled oglasa), 6 (Kreiranje oglasa)
+- **Acceptance criteria:**
+  - Sistem mora omogućiti filtriranje oglasa po oblasti zanimanja
+  - Sistem mora omogućiti filtriranje po vrsti plaćanja (plaćena/neplaćena praksa)
+  - Sistem mora omogućiti filtriranje po datumu objave i trajanju prakse
+  - Sistem mora ažurirati listu oglasa u realnom vremenu pri primjeni filtera
+  - Sistem mora omogućiti brisanje/resetovanje svih aktivnih filtera
+---
+
+
+## 37. Notifikacije o statusu prakse
+- **Opis:** Kao student, želim da primam notifikacije o svakoj promjeni statusa moje prijave na praksu kako bih bio pravovremeno obaviješten
+- **Poslovne vrijednosti:** Smanjuje potrebu za manualnim praćenjem statusa i povećava angažovanost studenta u procesu
+- **Prioritet:** Medium
+- **Pretpostavke i otvorena pitanja:**
+  - Da li se notifikacije šalju putem emaila, unutar aplikacije, ili oboje?
+  - Koje sve promjene statusa zahtijevaju notifikaciju?
+- **Veza sa drugim storijima ili zavisnostima:**
+  - Zavisi od 9 (Prijava na praksu), 13 (Odobravanje prakse), 35 (Student dashboard)
+- **Acceptance criteria:**
+  - Sistem mora poslati notifikaciju studentu kada kompanija promijeni status prijave (odobri, odbije, uvrsti u uži izbor)
+  - Sistem mora poslati notifikaciju kada koordinator odobri ili odbije praksu
+  - Sistem mora prikazati notifikacije unutar aplikacije na dashboardu studenta
+  - Student mora moći vidjeti historiju svih primljenih notifikacija
+  - Sistem ne smije slati duplikate notifikacija za istu promjenu statusa
+---
+
+
+## 38. Verifikacija email adrese
+- **Opis:** Kao novi korisnik, želim da primim email za verifikaciju računa kako bi sistem potvrdio moj identitet i aktivirao moj nalog
+- **Poslovne vrijednosti:** Osigurava validnost korisničkih podataka i sprječava kreiranje lažnih naloga
+- **Prioritet:** High
+- **Pretpostavke i otvorena pitanja:**
+  - Korisnik je uspješno popunio formu za registraciju
+  - Koliko dugo verifikacioni link ostaje aktivan?
+  - Može li se verifikacioni email ponovo poslati?
+- **Veza sa drugim storijima ili zavisnostima:**
+  - Zavisi od 1, 2, 3 (Registracija), direktno blokira 4, 5, 6 (Prijava)
+- **Acceptance criteria:**
+  - Sistem mora automatski poslati verifikacioni email odmah nakon registracije
+  - Verifikacioni link mora isteći nakon određenog perioda (npr. 24 sata)
+  - Kada korisnik klikne validni link, sistem mora aktivirati nalog i preusmjeriti ga na prijavu
+  - Sistem mora onemogućiti prijavu na nalog koji nije verifikovan
+  - Sistem mora omogućiti korisniku ponovno slanje verifikacionog emaila u slučaju da nije primljen
+---
+
+
+## 39. Pretraživanje oglasa
+- **Opis:** Kao student, želim da pretražujem oglase po ključnoj riječi kako bih brzo pronašao relevantne prakse
+- **Poslovne vrijednosti:** Dopunjuje filtriranje i ubrzava pronalazak oglasa po specifičnim pojmovima
+- **Prioritet:** Medium
+- **Pretpostavke i otvorena pitanja:**
+  - Postoje oglasi objavljeni u sistemu
+  - Da li pretraga obuhvata naziv, opis ili oboje?
+- **Veza sa drugim storijima ili zavisnostima:**
+  - Zavisi od 7 (Pregled oglasa), 36 (Filtriranje oglasa)
+- **Acceptance criteria:**
+  - Sistem mora omogućiti unos ključne riječi u polje za pretragu
+  - Sistem mora prikazati sve oglase čiji naziv ili opis sadrži unesenu ključnu riječ
+  - Sistem mora prikazati poruku ako nema rezultata za datu pretragu
+---
+
+
+## 40. Deaktivacija/brisanje korisničkog računa
+- **Opis:** Kao korisnik, želim da deaktiviram ili obrišem svoj nalog u sistemu
+- **Poslovne vrijednosti:** Korisnicima daje kontrolu nad svojim podacima i nalogom
+- **Prioritet:** Low
+- **Pretpostavke i otvorena pitanja:**
+  - Šta se dešava s aktivnim prijavama pri brisanju naloga?
+  - Da li brisanje naloga zahtijeva administratorsko odobrenje?
+- **Veza sa drugim storijima ili zavisnostima:**
+  - Zavisi od 4, 5, 6 (Prijava korisnika), 9 (Pristup administratora)
+- **Acceptance criteria:**
+  - Sistem mora tražiti potvrdu od korisnika prije deaktivacije/brisanja naloga
+  - Sistem mora onemogućiti prijavu na deaktiviran nalog
+  - Sistem mora obavijestiti kompaniju ili koordinatora ako student s aktivnim prijavama obriše nalog
+  - Administrator mora moći reaktivirati deaktiviran nalog
+  ---
