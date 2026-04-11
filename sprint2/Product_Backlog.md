@@ -206,3 +206,94 @@
 - Prioritet: Medium  
 - Procjena složenosti: 3  
 - Status: To Do  
+---
+
+### 26 - Uređivanje oglasa
+- Opis: Kompanija može izmijeniti postojeći aktivni oglas  
+- Tip: Feature  
+- Prioritet: Medium  
+- Procjena složenosti: 3  
+- Status: To Do  
+
+---
+
+### 27 - Odustajanje od prakse
+- Opis: Student može odustati od prijavljene ili odobrene prakse  
+- Tip: Feature  
+- Prioritet: Medium  
+- Procjena složenosti: 2  
+- Status: To Do  
+
+---
+
+### 28 - Obnavljanje lozinke
+- Opis: Korisnik može resetovati lozinku putem email linka  
+- Tip: Feature  
+- Prioritet: High  
+- Procjena složenosti: 3  
+- Status: To Do  
+
+---
+
+### 29 - Student dashboard
+- Opis: Centralizovani pregled svih prijava i statusa za studenta  
+- Tip: Feature  
+- Prioritet: High  
+- Procjena složenosti: 3  
+- Status: To Do  
+
+---
+
+### 30 - Filtriranje i pretraživanje oglasa
+- Opis: Student može filtrirati oglase po kriterijima i pretraživati po ključnoj riječi  
+- Tip: Feature  
+- Prioritet: Medium  
+- Procjena složenosti: 3  
+- Status: To Do  
+
+---
+
+### 31 - Notifikacije
+- Opis: Sistem šalje notifikacije korisnicima o promjenama statusa prijava  
+- Tip: Feature  
+- Prioritet: Medium  
+- Procjena složenosti: 5  
+- Status: To Do  
+
+---
+
+### 32 - Verifikacija email adrese
+- Opis: Sistem šalje verifikacioni email nakon registracije  
+- Tip: Feature  
+- Prioritet: High  
+- Procjena složenosti: 3  
+- Status: To Do  
+
+---
+
+### 33 - Deaktivacija/brisanje korisničkog računa
+- Opis: Korisnik može deaktivirati ili obrisati svoj nalog  
+- Tip: Feature  
+- Prioritet: Low  
+- Procjena složenosti: 3  
+- Status: To Do  
+
+---
+
+### 34 - Landing page
+- Opis: Implementacija početne stranice sa opisom platforme i opcijama za registraciju/prijavu  
+- Tip: Feature  
+- Prioritet: High  
+- Procjena složenosti: 3  
+- Status: To Do  
+
+---
+
+### 35 - Navigacija
+- Opis: Implementacija navigacije prilagođene korisničkoj roli  
+- Tip: Feature  
+- Prioritet: High  
+- Procjena složenosti: 2  
+- Status: To Do  
+
+---
