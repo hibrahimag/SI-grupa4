@@ -877,3 +877,54 @@
     pronalazak ove mogućnosti
 
 ---
+
+## 48. Favoriziranje oglasa | PB39
+- **Opis:** Kao student, želim da označim oglase kao omiljene kako bih ih kasnije lakše pronašao
+- **Poslovne vrijednosti:** Omogućava studentu organizaciju i lakši pristup interesantnim praksama
+- **Prioritet:** Low
+- **Pretpostavke i otvorena pitanja:**
+    - Student je prijavljen u sistem
+- **Veza sa drugim storijima ili zavisnostima:**
+    - Zavisi od 4 (Prijava studenta), 11 (Pregled oglasa)
+**Acceptance criteria:**
+   - Sistem mora omogućiti studentu označavanje oglasa kao omiljenog
+   - Sistem mora omogućiti pregled liste omiljenih oglasa
+   - Sistem mora omogućiti uklanjanje oglasa iz omiljenih
+   - Sistem ne smije prikazivati tuđe omiljene oglase
+
+---
+
+## 49. Arhiviranje oglasa | PB40
+- **Opis:** Kao kompanija, želim da arhiviram stare oglase kako bih zadržala evidenciju bez prikazivanja studentima
+- **Poslovne vrijednosti:** Omogućava bolju organizaciju i historiju oglasa bez zatrpavanja aktivnih
+- **Prioritet:** Low
+- **Pretpostavke i otvorena pitanja:**
+    - Oglas je prethodno zatvoren
+- **Veza sa drugim storijima ili zavisnostima:**
+    - Zavisi od 31 (Zatvaranje oglasa)
+- **Acceptance criteria:**
+    - Sistem mora omogućiti arhiviranje zatvorenog oglasa
+    - Arhivirani oglasi se ne smiju prikazivati studentima
+    - Sistem mora omogućiti kompaniji pregled arhiviranih oglasa
+    - Sistem mora omogućiti vraćanje oglasa iz arhive
+
+---
+
+## 50. Pregled statistike prijava | PB41
+- **Opis:** Kao kompanija, želim da vidim statistiku prijava na oglas kako bih bolje razumjela interes studenata
+- **Poslovne vrijednosti:** Omogućava donošenje boljih odluka za buduće oglase
+- **Prioritet:** Medium
+- **Pretpostavke i otvorena pitanja:**
+    - Postoje prijave na oglas
+- **Veza sa drugim storijima ili zavisnostima:**
+    - Zavisi od 15 (Pregled prijava), 13 (Prijava na praksu)
+- **Acceptance criteria:**
+    - Sistem mora prikazati broj prijava po oglasu
+    - Sistem mora prikazati osnovne statistike (npr. po odsjeku, godini studija)
+    - Sistem mora omogućiti filtriranje statistike
+    - Sistem ne smije prikazivati statistiku za oglase koji ne pripadaju kompaniji
+
+---
+
+
+
