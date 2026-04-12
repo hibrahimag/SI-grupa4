@@ -18,7 +18,7 @@
 
 ---
 
-## 1. Registracija | PB1
+## 1. Registracija studenta | PB1
 - **Opis:** Kao student, želim da se registrujem u sistem kako bih kreirao svoj profil  
 - **Poslovne vrijednosti:** Omogućava studentu pristup sistemu i njegovim osnovim funkcionalnostima  
 - **Prioritet:** High  
@@ -141,7 +141,7 @@
 
 ---
 
-## 7. Uređivanje profila studenta | PB3
+## 7. Uređivanje profila studenta | PB39
 - **Opis:** Kao student želim da unesem/uređujem osnovne lične podatke potrebne za praksu (odsjek, godina studije, CV)  
 - **Poslovne vrijednosti:** Student ima mogućnost održavanja profila ažurnim u cilju povećanja šansi sticanja prakse  
 - **Prioritet:** Medium  
@@ -731,7 +731,7 @@
   - Sistem mora onemogućiti prijavu na deaktiviran nalog
   - Sistem mora obavijestiti kompaniju ili koordinatora ako student s aktivnim prijavama obriše nalog
   - Administrator mora moći reaktivirati deaktiviran nalog
-  ---
+---
 
 
   ## 41. Početna stranica (Landing page) | PB34
@@ -754,7 +754,6 @@
     na odgovarajući dashboard
   - Stranica ne smije prikazivati zaštićeni sadržaj 
     neprijavljenim korisnicima
-
 ---
 
 ## 42. Navigacija | PB35
@@ -778,7 +777,6 @@
     nakon prijave
   - Sistem ne smije prikazivati stavke navigacije 
     koje korisnik nema pravo koristiti
-
 ---
 
 ## 43. Pregled profila kompanije | PB4
@@ -803,5 +801,79 @@
     neodobrene kompanije
   - Sistem ne smije dozvoliti pregled profila 
     kompanije bez aktivne prijave u sistem
+---
+
+## 44. Pregled korisničkog profila | PB36
+- **Opis:** Kao korisnik, želim da vidim detalje o svom profilu kako bih imao uvid u moje pohranjene podatke.
+- **Poslovne vrijednosti:** Korisnik može da vidi svoje lične informacije i u slučaju greške da traži izmjenu, ili da bude saglasan sa njima.
+- **Prioritet:** Medium
+- **Pretpostavke i otvorena pitanja:**
+  - Korisnik mora biti prijavljen  
+- **Veza sa drugim storijima ili zavisnostima:**
+  - Vezano za 3 (Profil studenta)
+  - Vezano za 4 (Profil kompanije)  
+  - Zavisi od 1 (Registracija korisnika)  
+- **Acceptance criteria:**
+  - Sistem mora prikazati osnovne informacije o korisniku: 
+    ime/naziv, adresa, email, i ostale specifične informacije
+  - Sistem mora prikazati na ovoj stranici i mogućnost 
+    izmjene određenih korisničkih podataka
+  - Korisnik mora moći pristupiti profilu sa glavne stranice
+  - Sistem ne smije prikazivati profil 
+    neprijavljenom korisniku
+
+---
+
+## 45. Uređivanje profila kompanije | PB39
+- **Opis:** Kao kompanija, želim da vidim svoje pohranjene podatke koje sam unijela.
+- **Poslovne vrijednosti:** Kompanija ima uvid u javno dostupnim informacijama o sebi, te u slučaju nesaglasnosti promijeniti iste, ili ostaviti kao takve.  
+- **Prioritet:** Medium  
+- **Pretpostavke i otvorena pitanja:**
+  - Kompanija mora biti prijavljena
+- **Veza sa drugim storijima ili zavisnostima:**
+  - Vezano za 44 (Pregled korisničkog profila)
+  - Zavisi od 3 (Registracija kompanije)  
+- **Acceptance criteria:**
+  - Sistem mora omogućiti izmjenu informacija na
+    profilu kompanije
+  - Kompanija mora moći pristupiti uređivanju sa
+    profilne stranice kompanije
+  - Sistem ne smije omogućiti uređivanje profila
+    neprijavljenoj kompaniji
+
+---
+
+## 46. Privacy policy & User Terms stranica | PB37
+- **Opis:** Kao korisnik, želim da vidim Uslove korištenja stranice kao i politiku privatnosti.
+- **Poslovne vrijednosti:** Korisnik zna koji su uslovi korištenja i donosi svjesnu odluku da je saglasan sa istim tako što nastavlja koristiti sistem.
+- **Prioritet:** Low
+- **Pretpostavke i otvorena pitanja:**
+  
+- **Veza sa drugim storijima ili zavisnostima:**
+  
+- **Acceptance criteria:**
+  - Sistem mora prikazati politiku privatnosti
+    i uslove korištenja korisniku
+  - Sistem mora omogućiti prikaz ovih stavki i
+    neprijavljenom korisniku
+  - Sistem mora omogućiti jednostavnu navigaciju
+    do ovih stavki
+
+---
+
+## 47. Tamni režim rada | PB38
+- **Opis:** Kao korisnik, želim da mogu promijeniti temu stranice.
+- **Poslovne vrijednosti:** Korisnik može koristiti svjetlu ili tamnu temu stranice, što omogućava ugodnije korištenje iste
+- **Prioritet:** Low
+- **Pretpostavke i otvorena pitanja:**
+  
+- **Veza sa drugim storijima ili zavisnostima:**
+  
+- **Acceptance criteria:**
+  - Sistem može prikazati sadržaj u svjetloj 
+    kao i u tamnoj temi
+  - Sistem mora omogućiti intuitivnu izmjenu teme
+  - Sistem mora omogućiti jednostavan 
+    pronalazak ove mogućnosti
 
 ---
