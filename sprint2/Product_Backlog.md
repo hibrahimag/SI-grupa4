@@ -275,7 +275,7 @@
 - Opis: Korisnik može deaktivirati ili obrisati svoj nalog  
 - Tip: Feature  
 - Prioritet: Low  
-- Procjena složenosti: 3  
+- Procjena složenosti: 3
 - Status: To Do  
 
 ---
@@ -284,7 +284,7 @@
 - Opis: Implementacija početne stranice sa opisom platforme i opcijama za registraciju/prijavu  
 - Tip: Feature  
 - Prioritet: High  
-- Procjena složenosti: 3  
+- Procjena složenosti: 3
 - Status: To Do  
 
 ---
@@ -293,7 +293,43 @@
 - Opis: Implementacija navigacije prilagođene korisničkoj roli  
 - Tip: Feature  
 - Prioritet: High  
-- Procjena složenosti: 2  
+- Procjena složenosti: 2
 - Status: To Do  
+
+---
+
+### 36 - Pregled korisničkog profila
+- Opis: Korisnik može vidjeti detalje tj. pohranjene informacije o svom profilu
+- Tip: Feature  
+- Prioritet: Medium  
+- Procjena složenosti: 2
+- Status: To Do  
+
+---
+
+### 37 - Privacy policy & User Terms stranica
+- Opis: Stranica na kojoj su napisani uslovi korištenja
+- Tip: Feature  
+- Prioritet: Low
+- Procjena složenosti: 2
+- Status: To Do  
+
+---
+
+### 38 - Tamni režim rada
+- Opis: Implementacija tamnog režima rada aplikacije  
+- Tip: Feature  
+- Prioritet: Low
+- Procjena složenosti: 2
+- Status: To Do
+
+---
+
+### 39 - Uređivanje korisničkog profila
+- Opis: Korisnik može izmijeniti neke podatke svog profila
+- Tip: Feature  
+- Prioritet: Medium
+- Procjena složenosti: 2
+- Status: To Do
 
 ---
