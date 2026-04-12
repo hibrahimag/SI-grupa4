@@ -769,3 +769,45 @@
   - Statistika po odsjeku i godini
   - Filtriranje podataka
   - Nije moguće vidjeti statistiku tuđih oglasa
+
+  ---
+
+  ## 58. Podešavanje tipova notifikacija | PB31
+- **Opis:** Kao korisnik želim da odaberem koje vrste notifikacija primam kako bih primao samo relevantne obavijesti  
+- **Poslovne vrijednosti:** Smanjuje nepotrebne notifikacije i poboljšava korisničko iskustvo  
+- **Prioritet:** Low  
+- **Veza sa drugim storijima ili zavisnostima:**
+  - Zavisi od 45 
+- **Acceptance criteria:**
+  - Sistem mora omogućiti korisniku izbor tipova notifikacija  
+  - Sistem mora slati samo odabrane notifikacije  
+  - Sistem mora zapamtiti korisničke postavke  
+  - Promjene moraju biti odmah primijenjene  
+
+---
+
+## 59. Oznaka "Novo" na oglasima | PB7
+- **Opis:** Kao student želim da vidim koji su oglasi novododani kako bih lakše pronašao najnovije prakse  
+- **Poslovne vrijednosti:** Poboljšava preglednost i omogućava brže pronalaženje novih oglasa  
+- **Prioritet:** Low    
+- **Veza sa drugim storijima ili zavisnostima:**
+  - Zavisi od 13
+- **Acceptance criteria:**
+  - Sistem mora označiti oglas kao "Novo" ako je objavljen u definisanom vremenskom periodu  
+  - Oznaka se mora automatski ukloniti nakon isteka perioda  
+  - Oznaka mora biti vidljiva na listi oglasa  
+
+---
+
+## 60. Pregled zatvorenih oglasa | PB7
+- **Opis:** Kao student želim da vidim zatvorene oglase kako bih razumio zahtjeve kompanija i bolje se pripremio za buduće prijave  
+- **Poslovne vrijednosti:** Pomaže studentima u pripremi i povećava kvalitet prijava  
+- **Prioritet:** Low   
+- **Veza sa drugim storijima ili zavisnostima:**
+  - Zavisi od 11
+  - U vezi sa 13 
+- **Acceptance criteria:**
+  - Sistem mora omogućiti prikaz zatvorenih oglasa  
+  - Zatvoreni oglasi moraju biti jasno označeni  
+  - Sistem ne smije dozvoliti prijavu na zatvorene oglase  
+  - Sistem mora omogućiti pregled detalja zatvorenog oglasa  
