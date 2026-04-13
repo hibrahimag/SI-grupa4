@@ -53,8 +53,6 @@ Komponente su organizovane u sljedeće module:
 
 ## 3. Odgovornosti komponenti
 
-## 3. Odgovornosti komponenti
-
 | Modul | Odgovornost |
 |-------|-------------|
 | Auth modul | Registracija novih korisnika, prijava u sistem i verifikacija identiteta putem emaila |
@@ -79,6 +77,19 @@ Komponente su organizovane u sljedeće module:
 Korisnički zahtjev → Provjera identiteta i role → Obrada poslovne logike → Pristup podacima → Odgovor korisniku
 
 Korisnik inicira akciju kroz interfejs, sistem provjerava njegov identitet i ovlaštenja, zatim se izvršava odgovarajuća poslovna logika uz pristup podacima, te se rezultat prikazuje korisniku.
+
+### Tok komunijacije između modula
+
+Primjer toka prijave na praksu:
+
+1. Auth modul potvrđuje identitet korisnika putem Auth servisa  
+2. Oglas modul dohvaća podatke o oglasu putem Oglas servisa  
+3. Prijava modul šalje zahtjev za prijavu na praksu Prijava servisu  
+4. Prijava servis koristi Oglas servis za provjeru validnosti oglasa  
+5. Prijava servis koristi Korisnik servis za provjeru korisnika  
+6. Prijava servis kreira prijavu i postavlja početni status  
+7. Notifikacija servis šalje obavještenje kompaniji o novoj prijavi  
+8. Dashboard modul prikazuje ažuriran status korisniku   
 
 ---
 
