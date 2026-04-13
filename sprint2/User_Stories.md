@@ -24,760 +24,986 @@
 > - **27. Validacija unosa podataka**
 
 
+
 ---
 
 ## 1. Registracija studenta | PB1
 - **Opis:** Kao student, želim da se registrujem u sistem kako bih kreirao svoj profil  
-- **Poslovne vrijednosti:** Omogućava studentu pristup sistemu i njegovim osnovnim funkcionalnostima  
+- **Poslovne vrijednosti:** Omogućava studentu pristup sistemu i njegovim osnovim funkcionalnostima  
 - **Prioritet:** High  
 - **Pretpostavke i otvorena pitanja:**
   - Student posjeduje fakultetski email  
 - **Veza sa drugim storijima ili zavisnostima:**  
-  - Vezano za 46 (Verifikacija email adrese)
 - **Acceptance criteria:**
-  - Sistem mora omogućiti unos podataka: ime, prezime, email, lozinka, indeks, godina studija, odsjek
-  - Korisnik dobija potvrdu o registraciji
-  - Sistem ne smije dozvoliti registraciju s već postojećim emailom
-  - Sistem ne smije odobriti profil prije verifikacije
-  - Obavezna polja moraju biti popunjena
+  - Sistem mora omogućiti unos podataka: ime, prezime, 
+    email, lozinka, indeks, godina studija, odsjek
+  - Kada student uspješno unese sve podatke, 
+    korisnik treba dobiti potvrdu o registraciji na ekranu
+  - Sistem ne smije dozvoliti registraciju 
+    s već postojećim emailom
+  - Sistem ne smije odobriti profil prije verifikacije od strane     
+  fakulteta
+  - Sistem ne smije dozvoliti završetak registracije 
+    bez popunjenih obaveznih polja
 
 ---
 
 ## 2. Registracija koordinatora fakulteta | PB1
-- **Opis:** Kao koordinator, želim da se registrujem u sistem s odgovarajućim privilegijama  
-- **Poslovne vrijednosti:** Omogućava upravljanje procesom praksi  
+- **Opis:** Kao koordinator, želim da se registrujem u sistem s odgovarajućim privilegijama kako bih upravljao procesom odobravanja praksi  
+- **Poslovne vrijednosti:** Omogućava koordinatoru pristup određenim privilegijama koje dolaze uz tu rolu  
 - **Prioritet:** High  
 - **Pretpostavke i otvorena pitanja:**
   - Koordinator je uposlenik fakulteta  
 - **Veza sa drugim storijima ili zavisnostima:** 
-  - Zavisi od 9 (Pristup administratora)  
-  - Vezano za 46 (Verifikacija email adrese)
+  - Zavisi od 9
 - **Acceptance criteria:** 
-  - Unos: ime, prezime, email, lozinka, institucija, odsjek
-  - Registracija na čekanju admin odobrenja
-  - Nema pristupa bez admin odobrenja
-  - Email mora biti jedinstven
-
+  - Sistem mora omogućiti unos podataka: ime, prezime, 
+    email, lozinka, institucija, odsjek
+  - Kada koordinator unese podatke, sistem mora kreirati 
+    profil i dodijeliti mu rolu koordinatora
+  - Korisnik treba dobiti obavještenje da je registracija 
+    na čekanju adminovog odobravanja
+  - Sistem ne smije dozvoliti pristup privilegijama 
+    dok admin ne odobri account
+  - Sistem ne smije dozvoliti registraciju 
+    s već postojećim emailom
 ---
 
 ## 3. Registracija kompanije | PB1
-- **Opis:** Kao kompanija, želim da se registrujem radi objavljivanja oglasa  
-- **Poslovne vrijednosti:** Omogućava objavljivanje praksi  
+- **Opis:** Kao kompanija, želim da se registrujem u sistem s ciljem objavljivanja oglasa i povezivanja sa studentima  
+- **Poslovne vrijednosti:** Objavljivanje oglasa za praksu u cilju pronalaska kvalitetne radne snage  
 - **Prioritet:** High  
 - **Pretpostavke i otvorena pitanja:**
-  - Kompanija mora biti odobrena  
+  - Kompanija mora biti odobrena od strane fakulteta  
 - **Veza sa drugim storijima ili zavisnostima:**
-  - Zavisi od 9 (Pristup administratora)  
-  - Vezano za 46 (Verifikacija email adrese)
+  - Zavisi od 9
 - **Acceptance criteria:**
-  - Unos: naziv, email, lozinka, adresa, kontakt osoba
-  - Zahtjev ide adminu
-  - Email mora biti jedinstven
-
+  - Sistem mora omogućiti unos podataka: naziv kompanije, 
+    email, lozinka, adresa, kontakt osoba
+  - Kada kompanija unese podatke, sistem mora poslati 
+    zahtjev adminu za odobravanje
+  - Korisnik treba dobiti obavještenje da je registracija 
+    na čekanju odobravanja
+  - Sistem ne smije dozvoliti registraciju 
+    s već postojećim emailom
 ---
 
 ## 4. Prijava studenata | PB2
-- **Opis:** Kao student, želim da se prijavim u sistem  
-- **Poslovne vrijednosti:** Omogućava pristup dashboardu  
+- **Opis:** Kao student, želim da se prijavim u sistem kako bih pristupio objavljenim praksama i prijavio se na njih  
+- **Poslovne vrijednosti:** Omogućava studentu siguran pristup već kreiranom profilu i konstantan uvid u objavljene prakse i stanje prijavljenih praksi  
 - **Prioritet:** High  
+- **Pretpostavke i otvorena pitanja:**
+  - Student se već registrovao u sistem  
 - **Veza sa drugim storijima ili zavisnostima:**
-  - Zavisi od 1  
-  - Blokirano dok 46 nije završeno
+  - 1(Registracija studenta)
 - **Acceptance criteria:**
-  - Ispravni kredencijali → dashboard (42)
-  - Greška za pogrešne podatke
-  - Ne dozvoliti prijavu bez verifikacije
+  - Kada student uspješno unese kredencijale(email, lozinka), 
+    sistem ga  mora preusmjeriti na dashboard
+  - Korisnik treba dobiti poruku greške 
+    u slučaju pogrešnih kredencijala
+  - Sistem ne smije dozvoliti pristup 
+    bez verifikovanog accounta
+  - Sistem ne smije dozvoliti prijavu 
+    s nepostoječim emailom
+
 
 ---
 
 ## 5. Prijava koordinatora | PB2
-- **Opis:** Kao koordinator, želim prijavu u sistem  
-- **Poslovne vrijednosti:** Omogućava pristup koordinatorskom dashboardu  
+- **Opis:** Kao koordinator, želim da se prijavim u sistem kako bih odobravao studentima prijavljene prakse i imao uvid u njih  
+- **Poslovne vrijednosti:** Omogućava koordinatoru siguran pristup već kreiranom profilu i dalje odobravanje i evaluacije praksi  
 - **Prioritet:** High  
+- **Pretpostavke i otvorena pitanja:**
+  - Koordinator je već odobren od strane administratora kao koordinator  
+  - Kojim podacima studenata koordinator ima pristup?  
 - **Veza sa drugim storijima ili zavisnostima:**
-  - Zavisi od 2 i 9  
+  - 2(Registracija koordinatora)
 - **Acceptance criteria:**
-  - Pristup samo odobrenim accountima
-  - Greška za pogrešne podatke
+- Kada koordinator uspješno unese kredencijale, 
+    sistem ga mora preusmjeriti na koordinatorski dashboard
+  - Sistem mora omogućiti pristup samo 
+    odobrenim koordinatorskim accountima
+  - Korisnik treba dobiti poruku greške 
+    u slučaju pogrešnih kredencijala
+  - Sistem ne smije dozvoliti pristup 
+    neodobrenom koordinatoru
 
 ---
 
 ## 6. Prijava kompanija | PB2
-- **Opis:** Kao kompanija želim prijavu radi upravljanja oglasima  
-- **Poslovne vrijednosti:** Omogućava upravljanje praksama  
+- **Opis:** Kao kompanija želim da se prijavim u sistem u cilju nastavka upravljanja i objavljivanja oglasa  
+- **Poslovne vrijednosti:** Omogućava kompaniji siguran pristup već kreiranom profilu i nastavak upravljanja oglasima i prijavama  
 - **Prioritet:** High  
+- **Pretpostavke i otvorena pitanja:**
+  - Kompanija je već registrovana u sistem  
 - **Veza sa drugim storijima ili zavisnostima:** 
-  - Zavisi od 3 i 9  
+  - U zavisnosti od 3(Registracija kompanija)
 - **Acceptance criteria:**
-  - Pristup samo odobrenim accountima
+ - Kada kompanija uspješno unese kredencijale, 
+    sistem mora preusmjeriti je na dashboard kompanije
+  - Sistem mora omogućiti pristup samo 
+    odobrenim kompanijskim accountima
+  - Korisnik treba dobiti poruku greške 
+    u slučaju pogrešnih kredencijala
+  - Sistem ne smije dozvoliti pristup 
+    neodobrenoj kompaniji
 
 ---
 
-## 7. Pregled profila kompanije | PB4
-- **Opis:** Kao student, želim vidjeti detalje o kompaniji  
-- **Poslovne vrijednosti:** Informisana odluka o prijavi  
+## 7. Uređivanje profila studenta | PB39
+- **Opis:** Kao student želim da unesem/uređujem osnovne lične podatke potrebne za praksu (odsjek, godina studije, CV)  
+- **Poslovne vrijednosti:** Student ima mogućnost održavanja profila ažurnim u cilju povećanja šansi sticanja prakse  
 - **Prioritet:** Medium  
+- **Pretpostavke i otvorena pitanja:**
+  - Korisnik mora biti prijavljen da bi mogao uređivati profil  
 - **Veza sa drugim storijima ili zavisnostima:**
-  - Zavisi od 4  
-  - Vezano za 14 (Pregled detalja oglasa)  
-  - Vezano za 3  
+  - Zavisi od 4 (Prijava studenta)  
 - **Acceptance criteria:**
-  - Prikaz osnovnih podataka
-  - Lista aktivnih oglasa
-  - Dostupno samo prijavljenim studentima
+  - Sistem mora omogućiti izmjenu podataka: 
+    ime, prezime, indeks, godina studija, odsjek
+  - Kada student uspješno izmijeni podatke, 
+    korisnik treba dobiti potvrdu o ažuriranju profila
+  - Sistem mora omogućiti upload CV-a u PDF formatu
+  - Sistem ne smije dozvoliti upload fajla 
+    koji nije PDF format
 
 ---
 
 ## 8. Pristup koordinatora | PB5
-- **Opis:** Koordinator ima poseban interfejs  
-- **Poslovne vrijednosti:** Centralizovan pregled prijava  
+- **Opis:** Kao koordinator želim da pristupim posebnom interfejsu sa ciljem uvida u informacije o prijavama studenata na prakse i njihovim osnovnim informacijama  
+- **Poslovne vrijednosti:** Pruža centralizovan pregled prijava i informacija o studentima što omogućava efikasno odobravanje praksi  
 - **Prioritet:** Medium  
+- **Pretpostavke i otvorena pitanja:**
+  - Kojim informacijama može pristupiti koordinator?  
 - **Veza sa drugim storijima ili zavisnostima:**
-  - Zavisi od 5  
+  - Zavisi od 5 (Prijava koordinatora)  
 - **Acceptance criteria:**
-  - Pregled svih prijava
-  - Uvid u informacije studenata
+  - Sistem mora omogućiti koordinatoru pregled 
+    svih prijava studenata na prakse
+  - Sistem mora omogućiti koordinatoru uvid u 
+    osnovne informacije o studentima
+  - Korisnik treba dobiti pregledan prikaz 
+    statusa svake prijave
+  - Sistem ne smije dozvoliti pristup 
+    koordinatorskom interfejsu bez odgovarajuće role
 
 ---
 
 ## 9. Pristup administratora | PB5
-- **Opis:** Administrator upravlja korisnicima  
-- **Poslovne vrijednosti:** Upravljanje rolama  
+- **Opis:** Kao administrator želim da pristupim posebnom interfejsu sa ciljem uvida i upravljanja svim korisnicima sistema  
+- **Poslovne vrijednosti:** Administratoru omogućava upravljanje rolama korisnika što je preduslov za ispravan rad sistema  
 - **Prioritet:** High  
+- **Pretpostavke i otvorena pitanja:**
+  - Administrator se ne registruje kao ostali korisnici  
 - **Veza sa drugim storijima ili zavisnostima:**
-  - Vezano za 2 i 3  
+  - U vezi sa 2 i 3 (Davanje role koordinatora/kompanije korisniku)  
 - **Acceptance criteria:**
-  - Pregled svih korisnika
-  - Dodjela rola
+  - Sistem mora omogućiti administratoru pregled 
+    svih korisnika sistema
+  - Sistem mora omogućiti dodjelu rola 
+    drugom adminu, koordinatoru i kompaniji
+  - Korisnik treba dobiti potvrdu nakon 
+    svake akcije odobravanja ili odbijanja
+  - Sistem ne smije dozvoliti pristup 
+    admin interfejsu bez admin role
 
 ---
 
 ## 10. Kreiranje oglasa | PB6
-- **Opis:** Kompanija kreira oglas  
-- **Poslovne vrijednosti:** Objavljivanje prakse  
+- **Opis:** Kao kompanija želim da kreiram i objavim oglas kako bih studentima predstavio praksu i naše zahtjeve  
+- **Poslovne vrijednosti:** Omogućava kompaniji objavljivanje oglasa za praksu i povezivanje sa studentima  
 - **Prioritet:** Medium  
+- **Pretpostavke i otvorena pitanja:**
+  - Kompanija je prijavljena i odobrena u sistemu  
 - **Veza sa drugim storijima ili zavisnostima:**
-  - Zavisi od 6  
+  - Zavisi od 6 (Prijava kompanije)  
 - **Acceptance criteria:**
-  - Unos: naziv, opis, trajanje, broj mjesta
-  - Oglas postaje vidljiv studentima
+  - Sistem mora omogućiti unos podataka oglasa: 
+    naziv, opis, trajanje, broj mjesta, uslovi
+  - Kada kompanija uspješno kreira oglas, 
+    sistem mora objaviti oglas i učiniti ga vidljivim studentima
+  - Korisnik treba dobiti potvrdu o uspješnom 
+    kreiranju oglasa
+  - Sistem ne smije dozvoliti kreiranje oglasa 
+    bez popunjenih obaveznih polja
+  - Sistem ne smije dozvoliti kreiranje oglasa 
+    neodobrenoj kompaniji
 
 ---
 
-## 11. Zatvaranje oglasa | PB6
-- **Opis:** Kompanija zatvara oglas  
-- **Poslovne vrijednosti:** Sprečava nove prijave  
+## 11. Pregled oglasa | PB7
+- **Opis:** Kao student želim da imam mogućnost pregleda svih dostupnih praksi  
+- **Poslovne vrijednosti:** Student ima konstantan uvid u dostupne prakse  
 - **Prioritet:** Medium  
-- **Veza sa drugim storijima ili zavisnostima:** 
-  - Zavisi od 10  
-- **Acceptance criteria:** 
-  - Nije moguće prijaviti se na zatvoren oglas
-
----
-
-## 12. Upravljanje rokovima prijave | PB6
-- **Opis:** Definisanje roka prijave  
-- **Poslovne vrijednosti:** Automatsko zatvaranje  
-- **Prioritet:** High  
-- **Veza sa drugim storijima ili zavisnostima:**  
-  - Zavisi od 10  
+- **Pretpostavke i otvorena pitanja:**
+  - Student mora biti prijavljen da bi pristupio pregledu praksi  
+- **Veza sa drugim storijima ili zavisnostima:**
+  - U vezi sa 10 (Kreirani oglasi)  
+  - Zavisi od 4 (Prijava studenta)  
 - **Acceptance criteria:**
-  - Rok mora biti u budućnosti
-  - Automatsko zatvaranje nakon isteka
+  - Sistem mora omogućiti studentu pregled 
+    svih aktivnih oglasa
+  - Sistem mora prikazati osnovne informacije 
+    o svakom oglasu: naziv, kompanija, trajanje, broj mjesta
+  - Sistem ne smije dozvoliti pregled oglasa 
+    bez aktivne prijave u sistem
 
 ---
 
-## 13. Pregled oglasa | PB7
-- **Opis:** Student vidi sve aktivne oglase  
-- **Poslovne vrijednosti:** Uvid u ponudu praksi  
+## 12. Pregled detalja oglasa | PB8
+- **Opis:** Kao student želim da imam uvid u detalje prakse s ciljem odluke prijavljivanja na istu  
+- **Poslovne vrijednosti:** Student ima dublji uvid u zahtjeve za praksu  
 - **Prioritet:** Medium  
-- **Veza sa drugim storijima ili zavisnostima:**
-  - Zavisi od 4 i 10  
-- **Acceptance criteria:**
-  - Prikaz svih aktivnih oglasa
-  - Prikaz osnovnih informacija
-
----
-
-## 14. Pregled detalja oglasa | PB8
-- **Opis:** Student vidi detalje oglasa  
-- **Poslovne vrijednosti:** Donošenje odluke  
-- **Prioritet:** Medium  
-- **Veza sa drugim storijima ili zavisnostima:**
-  - Zavisi od 4 i 13  
-- **Acceptance criteria:**  
-  - Prikaz opisa, trajanja, broja mjesta, uslova
-  - Prikaz roka prijave
-
----
-
-## 15. Prijava na praksu | PB9
-- **Opis:** Student se prijavljuje na praksu  
-- **Poslovne vrijednosti:** Učešće u selekciji  
-- **Prioritet:** Medium  
-- **Veza sa drugim storijima ili zavisnostima:**
-  - Zavisi od 4, 13 i 14  
-  - U vezi sa 16 (Workflow engine)
-- **Acceptance criteria:**
-  - Status počinje kao "Na čekanju"
-  - Nije moguće prijaviti se dva puta
-  - Nije moguće prijaviti se na zatvoren oglas
-
----
-
-## 16. Upravljanje statusima prijave (Workflow engine) | PB9
-- **Opis:** Definisan tok statusa prijave  
-- **Poslovne vrijednosti:** Konzistentan proces  
-- **Prioritet:** High  
-- **Veza sa drugim storijima ili zavisnostima:**
-  - Vezano za 15, 20, 21, 23, 40  
-- **Acceptance criteria:**
-  - Definisani statusi
-  - Nema preskakanja redoslijeda
-  - Historija promjena statusa
-
----
-
-## 17. Ograničenje broja prijava po studentu | PB9
-- **Opis:** Limit aktivnih prijava  
-- **Poslovne vrijednosti:** Sprečava zloupotrebu  
-- **Prioritet:** Medium  
-- **Veza sa drugim storijima ili zavisnostima:**
-  - Zavisi od 15  
-- **Acceptance criteria:**
-  - Administrator definiše limit
-  - Nije moguće prekoračiti limit
-
----
-
-## 18. Upload dokumentacije | PB10
-- **Opis:** Upload CV i motivacionog pisma  
-- **Poslovne vrijednosti:** Predstavljanje kvalifikacija  
-- **Prioritet:** Medium  
-- **Veza sa drugim storijima ili zavisnostima:**
-  - Zavisi od 4 i 15  
-- **Acceptance criteria:**
-  - Samo PDF format
-  - Dokumenti vidljivi kompaniji
-
----
-
-## 19. Pregled prijava na praksu | PB11
-- **Opis:** Kompanija vidi prijavljene studente  
-- **Poslovne vrijednosti:** Selekcija kandidata  
-- **Prioritet:** Medium  
-- **Veza sa drugim storijima ili zavisnostima:**
-  - Zavisi od 6 i 15  
-- **Acceptance criteria:**
-  - Pregled svih kandidata
-  - Uvid u dokumente
-
----
-
-## 20. Selekcija kandidata | PB12
-- **Opis:** Kompanija bira uži krug  
-- **Poslovne vrijednosti:** Efikasna selekcija  
-- **Prioritet:** Medium  
-- **Veza sa drugim storijima ili zavisnostima:**
-  - Zavisi od 19  
-  - U vezi sa 16  
-- **Acceptance criteria:**
-  - Označavanje kandidata
-  - Promjena statusa
-
----
-
-## 21. Odobravanje prakse | PB13
-- **Opis:** Koordinator odobrava praksu  
-- **Poslovne vrijednosti:** Kontrola fakulteta  
-- **Prioritet:** High  
-- **Veza sa drugim storijima ili zavisnostima:** 
-  - Zavisi od 8 i 20  
-  - U vezi sa 16  
-- **Acceptance criteria:** 
-  - Ažuriranje statusa
-  - Notifikacija studentu
-
----
-
-## 22. Odbijanje prakse | PB13
-- **Opis:** Koordinator odbija praksu  
-- **Poslovne vrijednosti:** Kontrola procesa  
-- **Prioritet:** High  
-- **Veza sa drugim storijima ili zavisnostima:** 
-  - Zavisi od 8 i 20  
-  - U vezi sa 16  
-- **Acceptance criteria:** 
-  - Ažuriranje statusa
-  - Notifikacija studentu
-
- ---
-
-## 23. Potvrda studenta | PB14
-- **Opis:** Kao student, želim da potvrdim učešće na odobrenoj praksi  
-- **Poslovne vrijednosti:** Omogućava studentu prihvatanje odobrene prakse  
-- **Prioritet:** High  
 - **Pretpostavke i otvorena pitanja:**
   - Student mora biti prijavljen  
-  - Praksa je odobrena od koordinatora  
-- **Veza sa drugim storijima ili zavisnostima:** 
-  - Zavisi od 15 i 21  
-  - U vezi sa 16  
-- **Acceptance criteria:** 
-  - Student može potvrditi praksu
-  - Status prelazi u "Potvrđena od studenta"
-  - Kompanija i koordinator dobijaju obavještenje
-
----
-
-## 24. Dizajn baze podataka | PB15
-- **Opis:** Osmisliti šemu baze podataka sistema  
-- **Poslovne vrijednosti:** Temelj za implementaciju sistema  
-- **Prioritet:** High  
-- **Veza sa drugim storijima ili zavisnostima:** 
-  - Povezano sa svim funkcionalnim storijima  
-- **Acceptance criteria:** 
-  - Entiteti: studenti, kompanije, koordinatori, prijave, oglasi
-  - Definisane relacije između entiteta
-
----
-
-## 25. Implementacija baze podataka | PB15
-- **Opis:** Implementirati bazu podataka sistema  
-- **Poslovne vrijednosti:** Omogućava skladištenje podataka  
-- **Prioritet:** High  
-- **Veza sa drugim storijima ili zavisnostima:** 
-  - Zavisi od 24  
-- **Acceptance criteria:** 
-  - Sistem mora omogućiti skladištenje podataka u bazi
-
----
-
-## 26. Historija aktivnosti (Audit log) | PB15
-- **Opis:** Administrator ima uvid u historiju akcija  
-- **Poslovne vrijednosti:** Sigurnost i pravna validnost  
-- **Prioritet:** High  
 - **Veza sa drugim storijima ili zavisnostima:**
-  - Povezano sa 1–23  
-- **Acceptance criteria:**
-  - Evidencija registracija
-  - Evidencija promjena statusa
-  - Evidencija brisanja naloga
-  - Evidencija uređivanja oglasa
-  - Evidencija odustajanja od prakse
-  - Samo administrator ima pristup
-
+  - Zavisi od 4 i 11  
+- **Acceptance criteria:**  
+  - Sistem mora prikazati: opis, trajanje, 
+    broj mjesta, uslovi, kontakt informacije
+  - Korisnik treba dobiti jasan prikaz 
+    roka za prijavu
+  - Sistem ne smije dozvoliti pregled detalja 
+    neaktivnog oglasa
 ---
 
-## 27. Validacija unosa podataka | PB16
-- **Opis:** Validacija svih korisničkih unosa  
-- **Poslovne vrijednosti:** Sprečava greške i sigurnosne propuste  
-- **Prioritet:** High  
-- **Veza sa drugim storijima ili zavisnostima:**
-  - Povezano sa 1, 2, 3, 10, 12, 15  
-- **Acceptance criteria:**
-  - Email validan format
-  - Lozinka min 8 karaktera
-  - Broj mjesta pozitivan
-  - Rok prijave u budućnosti
-  - Validacija frontend i backend
-
----
-
-## 28. Generisanje ugovora | PB17
-- **Opis:** Sistem generiše ugovor o praksi  
-- **Poslovne vrijednosti:** Automatizacija pravne dokumentacije  
-- **Prioritet:** Medium  
-- **Veza sa drugim storijima ili zavisnostima:** 
-  - Zavisi od 20 i 23  
-- **Acceptance criteria:** 
-  - Automatsko generisanje ugovora
-  - Dostupno studentu i kompaniji
-
----
-
-## 29. Digitalni potpis ugovora | PB17
-- **Opis:** Student i kompanija digitalno potpisuju ugovor  
-- **Poslovne vrijednosti:** Potpuna digitalizacija procesa  
-- **Prioritet:** Medium  
-- **Veza sa drugim storijima ili zavisnostima:**
-  - Zavisi od 28  
-- **Acceptance criteria:**
-  - Omogućeno digitalno potpisivanje
-  - Status ugovora "Potpisan"
-  - Dokument se ne može mijenjati nakon potpisa
-
----
-
-## 30. Preuzimanje ugovora | PB18
-- **Opis:** Student preuzima digitalni ugovor  
-- **Poslovne vrijednosti:** Pregled i arhiviranje ugovora  
-- **Prioritet:** Medium  
-- **Veza sa drugim storijima ili zavisnostima:** 
-  - Zavisi od 28 i 29  
-- **Acceptance criteria:** 
-  - Omogućeno preuzimanje PDF verzije
-
----
-
-## 31. Evidencija aktivnosti | PB19
-- **Opis:** Student unosi dnevne/sedmične aktivnosti  
-- **Poslovne vrijednosti:** Praćenje rada studenta  
-- **Prioritet:** Medium  
-- **Veza sa drugim storijima ili zavisnostima:** 
-  - Zavisi od 23 i 29  
-- **Acceptance criteria:** 
-  - Student unosi aktivnosti
-  - Kompanija i koordinator imaju pregled
-
----
-
-## 32. Automatsko završavanje prakse | PB19
-- **Opis:** Sistem automatski završava praksu  
-- **Poslovne vrijednosti:** Automatizacija procesa  
-- **Prioritet:** Medium  
-- **Veza sa drugim storijima ili zavisnostima:**
-  - Zavisi od 31  
-  - U vezi sa 16  
-- **Acceptance criteria:**
-  - Nakon isteka trajanja → status "Završena"
-  - Obavještenje studentu i kompaniji
-
----
-
-## 33. Praćenje prisustva | PB20
-- **Opis:** Kompanija evidentira prisustvo  
-- **Poslovne vrijednosti:** Praćenje redovnosti  
-- **Prioritet:** Medium  
-- **Veza sa drugim storijima ili zavisnostima:** 
-  - Zavisi od 31  
-- **Acceptance criteria:** 
-  - Evidentiranje prisustva
-  - Student ima uvid
-
----
-
-## 34. Evaluacija studenta | PB21
-- **Opis:** Kompanija evaluira studenta  
-- **Poslovne vrijednosti:** Povratna informacija  
-- **Prioritet:** Medium  
-- **Veza sa drugim storijima ili zavisnostima:** 
-  - Zavisi od 32  
-- **Acceptance criteria:** 
-  - Evaluacija kroz formular
-  - Student vidi evaluaciju
-
----
-
-## 35. Evaluacija kompanije | PB22
-- **Opis:** Student evaluira kompaniju  
-- **Poslovne vrijednosti:** Poboljšanje kvaliteta praksi  
-- **Prioritet:** Medium  
-- **Veza sa drugim storijima ili zavisnostima:** 
-  - Zavisi od 32  
-- **Acceptance criteria:** 
-  - Student popunjava formular
-  - Kompanija vidi evaluaciju
-
----
-
-## 36. Izvještaji | PB23
-- **Opis:** Kompanija generiše izvještaj o praksi  
-- **Poslovne vrijednosti:** Dokaz o pohađanju prakse  
-- **Prioritet:** Medium  
-- **Veza sa drugim storijima ili zavisnostima:** 
-  - Zavisi od 33 i 34  
-- **Acceptance criteria:** 
-  - Generisanje izvještaja
-  - Dostupno studentu
-
- ---
-
-## 37. Analiza postojećih rješenja | PB24
-- **Opis:** Istražiti postojeće sisteme za upravljanje praksama  
-- **Poslovne vrijednosti:** Identifikacija dobrih praksi i nedostataka drugih sistema  
-- **Prioritet:** Medium  
-- **Veza sa drugim storijima ili zavisnostima:** 
-  - Prethodi 24 (Dizajn baze podataka)  
-- **Acceptance criteria:** 
-  - Analiza minimalno 3 postojeća sistema
-  - Dokumentovani zaključci i preporuke
-
----
-
-## 38. Dokumentacija sistema | PB25
-- **Opis:** Dokumentovati funkcionalnosti i strukturu sistema  
-- **Poslovne vrijednosti:** Strukturiran pregled sistema  
+## 13. Prijava na praksu | PB9
+- **Opis:** Kao student želim da se prijavim na praksu  
+- **Poslovne vrijednosti:** Omogućava studentu učešće u selekciji  
 - **Prioritet:** Medium  
 - **Pretpostavke i otvorena pitanja:**
-  - Dokumentacija se aktivno održava  
+  - Student mora biti prijavljen  
+  - Oglas mora biti aktivan  
+- **Veza sa drugim storijima ili zavisnostima:**
+  - Zavisi od 4, 11 i 12  
+- **Acceptance criteria:**
+  - Sistem mora omogućiti studentu prijavu 
+    na odabrani oglas
+  - Kada student uspješno podnese prijavu, 
+    korisnik treba dobiti potvrdu o prijavi
+  - Sistem mora prikazati status prijave: 
+    (Na čekanju, Odobreno, Odbijeno)
+  - Sistem ne smije dozvoliti prijavu 
+    na isti oglas dva puta
+  - Sistem ne smije dozvoliti prijavu 
+    na neaktivan oglas
+  - Sistem ne smije dozvoliti prijavu 
+    bez popunjenog profila  
+
+---
+
+## 14. Upload dokumentacije | PB10
+- **Opis:** Kao student želim da upload-ujem dokumente (CV i motivaciono pismo)  
+- **Poslovne vrijednosti:** Omogućava predstavljanje kvalifikacija  
+- **Prioritet:** Medium  
+- **Pretpostavke i otvorena pitanja:**
+  - Korisnik mora biti prijavljen  
+- **Veza sa drugim storijima ili zavisnostima:**
+  - Zavisi od 4 (Prijava studenata)
+  - Zavisi od 13(Prijava na praksu)
+- **Acceptance criteria:**
+  - Sistem mora omogućiti upload CV-a 
+    i motivacionog pisma u PDF formatu
+  - Kada student uspješno uploada dokumente, 
+    treba dobiti potvrdu o uploadu
+  - Sistem mora učiniti dokumente vidljivim 
+    kompaniji nakon prijave
+  - Sistem ne smije dozvoliti upload fajla 
+    koji nije PDF format
+
+---
+
+## 15. Pregled prijava na praksu | PB11
+- **Opis:** Kao kompanija želim da pregledam listu prijavljenih studenata  
+- **Poslovne vrijednosti:** Olakšava selekciju kandidata  
+- **Prioritet:** Medium  
+- **Pretpostavke i otvorena pitanja:**
+  - Kompanija mora biti prijavljena  
+  - Oglas mora biti aktivan  
+- **Veza sa drugim storijima ili zavisnostima:**
+  - Zavisi od 6 i 13  
+- **Acceptance criteria:**
+  - Sistem mora omogućiti kompaniji pregled 
+    svih prijavljenih studenata po oglasu
+  - Sistem mora prikazati osnovne informacije 
+    o svakom kandidatu: ime, prezime, odsjek, godina studija
+  - Sistem mora omogućiti pregled uploadovanih 
+    dokumenata svakog kandidata
+  - Sistem ne smije dozvoliti pregled prijava 
+    na tuđe oglase  
+
+---
+
+## 16. Selekcija kandidata | PB12
+- **Opis:** Kao kompanija želim da evidentiram uži krug kandidata  
+- **Poslovne vrijednosti:** Efikasniji proces selekcije  
+- **Prioritet:** Medium  
+- **Pretpostavke i otvorena pitanja:**
+  - Kompanija mora biti prijavljena  
+  - Oglas mora biti aktivan  
+- **Veza sa drugim storijima ili zavisnostima:**
+  - Zavisi od 6 i 13  
+- **Acceptance criteria:**
+  - Sistem mora omogućiti kompaniji označavanje 
+    kandidata koji prolaze u uži krug
+  - Kada kompanija selektuje kandidata, 
+    sistem mora ažurirati status prijave
+  - Sistem mora obavijestiti studenta 
+    o promjeni statusa njegove prijave  
+
+---
+
+## 17. Odobravanje prakse | PB13
+- **Opis:** Kao koordinator, želim da odobrim studentsku prijavu za praksu
+- **Poslovne vrijednosti:** Omogućava koordinatoru upravljanje studentskim praksama
+- **Prioritet:** High  
+- **Pretpostavke i otvorena pitanja:**
+  - Koordinator je uposlenik fakulteta  
 - **Veza sa drugim storijima ili zavisnostima:** 
-  - Zavisi od svih implementiranih stavki (1–36)  
+  - Zavisi od 8 i 15
+- **Acceptance criteria:** 
+  - Sistem mora omogućiti koordinatoru odobravanje
+    studentskih prijava na praksi
+  - Kada koordinator odobri praksu, 
+    sistem mora ažurirati status prijave
+  - Sistem mora obavijestiti studenta 
+    o promjeni statusa njegove prijave  
+---
+
+## 18. Odbijanje prakse | PB13
+- **Opis:** Kao koordinator, želim da odbijem studentsku prijavu za praksu
+- **Poslovne vrijednosti:** Omogućava koordinatoru upravljanje studentskim praksama
+- **Prioritet:** High
+- **Pretpostavke i otvorena pitanja:**
+  - Koordinator je uposlenik fakulteta  
+- **Veza sa drugim storijima ili zavisnostima:** 
+  - Zavisi od 8 i 15
+- **Acceptance criteria:** 
+  - Sistem mora omogućiti koordinatoru odbijanje
+    studentskih prijava na praksi
+  - Kada koordinator odobri praksu, 
+    sistem mora ažurirati status prijave
+  - Sistem mora obavijestiti studenta 
+    o promjeni statusa njegove prijave  
+---
+
+## 19. Potvrda studenta | PB14
+- **Opis:** Kao student, želim da potvrdim učešće na prijavu za praksu
+- **Poslovne vrijednosti:** Omogućava studentu prihvatanje odobrene studentske prakse
+- **Prioritet:** High
+- **Pretpostavke i otvorena pitanja:**
+  - Student mora biti prijavljen  
+  - Oglas mora biti aktivan 
+- **Veza sa drugim storijima ili zavisnostima:** 
+  - Zavisi od 13 i 17
+- **Acceptance criteria:** 
+  - Sistem mora omogućiti studentu prihvatanje
+    učešća na odobrenoj praksi
+  - Kada student prihvati praksu, 
+    sistem mora ažurirati status prijave
+  - Sistem mora obavijestiti kompaniju i koordinatora 
+    o promjeni statusa njegove prijave
+---
+
+## 20. Dizajn baze podataka | PB15
+- **Opis:** Osmisliti šemu baze podataka sistema
+- **Poslovne vrijednosti:** Omogućava lakšu implementaciju baze podataka
+- **Prioritet:** High
+- **Pretpostavke i otvorena pitanja:**
+  - 
+- **Veza sa drugim storijima ili zavisnostima:** 
+  -
+- **Acceptance criteria:** 
+  - Dizajn mora obuhvatati glavne entite sistema:
+    koordinatore, studente, kompanije, prakse
+  - Dizajn treba uspostaviti relacije između
+    entiteta
+  - Dizajn treba čuvati sve neophodne podatke o 
+    entitetima
+---
+
+## 21. Implementacija baze podataka | PB15
+- **Opis:** Implementirati bazu podataka sistema
+- **Poslovne vrijednosti:** Omogućava lakše upravljanje i pohranjivanje podataka neophodnih za rad sistema
+- **Prioritet:** High
+- **Pretpostavke i otvorena pitanja:**
+  - Osmišljen je dizajn baze podataka
+  - Koju bazu podataka koristiti?
+- **Veza sa drugim storijima ili zavisnostima:** 
+  - Zavisi od 20
+- **Acceptance criteria:** 
+  - Sistem mora omogućiti skladištenje podataka 
+    u bazi
+---
+
+## 22. Generisanje ugovora | PB17
+- **Opis:** Sistem generiše ugovor o praksi za studenta
+- **Poslovne vrijednosti:** Omogućava automatsko generisanje ugovora koji pravno reguliše praksu studenta kod kompanije
+- **Prioritet:** Medium
+- **Pretpostavke i otvorena pitanja:**
+  - Student je potvrdio praksu
+  - Kompanija je saglasna sa prijavom
+- **Veza sa drugim storijima ili zavisnostima:** 
+  - Zavisi od 16 i 19
+- **Acceptance criteria:** 
+  - Sistem mora omogućiti generisanje ugovora o praksi
+  - Sistem mora omogućiti studentu 
+    i kompaniji uvid u ugovor
+---
+
+## 23. Preuzimanje ugovora | PB18
+- **Opis:** Student može preuzeti digitalni primjerak ugovora o praksi
+- **Poslovne vrijednosti:** Omogućava studentu pregled ugovora o praksi
+- **Prioritet:** Medium
+- **Pretpostavke i otvorena pitanja:**
+  - Student je potvrdio praksu
+  - Kompanija je saglasna sa prijavom
+  - Ugovor je generisan
+- **Veza sa drugim storijima ili zavisnostima:** 
+  - Zavisi od 16, 19, 22
+- **Acceptance criteria:** 
+  - Sistem mora omogućiti studentu 
+    i kompaniji uvid u ugovor
+  - Sistem mora omogućiti studentu preuzimanje
+    digitalne kopije ugovora
+---
+
+## 24. Evidencija aktivnosti | PB19
+- **Opis:** Student unosi dnevne/sedmične aktivnosti na praksi
+- **Poslovne vrijednosti:** Omogućava evidentiranje i praćenje aktivnosti studenta na praksi
+- **Prioritet:** Medium
+- **Pretpostavke i otvorena pitanja:**
+  - Student je potpisao važeći ugovor o praksi
+  - Studentska praksa je u toku
+- **Veza sa drugim storijima ili zavisnostima:** 
+  - Zavisi od 16 i 19
+- **Acceptance criteria:** 
+  - Sistem mora omogućiti studentu 
+    evidentiranje aktivnosti na praksi
+  - Sistem mora omogućiti pregled 
+    evidentiranih aktivnosti kompaniji i koordinatoru
+---
+
+## 25. Praćenje prisustva | PB20
+- **Opis:** Kompanija evidentira prisustvo studenta na praksi
+- **Poslovne vrijednosti:** Kompanija može pratiti prisustvo studenta
+- **Prioritet:** Medium
+- **Pretpostavke i otvorena pitanja:**
+  - Student je potpisao važeći ugovor o praksi
+  - Studentska praksa je u toku
+- **Veza sa drugim storijima ili zavisnostima:** 
+  - Zavisi od 24
+- **Acceptance criteria:** 
+  - Sistem mora omogućiti evidentiranje prisustva
+  - Sistem mora omogućiti studentu 
+    i kompaniji uvid u prisustvo studenta
+---
+
+## 26. Evaluacija studenta | PB21
+- **Opis:** Kompanija evaluira rad studenta na osnovu definisanih kriterija
+- **Poslovne vrijednosti:** Kompanija može evaluirati rad studenta na praksi dajući uvid u njegovo zalaganje i trud. Student može dobiti feedback za svoj rad.
+- **Prioritet:** Medium
+- **Pretpostavke i otvorena pitanja:**
+  - Student je potpisao važeći ugovor o praksi
+- **Veza sa drugim storijima ili zavisnostima:** 
+  - Zavisi od 24
+- **Acceptance criteria:** 
+  - Sistem mora omogućiti evaluaciju studenta 
+    na kraju prakse kroz predefinisani formular
+  - Sistem mora omogućiti studentu 
+    pregled evaluacije studenta
+---
+
+## 27. Evaluacija kompanije | PB22
+- **Opis:** Student evaluira kompaniju u kojoj je odradio praksu
+- **Poslovne vrijednosti:** Student može iznijeti mišljenje o kompaniji kod koje je radio praksu. Kompanija može vidjeti dojam studenta o praksi, te izvršiti korekcije po potrebi.
+- **Prioritet:** Medium
+- **Pretpostavke i otvorena pitanja:**
+  - Student je potpisao važeći ugovor o praksi
+- **Veza sa drugim storijima ili zavisnostima:** 
+  - 
+- **Acceptance criteria:** 
+  - Sistem mora omogućiti studentu evaluaciju
+    kompanije kroz predefinisani formular
+  - Sistem mora omogućiti kompaniji
+    pregled evaluacije kompanije
+---
+
+## 28. Izvještaji | PB23
+- **Opis:** Kompanija generiše izvještaj o praksi
+- **Poslovne vrijednosti:** Kompanija može generisati izvještaj o praksi koji služi studentu kao dokaz o pohađanju prakse
+- **Prioritet:** Medium
+- **Pretpostavke i otvorena pitanja:**
+  - Student je potpisao važeći ugovor o praksi
+- **Veza sa drugim storijima ili zavisnostima:** 
+  - 25, 26
+- **Acceptance criteria:** 
+  - Sistem mora omogućiti studentu evaluaciju
+---
+
+## 29. Analiza postojećih rješenja | PB24
+- **Opis:** Istražiti postojeća sisteme za upravljanje praksama
+- **Poslovne vrijednosti:**  Vidjeti šta nedostaje drugim sistemima, a šta je dobro za implementirati
+- **Prioritet:** Medium
+- **Pretpostavke i otvorena pitanja:**
+  
+- **Veza sa drugim storijima ili zavisnostima:** 
+  - 
+- **Acceptance criteria:** 
+  - 
+---
+
+## 30. Dokumentacija sistema | PB25
+- **Opis:** Dokumentovati fukncionalnosti i strukturu sistema
+- **Poslovne vrijednosti:** Dokumentacija omogućava struktuirani pregled sistema
+- **Prioritet:** Medium
+- **Pretpostavke i otvorena pitanja:**
+  - Dokumentacija se aktivno održava
+- **Veza sa drugim storijima ili zavisnostima:** 
+  - Zavisi od svih stavki
 - **Acceptance criteria:** 
   - Promjene moraju biti redovno dokumentovane
-  - Dokumentacija omogućava pregled dizajna i plana rada
-
+  - Dokumentacija omogućava pregled dizajna 
+    i plana rada na sistemu
 ---
 
-## 39. Uređivanje oglasa | PB26
-- **Opis:** Kao kompanija, želim izmijeniti postojeći oglas  
-- **Poslovne vrijednosti:** Održavanje oglasa ažurnim  
-- **Prioritet:** Medium  
+
+## 31. Zatvaranje oglasa | PB6
+- **Opis:** Kao kompanija želim zatvoriti oglas za praksu koji sam prethodno objavila
+- **Poslovne vrijednosti:** Oglas za praksu se zatvara kako ne bi pristizale nove prijave
+- **Prioritet:** Medium
+- **Pretpostavke i otvorena pitanja:**
+  - Oglas je prethodno objavljen
+- **Veza sa drugim storijima ili zavisnostima:** 
+  - Zavisi od 10, 12, 13
+- **Acceptance criteria:** 
+  - Na zatvoreni oglas se ne može više prijavljivati
+  - Zatvoreni oglas se ne pojavljuje u listi aktivnih oglasa
+---
+
+
+## 32. Uređivanje oglasa | PB26
+- **Opis:** Kao kompanija, želim da izmijenim postojeći oglas kako bih ispravila greške ili ažurirala informacije (npr. datum, broj mjesta, uslove)
+- **Poslovne vrijednosti:** Omogućava kompaniji održavanje oglasa ažurnim bez potrebe brisanja i ponovnog kreiranja
+- **Prioritet:** Medium
+- **Pretpostavke i otvorena pitanja:**
+  - Oglas je prethodno kreiran i aktivan
+  - Da li izmjena oglasa obavještava studente koji su već prijavljeni?
+  - Da li je moguće urediti oglas nakon što su pristigle prijave?
 - **Veza sa drugim storijima ili zavisnostima:**
-  - Zavisi od 10  
-  - Povezano sa 26 (Audit log)  
+  - Zavisi od 10 (Kreiranje oglasa)
 - **Acceptance criteria:**
-  - Moguća izmjena naziva, opisa, trajanja, broja mjesta
-  - Potvrda o uspješnom ažuriranju
-  - Nije moguće uređivati zatvoren oglas
-
+  - Sistem mora omogućiti izmjenu podataka oglasa: naziv, opis, trajanje, broj mjesta, uslovi, datum
+  - Kada kompanija uspješno izmijeni oglas, sistem mora sačuvati promjene i prikazati ažurirane podatke
+  - Korisnik treba dobiti potvrdu o uspješnom ažuriranju oglasa
+  - Sistem ne smije dozvoliti uređivanje zatvorenog oglasa
+  - Sistem ne smije dozvoliti uređivanje oglasa bez popunjenih obaveznih polja
 ---
 
-## 40. Odustajanje od prakse | PB27
-- **Opis:** Kao student, želim odustati od prijavljene ili odobrene prakse  
-- **Poslovne vrijednosti:** Fleksibilnost upravljanja prijavama  
-- **Prioritet:** Medium  
+
+## 33. Odustajanje od prakse | PB27
+- **Opis:** Kao student, želim da odustanem od prijavljene ili odobrene prakse kako bih oslobodio mjesto za drugog kandidata
+- **Poslovne vrijednosti:** Omogućava studentu fleksibilnost u upravljanju prijavam
+- **Prioritet:** Medium
+- **Pretpostavke i otvorena pitanja:**
+  - Student je prijavljen na praksu
+  - Do kada student može odustati (prije ili nakon odobrenja)?
+  - Da li odustajanje zahtijeva razlog ili potvrdu?
 - **Veza sa drugim storijima ili zavisnostima:**
-  - Zavisi od 15, 21 i 23  
-  - U vezi sa 16  
-  - Povezano sa 26  
+  - Zavisi od 9 (Prijava na praksu), 13 (Odobravanje prakse), 19 (Potvrda studenta)
 - **Acceptance criteria:**
-  - Moguće odustati u statusu "Na čekanju" ili "Odobrena"
-  - Status prelazi u "Odustao student"
-  - Obavještenje kompaniji i koordinatoru
-  - Nije moguće odustati od završene prakse
-
+  - Sistem mora omogućiti studentu odustajanje od prakse u statusu "na čekanju" ili "odobrena"
+  - Kada student odustane, sistem mora ažurirati status prijave
+  - Sistem mora obavijestiti kompaniju i koordinatora o odustajanju studenta
+  - Sistem ne smije dozvoliti odustajanje od prakse koja je već završena
 ---
 
-## 41. Obnavljanje lozinke | PB28
-- **Opis:** Kao korisnik, želim obnoviti lozinku  
-- **Poslovne vrijednosti:** Kontinuiran pristup sistemu  
+
+## 34. Obnavljanje lozinke | PB28
+- **Opis:** Kao korisnik, želim da obnovim lozinku u slučaju zaboravljanja kako bih ponovo pristupio svom nalogu
+- **Poslovne vrijednosti:** Osigurava kontinuiran pristup sistemu svim korisnicima bez potrebe za administratorskom intervencijom
+- **Prioritet:** High
+- **Pretpostavke i otvorena pitanja:**
+  - Korisnik posjeduje pristup registrovanom email nalogu
+  - Koliko dugo reset link ostaje aktivan?
+- **Veza sa drugim storijima ili zavisnostima:**
+  - Zavisi od 1, 2, 3 (Registracija korisnika), 4, 5, 6 (Prijava korisnika)
+- **Acceptance criteria:**
+  - Sistem mora omogućiti unos email adrese za slanje linka za resetovanje lozinke
+  - Sistem mora poslati email sa reset linkom na registrovanu adresu
+  - Reset link mora isteći nakon određenog vremenskog perioda (npr. 30 minuta)
+  - Kada korisnik uspješno postavi novu lozinku, sistem ga mora preusmjeriti na stranicu za prijavu
+  - Sistem ne smije otkriti da li email postoji u bazi u slučaju nepostojećeg emaila (sigurnost)
+---
+
+
+## 35. Student dashboard | PB29
+- **Opis:** Kao student, želim da imam centralizovani pregled svih svojih prijava na prakse, uključujući status svake prijave
+- **Poslovne vrijednosti:** Studentu pruža jasan i brz uvid u stanje svih prijava na jednom mjestu, čime se poboljšava korisničko iskustvo
+- **Prioritet:** High
+- **Pretpostavke i otvorena pitanja:**
+  - Student je prijavljen u sistem
+  - Koje sve informacije treba prikazati na dashboardu?
+- **Veza sa drugim storijima ili zavisnostima:**
+  - Zavisi od 4 (Prijava studenta), 9 (Prijava na praksu)
+- **Acceptance criteria:**
+  - Sistem mora prikazati listu svih praksi na koje je student prijavljen
+  - Sistem mora prikazati trenutni status svake prijave (npr. na čekanju, odobrena, odbijena, potvrđena)
+  - Sistem mora omogućiti studentu brzi pristup detaljima svake prijave
+  - Sistem mora prikazati obavještenja o nedavnim promjenama statusa
+  - Sistem ne smije prikazivati prijave koje ne pripadaju prijavljenom studentu
+---
+
+
+## 36. Filtriranje oglasa | PB30
+- **Opis:** Kao student, želim da filtriram dostupne oglase po određenim kriterijima kako bih pronašao praksu koja odgovara mojim interesima i potrebama 
+- **Poslovne vrijednosti:** Poboljšava korisničko iskustvo ubrzavanjem pretrage i smanjenjem irelevantnih rezultata
+- **Prioritet:** Medium
+- **Pretpostavke i otvorena pitanja:**
+  - Postoje oglasi objavljeni u sistemu
+  - Koje kategorije filtriranja su prioritetne za implementaciju?
+- **Veza sa drugim storijima ili zavisnostima:**
+  - Zavisi od 7 (Pregled oglasa), 6 (Kreiranje oglasa)
+- **Acceptance criteria:**
+  - Sistem mora omogućiti filtriranje oglasa po oblasti zanimanja
+  - Sistem mora omogućiti filtriranje po vrsti plaćanja (plaćena/neplaćena praksa)
+  - Sistem mora omogućiti filtriranje po datumu objave i trajanju prakse
+  - Sistem mora ažurirati listu oglasa u realnom vremenu pri primjeni filtera
+  - Sistem mora omogućiti brisanje/resetovanje svih aktivnih filtera
+---
+
+
+## 37. Notifikacije o statusu prakse | PB31
+- **Opis:** Kao student, želim da primam notifikacije o svakoj promjeni statusa moje prijave na praksu kako bih bio pravovremeno obaviješten
+- **Poslovne vrijednosti:** Smanjuje potrebu za manualnim praćenjem statusa i povećava angažovanost studenta u procesu
+- **Prioritet:** Medium
+- **Pretpostavke i otvorena pitanja:**
+  - Da li se notifikacije šalju putem emaila, unutar aplikacije, ili oboje?
+  - Koje sve promjene statusa zahtijevaju notifikaciju?
+- **Veza sa drugim storijima ili zavisnostima:**
+  - Zavisi od 9 (Prijava na praksu), 13 (Odobravanje prakse), 35 (Student dashboard)
+- **Acceptance criteria:**
+  - Sistem mora poslati notifikaciju studentu kada kompanija promijeni status prijave (odobri, odbije, uvrsti u uži izbor)
+  - Sistem mora poslati notifikaciju kada koordinator odobri ili odbije praksu
+  - Sistem mora prikazati notifikacije unutar aplikacije na dashboardu studenta
+  - Student mora moći vidjeti historiju svih primljenih notifikacija
+  - Sistem ne smije slati duplikate notifikacija za istu promjenu statusa
+---
+
+
+## 38. Verifikacija email adrese | PB32
+- **Opis:** Kao novi korisnik, želim da primim email za verifikaciju računa kako bi sistem potvrdio moj identitet i aktivirao moj nalog
+- **Poslovne vrijednosti:** Osigurava validnost korisničkih podataka i sprječava kreiranje lažnih naloga
+- **Prioritet:** High
+- **Pretpostavke i otvorena pitanja:**
+  - Korisnik je uspješno popunio formu za registraciju
+  - Koliko dugo verifikacioni link ostaje aktivan?
+  - Može li se verifikacioni email ponovo poslati?
+- **Veza sa drugim storijima ili zavisnostima:**
+  - Zavisi od 1, 2, 3 (Registracija), direktno blokira 4, 5, 6 (Prijava)
+- **Acceptance criteria:**
+  - Sistem mora automatski poslati verifikacioni email odmah nakon registracije
+  - Verifikacioni link mora isteći nakon određenog perioda (npr. 24 sata)
+  - Kada korisnik klikne validni link, sistem mora aktivirati nalog i preusmjeriti ga na prijavu
+  - Sistem mora onemogućiti prijavu na nalog koji nije verifikovan
+  - Sistem mora omogućiti korisniku ponovno slanje verifikacionog emaila u slučaju da nije primljen
+---
+
+
+## 39. Pretraživanje oglasa | PB30
+- **Opis:** Kao student, želim da pretražujem oglase po ključnoj riječi kako bih brzo pronašao relevantne prakse
+- **Poslovne vrijednosti:** Dopunjuje filtriranje i ubrzava pronalazak oglasa po specifičnim pojmovima
+- **Prioritet:** Medium
+- **Pretpostavke i otvorena pitanja:**
+  - Postoje oglasi objavljeni u sistemu
+  - Da li pretraga obuhvata naziv, opis ili oboje?
+- **Veza sa drugim storijima ili zavisnostima:**
+  - Zavisi od 7 (Pregled oglasa), 36 (Filtriranje oglasa)
+- **Acceptance criteria:**
+  - Sistem mora omogućiti unos ključne riječi u polje za pretragu
+  - Sistem mora prikazati sve oglase čiji naziv ili opis sadrži unesenu ključnu riječ
+  - Sistem mora prikazati poruku ako nema rezultata za datu pretragu
+---
+
+
+## 40. Deaktivacija/brisanje korisničkog računa | PB33
+- **Opis:** Kao korisnik, želim da deaktiviram ili obrišem svoj nalog u sistemu
+- **Poslovne vrijednosti:** Korisnicima daje kontrolu nad svojim podacima i nalogom
+- **Prioritet:** Low
+- **Pretpostavke i otvorena pitanja:**
+  - Šta se dešava s aktivnim prijavama pri brisanju naloga?
+  - Da li brisanje naloga zahtijeva administratorsko odobrenje?
+- **Veza sa drugim storijima ili zavisnostima:**
+  - Zavisi od 4, 5, 6 (Prijava korisnika), 9 (Pristup administratora)
+- **Acceptance criteria:**
+  - Sistem mora tražiti potvrdu od korisnika prije deaktivacije/brisanja naloga
+  - Sistem mora onemogućiti prijavu na deaktiviran nalog
+  - Sistem mora obavijestiti kompaniju ili koordinatora ako student s aktivnim prijavama obriše nalog
+  - Administrator mora moći reaktivirati deaktiviran nalog
+---
+
+
+  ## 41. Početna stranica (Landing page) | PB34
+- **Opis:** Kao posjetilac, želim da vidim informativnu početnu stranicu sa opisom sistema i opcijama za registraciju i prijavu kako bih razumio svrhu platforme  
+- **Poslovne vrijednosti:** Pruža prvi dojam o sistemu i usmjerava korisnike ka registraciji ili prijavi  
 - **Prioritet:** High  
+- **Pretpostavke i otvorena pitanja:**
+  - Korisnik nije prijavljen u sistem  
+  - Koje informacije prikazati na landing pageu?  
 - **Veza sa drugim storijima ili zavisnostima:**
-  - Zavisi od 1, 2, 3, 4, 5, 6  
+  - Vezano za 1, 2, 3 (Registracija), 4, 5, 6 (Prijava)  
 - **Acceptance criteria:**
-  - Slanje reset linka na email
-  - Link ističe nakon definisanog vremena
-  - Nakon promjene lozinke → preusmjeravanje na prijavu
-  - Ne otkrivati postojanje emaila u sistemu
-
+  - Sistem mora prikazati kratki opis platforme 
+    i njene svrhe
+  - Sistem mora prikazati dugmad/linkove 
+    za registraciju i prijavu
+  - Stranica mora biti vidljiva svim posjetiocima 
+    bez prijave
+  - Sistem mora preusmjeriti već prijavljenog korisnika 
+    na odgovarajući dashboard
+  - Stranica ne smije prikazivati zaštićeni sadržaj 
+    neprijavljenim korisnicima
 ---
 
-## 42. Student dashboard | PB29
-- **Opis:** Student ima centralizovani pregled prijava  
-- **Poslovne vrijednosti:** Bolje korisničko iskustvo  
+## 42. Navigacija | PB35
+- **Opis:** Kao korisnik, želim jasnu i prilagođenu navigaciju ovisno o mojoj roli kako bih se lako kretao kroz sistem  
+- **Poslovne vrijednosti:** Poboljšava korisničko iskustvo i omogućava brz pristup funkcionalnostima specifičnim za svaku rolu  
 - **Prioritet:** High  
+- **Pretpostavke i otvorena pitanja:**
+  - Korisnik je prijavljen u sistem  
+  - Koje stavke navigacije su potrebne za svaku rolu?  
 - **Veza sa drugim storijima ili zavisnostima:**
-  - Zavisi od 4 i 15  
-  - Povezano sa 45  
+  - Zavisi od 4, 5, 6 (Prijava korisnika)  
+  - Vezano za 35 (Student dashboard), 9 (Pristup administratora), 8 (Pristup koordinatora)  
 - **Acceptance criteria:**
-  - Lista svih prijava
-  - Prikaz trenutnog statusa
-  - Prikaz notifikacija
-  - Nema prikaza tuđih prijava
-
+  - Sistem mora prikazati navigaciju prilagođenu roli korisnika 
+    (student, kompanija, koordinator, admin)
+  - Navigacija mora sadržavati brze linkove ka svim 
+    glavnim funkcionalnostima date role
+  - Sistem mora prikazati opciju za odjavu 
+    u navigaciji
+  - Navigacija mora biti vidljiva na svim stranicama 
+    nakon prijave
+  - Sistem ne smije prikazivati stavke navigacije 
+    koje korisnik nema pravo koristiti
 ---
 
-## 43. Filtriranje oglasa | PB30
-- **Opis:** Student filtrira oglase  
-- **Poslovne vrijednosti:** Brža pretraga  
+## 43. Pregled profila kompanije | PB4
+- **Opis:** Kao student, želim da vidim detalje o kompaniji prije prijave na praksu kako bih donio informisanu odluku o prijavljivanju  
+- **Poslovne vrijednosti:** Student ima dublji uvid u kompaniju što povećava kvalitet prijava i smanjuje broj odustajanja od prakse  
 - **Prioritet:** Medium  
+- **Pretpostavke i otvorena pitanja:**
+  - Student mora biti prijavljen  
+  - Koje informacije o kompaniji su vidljive studentu?  
 - **Veza sa drugim storijima ili zavisnostima:**
-  - Zavisi od 13 i 10  
+  - Zavisi od 4 (Prijava studenta)  
+  - Vezano za 12 (Pregled detalja oglasa)  
+  - Vezano za 3 (Registracija kompanije)  
 - **Acceptance criteria:**
-  - Filtriranje po oblasti
-  - Filtriranje po vrsti plaćanja
-  - Reset filtera
+  - Sistem mora prikazati osnovne informacije o kompaniji: 
+    naziv, opis, adresa, djelatnost, kontakt osoba
+  - Sistem mora prikazati listu aktivnih oglasa 
+    te kompanije
+  - Korisnik mora moći pristupiti profilu kompanije 
+    direktno sa stranice oglasa
+  - Sistem ne smije prikazivati profil 
+    neodobrene kompanije
+  - Sistem ne smije dozvoliti pregled profila 
+    kompanije bez aktivne prijave u sistem
+---
+
+## 44. Pregled korisničkog profila | PB36
+- **Opis:** Kao korisnik, želim da vidim detalje o svom profilu kako bih imao uvid u moje pohranjene podatke.
+- **Poslovne vrijednosti:** Korisnik može da vidi svoje lične informacije i u slučaju greške da traži izmjenu, ili da bude saglasan sa njima.
+- **Prioritet:** Medium
+- **Pretpostavke i otvorena pitanja:**
+  - Korisnik mora biti prijavljen  
+- **Veza sa drugim storijima ili zavisnostima:**
+  - Vezano za 3 (Profil studenta)
+  - Vezano za 4 (Profil kompanije)  
+  - Zavisi od 1 (Registracija korisnika)  
+- **Acceptance criteria:**
+  - Sistem mora prikazati osnovne informacije o korisniku: 
+    ime/naziv, adresa, email, i ostale specifične informacije
+  - Sistem mora prikazati na ovoj stranici i mogućnost 
+    izmjene određenih korisničkih podataka
+  - Korisnik mora moći pristupiti profilu sa glavne stranice
+  - Sistem ne smije prikazivati profil 
+    neprijavljenom korisniku
 
 ---
 
-## 44. Pretraživanje oglasa | PB30
-- **Opis:** Student pretražuje oglase po ključnoj riječi  
-- **Poslovne vrijednosti:** Brže pronalaženje praksi  
+## 45. Uređivanje profila kompanije | PB39
+- **Opis:** Kao kompanija, želim da vidim svoje pohranjene podatke koje sam unijela.
+- **Poslovne vrijednosti:** Kompanija ima uvid u javno dostupnim informacijama o sebi, te u slučaju nesaglasnosti promijeniti iste, ili ostaviti kao takve.  
 - **Prioritet:** Medium  
+- **Pretpostavke i otvorena pitanja:**
+  - Kompanija mora biti prijavljena
 - **Veza sa drugim storijima ili zavisnostima:**
-  - Zavisi od 13 i 43  
+  - Vezano za 44 (Pregled korisničkog profila)
+  - Zavisi od 3 (Registracija kompanije)  
 - **Acceptance criteria:**
-  - Pretraga po nazivu i opisu
-  - Poruka ako nema rezultata
+  - Sistem mora omogućiti izmjenu informacija na
+    profilu kompanije
+  - Kompanija mora moći pristupiti uređivanju sa
+    profilne stranice kompanije
+  - Sistem ne smije omogućiti uređivanje profila
+    neprijavljenoj kompaniji
 
 ---
 
-## 45. Notifikacije o statusu prakse | PB31
-- **Opis:** Student prima notifikacije o promjeni statusa  
-- **Poslovne vrijednosti:** Pravovremeno informisanje  
-- **Prioritet:** Medium  
+## 46. Privacy policy & User Terms stranica | PB37
+- **Opis:** Kao korisnik, želim da vidim Uslove korištenja stranice kao i politiku privatnosti.
+- **Poslovne vrijednosti:** Korisnik zna koji su uslovi korištenja i donosi svjesnu odluku da je saglasan sa istim tako što nastavlja koristiti sistem.
+- **Prioritet:** Low
+- **Pretpostavke i otvorena pitanja:**
+  
 - **Veza sa drugim storijima ili zavisnostima:**
-  - Zavisi od 16, 20, 21, 23  
-  - Povezano sa 42  
+  
 - **Acceptance criteria:**
-  - Notifikacija pri svakoj promjeni statusa
-  - Prikaz historije notifikacija
-  - Nema duplikata
+  - Sistem mora prikazati politiku privatnosti
+    i uslove korištenja korisniku
+  - Sistem mora omogućiti prikaz ovih stavki i
+    neprijavljenom korisniku
+  - Sistem mora omogućiti jednostavnu navigaciju
+    do ovih stavki
 
 ---
 
-## 46. Verifikacija email adrese | PB32
-- **Opis:** Novi korisnik mora verifikovati email  
-- **Poslovne vrijednosti:** Sprečavanje lažnih naloga  
+## 47. Tamni režim rada | PB38
+- **Opis:** Kao korisnik, želim da mogu promijeniti temu stranice.
+- **Poslovne vrijednosti:** Korisnik može koristiti svjetlu ili tamnu temu stranice, što omogućava ugodnije korištenje iste
+- **Prioritet:** Low
+- **Pretpostavke i otvorena pitanja:**
+  
+- **Veza sa drugim storijima ili zavisnostima:**
+  
+- **Acceptance criteria:**
+  - Sistem može prikazati sadržaj u svjetloj 
+    kao i u tamnoj temi
+  - Sistem mora omogućiti intuitivnu izmjenu teme
+  - Sistem mora omogućiti jednostavan 
+    pronalazak ove mogućnosti
+
+---
+
+## 48. Favoriziranje oglasa | PB39
+- **Opis:** Kao student, želim da označim oglase kao omiljene kako bih ih kasnije lakše pronašao
+- **Poslovne vrijednosti:** Omogućava studentu organizaciju i lakši pristup interesantnim praksama
+- **Prioritet:** Low
+- **Pretpostavke i otvorena pitanja:**
+    - Student je prijavljen u sistem
+- **Veza sa drugim storijima ili zavisnostima:**
+    - Zavisi od 4 (Prijava studenta), 11 (Pregled oglasa)
+**Acceptance criteria:**
+   - Sistem mora omogućiti studentu označavanje oglasa kao omiljenog
+   - Sistem mora omogućiti pregled liste omiljenih oglasa
+   - Sistem mora omogućiti uklanjanje oglasa iz omiljenih
+   - Sistem ne smije prikazivati tuđe omiljene oglase
+
+---
+
+## 49. Arhiviranje oglasa | PB40
+- **Opis:** Kao kompanija, želim da arhiviram stare oglase kako bih zadržala evidenciju bez prikazivanja studentima
+- **Poslovne vrijednosti:** Omogućava bolju organizaciju i historiju oglasa bez zatrpavanja aktivnih
+- **Prioritet:** Low
+- **Pretpostavke i otvorena pitanja:**
+    - Oglas je prethodno zatvoren
+- **Veza sa drugim storijima ili zavisnostima:**
+    - Zavisi od 31 (Zatvaranje oglasa)
+- **Acceptance criteria:**
+    - Sistem mora omogućiti arhiviranje zatvorenog oglasa
+    - Arhivirani oglasi se ne smiju prikazivati studentima
+    - Sistem mora omogućiti kompaniji pregled arhiviranih oglasa
+    - Sistem mora omogućiti vraćanje oglasa iz arhive
+
+---
+
+## 50. Pregled statistike prijava | PB41
+- **Opis:** Kao kompanija, želim da vidim statistiku prijava na oglas kako bih bolje razumjela interes studenata
+- **Poslovne vrijednosti:** Omogućava donošenje boljih odluka za buduće oglase
+- **Prioritet:** Medium
+- **Pretpostavke i otvorena pitanja:**
+    - Postoje prijave na oglas
+- **Veza sa drugim storijima ili zavisnostima:**
+    - Zavisi od 15 (Pregled prijava), 13 (Prijava na praksu)
+- **Acceptance criteria:**
+    - Sistem mora prikazati broj prijava po oglasu
+    - Sistem mora prikazati osnovne statistike (npr. po odsjeku, godini studija)
+    - Sistem mora omogućiti filtriranje statistike
+    - Sistem ne smije prikazivati statistiku za oglase koji ne pripadaju kompaniji
+
+## 51. Historija aktivnosti (Audit log) | PB15
+
+- **Opis:** Kao administrator, želim imati uvid u historiju svih ključnih akcija u sistemu  
+- **Poslovne vrijednosti:** Omogućava sigurnost, pravnu validnost i praćenje zloupotreba  
 - **Prioritet:** High  
-- **Veza sa drugim storijima ili zavisnostima:**
-  - Zavisi od 1, 2, 3  
-  - Blokira 4, 5, 6 dok nije završeno  
-- **Acceptance criteria:**
-  - Automatsko slanje emaila
-  - Link ističe nakon 24h
-  - Mogućnost ponovnog slanja
+
+### Acceptance criteria:
+
+- Sistem mora bilježiti:
+  - Registracije  
+  - Promjene statusa prijava  
+  - Brisanje naloga  
+  - Uređivanje oglasa  
+  - Odustajanje od prakse  
+- Svaki zapis mora sadržavati:
+  - korisnika  
+  - vrijeme  
+  - tip akcije  
+- Samo administrator može pregledati audit log  
 
 ---
 
-## 47. Deaktivacija/brisanje korisničkog računa | PB33
-- **Opis:** Korisnik može deaktivirati nalog  
-- **Poslovne vrijednosti:** Kontrola nad podacima  
-- **Prioritet:** Low  
-- **Veza sa drugim storijima ili zavisnostima:**
-  - Zavisi od 4, 5, 6  
-  - Povezano sa 9 i 26  
-- **Acceptance criteria:**
-  - Potvrda prije brisanja
-  - Onemogućena prijava nakon deaktivacije
-  - Admin može reaktivirati nalog
+## 52. Upravljanje rokovima prijave | PB6
 
----
-
-## 48. Početna stranica (Landing page) | PB34
-- **Opis:** Informativna početna stranica  
-- **Poslovne vrijednosti:** Prvi dojam o sistemu  
+- **Opis:** Kao kompanija, želim definisati rok za prijavu na oglas  
+- **Poslovne vrijednosti:** Omogućava automatsko zatvaranje prijava  
 - **Prioritet:** High  
-- **Veza sa drugim storijima ili zavisnostima:**
-  - Vezano za 1–6  
-- **Acceptance criteria:**
-  - Opis platforme
-  - Linkovi za registraciju i prijavu
-  - Nema zaštićenog sadržaja
+
+### Acceptance criteria:
+
+- Kompanija mora unijeti rok prijave  
+- Sistem mora automatski zatvoriti oglas nakon isteka roka  
+- Sistem ne smije dozvoliti prijavu nakon isteka roka  
+- Sistem mora prikazati jasan datum isteka roka  
 
 ---
 
-## 49. Navigacija | PB35
-- **Opis:** Prilagođena navigacija po roli  
-- **Poslovne vrijednosti:** Lakše kretanje kroz sistem  
-- **Prioritet:** High  
-- **Veza sa drugim storijima ili zavisnostima:**
-  - Zavisi od 4, 5, 6  
-  - Povezano sa 42, 8, 9  
-- **Acceptance criteria:**
-  - Navigacija prilagođena roli
-  - Vidljiva opcija odjave
+## 53. Ograničenje broja prijava po studentu | PB9
 
----
-
-## 50. Pregled korisničkog profila | PB36
-- **Opis:** Korisnik vidi detalje svog profila  
-- **Poslovne vrijednosti:** Transparentnost podataka  
+- **Opis:** Kao fakultet, želim ograničiti broj aktivnih prijava po studentu  
+- **Poslovne vrijednosti:** Sprečava masovno prijavljivanje bez stvarne namjere  
 - **Prioritet:** Medium  
-- **Veza sa drugim storijima ili zavisnostima:**
-  - Zavisi od 1, 2, 3  
-  - Povezano sa 53 i 54  
-- **Acceptance criteria:**
-  - Prikaz osnovnih informacija
-  - Dostupno samo prijavljenim korisnicima
+
+### Acceptance criteria:
+
+- Administrator može definisati maksimalan broj aktivnih prijava  
+- Sistem ne smije dozvoliti prijavu iznad definisanog limita  
+- Student mora dobiti jasnu poruku o prekoračenju limita  
 
 ---
 
-## 51. Privacy policy & User Terms stranica | PB37
-- **Opis:** Prikaz politike privatnosti i uslova korištenja  
-- **Poslovne vrijednosti:** Pravna usklađenost  
-- **Prioritet:** Low  
-- **Veza sa drugim storijima ili zavisnostima:**  
-  - Dostupno svima (vezano za 48)  
-- **Acceptance criteria:**
-  - Vidljivo prijavljenim i neprijavljenim korisnicima
+## 54. Automatsko završavanje prakse | PB19
 
----
-
-## 52. Tamni režim rada | PB38
-- **Opis:** Mogućnost promjene teme  
-- **Poslovne vrijednosti:** Bolje korisničko iskustvo  
-- **Prioritet:** Low  
-- **Veza sa drugim storijima ili zavisnostima:**  
-  - Povezano sa 49  
-- **Acceptance criteria:**
-  - Svjetla i tamna tema
-  - Jednostavna promjena teme
-
----
-
-## 53. Uređivanje profila studenta | PB39
-- **Opis:** Student uređuje svoje podatke  
-- **Poslovne vrijednosti:** Ažurnost profila  
+- **Opis:** Kao sistem, želim automatski označiti praksu završenom nakon isteka trajanja  
+- **Poslovne vrijednosti:** Automatizacija administrativnih procesa  
 - **Prioritet:** Medium  
-- **Veza sa drugim storijima ili zavisnostima:**
-  - Zavisi od 4  
-  - Povezano sa 50  
-- **Acceptance criteria:**
-  - Izmjena ličnih podataka
-  - Upload CV u PDF formatu
+
+### Acceptance criteria:
+
+- Sistem mora pratiti datum početka i trajanje prakse  
+- Po isteku trajanja status prelazi u "Završena"  
+- Sistem mora obavijestiti studenta i kompaniju  
 
 ---
 
-## 54. Uređivanje profila kompanije | PB39
-- **Opis:** Kompanija uređuje podatke  
-- **Poslovne vrijednosti:** Ažurnost javnih informacija  
-- **Prioritet:** Medium  
-- **Veza sa drugim storijima ili zavisnostima:**
-  - Zavisi od 6  
-  - Povezano sa 50  
-- **Acceptance criteria:**
-  - Izmjena podataka
-  - Samo prijavljena kompanija
-
----
-
-## 55. Favoriziranje oglasa | PB39
-- **Opis:** Student označava oglase kao omiljene  
-- **Poslovne vrijednosti:** Lakše praćenje interesantnih praksi  
-- **Prioritet:** Low  
-- **Veza sa drugim storijima ili zavisnostima:**
-  - Zavisi od 4 i 13  
-- **Acceptance criteria:**
-  - Označavanje oglasa
-  - Lista omiljenih
-  - Uklanjanje iz omiljenih
-
----
-
-## 56. Arhiviranje oglasa | PB40
-- **Opis:** Kompanija arhivira zatvorene oglase  
-- **Poslovne vrijednosti:** Organizacija historije oglasa  
-- **Prioritet:** Low  
-- **Veza sa drugim storijima ili zavisnostima:**
-  - Zavisi od 11  
-- **Acceptance criteria:**
-  - Arhivirani oglasi nisu vidljivi studentima
-  - Moguće vratiti oglas iz arhive
-
----
-
-## 57. Pregled statistike prijava | PB41
-- **Opis:** Kompanija vidi statistiku prijava  
-- **Poslovne vrijednosti:** Bolje planiranje budućih oglasa  
-- **Prioritet:** Medium  
-- **Veza sa drugim storijima ili zavisnostima:**
-  - Zavisi od 19 i 15  
-- **Acceptance criteria:**
-  - Broj prijava
-  - Statistika po odsjeku i godini
-  - Filtriranje podataka
-  - Nije moguće vidjeti statistiku tuđih oglasa
-
-  ---
-
-  ## 58. Podešavanje tipova notifikacija | PB31
+  ## 55. Podešavanje tipova notifikacija | PB31
 - **Opis:** Kao korisnik želim da odaberem koje vrste notifikacija primam kako bih primao samo relevantne obavijesti  
 - **Poslovne vrijednosti:** Smanjuje nepotrebne notifikacije i poboljšava korisničko iskustvo  
 - **Prioritet:** Low  
 - **Veza sa drugim storijima ili zavisnostima:**
-  - Zavisi od 45 
+  - Zavisi od 37 
 - **Acceptance criteria:**
   - Sistem mora omogućiti korisniku izbor tipova notifikacija  
   - Sistem mora slati samo odabrane notifikacije  
@@ -786,12 +1012,12 @@
 
 ---
 
-## 59. Oznaka "Novo" na oglasima | PB7
+## 56. Oznaka "Novo" na oglasima | PB7
 - **Opis:** Kao student želim da vidim koji su oglasi novododani kako bih lakše pronašao najnovije prakse  
 - **Poslovne vrijednosti:** Poboljšava preglednost i omogućava brže pronalaženje novih oglasa  
 - **Prioritet:** Low    
 - **Veza sa drugim storijima ili zavisnostima:**
-  - Zavisi od 13
+  - Zavisi od 11
 - **Acceptance criteria:**
   - Sistem mora označiti oglas kao "Novo" ako je objavljen u definisanom vremenskom periodu  
   - Oznaka se mora automatski ukloniti nakon isteka perioda  
@@ -799,15 +1025,16 @@
 
 ---
 
-## 60. Pregled zatvorenih oglasa | PB7
+## 57. Pregled zatvorenih oglasa | PB7
 - **Opis:** Kao student želim da vidim zatvorene oglase kako bih razumio zahtjeve kompanija i bolje se pripremio za buduće prijave  
 - **Poslovne vrijednosti:** Pomaže studentima u pripremi i povećava kvalitet prijava  
 - **Prioritet:** Low   
 - **Veza sa drugim storijima ili zavisnostima:**
-  - Zavisi od 11
-  - U vezi sa 13 
+  - Zavisi od 31
+  - U vezi sa 11 
 - **Acceptance criteria:**
   - Sistem mora omogućiti prikaz zatvorenih oglasa  
   - Zatvoreni oglasi moraju biti jasno označeni  
   - Sistem ne smije dozvoliti prijavu na zatvorene oglase  
-  - Sistem mora omogućiti pregled detalja zatvorenog oglasa  
+  - Sistem mora omogućiti pregled detalja zatvorenog oglasa
+
