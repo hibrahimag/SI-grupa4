@@ -2,15 +2,16 @@
 
 ## Glavni entiteti
 
+- **User** - centralni entitet koji sadrži autentifikacijske podatke za sve korisnike sistema
+- **Role** - uloga korisnika u sistemu (ROLE_STUDENT, ROLE_KOMPANIJA, ROLE_KOORDINATOR, ROLE_ADMIN)
 - **Student** - korisnik sistema koji pretražuje, prijavljuje se i učestvuje na praksama
 - **Kompanija** - korisnik sistema koji nudi oglase za praksu, pregleda prijave, bira studente i prati njihov progres
-- **Koordinator** - korisnik sistema koji odobrava praksu i prati progres studenata za vrijeme trajanja prakse
-- **Admin** - korisnik sistema koji odobrava naloge kompanija i koordinatora
+- **Koordinator** - korisnik sistema koji odobrava prijave na praksu i prati progres studenata za vrijeme trajanja prakse
 - **Fakultet** - institucija kojoj pripadaju studenti i koordinatori
-- **Oglas** - oglas za praksu koji obajvljuje kompanija
+- **Oglas** - oglas za praksu koji objavljuje kompanija
 - **PrijavaNaPraksu** - prijava studenta na određeni oglas za praksu
 - **Praksa** - aktivna praksa koja nastaje nakon odobrenja prijave studenta na praksu
-- **Ugovor** - dokument koji formalizuje praksu 
+- **Ugovor** - dokument koji formalizuje početak prakse
 - **Izvještaj** - dokument koji formalizuje završetak prakse
 - **Prisustvo** - evidencija prisustva studenta tokom prakse
 - **Aktivnost** - evidencija o aktivnostima studenta tokom prakse
@@ -20,108 +21,104 @@
 
 ## Ključni atributi
 
-- **Student**: indeks, ime, prezime, email, godina studija, odsjek
-- **Koordinator**: ime, prezime, email
-- **Kompanija**: naziv, email, adresa, telefon, opis poslovanja
-- **Admin**: ime, prezime, email
+- **User**: ime, prezime, email, lozinka, username, emailVerifikovan, aktivan
+- **Role**: naziv
+- **Student**: indeks, godina studija, odsjek
+- **Koordinator**: fakultet
+- **Kompanija**: naziv, opis poslovanja, adresa, telefon
 - **Fakultet**: naziv, email, adresa
-- **Oglas**: naziv, opis, broj mjesta, datum objave, rok prijave, 
-  trajanje, oblast, plaćena praksa (da/ne)
-- **PrijavaNaPraksu**: status, datum prijave, CV, motivaciono pismo
-- **Praksa**: datum početka, datum kraja
-- **Ugovor**: datum početka, opis, datum završetka
+- **Oglas**: naziv, opis, broj mjesta, datum objave, rok prijave, trajanje, oblast, plaćena praksa (da/ne)
+- **PrijavaNaPraksu**: status, datum prijave, CV, motivaciono pismo, datum odustajanja, razlog odbijanja
+- **Praksa**: datum početka, datum kraja, datum odustajanja, razlog odustajanja
+- **Ugovor**: datum početka, datum završetka, opis
 - **Izvještaj**: datum, opis, preporuka
 - **EvaluacijaStudenta**: ocjena, komentar, datum
 - **EvaluacijaKompanije**: ocjena, komentar, datum
-- **Prisustvo**: datum, status
+- **Prisustvo**: id, datum, status
 - **Aktivnost**: datum, opis
+
 
 ## Veza između entiteta
 
+**User i Role**
+- svaki korisnik ima tačno jednu ulogu
+- jedna uloga može biti dodijeljena više korisnika
+
+**User i Student/Kompanija/Koordinator**
+- svaki od ovih entiteta predstavlja profilne podatke specifične za određenu ulogu
+- svaki profil je vezan za tačno jedan User entitet 
+- autentifikacijski podaci (email, lozinka, username) čuvaju se isključivo u User entitetu
+
 **Student i Fakultet**
-- student pripada jednom fakultetu dok fakultet ima više studenata
+- student pripada jednom fakultetu, dok fakultet ima više studenata
 
-**Student i PrijavaNaPraksu**
-- student može podnijeti više prijava za praksu, ali samo jednu po oglasu
-- kroz entitet PrijavaNaPraksu student postaje povezan sa kompanijom koja organizuje praksu kroz oglas i koordinatorom koji će pratiti praksu
-
-**Student i Koordinator**
-- koordinator odobrava profil studenta sa svog fakulteta
-- jedan koordinator može odobriti više studenata
+**Koordinator i Fakultet**
+- koordinator pripada jednom fakultetu, dok fakultet može imati više koordinatora
 
 **Kompanija i Oglas**
 - ista kompanija može objaviti više oglasa za praksu
-- oglas objavljuje samo jedna kompanija
+- jedan oglas objavljuje tačno jedna kompanija
 
 **Oglas i PrijavaNaPraksu**
-- oglas može imati više prijava
-- prijava se može odnositi samo na jedan oglas
-- veza omogućava dalje ostvarivanje veze između studenta i kompanije koja objavljuje oglas
+- jedan oglas može imati više prijava od strane različitih studenata
+- jedna prijava se odnosi samo na jedan oglas
+
+**Student i PrijavaNaPraksu**
+- student može podnijeti više prijava za praksu, ali samo jednu po oglasu
 
 **PrijavaNaPraksu i Koordinator**
-- koordinator može odobriti više praksi
-- prijavu na praksu odobrava jedan koordinator
-- veza omogućava dalje ostvarivanje veze između koordinatora, studenta i kompanije
-
-**Koordiantor i Fakultet**
-- koordinator pripada jednom fakultetu, dok fakultet može imati više koordinatora
+- koordinator odobrava prijave na praksu
+- jednu prijavu na praksu odobrava jedan koordinator
 
 **PrijavaNaPraksu i Praksa**
-- nakon koordinatorovog odobrenja prijava rezultira jednom praksom
+- nakon koordinatorovog odobrenja, prijava rezultira tačno jednom praksom 
+- prijava može postojati bez prakse (odbijena ili prijava na čekanju)
 
 **Praksa i EvaluacijaKompanije**
-- unutar jedne prakse je moguće da student uradi evaluaciju kompanije za koju radi praksu
-- student može evaluirati sve kompanije za koje je radio prakse
+- student evaluira kompaniju u okviru prakse koju je student radio za tu kompaniju
 
 **Praksa i EvaluacijaStudenta**
-- unutar jedne prakse je moguće da kompanija uradi evauaciju studenta koji radi praksu
-- jedna kompanija može evaluirati sve studente koji rade na nekoj praksi te kompanije
+- kompanija evaluira studenta u okviru prakse koju je student radio za kompaniju 
 
 **Praksa i Aktivnost**
-- unutar prakse se prate aktivnosti studenta na kojima on radi za vrijeme trajanja prakse
-- za jednu praksu se veže više aktivnosti kako bi se pokrilo sve ono što student radi tokom prakse
+- jedna praksa ima više aktivnosti koje pokrivaju sve što student radi tokom prakse
 
 **Praksa i Prisustvo**
-- unutar prakse prisustvo omogućava evidentiranje dolazaka studenata na praksu
+- za jednu praksu postoji više zapisa o prisustvu za svaki dan trajanja prakse
 
 **Praksa i Ugovor**
-- praksa ima tačno jedan ugovor za formaliziranje početka prakse
-- jedan ugovor odgovara tačno jednoj praksi
+- praksa ima tačno jedan ugovor koji formalizuje početak prakse
 
 **Praksa i Izvještaj**
-- praksa ima tačno jedan izvještaj za formaliziranje kraja prakse
-- jedan izvještaj odgovara tačno jednoj praksi
-
-**Admin i Kompanija**
-- admin odobrava registraciju kompanije
-- jedan admin može odobriti više kompanija
-
-**Admin i Koordinator**
-- admin odobrava registraciju koordinatora
-- jedan admin može odobriti više koordinatora
-
-**Admin i Fakultet**
-- admin dodaje i upravlja fakultetima u sistemu
-- jedan admin može dodati više fakulteta
+- praksa ima tačno jedan izvještaj koji formalizuje kraj prakse
 
 
 ## Poslovna pravila važna za model
 
 - Student se može prijaviti na isti oglas tačno jednom (unique constraint: studentID + oglasID)
-- Student se može prijaviti na više različitih praksi
+- Student se može prijaviti na više različitih oglasa
 - Student ne može imati dvije aktivne prakse u isto vrijeme
 - Student može obaviti više praksi tokom školovanja
 - Student ne može odustati od prakse koja je već završena
-- Student ne može pristupiti sistemu dok njegov email nije verfikovan i dok koordinator ne učini njegov profil aktivnim
+- Stduent mora biti odobren od strane koordinatora kako bi koristio sistem
+- Student može povući prijavu bez navođenja razloga
+- Student ne može povući prijavu koja je već odobrena ili odbijena
+- Nakon povlačenja prijave student se može ponovo prijaviti na isti oglas
+- Student može odustati od aktivne prakse uz navođenje razloga
+- Student ne može odustati od prakse koja je već završena
 - Promjena fakulteta tretira se kao kreiranje novog profila
-- Email kompanije mora biti verifikovan prije korištenja sistema
-- Email koordinatora mora biti verifikovan prije korištenja sistema
-- Kompanija mora biti odobrena od strane admina prije korištenja sistema (admin označava profil kompanije kao aktivan)
-- Koordinator mora biti odobren od strane admina prije korištenja sistema (admin označava profil koordinatora kao aktivan)
+- Email kompanije mora biti verifikovan kako bi koristila sistem
+- Email koordinatora mora biti verifikovan kako bi koristio sistem
+- Email studenta mora biti verifikovan kako bi koristio sistem
+- Kompanija mora biti odobrena od strane admina prije korištenja sistema
+- Kompanija može vidjeti samo prijave na svoje oglase
+- Koordinator mora biti odobren od strane admina prije korištenja sistema
 - Koordinator može odobriti prijave studenata samo sa svog fakulteta
-- Koordinator se dodjeljuje prijavi tek pri donošenju odluke o odobrenju prakse
 - Koordinator ne može odobriti prijavu studentu koji već ima aktivnu praksu
-- Praksa nastaje kada se odobri prijava na praksu
-- Prijava na praksu može postojati bez prakse (odbijena prijava ili prijava na čekanju ne rezultira praksom)
+- Koordinator može odbiti prijavu studenta uz navođenje razloga
+- Praksa nastaje isključivo kada koordinator odobri prijavu na praksu
 - Samo admin može dodavati fakultete u sistem
-- Sistem može posjedovati više admina
+- Kompanija može evaluirati studenta samo nakon što praksa završi
+- Student može evaluirati kompaniju samo nakon što praksa završi
+- Sistem može posjedovati više admina (korisnika sa ROLE_ADMIN ulogom)
+- Oglas mora imati rok prijave koji je u budućnosti da bi bio važeći
