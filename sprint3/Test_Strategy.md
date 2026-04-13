@@ -176,3 +176,278 @@ U nastavku su definisani rizici koji mogu uticati na kvalitet, potpunost i pouzd
 - Opis: Mogu postojati neotkrivene ranjivosti u autentifikaciji i pristupu podacima.
 - Mitigacija: Sigurnosno i penetracijsko testiranje
 ---
+
+
+# Acceptance Criteria   
+
+---
+
+# 1. Registracija korisnika
+
+## AC-01 Registracija studenta
+
+### Scenario: Uspješna registracija
+
+```gherkin
+Given korisnik nije registrovan u sistemu
+When unese validno ime, prezime, email, broj indeksa, odsjek i lozinku (minimum 8 karaktera)
+Then sistem kreira korisnički nalog sa statusom "Neverifikovan"
+And sistem šalje verifikacioni email
+```
+
+### Scenario: Registracija sa postojećim emailom
+
+```gherkin
+Given email već postoji u sistemu
+When korisnik pokuša izvršiti registraciju
+Then sistem prikazuje poruku o grešci
+And nalog se ne kreira
+```
+
+---
+
+## AC-02 Verifikacija email adrese
+
+```gherkin
+Given korisnik ima status "Neverifikovan"
+When klikne na validan verifikacioni link
+Then status korisnika prelazi u "Aktivan"
+And korisnik može pristupiti sistemu
+```
+
+```gherkin
+Given verifikacioni link je istekao
+When korisnik pokuša potvrditi email
+Then sistem prikazuje poruku da je link istekao
+And omogućava ponovno slanje verifikacionog linka
+```
+
+---
+
+# 2. Login i autorizacija
+
+## AC-03 Uspješna prijava
+
+```gherkin
+Given korisnik ima aktivan nalog
+When unese tačan email i lozinku
+Then sistem omogućava pristup
+And preusmjerava korisnika na dashboard prema njegovoj roli
+```
+
+## AC-04 Neispravni kredencijali
+
+```gherkin
+Given korisnik unese pogrešnu lozinku ili email
+When pokuša prijavu
+Then sistem prikazuje poruku "Neispravni podaci"
+And ne otkriva da li email postoji u sistemu
+```
+
+---
+
+# 3. Kreiranje oglasa
+
+## AC-05 Kreiranje oglasa od strane kompanije
+
+```gherkin
+Given korisnik ima rolu "Kompanija"
+When unese naziv, opis, trajanje, broj mjesta i rok prijave
+Then oglas se kreira sa statusom "Aktivan"
+And oglas je vidljiv studentima
+```
+
+```gherkin
+Given rok prijave je u prošlosti
+When kompanija pokuša kreirati oglas
+Then sistem prikazuje poruku o grešci
+And oglas se ne kreira
+```
+
+---
+
+# 4. Prijava studenta na praksu
+
+## AC-06 Uspješna prijava
+
+```gherkin
+Given student je prijavljen u sistem
+And oglas je aktivan
+When student pošalje prijavu sa CV-om i motivacionim pismom u PDF formatu
+Then prijava se kreira sa statusom "Na čekanju"
+And kompanija dobija notifikaciju
+```
+
+## AC-07 Dupla prijava
+
+```gherkin
+Given student je već prijavljen na isti oglas
+When pokuša ponovo poslati prijavu
+Then sistem blokira prijavu
+And prikazuje odgovarajuću poruku o grešci
+```
+
+---
+
+# 5. Workflow odobravanja
+
+## AC-08 Selekcija kandidata
+
+```gherkin
+Given prijava ima status "Na čekanju"
+When kompanija označi prijavu kao prihvaćenu
+Then status prelazi u "Predložena"
+And koordinator dobija notifikaciju
+```
+
+## AC-09 Odluka koordinatora
+
+```gherkin
+Given prijava ima status "Predložena"
+When koordinator odobri praksu
+Then status prelazi u "Odobrena"
+And student i kompanija dobijaju notifikaciju
+```
+
+```gherkin
+Given prijava ima status "Predložena"
+When koordinator odbije praksu
+Then status prelazi u "Odbijena"
+And student dobija obavještenje
+```
+
+---
+
+# 6. Generisanje i potpisivanje ugovora
+
+## AC-10 Generisanje ugovora
+
+```gherkin
+Given praksa ima status "Odobrena"
+When student potvrdi učešće
+Then sistem generiše ugovor u PDF formatu
+And dokument je dostupan studentu i kompaniji
+```
+
+## AC-11 Digitalni potpis
+
+```gherkin
+Given ugovor je generisan
+When student i kompanija digitalno potpišu dokument
+Then status ugovora prelazi u "Potpisan"
+And dokument postaje neizmjenjiv
+```
+
+---
+
+# 7. Evidencija aktivnosti
+
+## AC-12 Unos aktivnosti
+
+```gherkin
+Given praksa je aktivna
+When student unese dnevne ili sedmične aktivnosti
+Then sistem čuva unesene podatke
+And kompanija i koordinator imaju uvid
+```
+
+---
+
+# 8. Završetak prakse
+
+## AC-13 Automatski završetak
+
+```gherkin
+Given trajanje prakse je isteklo
+When sistem izvrši dnevnu provjeru
+Then status prakse prelazi u "Završena"
+And korisnici dobijaju notifikaciju
+```
+
+---
+
+# 9. Evaluacija
+
+## AC-14 Evaluacija studenta
+
+```gherkin
+Given praksa je završena
+When kompanija popuni evaluacioni formular
+Then evaluacija se čuva u sistemu
+And student ima pregled evaluacije
+```
+
+## AC-15 Evaluacija kompanije
+
+```gherkin
+Given praksa je završena
+When student popuni evaluaciju kompanije
+Then evaluacija se čuva
+And kompanija ima uvid
+```
+
+---
+
+# 10. Sigurnosni kriteriji
+
+## AC-16 Autorizacija po rolama
+
+```gherkin
+Given korisnik ima rolu "Student"
+When pokuša pristupiti administratorskoj stranici
+Then sistem zabranjuje pristup
+And vraća HTTP status 403
+```
+
+---
+
+# 11. Performanse
+
+## AC-17 Vrijeme odgovora sistema
+
+```gherkin
+Given korisnik šalje zahtjev ka API-ju
+When sistem obradi zahtjev
+Then vrijeme odgovora ne prelazi 2 sekunde u najmanje 95% slučajeva
+```
+
+---
+
+# 12. Notifikacije
+
+## AC-18 Promjena statusa prijave
+
+```gherkin
+Given status prijave se promijeni
+When promjena bude evidentirana u sistemu
+Then sistem šalje notifikaciju relevantnim korisnicima
+And notifikacija je vidljiva na dashboardu
+```
+
+---
+
+# 13. Reset lozinke
+
+## AC-19 Reset lozinke
+
+```gherkin
+Given korisnik zatraži reset lozinke
+When unese validan email
+Then sistem šalje reset link
+And link ističe nakon definisanog vremenskog perioda
+```
+
+---
+
+# 14. Audit log
+
+## AC-20 Evidencija kritičnih akcija
+
+```gherkin
+Given korisnik izvrši kritičnu akciju (kreiranje oglasa, promjena statusa, odobravanje prakse)
+When akcija bude izvršena
+Then sistem evidentira korisnika, vrijeme i tip akcije
+And samo administrator ima pristup audit logu
+```
+
+---
