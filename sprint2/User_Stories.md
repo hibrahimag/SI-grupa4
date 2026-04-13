@@ -16,13 +16,29 @@
 > - **38. Verifikacija email adrese** 
 > - **39. Pretraživanje oglasa** 
 > - **40. Deaktivacija/brisanje korisničkog računa**
-> - **26. Historija aktivnosti (Audit log)**
-> - **12. Upravljanje rokovima prijave**
-> - **17. Ograničenje broja prijava po studentu**
+> - **41. Početna stranica (Landing page)**
+> - **42. Navigacija**
+> - **43. Pregled profila kompanije**
+> - **44. Pregled korisničkog profila**
+> - **45. Uređivanje profila kompanije**
+> - **46. Privacy policy & User Terms stranica**
+> - **47. Tamni režim rada**
+> - **48. Favoriziranje oglasa**
+> - **49. Arhiviranje oglasa**
+> - **50. Pregled statistike prijava**
+> - **51. Historija aktivnosti (Audit log)**
+> - **52. Upravljanje rokovima prijave**
+> - **53. Ograničenje broja prijava po studentu**
+> - **54. Automatsko završavanje prakse**
+> - **55. Podešavanje tipova notifikacija**
+> - **56. Oznaka "Novo" na oglasima**
+> - **57. Pregled zatvorenih oglasa**
+> - **58. Odobravanje korisničkog računa**
 >
 > Svi user story-i su sada povezani sa odgovarajućim stavkama Product Backlog-a,
-> te su dodani očekivani sprint-ovi u kojima se planira realizacija svakog story-a
-
+> te su dodani očekivani sprint-ovi u kojima se planira realizacija svakog story-a.
+>
+> **Napomena:** Na kraju dokumenta dodana tabela sa rasporedom user storija po sprintovima - [Idi na tabelu →](#raspored-user-storija-po-sprintovima)
 
 
 ---
@@ -418,10 +434,8 @@
 - **Opis:** Osmisliti šemu baze podataka sistema
 - **Poslovne vrijednosti:** Omogućava lakšu implementaciju baze podataka
 - **Prioritet:** High
-- **Pretpostavke i otvorena pitanja:**
-  - 
+- **Pretpostavke i otvorena pitanja:** 
 - **Veza sa drugim storijima ili zavisnostima:** 
-  -
 - **Acceptance criteria:** 
   - Dizajn mora obuhvatati glavne entite sistema:
     koordinatore, studente, kompanije, prakse
@@ -564,11 +578,8 @@
 - **Poslovne vrijednosti:**  Vidjeti šta nedostaje drugim sistemima, a šta je dobro za implementirati
 - **Prioritet:** Medium
 - **Pretpostavke i otvorena pitanja:**
-  
 - **Veza sa drugim storijima ili zavisnostima:** 
-  - 
-- **Acceptance criteria:** 
-  - 
+- **Acceptance criteria:**  
 - **Očekivani sprint:** Sprint 6
 ---
 
@@ -1069,3 +1080,47 @@
   - Sistem ne smije dozvoliti prijavu na zatvorene oglase  
   - Sistem mora omogućiti pregled detalja zatvorenog oglasa
 - **Očekivani sprint:** Sprint 11
+---
+
+## 58. Odobravanje korisničkog računa | PB5
+- **Opis:** Kao administrator/koordinator, želim pregledati zahtjev 
+  za registraciju, verificirati identitet korisnika i dodijeliti mu 
+  odgovarajuću rolu kako bih osigurao da samo ovlašteni korisnici 
+  pristupaju sistemu
+- **Poslovne vrijednosti:** Osigurava kontrolisan pristup sistemu, 
+  verificira identitet korisnika i uspostavlja ispravne role 
+  prije aktivacije računa
+- **Prioritet:** High
+- **Pretpostavke i otvorena pitanja:**
+  - Korisnik je završio registraciju i verifikovao email adresu
+- **Veza sa drugim storijima ili zavisnostima:**
+  - Zavisi od 1, 2, 3 (Registracija korisnika)
+  - Zavisi od 38 (Verifikacija email adrese)
+  - Vezano za 9 (Pristup administratora), 8 (Pristup koordinatora)
+- **Acceptance criteria:**
+  - Sistem mora obavijestiti koordinatora/administratora o novom 
+    zahtjevu za odobravanje nakon verifikacije emaila
+  - Koordinator/administrator mora moći pregledati podatke korisnika 
+    i verificirati njegov identitet
+  - Sistem mora dodijeliti odgovarajuću rolu korisniku 
+    tek nakon odobrenja (student, kompanija, koordinator)
+  - U slučaju odbijanja, sistem mora tražiti unos razloga odbijanja
+  - Sistem mora obavijestiti korisnika o ishodu zahtjeva 
+    (odobreno/odbijeno) i dodijeljenoj roli
+  - Sistem ne smije dozvoliti prijavu korisniku čiji račun nije odobren
+  - Sistem mora automatski podsjetiti koordinatora/administratora 
+    ako zahtjev čeka odobrenje duže od definisanog perioda
+- **Očekivani sprint:** Sprint 7
+---
+
+## Raspored user storija po sprintovima
+
+| Sprint | User Stories |
+|--------|-------------|
+| **Sprint 6** | 9. Pristup administratora, 20. Dizajn baze podataka, 21. Implementacija baze podataka, 29. Analiza postojećih rješenja, 30. Dokumentacija sistema, 41. Početna stranica (Landing page), 46. Privacy policy & User Terms stranica, 47. Tamni režim rada |
+| **Sprint 7** | 1. Registracija studenta, 2. Registracija koordinatora fakulteta, 3. Registracija kompanije, 4. Prijava studenata, 5. Prijava koordinatora, 6. Prijava kompanija, 34. Obnavljanje lozinke, 38. Verifikacija email adrese, 58. Odobravanje korisničkog računa |
+| **Sprint 8** | 7. Uređivanje profila studenta, 8. Pristup koordinatora, 10. Kreiranje oglasa, 11. Pregled oglasa, 40. Deaktivacija/brisanje korisničkog računa, 42. Navigacija, 44. Pregled korisničkog profila, 45. Uređivanje profila kompanije |
+| **Sprint 9** | 12. Pregled detalja oglasa, 32. Uređivanje oglasa, 36. Filtriranje oglasa, 39. Pretraživanje oglasa, 43. Pregled profila kompanije, 48. Favoriziranje oglasa, 52. Upravljanje rokovima prijave, 56. Oznaka "Novo" na oglasima |
+| **Sprint 10** | 13. Prijava na praksu, 14. Upload dokumentacije, 15. Pregled prijava na praksu, 16. Selekcija kandidata, 17. Odobravanje prakse, 31. Zatvaranje oglasa, 35. Student dashboard, 53. Ograničenje broja prijava po studentu |
+| **Sprint 11** | 18. Odbijanje prakse, 19. Potvrda studenta, 22. Generisanje ugovora, 33. Odustajanje od prakse, 37. Notifikacije o statusu prakse, 49. Arhiviranje oglasa, 50. Pregled statistike prijava, 57. Pregled zatvorenih oglasa |
+| **Sprint 12** | 23. Preuzimanje ugovora, 24. Evidencija aktivnosti, 25. Praćenje prisustva, 26. Evaluacija studenta, 27. Evaluacija kompanije, 28. Izvještaji, 51. Historija aktivnosti (Audit log), 54. Automatsko završavanje prakse, 55. Podešavanje tipova notifikacija |
