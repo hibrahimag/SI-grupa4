@@ -519,3 +519,58 @@
 - *A2 - Zahtjev se ignorira duže vrijeme:* Sistem automatski podsjeća koordinatora/administratora o zahtjevu koji čeka na odobrenje.
 
 **Ishod:** Korisnički račun je aktiviran ili odbijen. Korisnik je obaviješten o odluci i može se prijaviti (u slučaju odobrenja).
+
+---
+
+## UC-21: Zatvaranje oglasa
+ 
+**Akter:** Kompanija
+ 
+**Kratak opis:** Kompanija zatvara aktivan oglas čime se onemogućavaju nove prijave studenata. Zatvoreni oglas ostaje vidljiv studentima samo za pregled, ali nije moguće prijaviti se na njega.
+ 
+**Preduslovi:**
+- Kompanija je prijavljena na sistem.
+- Postoji najmanje jedan aktivan oglas koji kompanija posjeduje.
+ 
+**Glavni tok:**
+1. Kompanija otvara listu svojih oglasa na dashboardu
+2. Kompanija odabire aktivan oglas koji želi zatvoriti
+3. Kompanija odabire opciju za zatvaranje oglasa
+4. Sistem traži potvrdu od kompanije
+5. Kompanija potvrđuje zatvaranje
+6. Sistem mijenja status oglasa u "Zatvoren"
+7. Oglas se uklanja iz liste aktivnih oglasa
+8. Studenti koji su prijavljeni na oglas dobijaju obavijest o zatvaranju
+ 
+**Alternativni tokovi:**
+- *A1 - Odustajanje od zatvaranja:* U koraku 4, kompanija odustaje - oglas ostaje aktivan.
+- *A2 - Automatsko zatvaranje:* Sistem automatski zatvara oglas nakon isteka roka za prijave bez intervencije kompanije.
+ 
+**Ishod:** Oglas je zatvoren. Nove prijave nisu moguće. Studenti su obaviješteni o zatvaranju.
+ 
+---
+ 
+## UC-22: Arhiviranje oglasa
+ 
+**Akter:** Kompanija
+ 
+**Kratak opis:** Kompanija arhivira zatvoreni oglas radi organizacije historije oglasa. Arhivirani oglasi nisu vidljivi studentima, ali ih kompanija može pregledati ili vratiti iz arhive.
+ 
+**Preduslovi:**
+- Kompanija je prijavljena na sistem.
+- Oglas ima status "Zatvoren" - UC-21.
+ 
+**Glavni tok:**
+1. Kompanija otvara listu zatvorenih oglasa na dashboardu
+2. Kompanija odabire oglas koji želi arhivirati
+3. Kompanija odabire opciju za arhiviranje
+4. Sistem traži potvrdu od kompanije
+5. Kompanija potvrđuje arhiviranje
+6. Sistem mijenja status oglasa u "Arhiviran"
+7. Oglas više nije vidljiv studentima ni u listi aktivnih ni zatvorenih oglasa
+ 
+**Alternativni tokovi:**
+- *A1 - Vraćanje iz arhive:* Kompanija odabire arhivirani oglas i odabire opciju za vraćanje - sistem mijenja status oglasa u "Zatvoren" i oglas postaje ponovo dostupan za pregled.
+- *A2 – Odustajanje od arhiviranja:* U koraku 4, kompanija odustaje - oglas ostaje zatvoren.
+ 
+**Ishod:** Oglas je arhiviran i nije vidljiv studentima. Kompanija ima uredan pregled historije oglasa.
