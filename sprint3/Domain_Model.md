@@ -24,102 +24,88 @@
 
 
 ### User
-[ ime ]  
-[ prezime ]  
-[ email ]  
-[ lozinka ]  
-[ username ]  
-[ email verifikovan (da/ne) ]  
-[ aktivan (da/ne) ]
-
+`ime`  
+`prezime`  
+`email`  
+`lozinka`  
+`username`  
+`email verifikovan (da/ne)`  
+`aktivan (da/ne)`
 
 ### Role
-[ naziv ]
-
+`naziv`
 
 ### Student
-[ indeks ]  
-[ godina studija ]  
-[ odsjek ]
-
+`indeks`  
+`godina studija`  
+`odsjek`
 
 ### Koordinator
-[ fakultet ]
-
+`fakultet`
 
 ### Kompanija
-[ naziv ]  
-[ opis poslovanja ]  
-[ adresa ]  
-[ telefon ]
-
+`naziv`  
+`opis poslovanja`  
+`adresa`  
+`telefon`
 
 ### Fakultet
-[ naziv ]  
-[ email ]  
-[ adresa ]
-
+`naziv`  
+`email`  
+`adresa`
 
 ### Oglas
-[ naziv ]  
-[ opis ]  
-[ broj mjesta ]  
-[ datum objave ]  
-[ rok prijave ]  
-[ trajanje ]  
-[ oblast ]  
-[ plaćena praksa (da/ne) ]  
-[ status (AKTIVAN | ZATVOREN | ARHIVIRAN) ]
-
+`naziv`  
+`opis`  
+`broj mjesta`  
+`datum objave`  
+`rok prijave`  
+`trajanje`  
+`oblast`  
+`plaćena praksa (da/ne)`  
+`status (AKTIVAN | ZATVOREN | ARHIVIRAN)`
 
 ### PrijavaNaPraksu
-[ status (NA_ČEKANJU | ODOBRENA | ODBIJENA | POVUČENA) ]  
-[ datum prijave ]  
-[ CV ]  
-[ motivaciono pismo ]  
-[ datum odustajanja ]  
-[ razlog odbijanja ]
-
+`status (NA_CEKANJU | ODOBRENA | ODBIJENA | POVUCENA)`  
+`datum prijave`  
+`CV`  
+`motivaciono pismo`  
+`datum odustajanja`  
+`razlog odbijanja`
 
 ### Praksa
-[ datum početka ]  
-[ datum kraja ]  
-[ datum odustajanja ]  
-[ razlog odustajanja ]
-
+`datum početka`  
+`datum kraja`  
+`datum odustajanja`  
+`razlog odustajanja`
 
 ### Ugovor
-[ datum početka ]  
-[ datum završetka ]  
-[ opis ]
-
+`datum početka`  
+`datum završetka`  
+`opis`
 
 ### Izvještaj
-[ datum ]  
-[ opis ]  
-[ preporuka ]
-
+`datum`  
+`opis`  
+`preporuka`
 
 ### EvaluacijaStudenta
-[ ocjena ]  
-[ komentar ]  
-[ datum ]
-
+`ocjena`  
+`komentar`  
+`datum`
 
 ### EvaluacijaKompanije
-[ ocjena ]  
-[ komentar ]  
-[ datum ]
-
+`ocjena`  
+`komentar`  
+`datum`
 
 ### Prisustvo
-[ datum ]  
-[ status (PRISUTAN | NIJE_PRISUTAN) ]
-
+`datum`  
+`status`
 
 ### Aktivnost
-[ datum ]  
-[ opis ]
+`datum`  
+`opis`
 
 
 ## Veza između entiteta
