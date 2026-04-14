@@ -14,8 +14,7 @@ Arhitektonski pristup je odabran jer:
 - Jasno razdvaja odgovornosti između prezentacijskog, 
   poslovnog i podatkovnog sloja
 - Omogućava paralelni razvoj frontenda i backenda
-- Odgovara prirodi sistema koji ima više korisničkih rola 
-  (student, kompanija, koordinator, administrator)
+
 
 ---
 
@@ -52,6 +51,10 @@ Komponente su organizovane u sljedeće module:
 
 ---
 
+![alt text](<Untitled Diagram.drawio.png>)
+
+---
+
 ## 3. Odgovornosti komponenti
 
 | Komponenta | Tehnologija | Odgovornost |
@@ -80,10 +83,10 @@ Primjer toka prijave na praksu:
 1. Auth modul potvrđuje identitet korisnika putem JWT tokena
 2. Oglas modul dohvaća podatke o oglasu putem Oglas servisa
 3. Prijava modul šalje zahtjev za prijavu na praksu Prijava servisu
-4. Prijava servis koristi Oglas servis za provjeru validnosti oglasa
-5. Prijava servis koristi Korisnik servis za provjeru korisnika
-6. Prijava servis kreira prijavu i postavlja početni status "na čekanju"
-7. Notifikacija servis šalje email kompaniji o novoj prijavi putem Nodemailer + Gmail SMTP
+4. Prijava modul koristi Oglas modul za provjeru validnosti oglasa
+5. Prijava modul koristi Korisnik modul za provjeru korisnika
+6. Prijava modul kreira prijavu i postavlja početni status "na čekanju"
+7. Notifikacija modul šalje email kompaniji o novoj prijavi putem Nodemailer + Gmail SMTP
 8. Dashboard modul prikazuje ažuriran status korisniku
 
 ---
@@ -93,11 +96,11 @@ Primjer toka prijave na praksu:
 | Odluka | Odabrano rješenje | Razlog |
 |--------|-------------------|--------|
 | Frontend framework | React | Komponentna arhitektura pogodna za višerolni sistem, veliki ekosistem |
-| Backend framework | Node.js + Express | JavaScript na oba kraja, bogat npm ekosistem, lagan REST API razvoj |
-| Baza podataka | PostgreSQL | Relacijska struktura prirodno odgovara vezama student→prijava→oglas→kompanija |
+| Backend framework | Node.js + Express | JavaScript na oba kraja, lagan REST API razvoj |
+| Baza podataka | PostgreSQL | Relacijska struktura  |
 | HTTP komunikacija | Fetch API | Ugrađen u browser, bez vanjskih zavisnosti, dovoljno za potrebe projekta |
 | Autentifikacija | JWT (JSON Web Token) | Stateless autentifikacija, pogodan za REST API, nosi informaciju o roli |
-| Autorizacija | Role-based (RBAC) | Sistem ima 4 jasno definirane role: student, kompanija, koordinator, admin |
+| Autorizacija | Role-based  | Sistem ima 4 jasno definirane role: student, kompanija, koordinator, admin |
 | File upload | Multer (PDF only) | Validacija formata fajla na serverskoj strani |
 | Email servis | Nodemailer + Gmail SMTP | Slanje verifikacionih emailova, reset lozinke i notifikacija, besplatan do 500 emailova dnevno |
 | Password hashing | bcrypt | Industrijski standard za sigurno hashovanje lozinki |
@@ -130,5 +133,3 @@ Primjer toka prijave na praksu:
 
 - Da li implementirati refresh token mehanizam uz JWT
   ili koristiti kratke tokene sa čestim ponovnim prijavama?
-- Koja strategija upravljanja promjenama strukture baze 
-  podataka će se koristiti (custom SQL skripte)?
