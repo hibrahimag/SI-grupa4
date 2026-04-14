@@ -178,33 +178,40 @@ Asinhroni procesi se izvršavaju nakon glavne operacije i ne blokiraju odgovor k
 
 ---
 
-### 4.3.3 Pregled i pretraga oglasa
+### 4.3.3 Upravljanje profilom
 
 **Tok podataka:**
-- Frontend → filteri/pretraga → Oglas modul  
-- Oglas modul → upit → Baza oglasa  
-- Oglas modul → lista oglasa → Frontend  
+- Korisnik → izmjene profila → Korisnik modul  
+- Korisnik modul → update → Baza korisnika  
 
 **Activity tok:**
-1. Korisnik bira filtere/pretragu  
-2. Sistem dohvaća oglase  
-3. Primjenjuje filtere  
-4. Vraća rezultate  
+1. Korisnik pristupa profilu  
+2. Mijenja podatke  
+3. Sistem validira unos  
+4. Sprema izmjene  
+5. Vraća potvrdu 
 
 ---
 
-### 4.3.4 Kreiranje oglasa
+### 4.3.4 Upravljanje oglasima
 
 **Tok podataka:**
-- Kompanija → podaci oglasa → Oglas modul  
-- Oglas modul → upis → Baza oglasa  
+- Student → pretraga/filter → Oglas modul  
+- Kompanija → kreiranje/izmjena → Oglas modul  
+- Oglas modul → upit/update → Baza oglasa  
 
 **Activity tok:**
-1. Kompanija unosi podatke  
-2. Sistem validira unos  
-3. [Ako nevalidno] → greška  
-4. Sprema oglas  
-5. Oglas postaje vidljiv  
+1. [Student]:
+   - pregledava oglase  
+   - pretražuje i filtrira  
+   - označava oglas kao favorit  
+2. [Kompanija]:
+   - kreira oglas  
+   - uređuje oglas  
+   - zatvara oglas  
+3. Sistem validira akcije  
+4. Sprema promjene u bazu  
+5. Vraća rezultate    
 
 ---
 
@@ -226,25 +233,11 @@ Asinhroni procesi se izvršavaju nakon glavne operacije i ne blokiraju odgovor k
 4. [Ako nije validno] → greška  
 5. Kreira prijavu (na čekanju)  
 6. Šalje notifikaciju  
+7. Student može odustati od prijave  
 
 ---
 
-### 4.3.6 Upload dokumenata
-
-**Tok podataka:**
-- Student → dokument (PDF) → Backend  
-- Backend → spremanje → Baza dokumenata  
-
-**Activity tok:**
-1. Student upload-a dokument  
-2. Sistem validira format  
-3. [Ako nije PDF] → greška  
-4. Sprema dokument  
-5. Omogućava pristup kompaniji  
-
----
-
-### 4.3.7 Selekcija kandidata (Kompanija)
+### 4.3.6 Selekcija kandidata (Kompanija)
 
 **Tok podataka:**
 - Kompanija → odluka → Prijava modul  
@@ -259,7 +252,7 @@ Asinhroni procesi se izvršavaju nakon glavne operacije i ne blokiraju odgovor k
 
 ---
 
-### 4.3.8 Odobravanje prakse (Koordinator)
+### 4.3.7 Odobravanje prakse (Koordinator)
 
 **Tok podataka:**
 - Koordinator → odluka → Prijava modul  
@@ -270,6 +263,21 @@ Asinhroni procesi se izvršavaju nakon glavne operacije i ne blokiraju odgovor k
 2. Donosi odluku  
 3. Sistem ažurira status  
 4. Šalje notifikacije  
+
+---
+
+### 4.3.8 Upload dokumenata
+
+**Tok podataka:**
+- Student → dokument (PDF) → Backend  
+- Backend → spremanje → Baza dokumenata  
+
+**Activity tok:**
+1. Student upload-a dokument  
+2. Sistem validira format  
+3. [Ako nije PDF] → greška  
+4. Sprema dokument  
+5. Omogućava pristup kompaniji  
 
 ---
 
@@ -343,7 +351,44 @@ Asinhroni procesi se izvršavaju nakon glavne operacije i ne blokiraju odgovor k
 
 ---
 
-### 4.3.14 Automatski procesi (background)
+### 4.3.14 Administracija sistema
+
+**Tok podataka:**
+- Administrator → akcije → Korisnik modul  
+- Korisnik modul → update → Baza korisnika  
+
+**Activity tok:**
+1. Administrator pregledava korisnike  
+2. Odobrava ili odbija naloge  
+3. Dodjeljuje role  
+4. Sistem ažurira podatke  
+5. Vraća potvrdu
+
+---
+
+### 4.3.15 Dashboard (pregled podataka po roli)
+
+**Tok podataka:**
+- Frontend → zahtjev → Backend  
+- Backend → upit → Baza (prijave, oglasi, notifikacije)  
+- Backend → agregirani podaci → Frontend  
+
+**Activity tok:**
+1. Korisnik se prijavi u sistem  
+2. Frontend šalje zahtjev za dashboard  
+3. Sistem identifikuje rolu korisnika  
+4. Dohvata relevantne podatke:
+   - Student → prijave + statusi + notifikacije  
+   - Kompanija → oglasi + kandidati  
+   - Koordinator → prijave za odobravanje  
+   - Administrator → korisnici sistema  
+5. Sistem agregira podatke  
+6. Vraća podatke frontend-u  
+7. Prikazuje dashboard korisniku  
+
+---
+
+### 4.3.16 Automatski procesi (background)
 
 **Tokovi:**
 - Sistem → provjera rokova → Baza oglasa  
@@ -355,6 +400,23 @@ Asinhroni procesi se izvršavaju nakon glavne operacije i ne blokiraju odgovor k
 2. Provjerava uslove  
 3. Ažurira status  
 4. Šalje notifikacije 
+
+---
+
+### 4.3.17 Obrada grešaka
+
+**Tok podataka:**
+- Frontend → zahtjev → Backend  
+- Backend → greška → Frontend  
+
+**Activity tok:**
+1. Sistem obrađuje zahtjev  
+2. [Ako dođe do greške]:
+   - nevalidni podaci  
+   - istek tokena  
+   - greška baze  
+3. Sistem vraća poruku greške  
+4. Frontend prikazuje korisniku 
 
 ---
 
