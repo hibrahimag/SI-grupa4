@@ -70,7 +70,7 @@ Komponente su organizovane u sljedeće module:
 
 ---
 
-## 4. Tok podataka i interakcija (pregled)
+## 4. Tok podataka i interakcija
 
 React komponenta → REST API (Express Server) → PostgreSQL → REST API → React komponenta  
 
@@ -89,16 +89,10 @@ Svi zahtjevi prema zaštićenim resursima prolaze kroz JWT middleware koji valid
 - upravljanje profilom  
 
 **Asinhrona komunikacija:**
-- slanje email notifikacija  
-- evidencija aktivnosti (audit log)  
-- generisanje ugovora  
+- slanje email notifikacija   
 - pozadinski sistemski procesi (npr. automatsko zatvaranje oglasa)  
 
 Asinhroni procesi se izvršavaju nakon glavne operacije i ne blokiraju odgovor korisniku.
-
----
-
-## 4. Tok podataka (DFD + Activity pregled)
 
 ---
 
@@ -109,18 +103,17 @@ Asinhroni procesi se izvršavaju nakon glavne operacije i ne blokiraju odgovor k
 - Kompanija
 - Koordinator
 - Administrator
-- Email servis (eksterni sistem)
+- Email modul (eksterni sistem)
 
 ### Sistemski procesi:
-- Autentifikacija i autorizacija (Auth servis)
-- Upravljanje korisnicima (Korisnik servis)
-- Upravljanje oglasima (Oglas servis)
-- Upravljanje prijavama (Prijava servis)
+- Autentifikacija i autorizacija (Auth modul)
+- Upravljanje korisnicima (Korisnik modul)
+- Upravljanje oglasima (Oglas modul)
+- Upravljanje prijavama (Prijava modul)
 - Upravljanje dokumentima
-- Notifikacija servis
-- Ugovor servis
-- Evaluacija servis
-- Audit log sistem
+- Notifikacija modul
+- Ugovor modul
+- Evaluacija modul
 
 ### Skladišta podataka (Data Store):
 - Baza korisnika
@@ -138,28 +131,25 @@ Asinhroni procesi se izvršavaju nakon glavne operacije i ne blokiraju odgovor k
 2. Frontend šalje HTTP zahtjev ka backend REST API  
 3. Backend prolazi kroz:
    - autentifikaciju (JWT)
-   - autorizaciju (RBAC)
+   - autorizaciju
    - validaciju podataka  
-4. Zahtjev se prosljeđuje odgovarajućem servisu  
-5. Servis komunicira sa bazom podataka  
+4. Zahtjev se prosljeđuje odgovarajućem modulu  
+5. Modul komunicira sa bazom podataka  
 6. Rezultat se vraća frontend aplikaciji  
 7. (Opcionalno) pokreću se asinhroni procesi:
-   - slanje emaila  
-   - audit log zapis  
+   - slanje emaila   
 
 ---
 
 ## 4.3 Ključni tokovi podataka (Activity + DFD)
 
----
-
 ### 4.3.1 Registracija korisnika
 
 **Tok podataka:**
-- Korisnik → registracijski podaci → Auth servis  
-- Auth servis → validacija → Baza korisnika  
-- Auth servis → verifikacioni token → Email servis  
-- Email servis → verifikacioni email → Korisnik  
+- Korisnik → registracijski podaci → Auth modul  
+- Auth modul → validacija → Baza korisnika  
+- Auth modul → verifikacioni token → Email modul  
+- Email modul → verifikacioni email → Korisnik  
 
 **Activity tok:**
 1. Korisnik unosi podatke  
@@ -175,9 +165,9 @@ Asinhroni procesi se izvršavaju nakon glavne operacije i ne blokiraju odgovor k
 ### 4.3.2 Prijava (Login)
 
 **Tok podataka:**
-- Korisnik → email + lozinka → Auth servis  
-- Auth servis → upit → Baza korisnika  
-- Auth servis → JWT token → Frontend  
+- Korisnik → email + lozinka → Auth modul  
+- Auth modul → upit → Baza korisnika  
+- Auth modul → JWT token → Frontend  
 
 **Activity tok:**
 1. Korisnik unosi kredencijale  
@@ -191,9 +181,9 @@ Asinhroni procesi se izvršavaju nakon glavne operacije i ne blokiraju odgovor k
 ### 4.3.3 Pregled i pretraga oglasa
 
 **Tok podataka:**
-- Frontend → filteri/pretraga → Oglas servis  
-- Oglas servis → upit → Baza oglasa  
-- Oglas servis → lista oglasa → Frontend  
+- Frontend → filteri/pretraga → Oglas modul  
+- Oglas modul → upit → Baza oglasa  
+- Oglas modul → lista oglasa → Frontend  
 
 **Activity tok:**
 1. Korisnik bira filtere/pretragu  
@@ -206,8 +196,8 @@ Asinhroni procesi se izvršavaju nakon glavne operacije i ne blokiraju odgovor k
 ### 4.3.4 Kreiranje oglasa
 
 **Tok podataka:**
-- Kompanija → podaci oglasa → Oglas servis  
-- Oglas servis → upis → Baza oglasa  
+- Kompanija → podaci oglasa → Oglas modul  
+- Oglas modul → upis → Baza oglasa  
 
 **Activity tok:**
 1. Kompanija unosi podatke  
@@ -221,10 +211,10 @@ Asinhroni procesi se izvršavaju nakon glavne operacije i ne blokiraju odgovor k
 ### 4.3.5 Prijava na praksu
 
 **Tok podataka:**
-- Student → podaci prijave → Prijava servis  
-- Prijava servis → provjera → Baza prijava  
-- Prijava servis → upis → Baza prijava  
-- Prijava servis → notifikacija → Email servis  
+- Student → podaci prijave → Prijava modul  
+- Prijava modul → provjera → Baza prijava  
+- Prijava modul → upis → Baza prijava  
+- Prijava modul → notifikacija → Email modul  
 
 **Activity tok:**
 1. Student pokreće prijavu  
@@ -257,9 +247,9 @@ Asinhroni procesi se izvršavaju nakon glavne operacije i ne blokiraju odgovor k
 ### 4.3.7 Selekcija kandidata (Kompanija)
 
 **Tok podataka:**
-- Kompanija → odluka → Prijava servis  
-- Prijava servis → update → Baza prijava  
-- Prijava servis → notifikacija → Student  
+- Kompanija → odluka → Prijava modul  
+- Prijava modul → update → Baza prijava  
+- Prijava modul → notifikacija → Student  
 
 **Activity tok:**
 1. Kompanija pregleda prijave  
@@ -272,8 +262,8 @@ Asinhroni procesi se izvršavaju nakon glavne operacije i ne blokiraju odgovor k
 ### 4.3.8 Odobravanje prakse (Koordinator)
 
 **Tok podataka:**
-- Koordinator → odluka → Prijava servis  
-- Prijava servis → update → Baza prijava  
+- Koordinator → odluka → Prijava modul  
+- Prijava modul → update → Baza prijava  
 
 **Activity tok:**
 1. Koordinator pregleda prijavu  
@@ -286,8 +276,8 @@ Asinhroni procesi se izvršavaju nakon glavne operacije i ne blokiraju odgovor k
 ### 4.3.9 Generisanje ugovora
 
 **Tok podataka:**
-- Backend → podaci → Ugovor servis  
-- Ugovor servis → dokument → Baza dokumenata  
+- Backend → podaci → Ugovor modul  
+- Ugovor modul → dokument → Baza dokumenata  
 
 **Activity tok:**
 1. Praksa odobrena  
@@ -300,8 +290,8 @@ Asinhroni procesi se izvršavaju nakon glavne operacije i ne blokiraju odgovor k
 ### 4.3.10 Evaluacija
 
 **Tok podataka:**
-- Student/Kompanija → evaluacija → Evaluacija servis  
-- Evaluacija servis → upis → Baza evaluacija  
+- Student/Kompanija → evaluacija → Evaluacija modul  
+- Evaluacija modul → upis → Baza evaluacija  
 
 **Activity tok:**
 1. Korisnici unose evaluaciju  
@@ -314,9 +304,9 @@ Asinhroni procesi se izvršavaju nakon glavne operacije i ne blokiraju odgovor k
 ### 4.3.11 Reset lozinke
 
 **Tok podataka:**
-- Korisnik → email → Auth servis  
-- Auth servis → token → Email servis  
-- Email servis → link → Korisnik  
+- Korisnik → email → Auth modul  
+- Auth modul → token → Email modul  
+- Email modul → link → Korisnik  
 
 **Activity tok:**
 1. Korisnik traži reset  
@@ -329,8 +319,8 @@ Asinhroni procesi se izvršavaju nakon glavne operacije i ne blokiraju odgovor k
 ### 4.3.12 Notifikacije
 
 **Tok podataka:**
-- Backend → događaj → Notifikacija servis  
-- Notifikacija servis → email/in-app → Korisnik  
+- Backend → događaj → Notifikacija modul  
+- Notifikacija modul → email/in-app → Korisnik  
 
 **Activity tok:**
 1. Događaj se desi (status promjena)  
@@ -342,8 +332,8 @@ Asinhroni procesi se izvršavaju nakon glavne operacije i ne blokiraju odgovor k
 ### 4.3.13 Brisanje/deaktivacija naloga
 
 **Tok podataka:**
-- Korisnik → zahtjev → Korisnik servis  
-- Korisnik servis → update → Baza korisnika  
+- Korisnik → zahtjev → Korisnik modul  
+- Korisnik modul → update → Baza korisnika  
 
 **Activity tok:**
 1. Korisnik traži brisanje  
