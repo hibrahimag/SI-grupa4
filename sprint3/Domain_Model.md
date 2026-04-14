@@ -21,14 +21,14 @@
 
 ## Ključni atributi
 
-- **User**: ime, prezime, email, lozinka, username, emailVerifikovan, aktivan
+- **User**: ime, prezime, email, lozinka, username, email verifikovan (da/ne), aktivan (da/ne)
 - **Role**: naziv
 - **Student**: indeks, godina studija, odsjek
 - **Koordinator**: fakultet
 - **Kompanija**: naziv, opis poslovanja, adresa, telefon
 - **Fakultet**: naziv, email, adresa
-- **Oglas**: naziv, opis, broj mjesta, datum objave, rok prijave, trajanje, oblast, plaćena praksa (da/ne)
-- **PrijavaNaPraksu**: status, datum prijave, CV, motivaciono pismo, datum odustajanja, razlog odbijanja
+- **Oglas**: naziv, opis, broj mjesta, datum objave, rok prijave, trajanje, oblast, plaćena praksa (da/ne), status (AKTIVAN, ZATVOREN, ARHIVIRAN)
+- **PrijavaNaPraksu**: status (NA_CEKANJU, ODOBRENA, ODBIJENA, POVUCENA), datum prijave, CV, motivaciono pismo, datum odustajanja, razlog odbijanja
 - **Praksa**: datum početka, datum kraja, datum odustajanja, razlog odustajanja
 - **Ugovor**: datum početka, datum završetka, opis
 - **Izvještaj**: datum, opis, preporuka
@@ -99,7 +99,6 @@
 - Student se može prijaviti na više različitih oglasa
 - Student ne može imati dvije aktivne prakse u isto vrijeme
 - Student može obaviti više praksi tokom školovanja
-- Student ne može odustati od prakse koja je već završena
 - Stduent mora biti odobren od strane koordinatora kako bi koristio sistem
 - Student može povući prijavu bez navođenja razloga
 - Student ne može povući prijavu koja je već odobrena ili odbijena
@@ -114,11 +113,25 @@
 - Kompanija može vidjeti samo prijave na svoje oglase
 - Koordinator mora biti odobren od strane admina prije korištenja sistema
 - Koordinator može odobriti prijave studenata samo sa svog fakulteta
+- Koordinator može pratiti samo prakse studenata sa svog fakulteta
 - Koordinator ne može odobriti prijavu studentu koji već ima aktivnu praksu
 - Koordinator može odbiti prijavu studenta uz navođenje razloga
 - Praksa nastaje isključivo kada koordinator odobri prijavu na praksu
 - Samo admin može dodavati fakultete u sistem
-- Kompanija može evaluirati studenta samo nakon što praksa završi
-- Student može evaluirati kompaniju samo nakon što praksa završi
+- Izvještaj se može kreirati tek nakon što praksa završi
+- Evaluacija je moguća samo nakon završetka prakse i 
+  odnosi se isključivo na praksu u kojoj su obje strane učestvovale
 - Sistem može posjedovati više admina (korisnika sa ROLE_ADMIN ulogom)
-- Oglas mora imati rok prijave koji je u budućnosti da bi bio važeći
+- Oglas mora imati rok prijave koji je u budućnosti kako bi imao status AKTIVAN
+- Oglas može imati status: AKTIVAN, ZATVOREN ili ARHIVIRAN
+- Oglas mora imati najmanje jedno mjesto za praksu
+- Prijava na praksu se može podnijeti samo na oglas koji je aktivan
+- Arhivirani oglas nije vidljiv studentima
+- Datum početka ugovora mora se podudarati sa datumom početka prakse
+- Datum završetka ugovora mora se podudarati sa datumom kraja prakse
+- Evaluacija se ne može mijenjati nakon što je predana
+- Ne može postojati više od jednog zapisa prisustva po danu
+  (unique constraint: praksaID + datum)
+- Prisustvo se može evidentirati samo za dane unutar 
+  trajanja prakse 
+- Kompanija ne može uređivati oglas koji je zatvoren ili arhiviran
