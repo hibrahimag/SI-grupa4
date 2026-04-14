@@ -309,3 +309,14 @@ U nastavku su definisani rizici koji mogu uticati na kvalitet, potpunost i pouzd
 - Opis: Mogu postojati neotkrivene ranjivosti u autentifikaciji i pristupu podacima.
 - Mitigacija: Sigurnosno i penetracijsko testiranje
 
+---
+
+## 7. Out of scope
+Sljedeće stavke nisu predmet testiranja u okviru ove strategije:
+
+- Testiranje infrastrukture fakultetske mreže ili hosting provajdera
+- Produkcijski monitoring nakon deploy-a
+- Interna implementacija third-party servisa (npr. email servis)
+- Hardverska kompatibilnost korisničkih uređaja
+- Sigurnosni audit eksternih sistema koji nisu dio aplikacije
+- Testiranje vanjskih sistema sa kojima se aplikacija eventualno integriše (osim verifikacije komunikacije putem API-ja)
