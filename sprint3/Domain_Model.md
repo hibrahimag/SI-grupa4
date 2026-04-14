@@ -2,6 +2,7 @@
 
 ## Glavni entiteti
 
+
 - **User** - centralni entitet koji sadrži autentifikacijske podatke za sve korisnike sistema
 - **Role** - uloga korisnika u sistemu (ROLE_STUDENT, ROLE_KOMPANIJA, ROLE_KOORDINATOR, ROLE_ADMIN)
 - **Student** - korisnik sistema koji pretražuje, prijavljuje se i učestvuje na praksama
@@ -21,24 +22,108 @@
 
 ## Ključni atributi
 
-- **User**: ime, prezime, email, lozinka, username, email verifikovan (da/ne), aktivan (da/ne)
-- **Role**: naziv
-- **Student**: indeks, godina studija, odsjek
-- **Koordinator**: fakultet
-- **Kompanija**: naziv, opis poslovanja, adresa, telefon
-- **Fakultet**: naziv, email, adresa
-- **Oglas**: naziv, opis, broj mjesta, datum objave, rok prijave, trajanje, oblast, plaćena praksa (da/ne), status (AKTIVAN, ZATVOREN, ARHIVIRAN)
-- **PrijavaNaPraksu**: status (NA_CEKANJU, ODOBRENA, ODBIJENA, POVUCENA), datum prijave, CV, motivaciono pismo, datum odustajanja, razlog odbijanja
-- **Praksa**: datum početka, datum kraja, datum odustajanja, razlog odustajanja
-- **Ugovor**: datum početka, datum završetka, opis
-- **Izvještaj**: datum, opis, preporuka
-- **EvaluacijaStudenta**: ocjena, komentar, datum
-- **EvaluacijaKompanije**: ocjena, komentar, datum
-- **Prisustvo**: id, datum, status
-- **Aktivnost**: datum, opis
+
+### User
+[ ime ]  
+[ prezime ]  
+[ email ]  
+[ lozinka ]  
+[ username ]  
+[ email verifikovan (da/ne) ]  
+[ aktivan (da/ne) ]
+
+
+### Role
+[ naziv ]
+
+
+### Student
+[ indeks ]  
+[ godina studija ]  
+[ odsjek ]
+
+
+### Koordinator
+[ fakultet ]
+
+
+### Kompanija
+[ naziv ]  
+[ opis poslovanja ]  
+[ adresa ]  
+[ telefon ]
+
+
+### Fakultet
+[ naziv ]  
+[ email ]  
+[ adresa ]
+
+
+### Oglas
+[ naziv ]  
+[ opis ]  
+[ broj mjesta ]  
+[ datum objave ]  
+[ rok prijave ]  
+[ trajanje ]  
+[ oblast ]  
+[ plaćena praksa (da/ne) ]  
+[ status (AKTIVAN | ZATVOREN | ARHIVIRAN) ]
+
+
+### PrijavaNaPraksu
+[ status (NA_ČEKANJU | ODOBRENA | ODBIJENA | POVUČENA) ]  
+[ datum prijave ]  
+[ CV ]  
+[ motivaciono pismo ]  
+[ datum odustajanja ]  
+[ razlog odbijanja ]
+
+
+### Praksa
+[ datum početka ]  
+[ datum kraja ]  
+[ datum odustajanja ]  
+[ razlog odustajanja ]
+
+
+### Ugovor
+[ datum početka ]  
+[ datum završetka ]  
+[ opis ]
+
+
+### Izvještaj
+[ datum ]  
+[ opis ]  
+[ preporuka ]
+
+
+### EvaluacijaStudenta
+[ ocjena ]  
+[ komentar ]  
+[ datum ]
+
+
+### EvaluacijaKompanije
+[ ocjena ]  
+[ komentar ]  
+[ datum ]
+
+
+### Prisustvo
+[ datum ]  
+[ status (PRISUTAN | NIJE_PRISUTAN) ]
+
+
+### Aktivnost
+[ datum ]  
+[ opis ]
 
 
 ## Veza između entiteta
+
 
 **User i Role**
 - svaki korisnik ima tačno jednu ulogu
@@ -95,43 +180,56 @@
 
 ## Poslovna pravila važna za model
 
+
+### Pravila vezana za studenta
 - Student se može prijaviti na isti oglas tačno jednom (unique constraint: studentID + oglasID)
 - Student se može prijaviti na više različitih oglasa
 - Student ne može imati dvije aktivne prakse u isto vrijeme
 - Student može obaviti više praksi tokom školovanja
-- Stduent mora biti odobren od strane koordinatora kako bi koristio sistem
-- Student može povući prijavu bez navođenja razloga
-- Student ne može povući prijavu koja je već odobrena ili odbijena
-- Nakon povlačenja prijave student se može ponovo prijaviti na isti oglas
-- Student može odustati od aktivne prakse uz navođenje razloga
-- Student ne može odustati od prakse koja je već završena
-- Promjena fakulteta tretira se kao kreiranje novog profila
-- Email kompanije mora biti verifikovan kako bi koristila sistem
-- Email koordinatora mora biti verifikovan kako bi koristio sistem
+- Student mora biti odobren od strane koordinatora kako bi koristio sistem
 - Email studenta mora biti verifikovan kako bi koristio sistem
+- Promjena fakulteta tretira se kao kreiranje novog profila
+
+### Pravila vezana za kompaniju
+- Email kompanije mora biti verifikovan kako bi koristila sistem
 - Kompanija mora biti odobrena od strane admina prije korištenja sistema
 - Kompanija može vidjeti samo prijave na svoje oglase
+
+### Pravila vezana za koordinatora
+- Email koordinatora mora biti verifikovan kako bi koristio sistem
 - Koordinator mora biti odobren od strane admina prije korištenja sistema
 - Koordinator može odobriti prijave studenata samo sa svog fakulteta
 - Koordinator može pratiti samo prakse studenata sa svog fakulteta
 - Koordinator ne može odobriti prijavu studentu koji već ima aktivnu praksu
 - Koordinator može odbiti prijavu studenta uz navođenje razloga
-- Praksa nastaje isključivo kada koordinator odobri prijavu na praksu
+
+### Pravila vezana za admina
 - Samo admin može dodavati fakultete u sistem
-- Izvještaj se može kreirati tek nakon što praksa završi
-- Evaluacija je moguća samo nakon završetka prakse i 
-  odnosi se isključivo na praksu u kojoj su obje strane učestvovale
 - Sistem može posjedovati više admina (korisnika sa ROLE_ADMIN ulogom)
-- Oglas mora imati rok prijave koji je u budućnosti kako bi imao status AKTIVAN
-- Oglas može imati status: AKTIVAN, ZATVOREN ili ARHIVIRAN
-- Oglas mora imati najmanje jedno mjesto za praksu
+
+### Pravila vezana za prijavu na praksu
+- Student može povući prijavu bez navođenja razloga
+- Student ne može povući prijavu koja je već odobrena ili odbijena
+- Nakon povlačenja prijave student se može ponovo prijaviti na isti oglas
 - Prijava na praksu se može podnijeti samo na oglas koji je aktivan
-- Arhivirani oglas nije vidljiv studentima
+
+### Pravila vezana za praksu
+- Student može odustati od aktivne prakse uz navođenje razloga
+- Student ne može odustati od prakse koja je već završena
+- Praksa nastaje isključivo kada koordinator odobri prijavu na praksu
 - Datum početka ugovora mora se podudarati sa datumom početka prakse
 - Datum završetka ugovora mora se podudarati sa datumom kraja prakse
+- Prisustvo se može evidentirati samo za dane unutar trajanja prakse
+- Ne može postojati više od jednog zapisa prisustva po danu (unique constraint: praksaID + datum)
+- Izvještaj se može kreirati tek nakon što praksa završi
+
+### Pravila vezana za evaluaciju
+- Evaluacija je moguća samo nakon završetka prakse i odnosi se isključivo na praksu u kojoj su obje strane učestvovale
 - Evaluacija se ne može mijenjati nakon što je predana
-- Ne može postojati više od jednog zapisa prisustva po danu
-  (unique constraint: praksaID + datum)
-- Prisustvo se može evidentirati samo za dane unutar 
-  trajanja prakse 
+
+### Pravila vezana za oglas
+- Oglas može imati status: AKTIVAN, ZATVOREN ili ARHIVIRAN
+- Oglas mora imati rok prijave koji je u budućnosti kako bi imao status AKTIVAN
+- Oglas mora imati najmanje jedno mjesto za praksu
+- Arhivirani oglas nije vidljiv studentima
 - Kompanija ne može uređivati oglas koji je zatvoren ili arhiviran
