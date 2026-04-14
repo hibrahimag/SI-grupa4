@@ -195,3 +195,115 @@
 - **Plan mitigacije:** Testiranje na više platformi  
 - **Odgovorna osoba/uloga:** Frontend developer  
 - **Status:** Otvoren  
+
+---
+
+## R-19: Prekoračenje budžeta
+- **Uzrok:** Loša procjena troškova i neplanirani izdaci  
+- **Vjerovatnoća:** Srednja  
+- **Uticaj:** Visok  
+- **Prioritet:** Visok  
+- **Plan mitigacije:** Praćenje budžeta i redovne revizije troškova  
+- **Odgovorna osoba/uloga:** Project Manager  
+- **Status:** Otvoren  
+
+---
+
+## R-20: Elementarne nepogode
+- **Uzrok:** Poplave, zemljotresi ili drugi vanjski faktori  
+- **Vjerovatnoća:** Niska  
+- **Uticaj:** Visok  
+- **Prioritet:** Srednji  
+- **Plan mitigacije:** Disaster recovery plan i cloud infrastruktura  
+- **Odgovorna osoba/uloga:** DevOps  
+- **Status:** Otvoren  
+
+---
+
+## R-21: Zloupotreba privilegija administratora
+- **Uzrok:** Prevelike privilegije bez kontrole  
+- **Vjerovatnoća:** Niska  
+- **Uticaj:** Visok  
+- **Prioritet:** Visok  
+- **Plan mitigacije:** Audit logovi i princip najmanjih privilegija  
+- **Odgovorna osoba/uloga:** Security / DevOps  
+- **Status:** Otvoren  
+
+---
+
+## R-22: Neefikasan rad koordinatora
+- **Uzrok:** Loše upravljanje zadacima i komunikacijom  
+- **Vjerovatnoća:** Srednja  
+- **Uticaj:** Srednji  
+- **Prioritet:** Srednji  
+- **Plan mitigacije:** Jasno definisane odgovornosti i praćenje rada  
+- **Odgovorna osoba/uloga:** Project Manager  
+- **Status:** Otvoren  
+
+---
+
+## R-23: Loša organizacija rada u timu
+- **Uzrok:** Nedostatak koordinacije i komunikacije  
+- **Vjerovatnoća:** Srednja  
+- **Uticaj:** Visok  
+- **Prioritet:** Visok  
+- **Plan mitigacije:** Uvođenje Agile praksi i redovni sastanci  
+- **Odgovorna osoba/uloga:** Scrum Master  
+- **Status:** Otvoren  
+
+---
+
+## R-24: Neusklađenost sa zakonima o zaštiti podataka
+- **Uzrok:** Nepravilno rukovanje ličnim podacima korisnika  
+- **Vjerovatnoća:** Srednja  
+- **Uticaj:** Visok  
+- **Prioritet:** Visok  
+- **Plan mitigacije:** Usklađivanje sa GDPR i lokalnim zakonima, pravna konsultacija  
+- **Odgovorna osoba/uloga:** Security / Project Manager  
+- **Status:** Otvoren  
+
+---
+
+## R-25: Neovlašteno korištenje licenci ili softvera
+- **Uzrok:** Korištenje biblioteka ili alata bez odgovarajuće licence  
+- **Vjerovatnoća:** Niska  
+- **Uticaj:** Srednji  
+- **Prioritet:** Srednji  
+- **Plan mitigacije:** Provjera licenci i korištenje open-source alata sa dozvolom  
+- **Odgovorna osoba/uloga:** Backend developer / Project Manager  
+- **Status:** Otvoren  
+
+---
+
+## R-26: Pravna odgovornost zbog gubitka ili zloupotrebe podataka
+- **Uzrok:** Incidenti sigurnosti ili gubitak podataka korisnika  
+- **Vjerovatnoća:** Niska  
+- **Uticaj:** Visok  
+- **Prioritet:** Visok  
+- **Plan mitigacije:** Sigurnosne mjere, backup i pravni ugovori o odgovornosti  
+- **Odgovorna osoba/uloga:** Security / Management  
+- **Status:** Otvoren  
+
+---
+
+## R-27: Nedostatak jasnih uslova korištenja sistema
+- **Uzrok:** Nedefinisani Terms of Service i Privacy Policy  
+- **Vjerovatnoća:** Srednja  
+- **Uticaj:** Srednji  
+- **Prioritet:** Srednji  
+- **Plan mitigacije:** Izrada pravnih dokumenata (npr. Privacy Policy)  
+- **Odgovorna osoba/uloga:** Project Manager / Legal  
+- **Status:** Otvoren  
+
+---
+
+## R-28: Neusklađenost sa institucionalnim pravilima (fakultet/organizacija)
+- **Uzrok:** Sistem ne prati pravila institucije za praksu  
+- **Vjerovatnoća:** Srednja  
+- **Uticaj:** Srednji  
+- **Prioritet:** Srednji  
+- **Plan mitigacije:** Analiza pravilnika i validacija sa stakeholderima  
+- **Odgovorna osoba/uloga:** Product Owner / Project Manager  
+- **Status:** Otvoren  
+
+---
