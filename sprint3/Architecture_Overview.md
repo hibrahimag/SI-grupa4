@@ -26,7 +26,7 @@ Arhitektonski pristup je odabran jer:
     SERVER - Sloj poslovne logike: 
     Odvijaju se sva pravila i procesi: provjera identiteta i ovlaštenja korisnika, upravljanje tokom prijave na praksu, generisanje ugovora, slanje notifikacija i kontrola pristupa podacima.                
 
-    BAZA PODATAKA (PostgreSQL) - Infrastrukturni sloj: 
+    BAZA PODATAKA - Infrastrukturni sloj: 
      Skladištenje svih informacija sistema: korisnici, oglasi, prijave, dokumenti, evaluacije i historija aktivnosti.
 
 Komponente su organizovane u sljedeće module:
@@ -41,13 +41,13 @@ Komponente su organizovane u sljedeće module:
 - Admin/Koordinator modul (odobravanje, upravljanje)
 
 **Backend moduli :**
-- Auth servis (JWT autentifikacija, verifikacija emaila)
-- Oglas servis (CRUD oglasa, filtriranje, pretraga)
-- Prijava servis (upravljanje prijavama, statusima)
-- Korisnik servis (upravljanje profilima i rolama)
-- Notifikacija servis (slanje email i in-app notifikacija)
-- Ugovor servis (generisanje i preuzimanje ugovora)
-- Evaluacija servis (evaluacija studenta i kompanije)
+- Auth modul (JWT autentifikacija, verifikacija emaila)
+- Oglas modul (CRUD oglasa, filtriranje, pretraga)
+- Prijava modul (upravljanje prijavama, statusima)
+- Korisnik modul (upravljanje profilima i rolama)
+- Notifikacija modul (slanje email i in-app notifikacija)
+- Ugovor modul (generisanje i preuzimanje ugovora)
+- Evaluacija modul (evaluacija studenta i kompanije)
 
 ---
 
@@ -62,13 +62,13 @@ Komponente su organizovane u sljedeće module:
 | Profil modul | Pregled i uređivanje profila studenta ili kompanije, upload CV-a i motivacionog pisma |
 | Tok prakse modul | Upravljanje ugovorom, vođenje evidencije sati i unos evaluacija po završetku prakse |
 | Admin/Koordinator modul | Odobravanje oglasa i prijava, upravljanje korisnicima i nadzor nad tokom praksi |
-| Auth servis | Provjera identiteta i role korisnika, izdavanje tokena i verifikacija emaila |
-| Oglas servis | Kreiranje, izmjena i brisanje oglasa, obrada upita za filtriranje i pretragu |
-| Prijava servis | Kreiranje i ažuriranje prijava, upravljanje statusima kroz tok odobrenja |
-| Korisnik servis | Upravljanje korisničkim profilima, podacima i rolama u sistemu |
-| Notifikacija servis | Slanje emailova i in-app notifikacija pri promjenama statusa i važnim događajima |
-| Ugovor servis | Automatsko generisanje ugovora o praksi i omogućavanje preuzimanja u PDF formatu |
-| Evaluacija servis | Prikupljanje i čuvanje obostrane evaluacije studenta i kompanije po završetku prakse |
+| Auth modul | Provjera identiteta i role korisnika, izdavanje tokena i verifikacija emaila |
+| Oglas modul | Kreiranje, izmjena i brisanje oglasa, obrada upita za filtriranje i pretragu |
+| Prijava modul | Kreiranje i ažuriranje prijava, upravljanje statusima kroz tok odobrenja |
+| Korisnik modul | Upravljanje korisničkim profilima, podacima i rolama u sistemu |
+| Notifikacija modul | Slanje emailova i in-app notifikacija pri promjenama statusa i važnim događajima |
+| Ugovor modul | Automatsko generisanje ugovora o praksi i omogućavanje preuzimanja u PDF formatu |
+| Evaluacija modul | Prikupljanje i čuvanje obostrane evaluacije studenta i kompanije po završetku prakse |
 
 ---
 
