@@ -9,6 +9,9 @@ Cilj trećeg sprinta je bio upostaviti zajedničko razumijevanje sistema kroz de
 
 # Ključne stavke koje tim želi završiti
 
+- Rasporediti user stories po sprintovima
+- Povezati svaki user story sa odgovarajućom stavkom iz Product Backlog-a
+- Dodati još user stories 
 - Definisati use case model koji pokriva ključne procese i interakcije   
 - Izraditi domenski model i ER dijagram sa jasno definisanim entitetima, odnosima i pravilima  
 - Kreirati architecture overview sa osnovnim tehničkim odlukama   
@@ -22,10 +25,8 @@ Cilj trećeg sprinta je bio upostaviti zajedničko razumijevanje sistema kroz de
 
 - Pogrešne odluke u ranoj fazi dizajna sistema teško je ispraviti 
   bez značajnog refaktorisanja u kasnijim sprintovima
-  
 - Neusklađenost između članova tima oko tehničkih odluka 
   (arhitektura, tehnologije) može usporiti dalji razvoj
-  
 - Izbor tehnologija sa kojima tim nije dovoljno upoznat 
   povećava vjerovatnoću tehničkih problema tokom implementacije
 
