@@ -61,7 +61,7 @@
   fakulteta
   - Sistem ne smije dozvoliti završetak registracije 
     bez popunjenih obaveznih polja
-- **Očekivani sprint:** Sprint 7
+- **Očekivani sprint:** Sprint 6
 ---
 
 ## 2. Registracija koordinatora fakulteta | PB1
@@ -83,7 +83,7 @@
     dok admin ne odobri account
   - Sistem ne smije dozvoliti registraciju 
     s već postojećim emailom
-- **Očekivani sprint:** Sprint 7
+- **Očekivani sprint:** Sprint 6
 ---
 
 ## 3. Registracija kompanije | PB1
@@ -103,7 +103,7 @@
     na čekanju odobravanja
   - Sistem ne smije dozvoliti registraciju 
     s već postojećim emailom
-- **Očekivani sprint:** Sprint 7
+- **Očekivani sprint:** Sprint 6
 ---
 
 ## 4. Prijava studenata | PB2
@@ -123,7 +123,7 @@
     bez verifikovanog accounta
   - Sistem ne smije dozvoliti prijavu 
     s nepostoječim emailom
-- **Očekivani sprint:** Sprint 7
+- **Očekivani sprint:** Sprint 6
 
 
 ---
@@ -146,7 +146,7 @@
     u slučaju pogrešnih kredencijala
   - Sistem ne smije dozvoliti pristup 
     neodobrenom koordinatoru
-- **Očekivani sprint:** Sprint 7
+- **Očekivani sprint:** Sprint 6
 
 ---
 
@@ -167,7 +167,7 @@
     u slučaju pogrešnih kredencijala
   - Sistem ne smije dozvoliti pristup 
     neodobrenoj kompaniji
-- **Očekivani sprint:** Sprint 7
+- **Očekivani sprint:** Sprint 6
 
 ---
 
@@ -184,7 +184,7 @@
     ime, prezime, indeks, godina studija, odsjek
   - Kada student uspješno izmijeni podatke, 
     korisnik treba dobiti potvrdu o ažuriranju profila
-- **Očekivani sprint:** Sprint 8
+- **Očekivani sprint:** Sprint 7
 
 ---
 
@@ -205,7 +205,7 @@
     statusa svake prijave
   - Sistem ne smije dozvoliti pristup 
     koordinatorskom interfejsu bez odgovarajuće role
-- **Očekivani sprint:** Sprint 8
+- **Očekivani sprint:** Sprint 7
 ---
 
 ## 9. Pristup administratora | PB5
@@ -225,7 +225,7 @@
     svake akcije odobravanja ili odbijanja
   - Sistem ne smije dozvoliti pristup 
     admin interfejsu bez admin role
-- **Očekivani sprint:** Sprint 6
+- **Očekivani sprint:** Sprint 5
 
 ---
 
@@ -248,7 +248,7 @@
     bez popunjenih obaveznih polja
   - Sistem ne smije dozvoliti kreiranje oglasa 
     neodobrenoj kompaniji
-- **Očekivani sprint:** Sprint 8
+- **Očekivani sprint:** Sprint 7
 ---
 
 ## 11. Pregled oglasa | PB7
@@ -267,7 +267,7 @@
     o svakom oglasu: naziv, kompanija, trajanje, broj mjesta
   - Sistem ne smije dozvoliti pregled oglasa 
     bez aktivne prijave u sistem
-- **Očekivani sprint:** Sprint 8
+- **Očekivani sprint:** Sprint 7
 ---
 
 ## 12. Pregled detalja oglasa | PB8
@@ -285,7 +285,7 @@
     roka za prijavu
   - Sistem ne smije dozvoliti pregled detalja 
     neaktivnog oglasa
-- **Očekivani sprint:** Sprint 9
+- **Očekivani sprint:** Sprint 8
 
 ---
 
@@ -311,7 +311,7 @@
     na neaktivan oglas
   - Sistem ne smije dozvoliti prijavu 
     bez popunjenog profila  
-- **Očekivani sprint:** Sprint 10
+- **Očekivani sprint:** Sprint 9
 ---
 
 ## 14. Upload dokumentacije | PB10
@@ -332,7 +332,7 @@
     kompaniji nakon prijave
   - Sistem ne smije dozvoliti upload fajla 
     koji nije PDF format
-- **Očekivani sprint:** Sprint 10
+- **Očekivani sprint:** Sprint 9
 ---
 
 ## 15. Pregled prijava na praksu | PB11
@@ -353,7 +353,7 @@
     dokumenata svakog kandidata
   - Sistem ne smije dozvoliti pregled prijava 
     na tuđe oglase  
-- **Očekivani sprint:** Sprint 10
+- **Očekivani sprint:** Sprint 9
 ---
 
 ## 16. Selekcija kandidata | PB12
@@ -372,7 +372,7 @@
     sistem mora ažurirati status prijave
   - Sistem mora obavijestiti studenta 
     o promjeni statusa njegove prijave  
-- **Očekivani sprint:** Sprint 10
+- **Očekivani sprint:** Sprint 9
 ---
 
 ## 17. Odobravanje prakse | PB13
@@ -390,7 +390,7 @@
     sistem mora ažurirati status prijave
   - Sistem mora obavijestiti studenta 
     o promjeni statusa njegove prijave
-- **Očekivani sprint:** Sprint 10
+- **Očekivani sprint:** Sprint 9
 ---
 
 ## 18. Odbijanje prakse | PB13
@@ -408,7 +408,7 @@
     sistem mora ažurirati status prijave
   - Sistem mora obavijestiti studenta 
     o promjeni statusa njegove prijave
-- **Očekivani sprint:** Sprint 11  
+- **Očekivani sprint:** Sprint 10  
 ---
 
 ## 19. Potvrda studenta | PB14
@@ -427,7 +427,7 @@
     sistem mora ažurirati status prijave
   - Sistem mora obavijestiti kompaniju i koordinatora 
     o promjeni statusa njegove prijave
-- **Očekivani sprint:** Sprint 11
+- **Očekivani sprint:** Sprint 10
 ---
 
 ## 20. Dizajn baze podataka | PB15
@@ -443,7 +443,7 @@
     entiteta
   - Dizajn treba čuvati sve neophodne podatke o 
     entitetima
-- **Očekivani sprint:** Sprint 6
+- **Očekivani sprint:** Sprint 5
 ---
 
 ## 21. Implementacija baze podataka | PB15
@@ -458,7 +458,7 @@
 - **Acceptance criteria:** 
   - Sistem mora omogućiti skladištenje podataka 
     u bazi
-- **Očekivani sprint:** Sprint 6
+- **Očekivani sprint:** Sprint 5
 ---
 
 ## 22. Generisanje ugovora | PB17
@@ -474,7 +474,7 @@
   - Sistem mora omogućiti generisanje ugovora o praksi
   - Sistem mora omogućiti studentu 
     i kompaniji uvid u ugovor
-- **Očekivani sprint:** Sprint 11
+- **Očekivani sprint:** Sprint 10
 ---
 
 ## 23. Preuzimanje ugovora | PB18
@@ -492,7 +492,7 @@
     i kompaniji uvid u ugovor
   - Sistem mora omogućiti studentu preuzimanje
     digitalne kopije ugovora
-- **Očekivani sprint:** Sprint 12
+- **Očekivani sprint:** Sprint 10
 ---
 
 ## 24. Evidencija aktivnosti | PB19
@@ -509,7 +509,7 @@
     evidentiranje aktivnosti na praksi
   - Sistem mora omogućiti pregled 
     evidentiranih aktivnosti kompaniji i koordinatoru
-- **Očekivani sprint:** Sprint 12
+- **Očekivani sprint:** Sprint 10
 ---
 
 ## 25. Praćenje prisustva | PB20
@@ -525,7 +525,7 @@
   - Sistem mora omogućiti evidentiranje prisustva
   - Sistem mora omogućiti studentu 
     i kompaniji uvid u prisustvo studenta
-- **Očekivani sprint:** Sprint 12
+- **Očekivani sprint:** Sprint 10
 ---
 
 ## 26. Evaluacija studenta | PB21
@@ -541,7 +541,7 @@
     na kraju prakse kroz predefinisani formular
   - Sistem mora omogućiti studentu 
     pregled evaluacije studenta
-- **Očekivani sprint:** Sprint 12
+- **Očekivani sprint:** Sprint 10
 ---
 
 ## 27. Evaluacija kompanije | PB22
@@ -557,7 +557,7 @@
     kompanije kroz predefinisani formular
   - Sistem mora omogućiti kompaniji
     pregled evaluacije kompanije
-- **Očekivani sprint:** Sprint 12
+- **Očekivani sprint:** Sprint 10
 ---
 
 ## 28. Izvještaji | PB23
@@ -570,7 +570,7 @@
   - 25, 26
 - **Acceptance criteria:** 
   - Sistem mora omogućiti studentu evaluaciju
-- **Očekivani sprint:** Sprint 12
+- **Očekivani sprint:** Sprint 10
 ---
 
 ## 29. Analiza postojećih rješenja | PB24
@@ -580,7 +580,7 @@
 - **Pretpostavke i otvorena pitanja:**
 - **Veza sa drugim storijima ili zavisnostima:** 
 - **Acceptance criteria:**  
-- **Očekivani sprint:** Sprint 6
+- **Očekivani sprint:** Sprint 5
 ---
 
 ## 30. Dokumentacija sistema | PB25
@@ -595,7 +595,7 @@
   - Promjene moraju biti redovno dokumentovane
   - Dokumentacija omogućava pregled dizajna 
     i plana rada na sistemu
-- **Očekivani sprint:** Sprint 6
+- **Očekivani sprint:** Sprint 5
 ---
 
 
@@ -610,7 +610,7 @@
 - **Acceptance criteria:** 
   - Na zatvoreni oglas se ne može više prijavljivati
   - Zatvoreni oglas se ne pojavljuje u listi aktivnih oglasa
-- **Očekivani sprint:** Sprint 10
+- **Očekivani sprint:** Sprint 9
 ---
 
 
@@ -630,7 +630,7 @@
   - Korisnik treba dobiti potvrdu o uspješnom ažuriranju oglasa
   - Sistem ne smije dozvoliti uređivanje zatvorenog oglasa
   - Sistem ne smije dozvoliti uređivanje oglasa bez popunjenih obaveznih polja
-- **Očekivani sprint:** Sprint 9
+- **Očekivani sprint:** Sprint 8
 ---
 
 
@@ -649,7 +649,7 @@
   - Kada student odustane, sistem mora ažurirati status prijave
   - Sistem mora obavijestiti kompaniju i koordinatora o odustajanju studenta
   - Sistem ne smije dozvoliti odustajanje od prakse koja je već završena
-- **Očekivani sprint:** Sprint 11
+- **Očekivani sprint:** Sprint 10
 ---
 
 
@@ -668,7 +668,7 @@
   - Reset link mora isteći nakon određenog vremenskog perioda (npr. 30 minuta)
   - Kada korisnik uspješno postavi novu lozinku, sistem ga mora preusmjeriti na stranicu za prijavu
   - Sistem ne smije otkriti da li email postoji u bazi u slučaju nepostojećeg emaila (sigurnost)
-- **Očekivani sprint:** Sprint 7
+- **Očekivani sprint:** Sprint 6
 ---
 
 
@@ -687,7 +687,7 @@
   - Sistem mora omogućiti studentu brzi pristup detaljima svake prijave
   - Sistem mora prikazati obavještenja o nedavnim promjenama statusa
   - Sistem ne smije prikazivati prijave koje ne pripadaju prijavljenom studentu
-- **Očekivani sprint:** Sprint 10
+- **Očekivani sprint:** Sprint 9
 ---
 
 
@@ -706,7 +706,7 @@
   - Sistem mora omogućiti filtriranje po datumu objave i trajanju prakse
   - Sistem mora ažurirati listu oglasa u realnom vremenu pri primjeni filtera
   - Sistem mora omogućiti brisanje/resetovanje svih aktivnih filtera
-- **Očekivani sprint:** Sprint 9
+- **Očekivani sprint:** Sprint 8
 ---
 
 
@@ -725,7 +725,7 @@
   - Sistem mora prikazati notifikacije unutar aplikacije na dashboardu studenta
   - Student mora moći vidjeti historiju svih primljenih notifikacija
   - Sistem ne smije slati duplikate notifikacija za istu promjenu statusa
-- **Očekivani sprint:** Sprint 11
+- **Očekivani sprint:** Sprint 10
 ---
 
 
@@ -745,7 +745,7 @@
   - Kada korisnik klikne validni link, sistem mora aktivirati nalog i preusmjeriti ga na prijavu
   - Sistem mora onemogućiti prijavu na nalog koji nije verifikovan
   - Sistem mora omogućiti korisniku ponovno slanje verifikacionog emaila u slučaju da nije primljen
-- **Očekivani sprint:** Sprint 7
+- **Očekivani sprint:** Sprint 6
 ---
 
 
@@ -762,7 +762,7 @@
   - Sistem mora omogućiti unos ključne riječi u polje za pretragu
   - Sistem mora prikazati sve oglase čiji naziv ili opis sadrži unesenu ključnu riječ
   - Sistem mora prikazati poruku ako nema rezultata za datu pretragu
-- **Očekivani sprint:** Sprint 9
+- **Očekivani sprint:** Sprint 8
 ---
 
 
@@ -780,7 +780,7 @@
   - Sistem mora onemogućiti prijavu na deaktiviran nalog
   - Sistem mora obavijestiti kompaniju ili koordinatora ako student s aktivnim prijavama obriše nalog
   - Administrator mora moći reaktivirati deaktiviran nalog
-- **Očekivani sprint:** Sprint 8
+- **Očekivani sprint:** Sprint 7
 ---
 
 
@@ -804,7 +804,7 @@
     na odgovarajući dashboard
   - Stranica ne smije prikazivati zaštićeni sadržaj 
     neprijavljenim korisnicima
-- **Očekivani sprint:** Sprint 6
+- **Očekivani sprint:** Sprint 5
 ---
 
 ## 42. Navigacija | PB35
@@ -828,7 +828,7 @@
     nakon prijave
   - Sistem ne smije prikazivati stavke navigacije 
     koje korisnik nema pravo koristiti
-- **Očekivani sprint:** Sprint 8
+- **Očekivani sprint:** Sprint 7
 ---
 
 ## 43. Pregled profila kompanije | PB4
@@ -853,7 +853,7 @@
     neodobrene kompanije
   - Sistem ne smije dozvoliti pregled profila 
     kompanije bez aktivne prijave u sistem
-- **Očekivani sprint:** Sprint 9
+- **Očekivani sprint:** Sprint 8
 ---
 
 ## 44. Pregled korisničkog profila | PB36
@@ -874,7 +874,7 @@
   - Korisnik mora moći pristupiti profilu sa glavne stranice
   - Sistem ne smije prikazivati profil 
     neprijavljenom korisniku
-- **Očekivani sprint:** Sprint 8
+- **Očekivani sprint:** Sprint 7
 ---
 
 ## 45. Uređivanje profila kompanije | PB39
@@ -893,7 +893,7 @@
     profilne stranice kompanije
   - Sistem ne smije omogućiti uređivanje profila
     neprijavljenoj kompaniji
-- **Očekivani sprint:** Sprint 8
+- **Očekivani sprint:** Sprint 7
 ---
 
 ## 46. Privacy policy & User Terms stranica | PB37
@@ -911,7 +911,7 @@
     neprijavljenom korisniku
   - Sistem mora omogućiti jednostavnu navigaciju
     do ovih stavki
-- **Očekivani sprint:** Sprint 6
+- **Očekivani sprint:** Sprint 5
 ---
 
 ## 47. Tamni režim rada | PB38
@@ -928,7 +928,7 @@
   - Sistem mora omogućiti intuitivnu izmjenu teme
   - Sistem mora omogućiti jednostavan 
     pronalazak ove mogućnosti
-- **Očekivani sprint:** Sprint 6
+- **Očekivani sprint:** Sprint 5
 ---
 
 ## 48. Favoriziranje oglasa | PB39
@@ -944,7 +944,7 @@
    - Sistem mora omogućiti pregled liste omiljenih oglasa
    - Sistem mora omogućiti uklanjanje oglasa iz omiljenih
    - Sistem ne smije prikazivati tuđe omiljene oglase
-- **Očekivani sprint:** Sprint 9
+- **Očekivani sprint:** Sprint 8
 ---
 
 ## 49. Arhiviranje oglasa | PB40
@@ -960,7 +960,7 @@
     - Arhivirani oglasi se ne smiju prikazivati studentima
     - Sistem mora omogućiti kompaniji pregled arhiviranih oglasa
     - Sistem mora omogućiti vraćanje oglasa iz arhive
-- **Očekivani sprint:** Sprint 11
+- **Očekivani sprint:** Sprint 9
 ---
 
 ## 50. Pregled statistike prijava | PB41
@@ -976,7 +976,7 @@
     - Sistem mora prikazati osnovne statistike (npr. po odsjeku, godini studija)
     - Sistem mora omogućiti filtriranje statistike
     - Sistem ne smije prikazivati statistiku za oglase koji ne pripadaju kompaniji
-- **Očekivani sprint:** Sprint 11
+- **Očekivani sprint:** Sprint 9
 
 ---
 ## 51. Historija aktivnosti (Audit log) | PB15
@@ -997,7 +997,7 @@
   - vrijeme  
   - tip akcije  
 - Samo administrator može pregledati audit log  
-- **Očekivani sprint:** Sprint 12
+- **Očekivani sprint:** Sprint 9
 ---
 
 ## 52. Upravljanje rokovima prijave | PB6
@@ -1011,20 +1011,20 @@
   - Sistem mora automatski zatvoriti oglas nakon isteka roka  
   - Sistem ne smije dozvoliti prijavu nakon isteka roka  
   - Sistem mora prikazati jasan datum isteka roka  
-- **Očekivani sprint:** Sprint 9
+- **Očekivani sprint:** Sprint 8
 ---
 
 ## 53. Ograničenje broja prijava po studentu | PB9
 
 - **Opis:** Kao fakultet, želim ograničiti broj aktivnih prijava po studentu  
-- **Poslovne vrijednosti:** Sprečava masovno prijavljivanje bez stvarne namjere  
+- **Poslovne vrijednosti:** Sprječava masovno prijavljivanje bez stvarne namjere  
 - **Prioritet:** Medium  
 
 - **Acceptance criteria:**
 - Administrator može definisati maksimalan broj aktivnih prijava  
 - Sistem ne smije dozvoliti prijavu iznad definisanog limita  
 - Student mora dobiti jasnu poruku o prekoračenju limita  
-- **Očekivani sprint:** Sprint 10
+- **Očekivani sprint:** Sprint 9
 ---
 
 ## 54. Automatsko završavanje prakse | PB19
@@ -1037,7 +1037,7 @@
 - Sistem mora pratiti datum početka i trajanje prakse  
 - Po isteku trajanja status prelazi u "Završena"  
 - Sistem mora obavijestiti studenta i kompaniju  
-- **Očekivani sprint:** Sprint 12
+- **Očekivani sprint:** Sprint 10
 ---
 
   ## 55. Podešavanje tipova notifikacija | PB31
@@ -1051,7 +1051,7 @@
   - Sistem mora slati samo odabrane notifikacije  
   - Sistem mora zapamtiti korisničke postavke  
   - Promjene moraju biti odmah primijenjene  
-- **Očekivani sprint:** Sprint 12
+- **Očekivani sprint:** Sprint 9
 ---
 
 ## 56. Oznaka "Novo" na oglasima | PB7
@@ -1064,7 +1064,7 @@
   - Sistem mora označiti oglas kao "Novo" ako je objavljen u definisanom vremenskom periodu  
   - Oznaka se mora automatski ukloniti nakon isteka perioda  
   - Oznaka mora biti vidljiva na listi oglasa  
-- **Očekivani sprint:** Sprint 9
+- **Očekivani sprint:** Sprint 8
 ---
 
 ## 57. Pregled zatvorenih oglasa | PB7
@@ -1079,7 +1079,7 @@
   - Zatvoreni oglasi moraju biti jasno označeni  
   - Sistem ne smije dozvoliti prijavu na zatvorene oglase  
   - Sistem mora omogućiti pregled detalja zatvorenog oglasa
-- **Očekivani sprint:** Sprint 11
+- **Očekivani sprint:** Sprint 9
 ---
 
 ## 58. Odobravanje korisničkog računa | PB5
@@ -1110,17 +1110,16 @@
   - Sistem ne smije dozvoliti prijavu korisniku čiji račun nije odobren
   - Sistem mora automatski podsjetiti koordinatora/administratora 
     ako zahtjev čeka odobrenje duže od definisanog perioda
-- **Očekivani sprint:** Sprint 7
+- **Očekivani sprint:** Sprint 6
 ---
 
 ## Raspored user storija po sprintovima
 
 | Sprint | User Stories |
 |--------|-------------|
-| **Sprint 6** | 9. Pristup administratora, 20. Dizajn baze podataka, 21. Implementacija baze podataka, 29. Analiza postojećih rješenja, 30. Dokumentacija sistema, 41. Početna stranica (Landing page), 46. Privacy policy & User Terms stranica, 47. Tamni režim rada |
-| **Sprint 7** | 1. Registracija studenta, 2. Registracija koordinatora fakulteta, 3. Registracija kompanije, 4. Prijava studenata, 5. Prijava koordinatora, 6. Prijava kompanija, 34. Obnavljanje lozinke, 38. Verifikacija email adrese, 58. Odobravanje korisničkog računa |
-| **Sprint 8** | 7. Uređivanje profila studenta, 8. Pristup koordinatora, 10. Kreiranje oglasa, 11. Pregled oglasa, 40. Deaktivacija/brisanje korisničkog računa, 42. Navigacija, 44. Pregled korisničkog profila, 45. Uređivanje profila kompanije |
-| **Sprint 9** | 12. Pregled detalja oglasa, 32. Uređivanje oglasa, 36. Filtriranje oglasa, 39. Pretraživanje oglasa, 43. Pregled profila kompanije, 48. Favoriziranje oglasa, 52. Upravljanje rokovima prijave, 56. Oznaka "Novo" na oglasima |
-| **Sprint 10** | 13. Prijava na praksu, 14. Upload dokumentacije, 15. Pregled prijava na praksu, 16. Selekcija kandidata, 17. Odobravanje prakse, 31. Zatvaranje oglasa, 35. Student dashboard, 53. Ograničenje broja prijava po studentu |
-| **Sprint 11** | 18. Odbijanje prakse, 19. Potvrda studenta, 22. Generisanje ugovora, 33. Odustajanje od prakse, 37. Notifikacije o statusu prakse, 49. Arhiviranje oglasa, 50. Pregled statistike prijava, 57. Pregled zatvorenih oglasa |
-| **Sprint 12** | 23. Preuzimanje ugovora, 24. Evidencija aktivnosti, 25. Praćenje prisustva, 26. Evaluacija studenta, 27. Evaluacija kompanije, 28. Izvještaji, 51. Historija aktivnosti (Audit log), 54. Automatsko završavanje prakse, 55. Podešavanje tipova notifikacija |
+| **Sprint 5** | 29. Analiza postojećih rješenja, 20. Dizajn baze podataka, 21. Implementacija baze podataka, 30. Dokumentacija sistema, 9. Pristup administratora, 41. Početna stranica (Landing page), 46. Privacy policy & User Terms stranica, 47. Tamni režim rada |
+| **Sprint 6** | 1. Registracija studenta, 2. Registracija koordinatora fakulteta, 3. Registracija kompanije, 4. Prijava studenata, 5. Prijava koordinatora, 6. Prijava kompanija, 34. Obnavljanje lozinke, 38. Verifikacija email adrese, 58. Odobravanje korisničkog računa |
+| **Sprint 7** | 7. Uređivanje profila studenta, 8. Pristup koordinatora, 10. Kreiranje oglasa, 11. Pregled oglasa, 40. Deaktivacija/brisanje korisničkog računa, 42. Navigacija, 44. Pregled korisničkog profila, 45. Uređivanje profila kompanije |
+| **Sprint 8** | 12. Pregled detalja oglasa, 32. Uređivanje oglasa, 36. Filtriranje oglasa, 39. Pretraživanje oglasa, 43. Pregled profila kompanije, 48. Favoriziranje oglasa, 52. Upravljanje rokovima prijave, 56. Oznaka "Novo" na oglasima |
+| **Sprint 9** | 13. Prijava na praksu, 14. Upload dokumentacije, 15. Pregled prijava na praksu, 16. Selekcija kandidata, 17. Odobravanje prakse, 31. Zatvaranje oglasa, 35. Student dashboard, 49. Arhiviranje oglasa, 50. Pregled statistike prijava, 51. Historija aktivnosti (Audit log), 53. Ograničenje broja prijava po studentu, 55. Podešavanje tipova notifikacija, 57. Pregled zatvorenih oglasa |
+| **Sprint 10** | 18. Odbijanje prakse, 19. Potvrda studenta, 22. Generisanje ugovora, 23. Preuzimanje ugovora, 24. Evidencija aktivnosti, 25. Praćenje prisustva, 26. Evaluacija studenta, 27. Evaluacija kompanije, 28. Izvještaji, 33. Odustajanje od prakse, 37. Notifikacije o statusu prakse, 54. Automatsko završavanje prakse |
