@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const { notificationsPlaceholderController } = require('./notifications.controller');
+const { notificationsPlaceholderController } = require('../../business/controllers/notifications.controller');
 
 router.get('/', notificationsPlaceholderController);
 

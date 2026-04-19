@@ -2,11 +2,11 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 
-const authRoutes = require('./modules/auth/auth.routes');
-const usersRoutes = require('./modules/users/users.routes');
-const listingsRoutes = require('./modules/listings/listings.routes');
-const applicationsRoutes = require('./modules/applications/applications.routes');
-const notificationsRoutes = require('./modules/notifications/notifications.routes');
+const authRoutes = require('./presentation/routes/auth.routes');
+const usersRoutes = require('./presentation/routes/users.routes');
+const listingsRoutes = require('./presentation/routes/listings.routes');
+const applicationsRoutes = require('./presentation/routes/applications.routes');
+const notificationsRoutes = require('./presentation/routes/notifications.routes');
 
 const app = express();
 

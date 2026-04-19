@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const { listingsPlaceholderController } = require('./listings.controller');
+const { listingsPlaceholderController } = require('../../business/controllers/listings.controller');
 
 router.get('/', listingsPlaceholderController);
 
