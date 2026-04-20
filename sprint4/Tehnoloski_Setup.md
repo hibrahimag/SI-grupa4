@@ -17,7 +17,7 @@ Aplikacija je organizovana u tri sloja - prezentacijski (React), poslovni (Node.
 | **React Router DOM** | 6.x | Upravljanje navigacijom i zaštitom ruta na osnovu korisničke role. Neautorizovani korisnici se automatski preusmjeravaju - student ne može pristupiti koordinatorskim ekranima i obratno. |
 | **React Context API - AuthContext** | ugrađen | Globalno stanje prijavljenog korisnika (identitet, rola, JWT token) dostupno svim komponentama bez prop drillinga (situacija u Reactu kada je potrebno proslijeđivati podatke kroz više komponenti koje te podatke uopće ne koriste, samo ih dalje prosljeđuju do komponente kojoj su stvarno potrebni). |
 | **Fetch API** | ugrađen u browser | HTTP komunikacija prema backend sloju. Ugrađen u sve moderne browsere, bez vanjskih zavisnosti. Svi zahtjevi prema zaštićenim resursima automatski nose JWT token iz AuthContexta. |
-| **useState / useEffect** | ugrađen | Ugrađeni React hookovi. useState prati sve što se mijenja unutar komponente i treba biti prikazano korisniku - npr. poruka greške, stanje forme, koji je tab trenutno aktivan... useEffect pokreće API pozive u pravo vrijeme — npr. kada student otvori listu oglasa, useEffect dohvata oglase s backenda i prikazuje ih. |
+| **useState / useEffect** | ugrađen | Ugrađeni React hookovi. useState prati sve što se mijenja unutar komponente i treba biti prikazano korisniku - npr. poruka greške, stanje forme, koji je tab trenutno aktivan... useEffect pokreće API pozive u pravo vrijeme - npr. kada student otvori listu oglasa, useEffect dohvata oglase s backenda i prikazuje ih. |
 | **Tailwind CSS** | 3.x | Utility-first CSS framework koji eliminiše konflikte između CSS klasa i ubrzava stilizovanje komponenti. Nema potrebe za pisanjem zasebnih CSS fajlova za svaku komponentu. |
 
 ---
@@ -79,7 +79,6 @@ Testiranje i dokumentacija API endpointa tokom razvoja. Kolekcije zahtjeva mogu 
 
 Vizualni alat za upravljanje PostgreSQL bazom u lokalnom razvoju. Omogućava pregled podataka, strukturu tabela i izvršavanje upita bez pisanja SQL-a u terminalu.
 
----
 ---
 
 ## 2. GitFlow Branching Strategija
@@ -251,7 +250,7 @@ Svaka promjena koja ulazi u `develop` ili `main` prolazi kroz Pull Request na Gi
 - Konzistentnost s postojećom strukturom koda i modulima
 - Da ne postoje `.env` tajne ili osjetljivi podaci u kodu
 
-**Nakon odobrenog review-a:** autor brancha klikće Squash and Merge na GitHubu, a branch se briše.
+**Nakon odobrenog review-a:** autor brancha bira Squash and Merge na GitHubu, a branch se briše.
 
 ---
 
@@ -322,10 +321,7 @@ Closes #10
 **Hitni fix na produkciji**
 `main` → `hotfix/*` → ispravka → merge u `main` + `develop` → brisanje brancha
 
-
-Gdje cuvamo fajlove (mozda cloud, potrebno navesti koji i kako)
-Kako radimo deploy (virtualna masina, fizicka, docker kontejneri, na koliko masina ako njih koristimo, koji operativni sistem) - uzeti sta je optimalno
-Pitanja oko baze - je li na istom serveru gdje i backend ili je razdvojena (poseban database server)
+---
 
 ## 3. Deployment i Hosting
 
@@ -337,6 +333,7 @@ Postoje dva načina deployment-a koja ćemo koristiti u različitim fazama proje
 | Baza podataka | Supabase | AWS RDS |
 | File storage | Supabase Storage | AWS S3 |
 
+---
 
 ### 3.1 Development faza
 U development fazi koristićemo pojednostavljeni model deployment-a s fokusom na jednostavnost objavljivanja aplikacije i olakšanim konfiguracijama. Također, servisi 
@@ -376,6 +373,7 @@ vizuelno upravljanje je dosta značajno u razvojnoj fazi kada se dešava dosta p
 Za čuvanje datoteka poput CV-ova, motivacionih pisama i slično koristićemo [Supabase Storage](https://supabase.com/storage). Ovo je prirodan izbor za naš projekat, jer 
 je direktno kompatibilan sa bazom podataka koja se nalazi u istom ekosistemu, a zasniva se na AWS S3 servisu koji se planira koristiti u narednoj fazi.
 
+---
 
 ### 3.2 Smjernice za prelazak iz Development u Production fazu
 
@@ -386,6 +384,7 @@ pratiti neke generalne coding smjernice, ali i neke projekt-specifične upute. T
 - Pisanje custom JWT autentifikacije sa `bcrypt` i `jsonwebtoken` umjesto korištenja Supabase Auth
 - Korištenje dockerfilea za backend na Renderu
 
+---
 
 ### 3.3 Production faza
 
@@ -415,6 +414,7 @@ mašina, sa inkrementalnim poboljšanjima. To nam omogućava da, ako dođe do po
 OS koji nam treba, te se može izabrati onaj koji nam daje najbolje usluge/performanse. Također, praćenje troškova je sada dosta lakše jer se svi servisi koji koristimo
 nalaze u istom ekosistemu, odnosno na jednom mjestu.
 
+---
 
 ### 3.4 Post-production faza
 
