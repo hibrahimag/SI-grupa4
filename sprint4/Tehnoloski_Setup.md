@@ -321,3 +321,104 @@ Closes #10
 
 **Hitni fix na produkciji**
 `main` → `hotfix/*` → ispravka → merge u `main` + `develop` → brisanje brancha
+
+
+Gdje cuvamo fajlove (mozda cloud, potrebno navesti koji i kako)
+Kako radimo deploy (virtualna masina, fizicka, docker kontejneri, na koliko masina ako njih koristimo, koji operativni sistem) - uzeti sta je optimalno
+Pitanja oko baze - je li na istom serveru gdje i backend ili je razdvojena (poseban database server)
+
+## 3. Deployment i Hosting
+
+Postoje dva načina deployment-a koja ćemo koristiti u različitim fazama projekta. Oni su prikazani tabelarno ispod.
+
+|          | Development | Production |
+|--------|----------|----------|
+| Aplikacija | Render | AWS EC2 |
+| Baza podataka | Supabase | AWS RDS |
+| File storage | Supabase Storage | AWS S3 |
+
+
+### 3.1 Development faza
+U development fazi koristićemo pojednostavljeni model deployment-a s fokusom na jednostavnost objavljivanja aplikacije i olakšanim konfiguracijama. Također, servisi 
+koje ćemo koristiti imaju besplatne planove, što će smanjiti trošak izrade/razvoja sistema.
+
+Za host-anje aplikacije koristićemo [Render](https://render.com/). Render-ov besplatni plan omogućava da objavimo aplikaciju kojoj će se moći pristupiti uvijek,
+s tim da će prvo pristupanje nakon perioda neaktivnosti potrajati duže, što nam ne smeta dok smo još u fazi razvoja. Deploy-anje aplikacije je vrlo jednostavno - 
+potrebno je samo povezati naš GitHub repozitorij (preciznije, naš main branch) sa Renderom čime se automatski prati svaka promjena na repozitoriju. Te se promjene
+automatski prikazuju i na deploy-anoj aplikaciji, što znači da imamo osiguran CI/CD pipeline. Render omogućava da imamo i build-amo servise preko docker datoteka.
+
+Na Renderu ćemo imati pokrenute 2 instance: Render Static Site (za frontend) i Render Web Service (za backend). 
+
+RSS služi za serviranje statičkih datoteka poput HTML i 
+CSS file-ova. Na svakom push-u na main, pokreće se rebuild (obično sa `npm run build`), novi statički fileovi se build-aju i sačuvaju u `/dist` folderu, te se taj folder
+sačuva u CDN (Content Distribution Network) na Renderu. Kada korisnik pristupi domeni aplikacije, Renderov CDN (preko RSS) će poslužiti korisniku glavne datoteke poput
+index.html, main.js i ostale potrebne UI datoteke. Kada korisnik izvrši neku akciju za koju je potreban backend (npr. login) unutar tih datoteka se nalaze pozivi
+za backend servis koji se nalazi na lokaciji koju pruža RWS.
+
+Render Web Service (RWS) nam služi za host-anje servera odnosno backend-a naše aplikacije. Za deploy-anje backend-a aplikacije koristićemo docker kontenjer koji ćemo
+izgraditi preko odgovarajućeg dockerfile-a smještenog u backendu repozitorija. Kontejnerizacija nam je korisna jer osigurava konzistentnost okruženja - isti kontejner 
+koji se pokreće lokalno pokreće se identično i na Renderu, bez razlika u verzijama Node.js-a ili ostalih zavisnosti. Također, korištenje dockerfilea u development fazi 
+direktno nam olakšava prelazak na AWS EC2 u production fazi, jer je isti dockerfile prenosiv između okruženja. Pri tom konfiguracija docker-a kao i build/run docker
+slika se vrši automatski od strane Render-a. Mi samo povežemo dockerfile sa Renderom i ostalo se izvršava automatski.
+
+Tok izgradnje bi izgledao ovako:
+1. Pokrećemo Render Web Service koji nam build-a backend i daje nam URL. Taj URL koristimo za API pozive.
+2. Koristimo `env` varijable za definisanje API_URL-a. Render prima ove varijable pri pokretanju build procesa, te ih Vite ugrađuje direktno u kompajlirani `main.js` pri 
+izvršavanju `npm run build`. 
+3. Pokrećemo Render Static Site koji čuva naše statičke fileove i proslijeđujemo mu RWS (odnosno API) URL kao `env` var. Dobijamo UI_URL.
+4. Update-ati backend da omogući primanje zahtjeva sa našeg frontend URL-a (npr. korištenjem `cors`)
+5. Korisnici pristupaju UI_URL-u, dok se zahtjevi šalju implicitno sa tog URL-a na API_URL.
+
+Za host-anje baze podataka koristićemo [Supabase](https://supabase.com/). Ovo je također servis koji omogućava besplatni plan, čime izbjegavamo nepotrebni trošak
+na početku projekta. Supabase je PostgreSQL baza koja odgovara našim potrebama. Dostupna je online, te njeno upravljanje je dosta olakšano preko web dashboard-a. To
+vizuelno upravljanje je dosta značajno u razvojnoj fazi kada se dešava dosta promjena na bazi, te manuelni pristup preko terminala nije najefikasniji. 
+
+Za čuvanje datoteka poput CV-ova, motivacionih pisama i slično koristićemo [Supabase Storage](https://supabase.com/storage). Ovo je prirodan izbor za naš projekat, jer 
+je direktno kompatibilan sa bazom podataka koja se nalazi u istom ekosistemu, a zasniva se na AWS S3 servisu koji se planira koristiti u narednoj fazi.
+
+
+### 3.2 Smjernice za prelazak iz Development u Production fazu
+
+Kako bi se omogućio što jednostavnija migracija iz development setup-a u production setup, biće potrebno razvijati sistem sa ovom migracijom na umu. To većinom znači 
+pratiti neke generalne coding smjernice, ali i neke projekt-specifične upute. Te smjernice se mogu pronaći u [Developer Guidelines](#). Neke od njih uključuju:
+- Korištenje ORM (poput `Sequelize`) umjesto Supabase klijenta za dohvatanje podataka u backendu
+- Pravljenje Storage Service wrapper-a da se Supabase-specific kod nalazi na jednom mjestu (prilikom prelaska na AWS S3 mijenja se samo ovaj file)
+- Pisanje custom JWT autentifikacije sa `bcrypt` i `jsonwebtoken` umjesto korištenja Supabase Auth
+- Korištenje dockerfilea za backend na Renderu
+
+
+### 3.3 Production faza
+
+U production fazi prelazimo na robusniji setup koji uključuje korištenje AWS ekosistema. Ovaj prelazak omogućava veću kontrolu nad konfiguracijom sistema, 
+bolju skalabilnost, te pouzdaniju uslugu korisnicima. U development fazi smo se fokusirali na jednostavniji razvoj i deployment, dok se ovdje fokusiramo na bolje
+korisničko iskustvo i kontrolu nad deployment-om.
+
+Za host-anje aplikacije koristićemo AWS EC2 servis. Prevashodno ćemo napraviti zajedničku VPC mrežu za sve instance u ekosistemu. Imaćemo jednu EC2 (Ubuntu 24.04 LTS) 
+instancu u javnoj podmreži na kojoj ćemo pokrenuti dva docker kontejnera: jedan javno dostupan za Nginx (zaslužan za usluživanje statičkih datoteka i preusmjeravanje API 
+poziva na backend), i jedan privatni za Node.js (zaslužan za odgovaranje na API pozive i vraćanje odgovora na Nginx kontejner). Na ovaj način postižemo bolju izolovanost, 
+samim time i sigurnost, jer je zahtjeve moguće slati samo preko javnog frontend-a, a nedostupnost ne zavisi od softvera, već od mrežnih postavki.
+
+Za host-anje baze podataka koristićemo AWS RDS servise. Ovo je standardni servis za bazu podataka na AWS-u, koja omogućava i pokretanje PostgreSQL baze. RDS pokrećemo u
+sklopu iste VPC mreže, ali u privatnoj podmreži. To je bitno, opet radi sigurnosti, da korisnici ne bi mogli pristupati bazi podataka i upravljati njome. Baza je povezana 
+sa web serverom preko VPC mreže te može komunicirati sa njom. To omogućava prenos podataka u/iz baze. 
+
+Za čuvanje datoteka koristićemo AWS S3 servis. Ovaj servis radi na istom principu kao i Supabase Storage, te neće biti velike promjene mimo promjene poziva funkcija.
+
+Za automatizaciju deployment procesa u production fazi koristićemo GitHub Actions. Pri svakom push-u na main granu, GitHub Actions workflow se automatski pokreće i 
+izvršava sljedeće korake: build-a novi Docker image od najnovijeg koda, te ga objavljuje na Docker Hub. Nakon toga, workflow se spaja na EC2 instancu putem SSH-a 
+(koristeći privatni ključ pohranjen kao GitHub Secret) i izvršava komande za preuzimanje novog image-a sa Docker Huba te restart kontejnera. Na ovaj način je osiguran 
+potpuno automatizovan CI/CD pipeline bez potrebe za ručnim intervencijama pri svakom novom release-u.
+
+Dodatne mogućnosti prilikom konfiguracije sistema u produkcijskoj fazi predstavljaju prednost, dok su u development fazi bili samo komplikacija. Na Renderu smo ograničeni 
+sa izborom mašine na kojoj se pokreće naš web server, te nemamo izbora u odabir operativnog sistema. Preko AWS-a je moguće izabrati preko stotinu različitih specifikacija 
+mašina, sa inkrementalnim poboljšanjima. To nam omogućava da, ako dođe do porasta korisnika u budućnosti, lahko nadogradimo naš sistem. Također možemo izabrati bilo koji 
+OS koji nam treba, te se može izabrati onaj koji nam daje najbolje usluge/performanse. Također, praćenje troškova je sada dosta lakše jer se svi servisi koji koristimo
+nalaze u istom ekosistemu, odnosno na jednom mjestu.
+
+
+### 3.4 Post-production faza
+
+U production fazi je izabran public cloud servis radi jednostavnijeg početka sa manjim up-front troškom. Međutim, nedostaci korištenja public cloud-a su ponajviše 
+sigurnost podataka. U budućnosti je moguće prebaciti se sa public cloud sistema na private odnosno community cloud. S obzirom da su korisnici ove aplikacije usko povezani 
+odnosno sa sličnim zahtjevima, a nalaze se u istom lokalitetu (gradu), ako sistem zaživi i bude imao dovoljno korisnika da to opravda, prebacivanje na community cloud bi 
+dao korisnicima (fakultetima, kompanijama, i studentima) veću kontrolu nad svojim podacima.
