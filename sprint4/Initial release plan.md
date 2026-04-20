@@ -12,17 +12,17 @@ Cilj plana je prikazati:
 Razvoj sistema organizovan je iterativno kroz sprintove, pri čemu svaki inkrement predstavlja logički zaokruženu funkcionalnu cjelinu koja donosi mjerljivu poslovnu vrijednost.
 
 Planirana su četiri release-a:
-- **Release 1 – Objava oglasa i prijava na praksu**
-- **Release 2 – Upravljanje selekcijom i statusima**
-- **Release 3 – Realizacija i praćenje prakse**
-- **Release 4 – Analitika, automatizacija i napredne funkcionalnosti**
+- **Release 1 – Objava i pregled oglasa**
+- **Release 2 – Prijava na praksu i upravljanje selekcijom i statusima**
+- **Release 3 – Realizacija i praćenje prakse, analitika, automatizacija i napredne funkcionalnosti**
+
 
 ---
 
 # RELEASE 1
 
 ## Naziv
-Objava oglasa i prijava na praksu  
+Objava i pregled oglasa 
 
 ## Cilj
 Omogućiti kompanijama kreiranje oglasa i studentima prijavu na oglase.
@@ -36,14 +36,12 @@ Omogućiti kompanijama kreiranje oglasa i studentima prijavu na oglase.
 - **Kreiranje oglasa** – omogućava kompanijama objavu oglasa za praksu sa opisom, zahtjevima i rokom prijave.  
 - **Pregled oglasa** – omogućava studentima pregled liste dostupnih oglasa za praksu.  
 - **Pregled detalja oglasa** – omogućava prikaz svih informacija o pojedinačnom oglasu.  
-- **Prijava na praksu** – omogućava studentima slanje prijave na odabrani oglas.  
-- **Upload dokumentacije** – omogućava studentima dodavanje potrebnih dokumenata (CV, motivaciono pismo) prilikom prijave.  
-- **Pregled prijava (kompanija)** – omogućava kompanijama uvid u sve pristigle prijave za njihove oglase.  
 - **Administratorski pristup** – omogućava administratoru upravljanje korisničkim računima i odobravanje registracija.  
 - **Navigacija** – omogućava korisnicima jednostavno kretanje kroz sistem.  
 - **Landing page** – omogućava prikaz osnovnih informacija o sistemu i pristup registraciji i prijavi.  
 - **Verifikacija email adrese** – omogućava potvrdu identiteta korisnika putem verifikacionog linka poslanog na email adresu.  
-- **Obnavljanje lozinke** – omogućava korisnicima resetovanje lozinke putem email linka u slučaju zaboravljene lozinke.  
+- **Obnavljanje lozinke** – omogućava korisnicima resetovanje lozinke putem email linka u slučaju zaboravljene lozinke.
+- **Tamni režim rada** – omogućava promjenu vizuelne teme sistema.
 
 ### Tehnička podrška
 - Dizajn i implementacija baze podataka  
@@ -62,29 +60,36 @@ Omogućiti kompanijama kreiranje oglasa i studentima prijavu na oglase.
 - Sprint 5  
 - Sprint 6  
 - Sprint 7  
-- Dio Sprinta 8  
+
 
 ---
 
 # RELEASE 2
 
 ## Naziv
-Upravljanje statusima i selekcijom  
+Prijava na praksu i upravljanje statusima i selekcijom  
 
 ## Cilj
 Omogućiti kompaniji i koordinatoru upravljanje procesom selekcije kandidata.
 
 ## Glavne funkcionalnosti
 
+- **Prijava na praksu** – omogućava studentima slanje prijave na odabrani oglas.  
+- **Upload dokumentacije** – omogućava studentima dodavanje potrebnih dokumenata (CV, motivaciono pismo) prilikom prijave.  
+- **Pregled prijava (kompanija)** – omogućava kompanijama uvid u sve pristigle prijave za njihove oglase.  
 - **Ograničenje broja prijava po studentu** – omogućava fakultetu definisanje maksimalnog broja aktivnih prijava po studentu
 - **Selekcija kandidata** – omogućava pregled i izbor prijavljenih kandidata za praksu.  
 - **Upravljanje statusom prijave** – omogućava kompaniji i koordinatoru promjenu statusa prijave (npr. na čekanju, u selekciji, odobrena, odbijena), kao i studentu potvrdu ili povlačenje prijave.
 - **Student dashboard** – omogućava studentu centralizovani pregled svih prijava na prakse, uključujući trenutni status svake prijave.
 - **Zatvaranje oglasa** – omogućava kompaniji zatvaranje oglasa nakon završetka prijava.  
-- **Pregled zatvorenih oglasa** – omogućava uvid u zatvorene oglase oglase.  
+- **Pregled zatvorenih oglasa** – omogućava uvid u zatvorene oglase oglase.
+- **Oznaka “Novo”** – označava nedavno objavljene oglase.
+- **Favoriziranje oglasa** – omogućava studentima označavanje omiljenih oglasa.
+- **Arhiviranje oglasa** – omogućava dugoročno čuvanje neaktivnih oglasa.
+- **Audit log** – omogućava praćenje aktivnosti korisnika u sistemu.  
 
 ## Zavisnosti
-- Funkcionalan proces prijave (Release 1)
+- Funkcionalan proces registracije (Release 1)
 
 ## Rizici
 - Kompleksnost statusa  
@@ -92,7 +97,7 @@ Omogućiti kompaniji i koordinatoru upravljanje procesom selekcije kandidata.
 - Edge case scenariji  
 
 ## Sprintovi
-- Završetak Sprinta 8  
+- Sprint 8  
 - Sprint 9  
 
 ---
@@ -100,10 +105,11 @@ Omogućiti kompaniji i koordinatoru upravljanje procesom selekcije kandidata.
 # RELEASE 3
 
 ## Naziv
-Realizacija i praćenje prakse  
+Realizacija i praćenje prakse, analitika, automatizacija i napredne funkcionalnosti  
 
 ## Cilj
-Omogućiti praćenje realizacije prakse nakon prihvatanja.
+Omogućiti praćenje realizacije prakse nakon prihvatanja, te dodati napredne funkcionalnosti i administrativne mogućnosti.
+
 
 ## Glavne funkcionalnosti
 
@@ -115,49 +121,30 @@ Omogućiti praćenje realizacije prakse nakon prihvatanja.
 - **Evaluacija studenta** – omogućava kompaniji ocjenjivanje studenta.  
 - **Evaluacija kompanije** – omogućava studentu ocjenjivanje kompanije.  
 - **Odustajanje od prakse** – omogućava prekid prakse od strane učesnika.  
-- **Automatsko završavanje prakse** – omogućava sistemu da automatski zatvori praksu nakon isteka.  
-
-## Zavisnosti
-- Stabilan statusni sistem (Release 2)
-
-## Rizici
-- Automatizovani procesi  
-- Generisanje dokumenata  
-- Integritet podataka  
-
-## Sprintovi
-- Sprint 9  
-- Sprint 10  
-
----
-
-# RELEASE 4
-
-## Naziv
-Analitika, automatizacija i napredne funkcionalnosti  
-
-## Cilj
-Dodati napredne funkcionalnosti i administrativne mogućnosti.
-
-## Glavne funkcionalnosti
-
+- **Automatsko završavanje prakse** – omogućava sistemu da automatski zatvori praksu nakon isteka.
 - **Izvještaji** – omogućavaju generisanje izvještaja o završetku prakse.
 - **Statistika prijava** – omogućava analizu prijava po oglasima i korisnicima.  
-- **Audit log** – omogućava praćenje aktivnosti korisnika u sistemu.  
-- **Arhiviranje oglasa** – omogućava dugoročno čuvanje neaktivnih oglasa.  
-- **Favoriziranje oglasa** – omogućava studentima označavanje omiljenih oglasa.  
-- **Oznaka “Novo”** – označava nedavno objavljene oglase.  
-- **Tamni režim rada** – omogućava promjenu vizuelne teme sistema.  
 - **Napredna pretraga i filtriranje** – omogućava precizno pretraživanje oglasa.  
 - **Podešavanje tipova notifikacija** – omogućava korisnicima kontrolu nad obavijestima.  
 
 ## Zavisnosti
+- Stabilan statusni sistem (Release 2)
 - Stabilan produkcijski sistem  
 
 ## Rizici
+- Automatizovani procesi  
+- Generisanje dokumenata  
+- Integritet podataka
 - Performanse baze  
 - Skalabilnost  
-- Kompleksnost izvještaja  
+- Kompleksnost izvještaja
 
-## Sprintovi
+## Sprintovi 
 - Sprint 10  
+
+
+
+
+
+
+
