@@ -3,16 +3,6 @@
 
 - skup kriterija koji moraju biti ispunjeni kako bi se određena stavka smatrala završenom 
 
-## Template
-
-Stavka se smatra završenom kada su ispunjeni sljedeći uslovi:
-
-- Funkcionalnost je implementirana ili dokumentovana u skladu sa dogovorenim zahtjevima
-- Svi definisani Acceptance Criteria su u potpunosti ispunjeni
-- Implementacija je pregledana od strane tima
-- Funkcionalnost je adekvatno testirana 
-- Promjene su evidentirane u relevantnim projektnim artefaktima 
-- Funkcionalnost je spremna za demonstraciju u okviru sprint review-a
 
   ---
 
@@ -81,7 +71,7 @@ Stavka se smatra završenom kada su ispunjeni sljedeći uslovi:
 | **Backlog** | Product Backlog i Sprint Backlog su ažurirani |
 | **Dokumentacija** | Dokumentacija je ažurirana gdje je potrebno |
 | **Odluke** | Tehničke i dizajnerske odluke su evidentirane u Decision Log-u |
-| **AI** | AI Usage Log je ažuriran (ako je primjenjivo) |
+| **AI** | AI Usage Log je ažuriran  |
 
 ---
 
