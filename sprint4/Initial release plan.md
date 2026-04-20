@@ -11,7 +11,7 @@ Cilj plana je prikazati:
 
 Razvoj sistema organizovan je iterativno kroz sprintove, pri čemu svaki inkrement predstavlja logički zaokruženu funkcionalnu cjelinu koja donosi mjerljivu poslovnu vrijednost.
 
-Planirana su četiri release-a:
+Planirana su tri release-a:
 - **Release 1 – Objava i pregled oglasa**
 - **Release 2 – Prijava na praksu i upravljanje selekcijom i statusima**
 - **Release 3 – Realizacija i praćenje prakse, analitika, automatizacija i napredne funkcionalnosti**
