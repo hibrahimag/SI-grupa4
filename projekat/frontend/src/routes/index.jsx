@@ -6,6 +6,7 @@ import ListingsPage from '../pages/ListingsPage';
 import NotFoundPage from '../pages/NotFoundPage';
 import ProfilePage from '../pages/ProfilePage';
 import LandingPage from "../pages/LandingPage";
+import AdminDashboard from '../pages/AdminDashboard';
 
 export default function AppRouter() {
   return (
@@ -18,6 +19,7 @@ export default function AppRouter() {
         <Route path="/applications" element={<ApplicationsPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/admin" element={<AdminDashboard />} />
         <Route path="*" element={<NotFoundPage />} />
         
       </Routes>
