@@ -15,19 +15,37 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING(100),
         allowNull: false,
       },
+      prezime: {
+        type: DataTypes.STRING(100),
+        allowNull: false,
+      },
+      username: {
+        type: DataTypes.STRING(100),
+        allowNull: false,
+        unique: true,
+      },
       email: {
         type: DataTypes.STRING(150),
         allowNull: false,
         unique: true,
       },
+      passwordHash: {
+        type: DataTypes.STRING(255),
+        allowNull: false,
+      },
       role: {
         type: DataTypes.ENUM('STUDENT', 'COMPANY', 'COORDINATOR', 'ADMIN'),
         allowNull: false,
       },
-      status: {
-        type: DataTypes.ENUM('PENDING', 'ACTIVE', 'DEACTIVATED'),
+      emailVerifikovan: {
+        type: DataTypes.BOOLEAN,
         allowNull: false,
-        defaultValue: 'PENDING',
+        defaultValue: false,
+      },
+      aktivan: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: true,
       },
       institution: {
         type: DataTypes.STRING(150),
