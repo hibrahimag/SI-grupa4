@@ -5,18 +5,21 @@ import DashboardPage from '../pages/DashboardPage';
 import ListingsPage from '../pages/ListingsPage';
 import NotFoundPage from '../pages/NotFoundPage';
 import ProfilePage from '../pages/ProfilePage';
+import LandingPage from "../pages/LandingPage";
 
 export default function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        {/*<Route path="/" element={<Navigate to="/dashboard" replace />} />*/}
+        <Route path="/" element={<LandingPage />} />
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/listings" element={<ListingsPage />} />
         <Route path="/applications" element={<ApplicationsPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="*" element={<NotFoundPage />} />
+        
       </Routes>
     </BrowserRouter>
   );
