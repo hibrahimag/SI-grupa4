@@ -1,0 +1,11 @@
+html.dark,
+html.dark body,
+html.dark #root {
+  background-color: #111827;
+  color: #f9fafb;
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+}
