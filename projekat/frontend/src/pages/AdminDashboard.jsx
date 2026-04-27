@@ -1,464 +1,480 @@
-import { useEffect, useReducer, useRef, useState } from 'react';
-import { getUsers, updateUserRole } from '../services/adminService.js';
+import { useEffect, useReducer } from 'react';
+import { getUsers, updateUserRole } from '../services/adminService';
 import './AdminDashboard.css';
 
-// ── Icons ─────────────────────────────────────────────────────────────────────
-const Icon = {
-  grid: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>,
-  shield: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
-  users: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
-  plus: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
-  check: '✓', user: '○', x: '×', doc: '≡', alert: '◎',
-};
+const ROLES = ['STUDENT', 'COMPANY', 'COORDINATOR', 'ADMIN'];
 
-// ── Mock data ─────────────────────────────────────────────────────────────────
-const MOCK_PENDING = [
-  { id: 3,  name: 'Adnan Kovačević', type: 'Student',     institution: 'ETF Sarajevo',  date: '2. jan' },
-  { id: 7,  name: 'Telegroup Inc.',  type: 'Kompanija',   institution: 'Sarajevo',      date: '3. jan' },
-  { id: 8,  name: 'Maja Petrović',   type: 'Koordinator', institution: 'FIN Sarajevo',  date: '4. jan' },
-  { id: 9,  name: 'Sara Alibegović', type: 'Student',     institution: 'PMF Sarajevo',  date: '4. jan' },
-  { id: 10, name: 'Burch International', type: 'Kompanija', institution: 'Sarajevo',   date: '5. jan' },
+const STATUS_FILTERS = [
+  { label: 'Svi', value: '' },
+  { label: 'Pending', value: 'PENDING' },
+  { label: 'Aktivni', value: 'ACTIVE' },
+  { label: 'Deaktivirani', value: 'DEACTIVATED' },
 ];
 
-const AUDIT_LOG = [
-  { id: 1, icon: 'check', color: 'green',  action: 'Praksa odobrena',       who: 'Koordinator Maja P.',  time: '14:32' },
-  { id: 2, icon: 'user',  color: 'blue',   action: 'Registracija',          who: 'Adnan Kovačević',      time: '13:55' },
-  { id: 3, icon: 'x',     color: 'red',    action: 'Nalog obrisan',         who: 'Anonimni korisnik',    time: '11:08' },
-  { id: 4, icon: 'doc',   color: 'orange', action: 'Oglas zatvoren',        who: 'Symphony d.o.o.',      time: '10:50' },
-  { id: 5, icon: 'alert', color: 'gray',   action: 'Neuspješan login pokušaj', who: 'nepoznat@mail.com', time: '09:44' },
+const ROLE_FILTERS = [
+  { label: 'Studenti', value: 'STUDENT' },
+  { label: 'Kompanije', value: 'COMPANY' },
+  { label: 'Koordinatori', value: 'COORDINATOR' },
+  { label: 'Admini', value: 'ADMIN' },
 ];
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-const initials = (name) =>
-  name.split(' ').slice(0, 2).map((w) => w[0]).join('').toUpperCase();
-
-const formatDate = (iso) =>
-  iso ? new Date(iso).toLocaleDateString('bs-BA', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—';
-
-const roleBadge   = (r) => ({ STUDENT: 'badge-student', COMPANY: 'badge-company', COORDINATOR: 'badge-coordinator', ADMIN: 'badge-admin' }[r] ?? '');
-const statusBadge = (s) => ({ PENDING: 'badge-pending', ACTIVE: 'badge-active', DEACTIVATED: 'badge-deactivated' }[s] ?? '');
-const typeBadge   = (t) => ({ Kompanija: 'company', Koordinator: 'coordinator', Admin: 'admin' }[t] ?? '');
-
-const ROLES   = ['STUDENT', 'COMPANY', 'COORDINATOR', 'ADMIN'];
-const FILTERS = [
-  { value: '',            label: 'Svi' },
-  { value: 'PENDING',     label: 'Pending' },
-  { value: 'ACTIVE',      label: 'Active' },
-  { value: 'DEACTIVATED', label: 'Deactivated' },
-  { value: 'STUDENT',     label: 'Studenti' },
-  { value: 'COMPANY',     label: 'Kompanije' },
-  { value: 'COORDINATOR', label: 'Koordinatori' },
-  { value: 'ADMIN',       label: 'Admini' },
+const STATIC_AUDIT = [
+  { iconClass: 'ad-audit-icon--green',  symbol: '✓', action: 'Praksa odobrena',        sub: 'Koordinator Maja P.',   time: '14:32' },
+  { iconClass: 'ad-audit-icon--blue',   symbol: '○', action: 'Registracija',            sub: 'Adnan Kovačević',       time: '13:55' },
+  { iconClass: 'ad-audit-icon--red',    symbol: '✕', action: 'Nalog obrisan',           sub: 'Anonimni korisnik',     time: '11:08' },
+  { iconClass: 'ad-audit-icon--orange', symbol: '≡', action: 'Oglas zatvoren',          sub: 'Symphony d.o.o.',       time: '10:50' },
+  { iconClass: 'ad-audit-icon--gray',   symbol: '○', action: 'Neuspješan login pokušaj', sub: 'nepoznat@mail.com',    time: '09:44' },
 ];
 
-// ── Reducer ───────────────────────────────────────────────────────────────────
+function initials(name) {
+  return name
+    .split(' ')
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase();
+}
+
 function reducer(state, action) {
   switch (action.type) {
-    case 'LOADING':     return { ...state, loading: true, error: null };
-    case 'LOADED':      return { ...state, loading: false, users: action.users };
-    case 'ERROR':       return { ...state, loading: false, error: action.error };
-    case 'SET_FILTER':  return { ...state, filter: action.filter };
-    case 'UPDATE_ROLE': return { ...state, users: state.users.map((u) => u.id === action.id ? { ...u, role: action.role } : u) };
-    case 'SET_TOAST':   return { ...state, toast: action.toast };
-    case 'CLEAR_TOAST': return { ...state, toast: null };
-    case 'REMOVE_PENDING': return { ...state, pending: state.pending.filter((p) => p.id !== action.id) };
-    default: return state;
+    case 'SET_VIEW':
+      return { ...state, view: action.payload };
+    case 'SET_STATUS_FILTER':
+      return { ...state, statusFilter: action.payload, roleFilter: '' };
+    case 'SET_ROLE_FILTER':
+      return { ...state, roleFilter: action.payload, statusFilter: '' };
+    case 'SET_USERS':
+      return { ...state, users: action.payload, loading: false };
+    case 'SET_LOADING':
+      return { ...state, loading: action.payload };
+    case 'UPDATE_USER_ROLE':
+      return {
+        ...state,
+        users: state.users.map((u) =>
+          u.id === action.payload.id ? { ...u, role: action.payload.role } : u
+        ),
+      };
+    case 'SHOW_TOAST':
+      return { ...state, toast: action.payload };
+    case 'HIDE_TOAST':
+      return { ...state, toast: null };
+    default:
+      return state;
   }
 }
 
-// ── Main component ────────────────────────────────────────────────────────────
-export default function AdminDashboard() {
-  const [view, setView] = useState('dashboard');
-  const [state, dispatch] = useReducer(reducer, {
-    users: [], loading: true, error: null, filter: '',
-    toast: null, pending: MOCK_PENDING,
-  });
-  const toastTimer = useRef(null);
+const initialState = {
+  view: 'dashboard',
+  statusFilter: '',
+  roleFilter: '',
+  users: [],
+  loading: true,
+  toast: null,
+};
 
-  function showToast(message, type) {
-    clearTimeout(toastTimer.current);
-    dispatch({ type: 'SET_TOAST', toast: { message, type } });
-    toastTimer.current = setTimeout(() => dispatch({ type: 'CLEAR_TOAST' }), 3500);
-  }
+export default function AdminDashboard() {
+  const [state, dispatch] = useReducer(reducer, initialState);
+  const { view, statusFilter, roleFilter, users, loading, toast } = state;
 
   useEffect(() => {
-    dispatch({ type: 'LOADING' });
-    const status = ['PENDING', 'ACTIVE', 'DEACTIVATED'].includes(state.filter) ? state.filter : undefined;
-    getUsers(status)
-      .then((users) => {
-        const roleFilter = ['STUDENT', 'COMPANY', 'COORDINATOR', 'ADMIN'].includes(state.filter);
-        dispatch({ type: 'LOADED', users: roleFilter ? users.filter((u) => u.role === state.filter) : users });
-      })
-      .catch(() => dispatch({ type: 'ERROR', error: 'Greška pri učitavanju korisnika.' }));
-  }, [state.filter]);
+    if (view === 'users') {
+      dispatch({ type: 'SET_LOADING', payload: true });
+      getUsers(statusFilter || undefined)
+        .then((data) => dispatch({ type: 'SET_USERS', payload: data }))
+        .catch(() => showToast('Greška pri učitavanju korisnika.', 'error'));
+    }
+  }, [view, statusFilter]);
 
-  async function handleRoleChange(userId, newRole) {
+  function showToast(message, type = 'success') {
+    dispatch({ type: 'SHOW_TOAST', payload: { message, type } });
+    setTimeout(() => dispatch({ type: 'HIDE_TOAST' }), 3500);
+  }
+
+  async function handleRoleChange(userId, role) {
     try {
-      await updateUserRole(userId, newRole);
-      dispatch({ type: 'UPDATE_ROLE', id: userId, role: newRole });
-      showToast(`Rola promijenjena u ${newRole}.`, 'success');
+      const updated = await updateUserRole(userId, role);
+      dispatch({ type: 'UPDATE_USER_ROLE', payload: { id: userId, role: updated.user.role } });
+      showToast(`Rola uspješno promijenjena u ${updated.user.role}.`);
     } catch {
       showToast('Greška pri promjeni role.', 'error');
     }
   }
 
-  function handleApprove(id, name) {
-    dispatch({ type: 'REMOVE_PENDING', id });
-    showToast(`${name} odobren.`, 'success');
-  }
+  const visibleUsers = roleFilter
+    ? users.filter((u) => u.role === roleFilter)
+    : users;
 
-  function handleReject(id, name) {
-    dispatch({ type: 'REMOVE_PENDING', id });
-    showToast(`${name} odbijen.`, 'error');
-  }
-
-  const pendingCount = state.pending.length;
+  const mockPending = [
+    { id: 1, name: 'Adnan Kovačević', role: 'STUDENT',     institution: 'ETF Sarajevo',  date: '2. jan' },
+    { id: 2, name: 'Telegroup Inc.',  role: 'COMPANY',     institution: 'Sarajevo',       date: '3. jan' },
+    { id: 3, name: 'Maja Petrović',   role: 'COORDINATOR', institution: 'FIN Sarajevo',  date: '4. jan' },
+    { id: 4, name: 'Sara Alibegović', role: 'STUDENT',     institution: 'PMF Sarajevo',  date: '4. jan' },
+    { id: 5, name: 'Burch International', role: 'COMPANY', institution: 'Sarajevo',      date: '5. jan' },
+  ];
 
   return (
-    <div className="admin-shell">
-      <Sidebar view={view} setView={setView} pendingCount={pendingCount} />
+    <div className="ad-layout">
+      {/* Sidebar */}
+      <aside className="ad-sidebar">
+        <div className="ad-logo">
+          <div className="ad-logo-name">PraksaHub</div>
+          <div className="ad-logo-sub">Admin panel</div>
+        </div>
 
-      <div className="admin-main">
+        <div className="ad-nav-group">
+          <div className="ad-nav-label">Pregled</div>
+          <nav className="ad-nav">
+            <button
+              className={`ad-nav-item ${view === 'dashboard' ? 'active' : ''}`}
+              onClick={() => dispatch({ type: 'SET_VIEW', payload: 'dashboard' })}
+            >
+              Dashboard
+            </button>
+          </nav>
+        </div>
+
+        <div className="ad-nav-group">
+          <div className="ad-nav-label">Upravljanje</div>
+          <nav className="ad-nav">
+            <button
+              className={`ad-nav-item ${view === 'roles' ? 'active' : ''}`}
+              onClick={() => dispatch({ type: 'SET_VIEW', payload: 'roles' })}
+            >
+              Dodjela rola
+              <span className="ad-badge">{mockPending.length}</span>
+            </button>
+            <button
+              className={`ad-nav-item ${view === 'users' ? 'active' : ''}`}
+              onClick={() => dispatch({ type: 'SET_VIEW', payload: 'users' })}
+            >
+              Korisnici
+            </button>
+          </nav>
+        </div>
+      </aside>
+
+      {/* Main content */}
+      <main className="ad-main">
         {view === 'dashboard' && (
-          <DashboardView
-            pending={state.pending}
-            onApprove={handleApprove}
-            onReject={handleReject}
-          />
+          <DashboardView pending={mockPending} showToast={showToast} />
         )}
         {view === 'roles' && (
-          <RolesView
-            pending={state.pending}
-            onApprove={handleApprove}
-            onReject={handleReject}
-            showToast={showToast}
-          />
+          <RolesView pending={mockPending} showToast={showToast} />
         )}
         {view === 'users' && (
           <UsersView
-            state={state}
+            users={visibleUsers}
+            loading={loading}
+            statusFilter={statusFilter}
+            roleFilter={roleFilter}
             dispatch={dispatch}
             onRoleChange={handleRoleChange}
           />
         )}
-      </div>
+      </main>
 
-      {state.toast && (
-        <div className={`toast toast-${state.toast.type}`}>
-          <div className="toast-dot" />
-          {state.toast.message}
-        </div>
+      {/* Toast */}
+      {toast && (
+        <div className={`ad-toast ad-toast--${toast.type}`}>{toast.message}</div>
       )}
     </div>
   );
 }
 
-// ── Sidebar ───────────────────────────────────────────────────────────────────
-function Sidebar({ view, setView, pendingCount }) {
-  const nav = (id, icon, label, badge) => (
-    <button
-      key={id}
-      className={`sidebar-nav-item${view === id ? ' active' : ''}`}
-      onClick={() => setView(id)}
-    >
-      {icon}
-      {label}
-      {badge > 0 && <span className="sidebar-badge">{badge}</span>}
-    </button>
-  );
+function DashboardView({ pending, showToast }) {
+  const stats = [
+    { label: 'Korisnika ukupno', value: '1,840', sub: '+23 ove sedmice',  subClass: 'ad-stat-sub--green' },
+    { label: 'Na odobravanju',   value: pending.length, sub: 'Čeka akciju', subClass: 'ad-stat-sub--orange' },
+    { label: 'Kompanije',        value: '93',   sub: '+8 ove sedmice',  subClass: 'ad-stat-sub--blue' },
+    { label: 'Prakse ukupno',    value: '312',  sub: '+8 ove sedmice',  subClass: 'ad-stat-sub--green' },
+  ];
 
   return (
-    <aside className="sidebar">
-      <div className="sidebar-brand">
-        <div className="sidebar-brand-name">PraksaHub</div>
-        <div className="sidebar-brand-sub">Admin panel</div>
+    <div className="ad-content">
+      <div className="ad-header">
+        <h1 className="ad-title">Admin</h1>
+        <div className="ad-subtitle">Upravljanje korisnicima · PraksaHub</div>
       </div>
 
-      <div className="sidebar-section">
-        <div className="sidebar-section-label">Pregled</div>
-        {nav('dashboard', Icon.grid, 'Dashboard')}
-      </div>
-
-      <div className="sidebar-section">
-        <div className="sidebar-section-label">Upravljanje</div>
-        {nav('roles', Icon.shield, 'Dodjela rola', pendingCount)}
-        {nav('users', Icon.users, 'Korisnici')}
-      </div>
-    </aside>
-  );
-}
-
-// ── Dashboard view ────────────────────────────────────────────────────────────
-function DashboardView({ pending, onApprove, onReject }) {
-  return (
-    <>
-      <div className="admin-topbar">
-        <div>
-          <div className="admin-topbar-title">Admin</div>
-          <div className="admin-topbar-sub">Upravljanje korisnicima · PraksaHub</div>
-        </div>
-      </div>
-
-      <div className="admin-content">
-        {/* Stats */}
-        <div className="stats-grid">
-          <StatCard label="Korisnika ukupno" value="1,840" sub="+23 ove sedmice" subClass="positive" />
-          <StatCard label="Na odobravanju"   value={pending.length} sub="Čeka akciju" subClass="warning" />
-          <StatCard label="Kompanije"        value="93" />
-          <StatCard label="Prakse ukupno"    value="312" sub="+8 ove sedmice" subClass="positive" />
-        </div>
-
-        {/* Mid */}
-        <div className="mid-grid">
-          <div className="card">
-            <div className="card-header">
-              <span className="card-title">Zahtjevi za odobravanje</span>
-              {pending.length > 0 && (
-                <span className="card-badge">{pending.length} na čekanju</span>
-              )}
-            </div>
-            <ApprovalTable rows={pending} onApprove={onApprove} onReject={onReject} />
+      <div className="ad-stats-grid">
+        {stats.map((s) => (
+          <div key={s.label} className="ad-stat-card">
+            <span className="ad-stat-label">{s.label}</span>
+            <span className="ad-stat-value">{s.value}</span>
+            <span className={`ad-stat-sub ${s.subClass}`}>{s.sub}</span>
           </div>
-
-          <div className="card">
-            <div className="card-header">
-              <span className="card-title">Audit log</span>
-            </div>
-            <div className="audit-list">
-              {AUDIT_LOG.map((entry) => (
-                <div key={entry.id} className="audit-item">
-                  <div className={`audit-icon ${entry.color}`}>{Icon[entry.icon]}</div>
-                  <div className="audit-body">
-                    <div className="audit-action">{entry.action}</div>
-                    <div className="audit-who">{entry.who}</div>
-                  </div>
-                  <div className="audit-time">{entry.time}</div>
-                </div>
-              ))}
-            </div>
-            <div className="audit-footer">
-              <button className="btn-ghost">Cijeli log</button>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </>
-  );
-}
-
-// ── Roles view ────────────────────────────────────────────────────────────────
-function RolesView({ pending, onApprove, onReject, showToast }) {
-  const [adminEmail, setAdminEmail] = useState('');
-
-  const coordinators = pending.filter((p) => p.type === 'Koordinator');
-  const companies    = pending.filter((p) => p.type === 'Kompanija');
-
-  function handleAssignAdmin(e) {
-    e.preventDefault();
-    if (!adminEmail.trim()) return;
-    showToast(`Admin rola dodijeljena: ${adminEmail}`, 'success');
-    setAdminEmail('');
-  }
-
-  return (
-    <>
-      <div className="admin-topbar">
-        <div>
-          <div className="admin-topbar-title">Dodjela rola</div>
-          <div className="admin-topbar-sub">Odobravanje koordinatora, kompanija i dodjela admin pristupa</div>
-        </div>
-      </div>
-
-      <div className="admin-content">
-        <div className="roles-grid">
-          {/* Koordinatori */}
-          <div className="card">
-            <div className="card-header">
-              <span className="card-title">Koordinatori na čekanju</span>
-              {coordinators.length > 0 && (
-                <span className="card-badge">{coordinators.length} zahtjeva</span>
-              )}
-            </div>
-            {coordinators.length === 0
-              ? <div className="roles-empty">Nema zahtjeva za koordinatora.</div>
-              : <ApprovalTable rows={coordinators} onApprove={onApprove} onReject={onReject} />}
-          </div>
-
-          {/* Kompanije */}
-          <div className="card">
-            <div className="card-header">
-              <span className="card-title">Kompanije na čekanju</span>
-              {companies.length > 0 && (
-                <span className="card-badge">{companies.length} zahtjeva</span>
-              )}
-            </div>
-            {companies.length === 0
-              ? <div className="roles-empty">Nema zahtjeva za kompaniju.</div>
-              : <ApprovalTable rows={companies} onApprove={onApprove} onReject={onReject} />}
-          </div>
-        </div>
-
-        {/* Dodjela admin role */}
-        <div className="admin-assign-card">
-          <div className="card-header">
-            <span className="card-title">Dodjela admin pristupa</span>
-          </div>
-          <div className="admin-assign-body">
-            <p className="admin-assign-desc">
-              Unesi email adresu postojećeg korisnika kome želiš dodijeliti admin rolu.
-              Admin ima puni pristup sistemu uključujući odobravanje korisnika i upravljanje rolama.
-            </p>
-            <form onSubmit={handleAssignAdmin}>
-              <input
-                className="assign-input"
-                type="email"
-                placeholder="email@korisnik.ba"
-                value={adminEmail}
-                onChange={(e) => setAdminEmail(e.target.value)}
-              />
-              <button className="btn-primary" type="submit">
-                {Icon.shield} Dodijeli admin rolu
-              </button>
-            </form>
-          </div>
-        </div>
-      </div>
-    </>
-  );
-}
-
-// ── Users view ────────────────────────────────────────────────────────────────
-function UsersView({ state, dispatch, onRoleChange }) {
-  return (
-    <>
-      <div className="admin-topbar">
-        <div>
-          <div className="admin-topbar-title">Korisnici</div>
-          <div className="admin-topbar-sub">Pregled i upravljanje svim korisničkim računima</div>
-        </div>
-      </div>
-
-      <div className="admin-content">
-        <div className="users-toolbar">
-          <div className="filter-group">
-            {FILTERS.map((f) => (
-              <button
-                key={f.value}
-                className={`filter-btn${state.filter === f.value ? ' active' : ''}`}
-                onClick={() => dispatch({ type: 'SET_FILTER', filter: f.value })}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
-          {!state.loading && !state.error && (
-            <span className="user-count">{state.users.length} korisnika</span>
-          )}
-        </div>
-
-        <div className="card">
-          {state.loading && <div className="table-empty">Učitavanje...</div>}
-          {state.error   && <div className="table-empty" style={{ color: '#dc2626' }}>{state.error}</div>}
-
-          {!state.loading && !state.error && (
-            <table className="users-table">
-              <thead>
-                <tr>
-                  <th>Korisnik</th>
-                  <th>Rola</th>
-                  <th>Status</th>
-                  <th>Institucija</th>
-                  <th>Registrovan</th>
-                  <th>Promijeni rolu</th>
-                </tr>
-              </thead>
-              <tbody>
-                {state.users.length === 0 ? (
-                  <tr><td colSpan={6}><div className="table-empty">Nema korisnika za odabrani filter.</div></td></tr>
-                ) : (
-                  state.users.map((user) => (
-                    <tr key={user.id}>
-                      <td>
-                        <div className="user-cell">
-                          <div className="avatar">{initials(user.name)}</div>
-                          <div>
-                            <div className="user-name-text">{user.name}</div>
-                            <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: 1 }}>{user.email}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td><span className={`badge ${roleBadge(user.role)}`}>{user.role}</span></td>
-                      <td><span className={`badge ${statusBadge(user.status)}`}>{user.status}</span></td>
-                      <td style={{ color: user.institution ? '#0f172a' : '#cbd5e1' }}>{user.institution ?? '—'}</td>
-                      <td style={{ color: '#64748b' }}>{formatDate(user.created_at)}</td>
-                      <td>
-                        <select
-                          className="role-select"
-                          value={user.role}
-                          onChange={(e) => onRoleChange(user.id, e.target.value)}
-                        >
-                          {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
-                        </select>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          )}
-        </div>
-      </div>
-    </>
-  );
-}
-
-// ── Shared sub-components ─────────────────────────────────────────────────────
-function ApprovalTable({ rows, onApprove, onReject }) {
-  if (rows.length === 0) return <div className="roles-empty">Nema zahtjeva.</div>;
-  return (
-    <table className="approval-table">
-      <thead>
-        <tr>
-          <th>Korisnik</th>
-          <th>Tip</th>
-          <th>Institucija</th>
-          <th>Datum</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((row) => (
-          <tr key={row.id}>
-            <td>
-              <div className="user-cell">
-                <div className="avatar">{initials(row.name)}</div>
-                <span className="user-name-text">{row.name}</span>
-              </div>
-            </td>
-            <td><span className={`type-badge ${typeBadge(row.type)}`}>{row.type}</span></td>
-            <td style={{ color: '#64748b' }}>{row.institution}</td>
-            <td style={{ color: '#94a3b8', fontSize: '0.8125rem' }}>{row.date}</td>
-            <td>
-              <div className="action-group">
-                <button className="btn-approve" onClick={() => onApprove(row.id, row.name)}>Odobri</button>
-                <button className="btn-reject"  onClick={() => onReject(row.id, row.name)}>Odbij</button>
-              </div>
-            </td>
-          </tr>
         ))}
-      </tbody>
-    </table>
-  );
-}
+      </div>
 
-function StatCard({ label, value, sub, subClass }) {
-  return (
-    <div className="stat-card">
-      <div className="stat-label">{label}</div>
-      <div className="stat-value">{value}</div>
-      {sub && <div className={`stat-sub ${subClass ?? 'neutral'}`}>{sub}</div>}
+      <div className="ad-dashboard-cols">
+        {/* Approval table */}
+        <div className="ad-section">
+          <div className="ad-section-header">
+            <h2 className="ad-section-title">Zahtjevi za odobravanje</h2>
+            <span className="ad-section-count">{pending.length} na čekanju</span>
+          </div>
+          <table className="ad-table">
+            <thead>
+              <tr>
+                <th>Korisnik</th>
+                <th>Tip</th>
+                <th>Institucija</th>
+                <th>Datum</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {pending.map((u) => (
+                <tr key={u.id}>
+                  <td>
+                    <div className="ad-user-cell">
+                      <div className="ad-avatar">{initials(u.name)}</div>
+                      <span className="ad-user-name">{u.name}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <span className={`ad-role-badge ad-role--${u.role.toLowerCase()}`}>
+                      {u.role === 'STUDENT' ? 'Student' : u.role === 'COMPANY' ? 'Kompanija' : 'Koordinator'}
+                    </span>
+                  </td>
+                  <td style={{ color: '#5a7a9a', fontSize: '0.85rem' }}>{u.institution}</td>
+                  <td style={{ color: '#9aabbc', fontSize: '0.82rem' }}>{u.date}</td>
+                  <td>
+                    <div className="ad-actions">
+                      <button
+                        className="ad-btn ad-btn--approve"
+                        onClick={() => showToast(`${u.name} odobren.`)}
+                      >
+                        Odobri
+                      </button>
+                      <button
+                        className="ad-btn ad-btn--reject"
+                        onClick={() => showToast(`${u.name} odbijen.`, 'error')}
+                      >
+                        Odbij
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Audit log */}
+        <div className="ad-section">
+          <div className="ad-section-header">
+            <h2 className="ad-section-title">Audit log</h2>
+          </div>
+          {STATIC_AUDIT.map((entry, i) => (
+            <div key={i} className="ad-audit-row">
+              <div className={`ad-audit-icon ${entry.iconClass}`}>{entry.symbol}</div>
+              <div className="ad-audit-body">
+                <div className="ad-audit-action">{entry.action}</div>
+                <div className="ad-audit-sub">{entry.sub}</div>
+              </div>
+              <div className="ad-audit-time">{entry.time}</div>
+            </div>
+          ))}
+          <div className="ad-audit-footer">
+            <button onClick={() => showToast('Audit log nije još implementiran.')}>
+              Cijeli log
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
 
+function PendingTable({ rows, showToast, emptyMsg }) {
+  return (
+    <div className="ad-table-scroll">
+      <table className="ad-table">
+        <thead>
+          <tr>
+            <th>Korisnik</th>
+            <th>Institucija</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((u) => (
+            <tr key={u.id}>
+              <td>
+                <div className="ad-user-cell">
+                  <div className="ad-avatar">{initials(u.name)}</div>
+                  <span className="ad-user-name">{u.name}</span>
+                </div>
+              </td>
+              <td style={{ color: '#5a7a9a', fontSize: '0.82rem' }}>{u.institution}</td>
+              <td>
+                <div className="ad-actions">
+                  <button className="ad-btn ad-btn--approve" onClick={() => showToast(`${u.name} odobren.`)}>Odobri</button>
+                  <button className="ad-btn ad-btn--reject" onClick={() => showToast(`${u.name} odbijen.`, 'error')}>Odbij</button>
+                </div>
+              </td>
+            </tr>
+          ))}
+          {rows.length === 0 && (
+            <tr><td colSpan={3} className="ad-empty">{emptyMsg}</td></tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function RolesView({ pending, showToast }) {
+  const coordinatorsPending = pending.filter((u) => u.role === 'COORDINATOR');
+  const companiesPending = pending.filter((u) => u.role === 'COMPANY');
+
+  return (
+    <div className="ad-content">
+      <div className="ad-header">
+        <h1 className="ad-title">Dodjela rola</h1>
+        <div className="ad-subtitle">Odobravanje koordinatora, kompanije i dodjela admin pristupa</div>
+      </div>
+
+      <div className="ad-roles-cols">
+        <div className="ad-section">
+          <div className="ad-section-header">
+            <h2 className="ad-section-title">Koordinatori na čekanju</h2>
+            <span className="ad-section-count">{coordinatorsPending.length} zahtjeva</span>
+          </div>
+          <PendingTable rows={coordinatorsPending} showToast={showToast} emptyMsg="Nema koordinatora na čekanju." />
+        </div>
+
+        <div className="ad-section">
+          <div className="ad-section-header">
+            <h2 className="ad-section-title">Kompanije na čekanju</h2>
+            <span className="ad-section-count">{companiesPending.length} zahtjeva</span>
+          </div>
+          <PendingTable rows={companiesPending} showToast={showToast} emptyMsg="Nema kompanija na čekanju." />
+        </div>
+      </div>
+
+      <div className="ad-section">
+        <div className="ad-section-header">
+          <h2 className="ad-section-title">Dodjela admin pristupa</h2>
+        </div>
+        <form
+          className="ad-assign-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            showToast('Admin rola dodijeljena.');
+            e.target.reset();
+          }}
+        >
+          <p className="ad-form-desc">
+            Unesi email adresu postojećeg korisnika kome želiš dodijeliti admin rolu.
+            Admin ima puni pristup sistemu uključujući odobravanje korisnika i upravljanje rolama.
+          </p>
+          <input type="email" placeholder="email@korisnik.ba" className="ad-input" required />
+          <button type="submit" className="ad-btn ad-btn--primary">Dodijeli admin rolu</button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function UsersView({ users, loading, statusFilter, roleFilter, dispatch, onRoleChange }) {
+  return (
+    <div className="ad-content">
+      <div className="ad-header">
+        <h1 className="ad-title">Korisnici</h1>
+        <div className="ad-subtitle">Pregled i upravljanje svim korisničkim računima</div>
+      </div>
+
+      <div className="ad-filters">
+        {STATUS_FILTERS.map((f) => (
+          <button
+            key={f.value}
+            className={`ad-filter-btn ${statusFilter === f.value && !roleFilter ? 'active' : ''}`}
+            onClick={() => dispatch({ type: 'SET_STATUS_FILTER', payload: f.value })}
+          >
+            {f.label}
+          </button>
+        ))}
+        <span className="ad-filter-sep" />
+        {ROLE_FILTERS.map((f) => (
+          <button
+            key={f.value}
+            className={`ad-filter-btn ${roleFilter === f.value ? 'active' : ''}`}
+            onClick={() =>
+              dispatch({
+                type: 'SET_ROLE_FILTER',
+                payload: roleFilter === f.value ? '' : f.value,
+              })
+            }
+          >
+            {f.label}
+          </button>
+        ))}
+        {!loading && (
+          <span className="ad-filters-count">{users.length} korisnika</span>
+        )}
+      </div>
+
+      {loading ? (
+        <p className="ad-loading">Učitavanje...</p>
+      ) : (
+        <div className="ad-section">
+          <table className="ad-table">
+            <thead>
+              <tr>
+                <th>Korisnik</th>
+                <th>Rola</th>
+                <th>Status</th>
+                <th>Institucija</th>
+                <th>Registrovan</th>
+                <th>Promijeni rolu</th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.map((u) => (
+                <tr key={u.id}>
+                  <td>
+                    <div className="ad-user-cell">
+                      <div className="ad-avatar">{initials(u.name)}</div>
+                      <div>
+                        <div className="ad-user-name">{u.name}</div>
+                        <div className="ad-user-email">{u.email}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <span className={`ad-role-badge ad-role--${u.role.toLowerCase()}`}>{u.role}</span>
+                  </td>
+                  <td>
+                    <span className={`ad-status-badge ad-status--${u.status.toLowerCase()}`}>{u.status}</span>
+                  </td>
+                  <td style={{ color: '#5a7a9a', fontSize: '0.85rem' }}>{u.institution || '—'}</td>
+                  <td style={{ color: '#9aabbc', fontSize: '0.82rem' }}>
+                    {u.created_at ? u.created_at.slice(0, 10) : '—'}
+                  </td>
+                  <td>
+                    <select
+                      className="ad-select"
+                      value={u.role}
+                      onChange={(e) => onRoleChange(u.id, e.target.value)}
+                    >
+                      {ROLES.map((r) => (
+                        <option key={r} value={r}>{r}</option>
+                      ))}
+                    </select>
+                  </td>
+                </tr>
+              ))}
+              {users.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="ad-empty">Nema korisnika za odabrani filter.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}

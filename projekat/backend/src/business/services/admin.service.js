@@ -76,14 +76,12 @@ async function updateUserRole(id, role) {
     err.status = 400;
     throw err;
   }
-
   const user = mockUsers.find((u) => u.id === id);
   if (!user) {
     const err = new Error('User not found.');
     err.status = 404;
     throw err;
   }
-
   user.role = role;
   return user;
 }
