@@ -686,7 +686,7 @@ export default function LandingPage() {
       </section>
 
       {/* ══════════════ FOOTER ══════════════ */}
-      <footer style={{ background: "#0a1628", padding: "48px 2rem 28px", color: "#6a88aa", width: "100%", boxSizing: "border-box" }}>
+      <footer style={{ background: "#0a1628", padding: "48px 2rem 28px", color: "#6a88aa", width: "100%", boxSizing: "border-box",  position: "relative", zIndex: 10 }}>
         <div style={{ maxWidth: 1100, margin: "0 auto" }}>
           <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 40, marginBottom: 40 }}>
             <div>
@@ -700,7 +700,7 @@ export default function LandingPage() {
             {[
               { title:"Platforma", links:[["O nama","#"],["Kako funkcioniše","#"],["Blog","#"],["Kontakt","#"]] },
               { title:"Korisnici", links:[["Za studente","#"],["Za kompanije","#"],["Za fakultete","#"],["FAQ","#"]] },
-              { title:"Pravno",    links:[["Uslovi korištenja","/terms"],["Politika privatnosti","/privacy"],["Kolačići","#"]] },
+              { title:"Pravno",    links:[["Uslovi korištenja","/terms"],["Politika privatnosti","/privacy"],["Kolačići","/cookies"]] },
             ].map(({ title, links }) => (
               <div key={title}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: "#99bbdd", marginBottom: 14, textTransform: "uppercase", letterSpacing: 1 }}>{title}</div>
