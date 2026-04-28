@@ -11,3 +11,10 @@ export function updateUserRole(id, role) {
     body: JSON.stringify({ role }),
   });
 }
+
+export function updateUserStatus(id, status) {
+  return apiRequest(`/admin/users/${id}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
+  });
+}

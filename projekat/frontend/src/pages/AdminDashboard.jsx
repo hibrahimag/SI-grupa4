@@ -1,5 +1,5 @@
 import { useEffect, useReducer } from 'react';
-import { getUsers, updateUserRole } from '../services/adminService';
+import { getUsers, updateUserRole, updateUserStatus } from '../services/adminService';
 import './AdminDashboard.css';
 
 const ROLES = ['STUDENT', 'COMPANY', 'COORDINATOR', 'ADMIN'];
@@ -54,6 +54,13 @@ function reducer(state, action) {
           u.id === action.payload.id ? { ...u, role: action.payload.role } : u
         ),
       };
+    case 'SET_PENDING':
+      return { ...state, pending: action.payload };
+    case 'REMOVE_PENDING':
+      return {
+        ...state,
+        pending: state.pending.filter((u) => u.id !== action.payload),
+      };
     case 'SHOW_TOAST':
       return { ...state, toast: action.payload };
     case 'HIDE_TOAST':
@@ -69,12 +76,19 @@ const initialState = {
   roleFilter: '',
   users: [],
   loading: true,
+  pending: [],
   toast: null,
 };
 
 export default function AdminDashboard() {
   const [state, dispatch] = useReducer(reducer, initialState);
-  const { view, statusFilter, roleFilter, users, loading, toast } = state;
+  const { view, statusFilter, roleFilter, users, loading, pending, toast } = state;
+
+  useEffect(() => {
+    getUsers('PENDING')
+      .then((data) => dispatch({ type: 'SET_PENDING', payload: data }))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (view === 'users') {
@@ -100,17 +114,19 @@ export default function AdminDashboard() {
     }
   }
 
+  async function handleStatusChange(userId, status, name) {
+    try {
+      await updateUserStatus(userId, status);
+      dispatch({ type: 'REMOVE_PENDING', payload: userId });
+      showToast(status === 'ACTIVE' ? `${name} odobren.` : `${name} odbijen.`);
+    } catch {
+      showToast('Greška pri promjeni statusa.', 'error');
+    }
+  }
+
   const visibleUsers = roleFilter
     ? users.filter((u) => u.role === roleFilter)
     : users;
-
-  const mockPending = [
-    { id: 1, name: 'Adnan Kovačević', role: 'STUDENT',     institution: 'ETF Sarajevo',  date: '2. jan' },
-    { id: 2, name: 'Telegroup Inc.',  role: 'COMPANY',     institution: 'Sarajevo',       date: '3. jan' },
-    { id: 3, name: 'Maja Petrović',   role: 'COORDINATOR', institution: 'FIN Sarajevo',  date: '4. jan' },
-    { id: 4, name: 'Sara Alibegović', role: 'STUDENT',     institution: 'PMF Sarajevo',  date: '4. jan' },
-    { id: 5, name: 'Burch International', role: 'COMPANY', institution: 'Sarajevo',      date: '5. jan' },
-  ];
 
   return (
     <div className="ad-layout">
@@ -141,7 +157,7 @@ export default function AdminDashboard() {
               onClick={() => dispatch({ type: 'SET_VIEW', payload: 'roles' })}
             >
               Dodjela rola
-              <span className="ad-badge">{mockPending.length}</span>
+              {pending.length > 0 && <span className="ad-badge">{pending.length}</span>}
             </button>
             <button
               className={`ad-nav-item ${view === 'users' ? 'active' : ''}`}
@@ -156,10 +172,10 @@ export default function AdminDashboard() {
       {/* Main content */}
       <main className="ad-main">
         {view === 'dashboard' && (
-          <DashboardView pending={mockPending} showToast={showToast} />
+          <DashboardView pending={pending} showToast={showToast} onStatusChange={handleStatusChange} />
         )}
         {view === 'roles' && (
-          <RolesView pending={mockPending} showToast={showToast} />
+          <RolesView pending={pending} showToast={showToast} onStatusChange={handleStatusChange} />
         )}
         {view === 'users' && (
           <UsersView
@@ -181,7 +197,7 @@ export default function AdminDashboard() {
   );
 }
 
-function DashboardView({ pending, showToast }) {
+function DashboardView({ pending, showToast, onStatusChange }) {
   const stats = [
     { label: 'Korisnika ukupno', value: '1,840', sub: '+23 ove sedmice',  subClass: 'ad-stat-sub--green' },
     { label: 'Na odobravanju',   value: pending.length, sub: 'Čeka akciju', subClass: 'ad-stat-sub--orange' },
@@ -243,13 +259,13 @@ function DashboardView({ pending, showToast }) {
                     <div className="ad-actions">
                       <button
                         className="ad-btn ad-btn--approve"
-                        onClick={() => showToast(`${u.name} odobren.`)}
+                        onClick={() => onStatusChange(u.id, 'ACTIVE', u.name)}
                       >
                         Odobri
                       </button>
                       <button
                         className="ad-btn ad-btn--reject"
-                        onClick={() => showToast(`${u.name} odbijen.`, 'error')}
+                        onClick={() => onStatusChange(u.id, 'DEACTIVATED', u.name)}
                       >
                         Odbij
                       </button>
@@ -287,7 +303,7 @@ function DashboardView({ pending, showToast }) {
   );
 }
 
-function PendingTable({ rows, showToast, emptyMsg }) {
+function PendingTable({ rows, onStatusChange, emptyMsg }) {
   return (
     <div className="ad-table-scroll">
       <table className="ad-table">
@@ -310,8 +326,8 @@ function PendingTable({ rows, showToast, emptyMsg }) {
               <td style={{ color: '#5a7a9a', fontSize: '0.82rem' }}>{u.institution}</td>
               <td>
                 <div className="ad-actions">
-                  <button className="ad-btn ad-btn--approve" onClick={() => showToast(`${u.name} odobren.`)}>Odobri</button>
-                  <button className="ad-btn ad-btn--reject" onClick={() => showToast(`${u.name} odbijen.`, 'error')}>Odbij</button>
+                  <button className="ad-btn ad-btn--approve" onClick={() => onStatusChange(u.id, 'ACTIVE', u.name)}>Odobri</button>
+                  <button className="ad-btn ad-btn--reject" onClick={() => onStatusChange(u.id, 'DEACTIVATED', u.name)}>Odbij</button>
                 </div>
               </td>
             </tr>
@@ -325,7 +341,7 @@ function PendingTable({ rows, showToast, emptyMsg }) {
   );
 }
 
-function RolesView({ pending, showToast }) {
+function RolesView({ pending, showToast, onStatusChange }) {
   const coordinatorsPending = pending.filter((u) => u.role === 'COORDINATOR');
   const companiesPending = pending.filter((u) => u.role === 'COMPANY');
 
@@ -342,7 +358,7 @@ function RolesView({ pending, showToast }) {
             <h2 className="ad-section-title">Koordinatori na čekanju</h2>
             <span className="ad-section-count">{coordinatorsPending.length} zahtjeva</span>
           </div>
-          <PendingTable rows={coordinatorsPending} showToast={showToast} emptyMsg="Nema koordinatora na čekanju." />
+          <PendingTable rows={coordinatorsPending} onStatusChange={onStatusChange} emptyMsg="Nema koordinatora na čekanju." />
         </div>
 
         <div className="ad-section">
@@ -350,7 +366,7 @@ function RolesView({ pending, showToast }) {
             <h2 className="ad-section-title">Kompanije na čekanju</h2>
             <span className="ad-section-count">{companiesPending.length} zahtjeva</span>
           </div>
-          <PendingTable rows={companiesPending} showToast={showToast} emptyMsg="Nema kompanija na čekanju." />
+          <PendingTable rows={companiesPending} onStatusChange={onStatusChange} emptyMsg="Nema kompanija na čekanju." />
         </div>
       </div>
 
