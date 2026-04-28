@@ -33,4 +33,25 @@ async function updateUserRole(req, res) {
   }
 }
 
-module.exports = { getUsers, updateUserRole };
+async function updateUserStatus(req, res) {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    const numericId = Number(id);
+
+    if (!Number.isInteger(numericId) || numericId <= 0) {
+      return res.status(400).json({ message: 'Valid user id is required.' });
+    }
+
+    if (!status) {
+      return res.status(400).json({ message: 'Field "status" is required.' });
+    }
+
+    const user = await adminService.updateUserStatus(numericId, status.toUpperCase());
+    res.json({ message: `Status updated to ${user.status}.`, user });
+  } catch (err) {
+    res.status(err.status || 500).json({ message: err.message });
+  }
+}
+
+module.exports = { getUsers, updateUserRole, updateUserStatus };

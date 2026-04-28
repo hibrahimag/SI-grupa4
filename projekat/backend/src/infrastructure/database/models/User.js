@@ -44,10 +44,10 @@ module.exports = (sequelize) => {
         allowNull: false,
         defaultValue: false,
       },
-      aktivan: {
-        type: DataTypes.BOOLEAN,
+      status: {
+        type: DataTypes.ENUM('PENDING', 'ACTIVE', 'DEACTIVATED'),
         allowNull: false,
-        defaultValue: true,
+        defaultValue: 'PENDING',
       },
       institution: {
         type: DataTypes.STRING(150),

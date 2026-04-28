@@ -10,5 +10,6 @@ router.use(rbacMiddleware('ADMIN'));
 
 router.get('/users', adminController.getUsers);
 router.patch('/users/:id/role', adminController.updateUserRole);
+router.patch('/users/:id/status', adminController.updateUserStatus);
 
 module.exports = router;
