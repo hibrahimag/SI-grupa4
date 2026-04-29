@@ -1,5 +1,6 @@
-import { useEffect, useReducer } from 'react';
+import { useEffect, useReducer, useState } from 'react';
 import { getUsers, updateUserRole, updateUserStatus } from '../services/adminService';
+import { useTheme } from '../context/ThemeContext';
 import './AdminDashboard.css';
 
 const ROLES = ['STUDENT', 'COMPANY', 'COORDINATOR', 'ADMIN'];
@@ -83,6 +84,8 @@ const initialState = {
 export default function AdminDashboard() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const { view, statusFilter, roleFilter, users, loading, pending, toast } = state;
+  const { darkMode } = useTheme();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     getUsers('PENDING')
@@ -129,13 +132,26 @@ export default function AdminDashboard() {
     : users;
 
   return (
-    <div className="ad-layout">
+    <div className={`ad-layout${darkMode ? ' dark' : ''}`}>
       {/* Sidebar */}
-      <aside className="ad-sidebar">
+      <aside className={`ad-sidebar${sidebarOpen ? ' open' : ''}`}>
         <div className="ad-logo">
-          <div className="ad-logo-name">PraksaHub</div>
+          <img src="/logo2.png" alt="PraksaHub" style={{ height: 40 }} />
           <div className="ad-logo-sub">Admin panel</div>
         </div>
+        {/* Toggle — vidljiv samo na mobilnom */}
+<button
+  className="ad-sidebar-toggle"
+  style={{ display: "none" }}
+  onClick={() => setSidebarOpen(o => !o)}
+>
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+    {sidebarOpen
+      ? <><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>
+      : <><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></>
+    }
+  </svg>
+</button>
 
         <div className="ad-nav-group">
           <div className="ad-nav-label">Pregled</div>
@@ -234,8 +250,8 @@ function DashboardView({ pending, showToast, onStatusChange }) {
               <tr>
                 <th>Korisnik</th>
                 <th>Tip</th>
-                <th>Institucija</th>
-                <th>Datum</th>
+                <th className="ad-col-institution">Institucija</th>
+                <th className="ad-col-date">Datum</th>
                 <th></th>
               </tr>
             </thead>
@@ -253,8 +269,8 @@ function DashboardView({ pending, showToast, onStatusChange }) {
                       {u.role === 'STUDENT' ? 'Student' : u.role === 'COMPANY' ? 'Kompanija' : 'Koordinator'}
                     </span>
                   </td>
-                  <td style={{ color: '#5a7a9a', fontSize: '0.85rem' }}>{u.institution}</td>
-                  <td style={{ color: '#9aabbc', fontSize: '0.82rem' }}>{u.date}</td>
+                  <td className="ad-col-institution" style={{ color: '#5a7a9a', fontSize: '0.85rem' }}>{u.institution}</td>
+                  <td className="ad-col-date" style={{ color: '#9aabbc', fontSize: '0.82rem' }}>{u.date}</td>
                   <td>
                     <div className="ad-actions">
                       <button
@@ -442,8 +458,8 @@ function UsersView({ users, loading, statusFilter, roleFilter, dispatch, onRoleC
                 <th>Korisnik</th>
                 <th>Rola</th>
                 <th>Status</th>
-                <th>Institucija</th>
-                <th>Registrovan</th>
+                <th className="ad-col-institution">Institucija</th>
+                <th className="ad-col-date">Registrovan</th>
                 <th>Promijeni rolu</th>
               </tr>
             </thead>
@@ -465,8 +481,8 @@ function UsersView({ users, loading, statusFilter, roleFilter, dispatch, onRoleC
                   <td>
                     <span className={`ad-status-badge ad-status--${u.status.toLowerCase()}`}>{u.status}</span>
                   </td>
-                  <td style={{ color: '#5a7a9a', fontSize: '0.85rem' }}>{u.institution || '—'}</td>
-                  <td style={{ color: '#9aabbc', fontSize: '0.82rem' }}>
+                  <td className="ad-col-institution" style={{ color: '#5a7a9a', fontSize: '0.85rem' }}>{u.institution || '—'}</td>
+                  <td className="ad-col-date" style={{ color: '#9aabbc', fontSize: '0.82rem' }}>
                     {u.created_at ? u.created_at.slice(0, 10) : '—'}
                   </td>
                   <td>
