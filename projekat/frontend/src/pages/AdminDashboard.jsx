@@ -89,7 +89,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     getUsers('PENDING')
-      .then((data) => dispatch({ type: 'SET_PENDING', payload: data }))
+      .then((data) => dispatch({ type: 'SET_PENDING', payload: data.filter((u) => u.role !== 'ADMIN') }))
       .catch(() => {});
   }, []);
 
@@ -124,6 +124,23 @@ export default function AdminDashboard() {
       showToast(status === 'ACTIVE' ? `${name} odobren.` : `${name} odbijen.`);
     } catch {
       showToast('Greška pri promjeni statusa.', 'error');
+    }
+  }
+
+  async function handleAssignAdmin(email) {
+    try {
+      const allUsers = await getUsers();
+      const user = allUsers.find((u) => u.email === email);
+      if (!user) {
+        showToast('Korisnik s tim emailom nije pronađen.', 'error');
+        return;
+      }
+      await updateUserRole(user.id, 'ADMIN');
+      await updateUserStatus(user.id, 'ACTIVE');
+      dispatch({ type: 'REMOVE_PENDING', payload: user.id });
+      showToast(`${user.name} je sada admin.`);
+    } catch {
+      showToast('Greška pri dodjeli admin role.', 'error');
     }
   }
 
@@ -191,7 +208,7 @@ export default function AdminDashboard() {
           <DashboardView pending={pending} showToast={showToast} onStatusChange={handleStatusChange} />
         )}
         {view === 'roles' && (
-          <RolesView pending={pending} showToast={showToast} onStatusChange={handleStatusChange} />
+          <RolesView pending={pending} showToast={showToast} onStatusChange={handleStatusChange} onAssignAdmin={handleAssignAdmin} />
         )}
         {view === 'users' && (
           <UsersView
@@ -357,7 +374,7 @@ function PendingTable({ rows, onStatusChange, emptyMsg }) {
   );
 }
 
-function RolesView({ pending, showToast, onStatusChange }) {
+function RolesView({ pending, showToast, onStatusChange, onAssignAdmin }) {
   const coordinatorsPending = pending.filter((u) => u.role === 'COORDINATOR');
   const companiesPending = pending.filter((u) => u.role === 'COMPANY');
 
@@ -365,7 +382,7 @@ function RolesView({ pending, showToast, onStatusChange }) {
     <div className="ad-content">
       <div className="ad-header">
         <h1 className="ad-title">Dodjela rola</h1>
-        <div className="ad-subtitle">Odobravanje koordinatora, kompanije i dodjela admin pristupa</div>
+        <div className="ad-subtitle">Odobravanje koordinatora i kompanija</div>
       </div>
 
       <div className="ad-roles-cols">
@@ -394,7 +411,8 @@ function RolesView({ pending, showToast, onStatusChange }) {
           className="ad-assign-form"
           onSubmit={(e) => {
             e.preventDefault();
-            showToast('Admin rola dodijeljena.');
+            const email = e.target.elements[0].value;
+            onAssignAdmin(email);
             e.target.reset();
           }}
         >
