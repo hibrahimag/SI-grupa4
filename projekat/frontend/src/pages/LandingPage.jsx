@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useTheme } from "../context/ThemeContext";
 
 /* ─── SVG Icons ─── */
 const IconBriefcase = ({ size = 22, color = "currentColor" }) => (
@@ -184,7 +185,7 @@ const AREAS = [
 /* ══════════════════════════════════════
    AREAS CAROUSEL COMPONENT
 ══════════════════════════════════════ */
-function AreasCarousel() {
+function AreasCarousel({ darkMode }) {
   const [current, setCurrent] = useState(0);
   const [visible, setVisible] = useState(true);
   const [direction, setDirection] = useState("next");
@@ -254,10 +255,10 @@ function AreasCarousel() {
             }}>
               <area.Icon size={28} color={area.accent} />
             </div>
-            <h3 style={{ fontSize: 20, fontWeight: 700, color: "#0d1f3c", margin: "0 0 5px" }}>
+            <h3 style={{ fontSize: 20, fontWeight: 700, color: darkMode ? "#f9fafb" : "#0d1f3c", margin: "0 0 5px" }}>
               {area.label}
             </h3>
-            <p style={{ fontSize: 13, color: "#5a7a9a", margin: 0 }}>
+            <p style={{ fontSize: 13, color: darkMode ? "#cbd5e1" : "#5a7a9a", margin: 0 }}>
               Pronađi praksu u ovoj oblasti
             </p>
           </div>
@@ -358,6 +359,7 @@ const NAV_LINKS = [
 ];
 
 export default function LandingPage() {
+  const { darkMode, setDarkMode } = useTheme();
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -388,14 +390,19 @@ export default function LandingPage() {
   };
 
   return (
-    <div style={{ fontFamily: "'Sora','Segoe UI',sans-serif", background: "#f0f6ff", color: "#0d1f3c", width: "100%" }}>
-
+   <div style={{
+    fontFamily: "'Sora','Segoe UI',sans-serif",
+    width: "100%",
+    background: darkMode ? "#111827" : "#f0f6ff",
+    color: darkMode ? "#f9fafb" : "#0d1f3c",
+  }}
+>
       {/* ══════════════ NAVBAR ══════════════ */}
       <nav style={{
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
-        background: "rgba(255,255,255,0.93)",
+        background: darkMode ? "rgba(17,24,39,0.93)" : "rgba(255,255,255,0.93)",
         backdropFilter: "blur(14px)",
-        borderBottom: "1px solid #d0e3f7",
+        borderBottom: darkMode ? "1px solid #374151" : "1px solid #d0e3f7",
         transition: "all 0.3s ease", padding: "0 2rem",
       }}>
         <div style={{ maxWidth: 1200, margin: "0 auto", display: "flex", alignItems: "center", gap: 10, height: 68 }}>
@@ -408,7 +415,7 @@ export default function LandingPage() {
             {NAV_LINKS.map(({ label, sectionId }) => (
               <button key={label} onClick={() => scrollToSection(sectionId)} style={{
                 padding: "6px 12px", borderRadius: 8, fontSize: 14, fontWeight: 500,
-                color: "#3a5a8a", background: "transparent", border: "none",
+                color: darkMode ? "#cbd5e1" : "#3a5a8a", background: "transparent", border: "none",
                 cursor: "pointer", transition: "background 0.2s", fontFamily: "inherit",
               }}
                 {...hov({ background: "#e8f1fb" }, { background: "transparent" })}
@@ -417,14 +424,14 @@ export default function LandingPage() {
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: "auto", flexShrink: 0 }}>
-            <button title="Tamni režim (uskoro)" style={{
-              width: 36, height: 36, borderRadius: 8, border: "1px solid #d0e3f7",
-              background: "transparent", cursor: "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              transition: "background 0.2s",
-            }}
-              {...hov({ background: "#e8f1fb" }, { background: "transparent" })}
-            ><IconMoon size={17} color="#3a5a8a" /></button>
+            <button onClick={() => { setDarkMode(!darkMode);}} title="Promijeni temu"
+             style={{ width: 36, height: 36, borderRadius: 8, border: "1px solid #d0e3f7",
+               background: "transparent", cursor: "pointer", display: "flex", alignItems: "center",
+               justifyContent: "center", transition: "background 0.2s",
+              }}
+               {...hov({ background: "#e8f1fb" }, { background: "transparent" })}
+            ><IconMoon size={17} color={darkMode ? "#f9fafb" : "#3a5a8a"} />
+            </button>
 
             <Link to="/login" style={{
               padding: "8px 18px", borderRadius: 8, fontSize: 14, fontWeight: 600,
@@ -450,7 +457,7 @@ export default function LandingPage() {
       {/* ══════════════ HERO ══════════════ */}
       <section style={{
         minHeight: "100vh", display: "flex", alignItems: "center",
-        background: "linear-gradient(160deg,#e8f2ff 0%,#f0f6ff 55%,#ede8ff 100%)",
+        background: darkMode ? "linear-gradient(160deg,#111827 0%,#1f2937 55%,#0f172a 100%)" : "linear-gradient(160deg,#e8f2ff 0%,#f0f6ff 55%,#ede8ff 100%)",
         padding: "100px 2rem 60px", position: "relative", overflow: "hidden",
         width: "100%", boxSizing: "border-box",
       }}>
@@ -466,12 +473,12 @@ export default function LandingPage() {
               Digitalna platforma za studentske prakse
             </div>
 
-            <h1 style={{ fontSize: "clamp(2.2rem,4vw,3.2rem)", fontWeight: 700, lineHeight: 1.15, color: "#0d1f3c", margin: "0 0 24px", letterSpacing: "-1px" }}>
+            <h1 style={{ fontSize: "clamp(2.2rem,4vw,3.2rem)", fontWeight: 700, lineHeight: 1.15, color: darkMode ? "#f9fafb" : "#0d1f3c", margin: "0 0 24px", letterSpacing: "-1px" }}>
               Pronađi svoju prvu<br />
               <span style={{ background: "linear-gradient(135deg,#1a6fd4,#6d4ce1)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>profesionalnu praksu</span>
             </h1>
 
-            <p style={{ fontSize: 17, lineHeight: 1.75, color: "#3a5a8a", margin: "0 0 36px", maxWidth: 480 }}>
+            <p style={{ fontSize: 17, lineHeight: 1.75, color: darkMode ? "#cbd5e1" : "#3a5a8a", margin: "0 0 36px", maxWidth: 480 }}>
               Centralizovana platforma koja povezuje studente, kompanije i fakultete. Prijava, praćenje i evaluacija prakse - sve na jednom mjestu.
             </p>
 
@@ -490,16 +497,16 @@ export default function LandingPage() {
           </div>
 
           {/* Right — Areas Carousel */}
-          <AreasCarousel />
+          <AreasCarousel darkMode={darkMode}/>
         </div>
       </section>
 
       {/* ══════════════ HOW IT WORKS ══════════════ */}
-      <section id="kako-funkcionise" style={{ padding: "90px 2rem", background: "white", width: "100%", boxSizing: "border-box" }}>
+      <section id="kako-funkcionise" style={{ padding: "90px 2rem", background: darkMode ? "#111827" : "white", width: "100%", boxSizing: "border-box" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: 56 }}>
-            <h2 style={{ fontSize: "clamp(1.8rem,3vw,2.4rem)", fontWeight: 700, color: "#0d1f3c", margin: "0 0 14px", letterSpacing: "-0.5px" }}>Kako funkcioniše?</h2>
-            <p style={{ fontSize: 16, color: "#5a7a9a", maxWidth: 500, margin: "0 auto" }}>Jednostavan proces koji vodi od registracije do završene prakse</p>
+            <h2 style={{ fontSize: "clamp(1.8rem,3vw,2.4rem)", fontWeight: 700, color: darkMode ? "#f9fafb" : "#0d1f3c", margin: "0 0 14px", letterSpacing: "-0.5px" }}>Kako funkcioniše?</h2>
+            <p style={{ fontSize: 16, color: darkMode ? "#cbd5e1" : "#5a7a9a", maxWidth: 500, margin: "0 auto" }}>Jednostavan proces koji vodi od registracije do završene prakse</p>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 24 }}>
             {[
@@ -508,7 +515,7 @@ export default function LandingPage() {
               { step:"03", Icon: IconFile,      title:"Prijavi se",     desc:"Pošalji prijavu s CV-om i motivacionim pismom direktno kroz platformu.", color:"#0e9e6e", bg:"#e0f7ef" },
               { step:"04", Icon: IconClipboard, title:"Prati status",   desc:"Prati odobravanje od strane kompanije i koordinatora u realnom vremenu.", color:"#e07b1a", bg:"#fef0dd" },
             ].map(({ step, Icon, title, desc, color, bg }) => (
-              <div key={step} style={{ background: "#f8fbff", border: "1px solid #e0edf9", borderRadius: 16, padding: 28, position: "relative", overflow: "hidden", transition: "transform 0.2s, box-shadow 0.2s" }}
+              <div key={step} style={{ background: darkMode ? "#1f2937" : "#f8fbff", border: "1px solid #e0edf9", borderRadius: 16, padding: 28, position: "relative", overflow: "hidden", transition: "transform 0.2s, box-shadow 0.2s" }}
                 onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 10px 30px rgba(26,111,212,0.11)"; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
               >
@@ -516,8 +523,8 @@ export default function LandingPage() {
                 <div style={{ width: 46, height: 46, borderRadius: 12, background: bg, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
                   <Icon size={22} color={color} />
                 </div>
-                <h3 style={{ fontSize: 16, fontWeight: 700, color: "#0d1f3c", margin: "0 0 10px" }}>{title}</h3>
-                <p style={{ fontSize: 14, color: "#5a7a9a", lineHeight: 1.65, margin: 0 }}>{desc}</p>
+                <h3 style={{ fontSize: 16, fontWeight: 700, color: darkMode ? "#f9fafb" : "#0d1f3c", margin: "0 0 10px" }}>{title}</h3>
+                <p style={{ fontSize: 14, color: darkMode ? "#cbd5e1" : "#5a7a9a", lineHeight: 1.65, margin: 0 }}>{desc}</p>
               </div>
             ))}
           </div>
@@ -525,12 +532,12 @@ export default function LandingPage() {
       </section>
 
       {/* ══════════════ FOR STUDENTS ══════════════ */}
-      <section id="za-studente" style={{ padding: "90px 2rem", background: "linear-gradient(160deg,#f0f6ff,#f5f0ff)", width: "100%", boxSizing: "border-box" }}>
+      <section id="za-studente" style={{ padding: "90px 2rem", background: darkMode ? "linear-gradient(160deg,#0f172a,#1f2937)" : "linear-gradient(160deg,#f0f6ff,#f5f0ff)", width: "100%", boxSizing: "border-box" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 60, alignItems: "center" }}>
           <div>
             <div style={{ display: "inline-block", background: "#ddeeff", color: "#1a6fd4", borderRadius: 20, padding: "5px 14px", fontSize: 13, fontWeight: 600, marginBottom: 18, border: "1px solid #b8d8f8" }}>Za studente</div>
-            <h2 style={{ fontSize: "clamp(1.7rem,2.5vw,2.2rem)", fontWeight: 700, color: "#0d1f3c", margin: "0 0 20px", letterSpacing: "-0.5px" }}>Sve prakse na jednom mjestu</h2>
-            <p style={{ fontSize: 16, color: "#3a5a8a", lineHeight: 1.75, margin: "0 0 28px" }}>
+            <h2 style={{ fontSize: "clamp(1.7rem,2.5vw,2.2rem)", fontWeight: 700, color: darkMode ? "#f9fafb" : "#0d1f3c", margin: "0 0 20px", letterSpacing: "-0.5px" }}>Sve prakse na jednom mjestu</h2>
+            <p style={{ fontSize: 16, color: darkMode ? "#cbd5e1" : "#3a5a8a", lineHeight: 1.75, margin: "0 0 28px" }}>
               Prestani pretraživati desetine platformi. PraksaHub ti daje centralizovan pregled svih dostupnih praksi, jasan uvid u status prijava i automatske notifikacije o svim promjenama.
             </p>
             <ul style={{ listStyle: "none", padding: 0, margin: "0 0 32px", display: "flex", flexDirection: "column", gap: 13 }}>
@@ -570,7 +577,7 @@ export default function LandingPage() {
       </section>
 
       {/* ══════════════ FOR COMPANIES ══════════════ */}
-      <section id="za-kompanije" style={{ padding: "90px 2rem", background: "white", width: "100%", boxSizing: "border-box" }}>
+      <section id="za-kompanije" style={{ padding: "90px 2rem", background: darkMode ? "#111827" : "white", width: "100%", boxSizing: "border-box" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 60, alignItems: "center" }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
             {[
@@ -586,7 +593,7 @@ export default function LandingPage() {
                 <div style={{ width: 40, height: 40, borderRadius: 10, background: bg, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
                   <Icon size={20} color={color} />
                 </div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#0d1f3c", marginBottom: 6 }}>{title}</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: darkMode ? "#f9fafb" : "#0d1f3c", marginBottom: 6 }}>{title}</div>
                 <div style={{ fontSize: 13, color: "#6a88aa", lineHeight: 1.55 }}>{desc}</div>
               </div>
             ))}
@@ -594,8 +601,8 @@ export default function LandingPage() {
 
           <div>
             <div style={{ display: "inline-block", background: "#ede8ff", color: "#6d4ce1", borderRadius: 20, padding: "5px 14px", fontSize: 13, fontWeight: 600, marginBottom: 18, border: "1px solid #c9bbf5" }}>Za kompanije</div>
-            <h2 style={{ fontSize: "clamp(1.7rem,2.5vw,2.2rem)", fontWeight: 700, color: "#0d1f3c", margin: "0 0 20px", letterSpacing: "-0.5px" }}>Pronađi pravu radnu snagu</h2>
-            <p style={{ fontSize: 16, color: "#3a5a8a", lineHeight: 1.75, margin: "0 0 28px" }}>
+            <h2 style={{ fontSize: "clamp(1.7rem,2.5vw,2.2rem)", fontWeight: 700, color: darkMode ? "#f9fafb" : "#0d1f3c", margin: "0 0 20px", letterSpacing: "-0.5px" }}>Pronađi pravu radnu snagu</h2>
+            <p style={{ fontSize: 16, color: darkMode ? "#cbd5e1" : "#3a5a8a", lineHeight: 1.75, margin: "0 0 28px" }}>
               Jednostavno postavljanje oglasa, pregled profila kandidata i efikasan proces selekcije - sve integrisano s fakultetskim koordinatorima.
             </p>
             <ul style={{ listStyle: "none", padding: 0, margin: "0 0 32px", display: "flex", flexDirection: "column", gap: 13 }}>
@@ -616,11 +623,11 @@ export default function LandingPage() {
       </section>
 
       {/* ══════════════ ROLES ══════════════ */}
-      <section id="o-platformi" style={{ padding: "90px 2rem", background: "#f0f6ff", width: "100%", boxSizing: "border-box" }}>
+      <section id="o-platformi" style={{ padding: "90px 2rem", background: darkMode ? "#1f2937" : "white", width: "100%", boxSizing: "border-box" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: 56 }}>
-            <h2 style={{ fontSize: "clamp(1.8rem,3vw,2.4rem)", fontWeight: 700, color: "#0d1f3c", margin: "0 0 14px", letterSpacing: "-0.5px" }}>Ko koristi PraksaHub?</h2>
-            <p style={{ fontSize: 16, color: "#5a7a9a", maxWidth: 500, margin: "0 auto" }}>Četiri uloge, jedna platforma</p>
+            <h2 style={{ fontSize: "clamp(1.8rem,3vw,2.4rem)", fontWeight: 700, color: darkMode ? "#f9fafb" : "#0d1f3c", margin: "0 0 14px", letterSpacing: "-0.5px" }}>Ko koristi PraksaHub?</h2>
+            <p style={{ fontSize: 16, color: darkMode ? "#cbd5e1" : "#5a7a9a", maxWidth: 500, margin: "0 auto" }}>Četiri uloge, jedna platforma</p>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(230px,1fr))", gap: 24 }}>
             {[
@@ -645,15 +652,15 @@ export default function LandingPage() {
                 cta: null,
               },
             ].map(({ role, Icon, color, bg, border, top, desc, cta }) => (
-              <div key={role} style={{ background: "white", border: `1px solid ${border}`, borderTop: `4px solid ${top}`, borderRadius: 16, padding: 28, transition: "transform 0.2s, box-shadow 0.2s" }}
+              <div key={role} style={{ background: darkMode ? "#1f2937" : "white", border: `1px solid ${border}`, borderTop: `4px solid ${top}`, borderRadius: 16, padding: 28, transition: "transform 0.2s, box-shadow 0.2s" }}
                 onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 10px 30px rgba(0,0,0,0.09)"; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
               >
                 <div style={{ width: 50, height: 50, borderRadius: 13, background: bg, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 18 }}>
                   <Icon size={24} color={color} />
                 </div>
-                <h3 style={{ fontSize: 17, fontWeight: 700, color: "#0d1f3c", margin: "0 0 12px" }}>{role}</h3>
-                <p style={{ fontSize: 14, color: "#5a7a9a", lineHeight: 1.65, margin: "0 0 20px" }}>{desc}</p>
+                <h3 style={{ fontSize: 17, fontWeight: 700, color: darkMode ? "#f9fafb" : "#0d1f3c", margin: "0 0 12px" }}>{role}</h3>
+                <p style={{ fontSize: 14, color: darkMode ? "#cbd5e1" : "#5a7a9a", lineHeight: 1.65, margin: "0 0 20px" }}>{desc}</p>
                 {cta ? (
                   <Link to={cta.to} style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 14, fontWeight: 700, color, textDecoration: "none" }}>
                     {cta.label} <IconArrowRight size={13} color={color} />
@@ -675,7 +682,7 @@ export default function LandingPage() {
             Pridruži se stotinama studenata koji su već pronašli svoju prvu profesionalnu praksu putem PraksaHub platforme.
           </p>
           <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
-            <Link to="/register" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "14px 30px", borderRadius: 10, fontSize: 15, fontWeight: 700, color: "#0d1f3c", textDecoration: "none", background: "white", boxShadow: "0 4px 20px rgba(0,0,0,0.2)", transition: "transform 0.2s" }}
+            <Link to="/register" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "14px 30px", borderRadius: 10, fontSize: 15, fontWeight: 700, color: darkMode ? "#f9fafb" : "#0d1f3c", textDecoration: "none", background: "white", boxShadow: "0 4px 20px rgba(0,0,0,0.2)", transition: "transform 0.2s" }}
               {...hov({ transform: "translateY(-2px)" }, { transform: "translateY(0)" })}
             >Registruj se besplatno <IconArrowRight size={14} color="#0d1f3c" /></Link>
             <Link to="/login" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "14px 30px", borderRadius: 10, fontSize: 15, fontWeight: 700, color: "white", textDecoration: "none", border: "1.5px solid rgba(255,255,255,0.35)", transition: "background 0.2s" }}
@@ -705,8 +712,8 @@ export default function LandingPage() {
               <div key={title}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: "#99bbdd", marginBottom: 14, textTransform: "uppercase", letterSpacing: 1 }}>{title}</div>
                 {links.map(([label, to]) => (
-                  <Link key={label} to={to} style={{ display: "block", fontSize: 13, color: "#5a7a9a", marginBottom: 9, textDecoration: "none", transition: "color 0.2s" }}
-                    {...hov({ color: "#99bbdd" }, { color: "#5a7a9a" })}
+                  <Link key={label} to={to} style={{ display: "block", fontSize: 13, color: darkMode ? "#cbd5e1" : "#5a7a9a", marginBottom: 9, textDecoration: "none", transition: "color 0.2s" }}
+                    {...hov({ color: "#99bbdd" }, { color: darkMode ? "#cbd5e1" : "#5a7a9a" })}
                   >{label}</Link>
                 ))}
               </div>
