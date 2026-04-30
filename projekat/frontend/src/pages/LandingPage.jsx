@@ -422,7 +422,7 @@ export default function LandingPage() {
         <div style={{ maxWidth: 1200, margin: "0 auto", display: "flex", alignItems: "center", gap: 10, height: 68 }}>
 
           <Link to="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none", flexShrink: 0 }}>
-            <img src="/logo.png" alt="PraksaHub" style={{ height: 200 }} />
+            <img src="/logo2.png" alt="PraksaHub" style={{ height: 60 }} />
           </Link>
 
           <div className="lp-nav-links" style={{ display: "flex", alignItems: "center", gap: 2, marginLeft: 10 }}>
@@ -465,13 +465,21 @@ export default function LandingPage() {
               {...hov({ opacity: "0.88" }, { opacity: "1" })}
             >Registruj se</Link>
           </div>
+          <button
+            className="lp-darkmode-mobile"
+            onClick={() => setDarkMode(!darkMode)}
+            title="Promijeni temu"
+            style={{ display: "none" }}
+          >
+            {darkMode ? <IconSun size={17} color="#f9fafb" /> : <IconMoon size={17} color="#3a5a8a" />}
+          </button>
           {/* Hamburger — vidljiv samo na mobilnom */}
           <button
           className="lp-hamburger"
           onClick={() => setMobileMenuOpen(o => !o)}
           style={{
             display: "none", // CSS ga pokazuje na mobilnom
-            marginLeft: "auto",
+            marginLeft: "0",
             width: 36, height: 36, borderRadius: 8,
             border: "1px solid #d0e3f7", background: "transparent",
             cursor: "pointer", alignItems: "center", justifyContent: "center",
@@ -623,6 +631,7 @@ export default function LandingPage() {
       {/* ══════════════ FOR COMPANIES ══════════════ */}
       <section id="za-kompanije" style={{ padding: "90px 2rem", background: darkMode ? "#111827" : "white", width: "100%", boxSizing: "border-box" }}>
         <div className="lp-two-col"  style={{ maxWidth: 1100, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 60, alignItems: "center" }}>
+          <div className="lp-companies-badge-mobile">Za kompanije</div>
           <div className="lp-two-col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
             {[
               { Icon: IconBriefcase, title: "Upravljanje oglasima",    desc: "Kreiraj, uredi i zatvori oglase za praksu u par klikova.",      color: "#1a6fd4", bg: "#ddeeff" },
@@ -644,7 +653,7 @@ export default function LandingPage() {
           </div>
 
           <div>
-            <div style={{ display: "inline-block", background: "#ede8ff", color: "#6d4ce1", borderRadius: 20, padding: "5px 14px", fontSize: 13, fontWeight: 600, marginBottom: 18, border: "1px solid #c9bbf5" }}>Za kompanije</div>
+            <div className="lp-companies-badge-desktop" style={{ display: "inline-block", background: "#ede8ff", color: "#6d4ce1", borderRadius: 20, padding: "5px 14px", fontSize: 13, fontWeight: 600, marginBottom: 18, border: "1px solid #c9bbf5" }}>Za kompanije</div>
             <h2 style={{ fontSize: "clamp(1.7rem,2.5vw,2.2rem)", fontWeight: 700, color: darkMode ? "#f9fafb" : "#0d1f3c", margin: "0 0 20px", letterSpacing: "-0.5px" }}>Pronađi pravu radnu snagu</h2>
             <p style={{ fontSize: 16, color: darkMode ? "#cbd5e1" : "#3a5a8a", lineHeight: 1.75, margin: "0 0 28px" }}>
               Jednostavno postavljanje oglasa, pregled profila kandidata i efikasan proces selekcije - sve integrisano s fakultetskim koordinatorima.
