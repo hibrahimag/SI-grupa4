@@ -169,3 +169,239 @@ privremeno se koriste mock podaci pošto je audit log odvojeni US
 - Potencijalna generičnost pravnih formulacija
 - Rizik od pravno nedovoljno preciznih izraza — svi dokumenti su ručno pregledani i prilagođeni prije implementacije
 - AI dizajn prijedlog nije bio u skladu sa postojećim frontend stilom, što je zahtijevalo dodatno ručno prilagođavanje
+
+---
+
+## Unos 4 — Inicijalna implementacija Landing page (US-41)
+
+| Polje | Sadržaj |
+|---|---|
+| **Datum** | 25.04.2026 |
+| **Sprint broj** | 5 |
+| **Alat** | Claude (claude-sonnet-4-6, claude.ai) |
+| **Ko je koristio** | alukovac1 |
+| **Svrha korištenja** | Implementacija US-41 — početna stranica (Landing page) |
+
+**Kratak opis upita:**
+
+> Implementirati landing page za sistem za upravljanje studentskim praksama. Stack: React frontend sa React Router DOM. Stranica treba biti edukativnog karaktera, s plavo-bijelom temom. Navigacijska traka treba sadržavati logo, navigacijske linkove, ikonicu za tamni režim te dugmad za prijavu i registraciju. Sekcije: hero, kako funkcioniše, za studente, za kompanije, pregled uloga (student, kompanija, koordinator, administrator) i footer. Sve ikone trebaju biti outline/stroke stil.
+
+---
+
+**Šta je AI predložio ili generisao:**
+- Kompletan `LandingPage.jsx` s inline stilovima (bez zasebnog CSS fajla)
+- Fiksni navbar s blur efektom pri scrollovanju, smooth scroll na sekcije, placeholder dugme za tamni režim i search bar
+- Hero sekcija s gradijentnim naslovom, dva CTA dugmeta i karticom desno 
+- Sekcija "Kako funkcioniše" s 4 koraka (01–04)
+- Sekcija "Za studente" s listom funkcionalnosti i 4 feature kartice
+- Sekcija "Za kompanije" s 4 value prop kartice
+- Sekcija "Ko koristi platformu" s karticama po ulogama (Student, Kompanija, Koordinator, Administrator)
+- CTA sekcija i footer s kolonama linkova
+- Sve SVG ikone kao inline React komponente (outline stil)
+
+---
+
+**Šta je tim prihvatio:**
+- Cjelokupnu strukturu i raspored sekcija
+- Dizajn navbara, footer i sekcija
+- Inline SVG ikone outline stila
+- Plavo-bijelu temu s ljubičastim akcentima
+
+---
+
+**Šta je tim izmijenio:**
+- Dodan vlastiti logo umjesto generiranog logotipa
+- Promijenjeni pojedini tekstovi i opisi sekcija
+- Sitne korekcije boja i razmaka
+- Stavljena fiksna boja navbar-a
+
+---
+
+**Šta je tim odbacio:**
+- Prva verzija kartice u hero sekciji prikazivala je konkretan mock oglas ("Frontend Developer Praksa, TechCorp") - odbačeno jer oglasi još nisu implementirani
+- Footer je inicijalno sadržavao FAQ i Kontakt linkove - odbačeno jer te stranice nisu planirane u user storyjima
+
+---
+
+**Rizici, problemi ili greške:**
+- Browser defaultni `margin: 8px` na `<body>` uzrokovao bijeli prostor oko rubova - riješeno dodavanjem CSS reseta u `index.html`
+- Potrebno je dodati `box-sizing: border-box` i `overflow-x: hidden` globalno
+
+---
+
+## Unos 5 — Iterativne izmjene Landing page dizajna
+
+| Polje | Sadržaj |
+|---|---|
+| **Datum** | 27.04.2026 |
+| **Sprint broj** | 5 |
+| **Alat** | Claude (claude-sonnet-4-6, claude.ai) |
+| **Ko je koristio** | alukovac1 |
+| **Svrha korištenja** | Poboljšanje i korekcija landing page komponenti |
+
+**Kratak opis upita:**
+
+> Niz iterativnih izmjena na landing pageu: ukloniti konkretni mock oglas iz hero kartice, ukloniti search bar iz navbara, zamijeniti sve emoji ikone s outline SVG ikonama, ukloniti mock dashboard kompanije, popraviti navigacijske linkove da koriste smooth scroll, zamijeniti `<a href>` s `<Link>` iz react-router-dom, promijeniti hero karticu u areas carousel.
+
+---
+
+**Šta je AI predložio ili generisao:**
+- Uklanjanje search bara iz navbara, predloženo stavljane na ListingsPage
+- Redesign hero kartice: areas carousel s 6 oblasti
+- Areas carousel komponenta (`AreasCarousel`) s auto-advance svakih 3s, fade/slide animacijom, dot indikatorima i prev/next strelicama
+- Oblasti: Programiranje & IT, Medicina, Biznis & Marketing, Inženjering, Dizajn & Kreativa, Pravo & Uprava - svaka s ikonom, bojom i primjerima pozicija
+- Zamjena svih `<a href>` linkova s `<Link to>` iz react-router-dom
+- Fluid width: `maxWidth: "min(1320px, 92vw)"` umjesto fiksnog `1100px`
+- Administrator kartica bez CTA dugmeta ("Interno kreiranje naloga")
+
+---
+
+**Šta je tim prihvatio:**
+- Areas carousel kao finalno rješenje za hero karticu
+- Fluid width za sve sekcije
+- `<Link>` umjesto `<a href>` za sve interne rute
+- Administrator kartica bez dugmeta za registraciju
+
+---
+
+**Šta je tim izmijenio:**
+- Rute promijenjene iz `/oglasi` u `/listings` radi usklađivanja s postojećim `App.jsx` rutama
+
+---
+
+**Šta je tim odbacio:**
+- Status tracker mock (zamijenjen carousel-om)
+- "Zašto PraksaHub?" lista u hero kartici
+
+---
+
+**Rizici, problemi ili greške:**
+- `maxWidth: 1100` ostavljao previše bijelog prostora na velikim monitorima - riješeno fluid width pristupom
+
+---
+
+## Unos 6 — Korekcije footera i navbara
+
+| Polje | Sadržaj |
+|---|---|
+| **Datum** | 29.04.2026 |
+| **Sprint broj** | 5 |
+| **Alat** | Claude (claude-sonnet-4-6, claude.ai) |
+| **Ko je koristio** | alukovac1 |
+| **Svrha korištenja** | Usklađivanje redosljeda navigacije i footer linkova |
+
+**Kratak opis upita:**
+
+> Uskladiti redosljed linkova u navbaru s redoslijedom sekcija na stranici. Footer linkove koji vode na sekcije pretvoriti u scroll dugmad umjesto `<Link>` komponenti. Pravno sekcija treba voditi na `/terms`, `/privacy`, `/cookies`.
+
+---
+
+**Šta je AI predložio ili generisao:**
+- Novi redosljed `NAV_LINKS`: Kako funkcioniše → Za studente → Za kompanije → O platformi
+- Footer refaktor: novi format linkova s `type: "scroll"` i `type: "route"` distinkcijom
+- Scroll linkovi rendiraju se kao `<button onClick={() => scrollToSection(target)}>` 
+- Route linkovi rendiraju se kao `<Link to={target}>`
+
+---
+
+**Šta je tim prihvatio:**
+- Novi redosljed navbara
+- Distinkcija scroll vs route linkova u footeru
+
+---
+
+**Šta je tim izmijenio:**
+
+**Šta je tim odbacio:**
+
+---
+
+**Rizici, problemi ili greške:**
+- Miješanje starog formata `[label, to]` i novog formata `{ label, type, target }` u footer `.map()` uzrokovalo `TypeError: object is not iterable` - riješeno kompletnom zamjenom bloka koda
+
+---
+
+## Unos 7 — Responzivnost landing pagea za mobilne uređaje
+
+| Polje | Sadržaj |
+|---|---|
+| **Datum** | 29.04.2026 |
+| **Sprint broj** | 5 |
+| **Alat** | Claude (claude-sonnet-4-6, claude.ai) |
+| **Ko je koristio** | alukovac1 |
+| **Svrha korištenja** | Prilagodba landing pagea za mobilne i tablet uređaje |
+
+**Kratak opis upita:**
+
+> Implementirati responzivnost landing pagea za manje uređaje. Navbar treba imati hamburger meni koji otvara/zatvara navigacijski drawer. Sve sekcije trebaju biti raspoređene vertikalno (jedno ispod drugog) umjesto grid layouta. Sekcija "Za kompanije" na landing page-u treba imati "invisible badge" koji je vidljiv samo u mobilnoj verziji na vrhu kartice. Carousel oblasti treba ispravno funkcionirati na touch uređajima.
+
+---
+
+**Šta je AI predložio ili generisao:**
+- Hamburger ikonica u navbaru koja se prikazuje na manjim ekranima, zamjenjuje desktop navigacijske linkove
+- Mobile drawer navigacija s overlay-om koji se zatvara klikom izvan menija
+- CSS media queries (ili inline `window.innerWidth` provjere) za prelaz iz grid u flex/column layout
+- Sve sekcije (hero, za studente, za kompanije, uloge) prelaze na jednu kolonu na mobilnom
+- "Invisible badge" za kompaniju - vidljiv samo na mobilnoj verziji iznad kartice Za kompanije sekcije
+- Prilagodba paddinga za manje ekrane
+
+---
+
+**Šta je tim prihvatio:**
+- Hamburger meni i mobile drawer navigacija
+- Vertikalni raspored svih sekcija na mobilnom
+- Mobile badge za kompaniju
+
+---
+
+**Šta je tim izmijenio:**
+- Vizuelne korekcije drawer menija
+
+---
+
+**Šta je tim odbacio:**
+
+**Rizici, problemi ili greške:**
+
+---
+
+## Unos 8 — Dark mode za AdminDashboard i pravne stranice; ikonica za tamni režim
+
+| Polje | Sadržaj |
+|---|---|
+| **Datum** | 29.04.2026 |
+| **Sprint broj** | 5 |
+| **Alat** | Claude (claude-sonnet-4-6, claude.ai) |
+| **Ko je koristio** | alukovac1 |
+| **Svrha korištenja** | Proširenje dark mode podrške na AdminDashboard i pravne stranice; zamjena placeholder dugmeta za tamni režim ikonom sunca/mjeseca |
+
+**Kratak opis upita:**
+
+> Implementirati dark mode na `AdminDashboard` stranici koji se sinkronizira s landing pageom putem `ThemeContext` - promjena teme na jednoj stranici treba biti vidljiva i na drugoj, a stanje se čuva u `localStorage`. Pored toga, uskladiti CSS dizajn pravnih stranica (`PrivacyPolicy`, `TermsAndConditions`, `CookiesPolicy`) s dizajnom landing pagea (font, boje, razmaci). Pored ikonice mjeseca (tamni režim) dodati i ikonicu sunca (svijetli režim).
+
+---
+
+**Šta je AI predložio ili generisao:**
+- Upute za import `useTheme` hooka iz `ThemeContext` u `AdminDashboard.jsx`
+- Dodavanje `darkMode` varijable i primjena `dark` CSS klase na root `div` element dashboarda
+- Kompletne dark mode CSS varijable za `AdminDashboard.css` - sidebar, navbar, kartice, tabele, dugmad, badge-ovi, audit log, inputi, filteri
+- Konzistentni dizajn tamne teme s landing pageom (iste boje)
+- Inline SVG ikona sunca za svjetli režim u navbaru landing pagea
+
+---
+
+**Šta je tim prihvatio:**
+- Sinkronizaciju teme između stranica putem `ThemeContext` i `localStorage`
+- Dark mode CSS varijable za AdminDashboard
+- SVG ikonice sunca/mjeseca u navbaru
+
+---
+
+**Šta je tim izmijenio:**
+
+**Šta je tim odbacio:**
+
+---
+
+**Rizici, problemi ili greške:**
+- `useState` nije bio importan u `AdminDashboard.jsx` nakon dodavanja `sidebarOpen` stanja - uzrokovalo `ReferenceError: useState is not defined` i bijeli ekran; riješeno dodavanjem `useState` u import iz Reacta
