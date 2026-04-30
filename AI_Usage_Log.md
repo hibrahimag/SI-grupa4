@@ -119,3 +119,53 @@ privremeno se koriste mock podaci pošto je audit log odvojeni US
 - `handleAssignAdmin` dohvata sve korisnike kako bi pronašao korisnika po emailu — efikasnije bi bilo imati dedicated backend endpoint koji prima email direktno (tehnički dug)
 
 ---
+
+## Unos 3 — Implementacija pravne dokumentacije (Privacy Policy, Terms & Conditions, Cookie Policy)
+
+| Polje | Sadržaj |
+|---|---|
+| **Datum** | 25.04.2026 |
+| **Sprint broj** | 5 |
+| **Alat** | ChatGPT (GPT‑5, OpenAI) |
+| **Ko je koristio** | zpandza1 |
+| **Svrha korištenja** | Generisanje i strukturisanje pravne dokumentacije za aplikaciju |
+
+**Kratak opis upita:**
+
+> Potrebno je generisati inicijalne verzije dokumenata Privacy Policy, Terms & Conditions i Cookie Policy za web aplikaciju. Dokumenti trebaju sadržavati standardne pravne sekcije (obrada podataka, prava korisnika, odgovornosti, ograničenje odgovornosti, kolačići, izmjene uslova itd.) i biti povezani sa landing page-om.
+
+---
+
+**Šta je AI predložio ili generisao:**
+- Kompletan nacrt Privacy Policy dokumenta sa standardnim sekcijama (prikupljanje podataka, svrha obrade, prava korisnika, sigurnost podataka)
+- Kompletan nacrt Terms & Conditions dokumenta (prava i obaveze korisnika, ograničenje odgovornosti, izmjene uslova)
+- Kompletan nacrt Cookie Policy dokumenta (tipovi kolačića, svrha korištenja, upravljanje kolačićima)
+- Prijedlog strukture stranica i način povezivanja dokumenata sa landing page-om
+- Inicijalni frontend prikaz dokumenata
+
+---
+
+**Šta je tim prihvatio:**
+- Tekstualni sadržaj i strukturu svih dokumenata
+- Organizaciju sekcija i pravni stil pisanja
+- Način povezivanja dokumenata sa landing page-om
+
+---
+
+**Šta je tim izmijenio:**
+- Prilagodio specifične informacije vezane za projekat (naziv aplikacije, tip podataka koji se prikupljaju, kontakt podaci)
+- Poboljšao frontend izgled jer predloženi dizajn nije bio estetski usklađen sa ostatkom aplikacije
+- Uskladio CSS (boje, nijanse, spacing, raspored sekcija) sa postojećim vizuelnim identitetom sistema
+
+---
+
+**Šta je tim odbacio:**
+- Originalni vizuelni prijedlog prikaza dokumenata koji se nije uklapao u postojeći UI dizajn
+- Generičke formulacije koje nisu bile relevantne za stvarne funkcionalnosti aplikacije
+
+---
+
+**Rizici, problemi ili greške:**
+- Potencijalna generičnost pravnih formulacija
+- Rizik od pravno nedovoljno preciznih izraza — svi dokumenti su ručno pregledani i prilagođeni prije implementacije
+- AI dizajn prijedlog nije bio u skladu sa postojećim frontend stilom, što je zahtijevalo dodatno ručno prilagođavanje
