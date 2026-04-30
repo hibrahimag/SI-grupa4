@@ -192,4 +192,60 @@
   .ad-btn { padding: 5px 8px; font-size: 0.72rem; width: 100%; text-align: center; }
 
   .ad-section { overflow-x: hidden; }
+  
 }
+
+/* Za kompanije mobile badge */
+.lp-companies-badge-mobile {
+  display: none;
+}
+
+@media (max-width: 1024px) {
+  .lp-companies-badge-mobile {
+    display: inline-block;
+    width: fit-content;
+    background: #ede8ff;
+    color: #6d4ce1;
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 18px;
+    border: 1px solid #c9bbf5;
+  }
+
+  .lp-companies-badge-desktop {
+    display: none !important;
+  }
+}
+
+/* Dark mode toggle pored hamburgera */
+@media (max-width: 768px) {
+  .lp-darkmode-mobile {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: 1px solid #d0e3f7;
+    background: transparent;
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+  .ad-col-role { display: none; }
+
+  .dark .lp-darkmode-mobile {
+    border-color: #374151;
+  }
+   nav {
+    padding: 0 6px !important;
+  }
+
+  /* Pomjeri hamburger da ne koristi marginLeft auto više */
+  .lp-hamburger {
+    margin-left: 8px !important;
+  }
+}
+
