@@ -10,7 +10,8 @@ export async function apiRequest(path, options = {}) {
   });
 
   if (!response.ok) {
-    throw new Error(`Request failed with status ${response.status}`);
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.message || `Request failed with status ${response.status}`);
   }
 
   if (response.status === 204) {

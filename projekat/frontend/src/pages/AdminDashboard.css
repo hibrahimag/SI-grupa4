@@ -230,7 +230,7 @@
   background: #ffffff;
   border: 1px solid #e0edf9;
   border-radius: 16px;
-  overflow: hidden;
+  overflow-x: auto;
   margin-bottom: 20px;
 }
 

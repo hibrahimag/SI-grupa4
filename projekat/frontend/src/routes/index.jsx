@@ -7,6 +7,7 @@ import NotFoundPage from '../pages/NotFoundPage';
 import ProfilePage from '../pages/ProfilePage';
 import AdminDashboard from '../pages/AdminDashboard';
 import LandingPage from '../pages/LandingPage';
+import RegisterPage from '../pages/RegisterPage';
 import PrivacyPolicy from '../pages/PrivacyPolicy';
 import TermsAndConditions from '../pages/TermsAndConditions';
 import CookiesPolicy from '../pages/CookiesPolicy';
@@ -17,6 +18,7 @@ export default function AppRouter() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/auth" element={<AuthPage />} />
+        <Route path="/register" element={<RegisterPage />} />
         <Route path="/listings" element={<ListingsPage />} />
         <Route path="/applications" element={<ApplicationsPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />

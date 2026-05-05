@@ -668,7 +668,7 @@ export default function LandingPage() {
                 </li>
               ))}
             </ul>
-            <Link to="/register?role=company" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "12px 26px", borderRadius: 10, background: "linear-gradient(135deg,#6d4ce1,#8b6cf0)", color: "white", textDecoration: "none", fontWeight: 700, fontSize: 15, boxShadow: "0 4px 16px rgba(109,76,225,0.3)" }}>
+            <Link to="/register?role=kompanija" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "12px 26px", borderRadius: 10, background: "linear-gradient(135deg,#6d4ce1,#8b6cf0)", color: "white", textDecoration: "none", fontWeight: 700, fontSize: 15, boxShadow: "0 4px 16px rgba(109,76,225,0.3)" }}>
               Registruj kompaniju <IconArrowRight size={14} color="white" />
             </Link>
           </div>
@@ -692,12 +692,12 @@ export default function LandingPage() {
               {
                 role: "Kompanija", Icon: IconBriefcase, color: "#6d4ce1", bg: "#ede8ff", border: "#c9bbf5", top: "#6d4ce1",
                 desc: "Objavljuje oglase, pregledava prijave, selektuje kandidate i vodi evidenciju prakse.",
-                cta: { label: "Registruj kompaniju", to: "/register?role=company" },
+                cta: { label: "Registruj kompaniju", to: "/register?role=kompanija" },
               },
               {
                 role: "Koordinator", Icon: IconClipboard, color: "#0e9e6e", bg: "#e0f7ef", border: "#a3e4be", top: "#0e9e6e",
                 desc: "Odobrava prakse, prati napredak studenata i generiše izvještaje za fakultet.",
-                cta: { label: "Registruj se", to: "/register?role=coordinator" },
+                cta: { label: "Registruj se", to: "/register?role=koordinator" },
               },
               {
                 role: "Administrator", Icon: IconSettings, color: "#e07b1a", bg: "#fef0dd", border: "#fcd5a4", top: "#e07b1a",
@@ -735,7 +735,7 @@ export default function LandingPage() {
             Pridruži se stotinama studenata koji su već pronašli svoju prvu profesionalnu praksu putem PraksaHub platforme.
           </p>
           <div className="lp-cta-btns" style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
-            <Link to="/register" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "14px 30px", borderRadius: 10, fontSize: 15, fontWeight: 700, color: "#0d1f3c", textDecoration: "none", background: "white", boxShadow: "0 4px 20px rgba(0,0,0,0.2)", transition: "transform 0.2s" }}
+            <Link to="/register?role=student" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "14px 30px", borderRadius: 10, fontSize: 15, fontWeight: 700, color: "#0d1f3c", textDecoration: "none", background: "white", boxShadow: "0 4px 20px rgba(0,0,0,0.2)", transition: "transform 0.2s" }}
               {...hov({ transform: "translateY(-2px)" }, { transform: "translateY(0)" })}
             >Registruj se besplatno <IconArrowRight size={14} color="#0d1f3c" /></Link>
             <Link to="/login" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "14px 30px", borderRadius: 10, fontSize: 15, fontWeight: 700, color: "white", textDecoration: "none", border: "1.5px solid rgba(255,255,255,0.35)", transition: "background 0.2s" }}
@@ -813,6 +813,7 @@ export default function LandingPage() {
       </footer>
 
       <style>{`@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}`}</style>
+
     </div>
   );
 }
