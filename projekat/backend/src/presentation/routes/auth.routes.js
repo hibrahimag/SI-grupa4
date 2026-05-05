@@ -1,6 +1,8 @@
-const router = require('express').Router();
-const { authPlaceholderController } = require('../../business/controllers/auth.controller');
+const { Router } = require('express');
+const { loginController } = require('../../business/controllers/auth.controller');
 
-router.get('/', authPlaceholderController);
+const router = Router();
+
+router.post('/login', loginController);
 
 module.exports = router;
