@@ -1,6 +1,6 @@
 'use strict';
 
-const { User, Fakultet, Koordinator, Student } = require('../../infrastructure/database/models');
+const { User, Fakultet, Koordinator, Student, Odsjek } = require('../../infrastructure/database/models');
 
 const ALLOWED_ROLES = ['STUDENT', 'COMPANY', 'COORDINATOR', 'ADMIN'];
 
@@ -111,4 +111,39 @@ async function deleteFaculty(id) {
   await faculty.destroy();
 }
 
-module.exports = { getUsers, updateUserRole, updateUserStatus, getFaculties, createFaculty, updateFaculty, deleteFaculty };
+async function getOdsjeci(fakultetID) {
+  const faculty = await Fakultet.findByPk(fakultetID);
+  if (!faculty) {
+    const err = new Error('Faculty not found.');
+    err.status = 404;
+    throw err;
+  }
+  return Odsjek.findAll({ where: { fakultetID }, order: [['naziv', 'ASC']] });
+}
+
+async function createOdsjek(fakultetID, naziv) {
+  if (!naziv || !naziv.trim()) {
+    const err = new Error('Field "naziv" is required.');
+    err.status = 400;
+    throw err;
+  }
+  const faculty = await Fakultet.findByPk(fakultetID);
+  if (!faculty) {
+    const err = new Error('Faculty not found.');
+    err.status = 404;
+    throw err;
+  }
+  return Odsjek.create({ naziv: naziv.trim(), fakultetID });
+}
+
+async function deleteOdsjek(id) {
+  const odsjek = await Odsjek.findByPk(id);
+  if (!odsjek) {
+    const err = new Error('Odsjek not found.');
+    err.status = 404;
+    throw err;
+  }
+  await odsjek.destroy();
+}
+
+module.exports = { getUsers, updateUserRole, updateUserStatus, getFaculties, createFaculty, updateFaculty, deleteFaculty, getOdsjeci, createOdsjek, deleteOdsjek };

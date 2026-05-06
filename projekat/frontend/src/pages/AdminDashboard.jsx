@@ -1,5 +1,5 @@
 import { useEffect, useReducer, useState } from 'react';
-import { getUsers, updateUserRole, updateUserStatus, getFaculties, createFaculty, updateFaculty, deleteFaculty } from '../services/adminService';
+import { getUsers, updateUserRole, updateUserStatus, getFaculties, createFaculty, updateFaculty, deleteFaculty, getOdsjeci, createOdsjek, deleteOdsjek } from '../services/adminService';
 import { useTheme } from '../context/ThemeContext';
 import './AdminDashboard.css';
 
@@ -483,10 +483,99 @@ function RolesView({ pending, showToast, onStatusChange, onAssignAdmin }) {
   );
 }
 
+function OdsjekPanel({ fakultetID, onClose }) {
+  const [odsjeci, setOdsjeci] = useState([]);
+  const [newNaziv, setNewNaziv] = useState('');
+  const [loadError, setLoadError] = useState(false);
+
+  useEffect(() => {
+    getOdsjeci(fakultetID)
+      .then(setOdsjeci)
+      .catch(() => setLoadError(true));
+  }, [fakultetID]);
+
+  async function handleAdd(e) {
+    e.preventDefault();
+    if (!newNaziv.trim()) return;
+    try {
+      const created = await createOdsjek(fakultetID, newNaziv.trim());
+      setOdsjeci(prev => [...prev, created].sort((a, b) => a.naziv.localeCompare(b.naziv)));
+      setNewNaziv('');
+    } catch {
+      setLoadError(true);
+    }
+  }
+
+  async function handleDelete(id) {
+    try {
+      await deleteOdsjek(id);
+      setOdsjeci(prev => prev.filter(o => o.id !== id));
+    } catch {
+      setLoadError(true);
+    }
+  }
+
+  return (
+    <div style={{ background: '#f0f5fb', border: '1px solid #dce8f5', borderRadius: 8, padding: '14px 16px', marginTop: 4 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+        <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#3a5a7a' }}>Odsjeci</span>
+        <span style={{ fontSize: '0.78rem', color: '#9aabbc' }}>{odsjeci.length} odsjeka</span>
+      </div>
+
+      {loadError && (
+        <div style={{ fontSize: '0.78rem', color: '#c0392b', marginBottom: 8 }}>Greška pri učitavanju odsjeka.</div>
+      )}
+
+      {odsjeci.length === 0 && !loadError && (
+        <div style={{ fontSize: '0.82rem', color: '#9aabbc', marginBottom: 10, fontStyle: 'italic' }}>
+          Nema dodanih odsjeka.
+        </div>
+      )}
+
+      {odsjeci.length > 0 && (
+        <div style={{ marginBottom: 12 }}>
+          {odsjeci.map(o => (
+            <div key={o.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0', borderBottom: '1px solid #e2ecf5' }}>
+              <span style={{ fontSize: '0.85rem', flex: 1, color: '#2c3e50' }}>• {o.naziv}</span>
+              <button
+                className="ad-btn ad-btn--reject"
+                style={{ padding: '2px 10px', fontSize: '0.78rem' }}
+                onClick={() => handleDelete(o.id)}
+              >
+                Obriši
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <form style={{ display: 'flex', gap: 8, marginBottom: 12 }} onSubmit={handleAdd}>
+        <input
+          className="ad-input"
+          style={{ flex: 1, padding: '5px 10px', fontSize: '0.85rem' }}
+          placeholder="Naziv odsjeka"
+          value={newNaziv}
+          onChange={e => setNewNaziv(e.target.value)}
+        />
+        <button type="submit" className="ad-btn ad-btn--primary" style={{ padding: '5px 14px', fontSize: '0.85rem' }}>
+          Dodaj
+        </button>
+      </form>
+
+      <div style={{ borderTop: '1px solid #dce8f5', paddingTop: 10, textAlign: 'right' }}>
+        <button className="ad-btn ad-btn--approve" onClick={onClose} style={{ fontSize: '0.85rem' }}>
+          Završi dodavanje
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function FacultiesView({ faculties, onCreate, onUpdate, onDelete }) {
   const [form, setForm] = useState({ naziv: '', email: '', adresa: '' });
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({});
+  const [expandedId, setExpandedId] = useState(null);
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -496,6 +585,7 @@ function FacultiesView({ faculties, onCreate, onUpdate, onDelete }) {
 
   function startEdit(f) {
     setEditingId(f.id);
+    setExpandedId(null);
     setEditForm({ naziv: f.naziv, email: f.email || '', adresa: f.adresa || '' });
   }
 
@@ -507,6 +597,11 @@ function FacultiesView({ faculties, onCreate, onUpdate, onDelete }) {
   function saveEdit(id) {
     onUpdate(id, editForm);
     cancelEdit();
+  }
+
+  function toggleOdsjeci(id) {
+    setExpandedId(prev => (prev === id ? null : id));
+    setEditingId(null);
   }
 
   return (
@@ -560,33 +655,45 @@ function FacultiesView({ faculties, onCreate, onUpdate, onDelete }) {
           </thead>
           <tbody>
             {faculties.map((f) => (
-              <tr key={f.id}>
-                {editingId === f.id ? (
-                  <>
-                    <td><input className="ad-input" value={editForm.naziv} onChange={(e) => setEditForm({ ...editForm, naziv: e.target.value })} /></td>
-                    <td><input className="ad-input" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} /></td>
-                    <td><input className="ad-input" value={editForm.adresa} onChange={(e) => setEditForm({ ...editForm, adresa: e.target.value })} /></td>
-                    <td>
-                      <div className="ad-actions">
-                        <button className="ad-btn ad-btn--approve" onClick={() => saveEdit(f.id)}>Sačuvaj</button>
-                        <button className="ad-btn ad-btn--reject" onClick={cancelEdit}>Odustani</button>
-                      </div>
+              <>
+                <tr key={f.id}>
+                  {editingId === f.id ? (
+                    <>
+                      <td><input className="ad-input" value={editForm.naziv} onChange={(e) => setEditForm({ ...editForm, naziv: e.target.value })} /></td>
+                      <td><input className="ad-input" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} /></td>
+                      <td><input className="ad-input" value={editForm.adresa} onChange={(e) => setEditForm({ ...editForm, adresa: e.target.value })} /></td>
+                      <td>
+                        <div className="ad-actions">
+                          <button className="ad-btn ad-btn--approve" onClick={() => saveEdit(f.id)}>Sačuvaj</button>
+                          <button className="ad-btn ad-btn--reject" onClick={cancelEdit}>Odustani</button>
+                        </div>
+                      </td>
+                    </>
+                  ) : (
+                    <>
+                      <td>{f.naziv}</td>
+                      <td style={{ color: '#5a7a9a', fontSize: '0.85rem' }}>{f.email || '—'}</td>
+                      <td style={{ color: '#5a7a9a', fontSize: '0.85rem' }}>{f.adresa || '—'}</td>
+                      <td>
+                        <div className="ad-actions">
+                          <button className="ad-btn ad-btn--approve" onClick={() => startEdit(f)}>Uredi</button>
+                          <button className="ad-btn" style={{ background: '#e8eef5', color: '#3a5a7a' }} onClick={() => toggleOdsjeci(f.id)}>
+                            {expandedId === f.id ? 'Zatvori' : 'Odsjeci'}
+                          </button>
+                          <button className="ad-btn ad-btn--reject" onClick={() => onDelete(f.id)}>Obriši</button>
+                        </div>
+                      </td>
+                    </>
+                  )}
+                </tr>
+                {expandedId === f.id && (
+                  <tr key={`${f.id}-odsjeci`}>
+                    <td colSpan={4} style={{ background: '#f7fafd', padding: '0 16px 8px' }}>
+                      <OdsjekPanel fakultetID={f.id} onClose={() => setExpandedId(null)} />
                     </td>
-                  </>
-                ) : (
-                  <>
-                    <td>{f.naziv}</td>
-                    <td style={{ color: '#5a7a9a', fontSize: '0.85rem' }}>{f.email || '—'}</td>
-                    <td style={{ color: '#5a7a9a', fontSize: '0.85rem' }}>{f.adresa || '—'}</td>
-                    <td>
-                      <div className="ad-actions">
-                        <button className="ad-btn ad-btn--approve" onClick={() => startEdit(f)}>Uredi</button>
-                        <button className="ad-btn ad-btn--reject" onClick={() => onDelete(f.id)}>Obriši</button>
-                      </div>
-                    </td>
-                  </>
+                  </tr>
                 )}
-              </tr>
+              </>
             ))}
             {faculties.length === 0 && (
               <tr><td colSpan={4} className="ad-empty">Nema dodanih fakulteta.</td></tr>

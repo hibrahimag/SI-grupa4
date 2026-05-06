@@ -65,3 +65,7 @@ export function register(data) {
     body: JSON.stringify(data),
   });
 }
+
+export function getPublicOdsjeci(fakultetID) {
+  return apiRequest(`/auth/faculties/${fakultetID}/odsjeci`);
+}

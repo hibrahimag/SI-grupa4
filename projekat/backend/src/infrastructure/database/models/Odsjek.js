@@ -4,36 +4,24 @@ const { DataTypes } = require('sequelize');
 
 module.exports = (sequelize) => {
   return sequelize.define(
-    'Student',
+    'Odsjek',
     {
       id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
         autoIncrement: true,
       },
-      userID: {
-        type: DataTypes.INTEGER,
+      naziv: {
+        type: DataTypes.STRING(150),
         allowNull: false,
       },
       fakultetID: {
         type: DataTypes.INTEGER,
-        allowNull: true,
-      },
-      index_number: {
-        type: DataTypes.STRING(50),
         allowNull: false,
-      },
-      year_of_study: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-      },
-      odsjekID: {
-        type: DataTypes.INTEGER,
-        allowNull: true,
       },
     },
     {
-      tableName: 'students',
+      tableName: 'odsjeci',
       timestamps: false,
     }
   );

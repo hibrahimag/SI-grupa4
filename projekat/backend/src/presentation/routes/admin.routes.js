@@ -17,4 +17,8 @@ router.post('/faculties', adminController.createFaculty);
 router.put('/faculties/:id', adminController.updateFaculty);
 router.delete('/faculties/:id', adminController.deleteFaculty);
 
+router.get('/faculties/:id/odsjeci', adminController.getOdsjeci);
+router.post('/faculties/:id/odsjeci', adminController.createOdsjek);
+router.delete('/odsjeci/:id', adminController.deleteOdsjek);
+
 module.exports = router;
