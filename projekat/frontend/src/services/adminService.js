@@ -18,3 +18,25 @@ export function updateUserStatus(id, status) {
     body: JSON.stringify({ status }),
   });
 }
+
+export function getFaculties() {
+  return apiRequest('/admin/faculties');
+}
+
+export function createFaculty(data) {
+  return apiRequest('/admin/faculties', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export function updateFaculty(id, data) {
+  return apiRequest(`/admin/faculties/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
+export function deleteFaculty(id) {
+  return apiRequest(`/admin/faculties/${id}`, { method: 'DELETE' });
+}

@@ -1,5 +1,33 @@
 // backend/src/business/controllers/auth.controller.js
-const { loginService } = require('../services/auth.service');
+const authService = require('../services/auth.service');
+
+async function checkAvailability(req, res) {
+  try {
+    const { type, value } = req.query;
+    const result = await authService.checkAvailability(type, value);
+    res.json(result);
+  } catch (err) {
+    res.status(err.status || 500).json({ message: err.message });
+  }
+}
+
+async function getPublicFaculties(req, res) {
+  try {
+    const faculties = await authService.getPublicFaculties();
+    res.json(faculties);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+}
+
+async function register(req, res) {
+  try {
+    await authService.register(req.body);
+    res.status(201).json({ message: 'Registracija uspješna.' });
+  } catch (err) {
+    res.status(err.status || 500).json({ message: err.message });
+  }
+}
 
 /**
  * POST /api/auth/login
@@ -21,7 +49,7 @@ async function loginController(req, res) {
   }
 
   try {
-    const result = await loginService(identifier.trim(), password);
+    const result = await authService.loginService(identifier.trim(), password);
     return res.status(200).json(result);
   } catch (err) {
     // loginService throws user-facing Bosnian messages for all expected
@@ -44,4 +72,4 @@ async function loginController(req, res) {
   }
 }
 
-module.exports = { loginController };
+module.exports = { checkAvailability, getPublicFaculties, register, loginController };

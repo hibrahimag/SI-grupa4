@@ -1,5 +1,5 @@
 import { useEffect, useReducer, useState } from 'react';
-import { getUsers, updateUserRole, updateUserStatus } from '../services/adminService';
+import { getUsers, updateUserRole, updateUserStatus, getFaculties, createFaculty, updateFaculty, deleteFaculty } from '../services/adminService';
 import { useTheme } from '../context/ThemeContext';
 import './AdminDashboard.css';
 
@@ -62,6 +62,8 @@ function reducer(state, action) {
         ...state,
         pending: state.pending.filter((u) => u.id !== action.payload),
       };
+    case 'SET_FACULTIES':
+      return { ...state, faculties: action.payload };
     case 'SHOW_TOAST':
       return { ...state, toast: action.payload };
     case 'HIDE_TOAST':
@@ -79,11 +81,12 @@ const initialState = {
   loading: true,
   pending: [],
   toast: null,
+  faculties: [],
 };
 
 export default function AdminDashboard() {
   const [state, dispatch] = useReducer(reducer, initialState);
-  const { view, statusFilter, roleFilter, users, loading, pending, toast } = state;
+  const { view, statusFilter, roleFilter, users, loading, pending, toast, faculties } = state;
   const { darkMode } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -92,6 +95,14 @@ export default function AdminDashboard() {
       .then((data) => dispatch({ type: 'SET_PENDING', payload: data.filter((u) => u.role !== 'ADMIN') }))
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (view === 'faculties') {
+      getFaculties()
+        .then((data) => dispatch({ type: 'SET_FACULTIES', payload: data }))
+        .catch(() => showToast('Greška pri učitavanju fakulteta.', 'error'));
+    }
+  }, [view]);
 
   useEffect(() => {
     if (view === 'users') {
@@ -141,6 +152,36 @@ export default function AdminDashboard() {
       showToast(`${user.name} je sada admin.`);
     } catch {
       showToast('Greška pri dodjeli admin role.', 'error');
+    }
+  }
+
+  async function handleCreateFaculty(data) {
+    try {
+      const created = await createFaculty(data);
+      dispatch({ type: 'SET_FACULTIES', payload: [...faculties, created].sort((a, b) => a.naziv.localeCompare(b.naziv)) });
+      showToast('Fakultet uspješno dodan.');
+    } catch {
+      showToast('Greška pri dodavanju fakulteta.', 'error');
+    }
+  }
+
+  async function handleUpdateFaculty(id, data) {
+    try {
+      const updated = await updateFaculty(id, data);
+      dispatch({ type: 'SET_FACULTIES', payload: faculties.map((f) => (f.id === id ? updated : f)) });
+      showToast('Fakultet uspješno izmijenjen.');
+    } catch {
+      showToast('Greška pri izmjeni fakulteta.', 'error');
+    }
+  }
+
+  async function handleDeleteFaculty(id) {
+    try {
+      await deleteFaculty(id);
+      dispatch({ type: 'SET_FACULTIES', payload: faculties.filter((f) => f.id !== id) });
+      showToast('Fakultet uspješno obrisan.');
+    } catch {
+      showToast('Ne možete obrisati fakultet u upotrebi!', 'error');
     }
   }
 
@@ -198,6 +239,12 @@ export default function AdminDashboard() {
             >
               Korisnici
             </button>
+            <button
+              className={`ad-nav-item ${view === 'faculties' ? 'active' : ''}`}
+              onClick={() => dispatch({ type: 'SET_VIEW', payload: 'faculties' })}
+            >
+              Fakulteti
+            </button>
           </nav>
         </div>
       </aside>
@@ -218,6 +265,14 @@ export default function AdminDashboard() {
             roleFilter={roleFilter}
             dispatch={dispatch}
             onRoleChange={handleRoleChange}
+          />
+        )}
+        {view === 'faculties' && (
+          <FacultiesView
+            faculties={faculties}
+            onCreate={handleCreateFaculty}
+            onUpdate={handleUpdateFaculty}
+            onDelete={handleDeleteFaculty}
           />
         )}
       </main>
@@ -423,6 +478,121 @@ function RolesView({ pending, showToast, onStatusChange, onAssignAdmin }) {
           <input type="email" placeholder="email@korisnik.ba" className="ad-input" required />
           <button type="submit" className="ad-btn ad-btn--primary">Dodijeli admin rolu</button>
         </form>
+      </div>
+    </div>
+  );
+}
+
+function FacultiesView({ faculties, onCreate, onUpdate, onDelete }) {
+  const [form, setForm] = useState({ naziv: '', email: '', adresa: '' });
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({});
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    onCreate(form);
+    setForm({ naziv: '', email: '', adresa: '' });
+  }
+
+  function startEdit(f) {
+    setEditingId(f.id);
+    setEditForm({ naziv: f.naziv, email: f.email || '', adresa: f.adresa || '' });
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditForm({});
+  }
+
+  function saveEdit(id) {
+    onUpdate(id, editForm);
+    cancelEdit();
+  }
+
+  return (
+    <div className="ad-content">
+      <div className="ad-header">
+        <h1 className="ad-title">Fakulteti</h1>
+        <div className="ad-subtitle">Upravljanje fakultetima u sistemu</div>
+      </div>
+
+      <div className="ad-section">
+        <div className="ad-section-header">
+          <h2 className="ad-section-title">Dodaj fakultet</h2>
+        </div>
+        <form className="ad-assign-form" onSubmit={handleSubmit}>
+          <input
+            className="ad-input"
+            placeholder="Naziv fakulteta *"
+            value={form.naziv}
+            onChange={(e) => setForm({ ...form, naziv: e.target.value })}
+            required
+          />
+          <input
+            className="ad-input"
+            placeholder="Email (opcionalno)"
+            value={form.email}
+            onChange={(e) => setForm({ ...form, email: e.target.value })}
+          />
+          <input
+            className="ad-input"
+            placeholder="Adresa (opcionalno)"
+            value={form.adresa}
+            onChange={(e) => setForm({ ...form, adresa: e.target.value })}
+          />
+          <button type="submit" className="ad-btn ad-btn--primary">Dodaj fakultet</button>
+        </form>
+      </div>
+
+      <div className="ad-section">
+        <div className="ad-section-header">
+          <h2 className="ad-section-title">Lista fakulteta</h2>
+          <span className="ad-section-count">{faculties.length} fakulteta</span>
+        </div>
+        <table className="ad-table">
+          <thead>
+            <tr>
+              <th>Naziv</th>
+              <th>Email</th>
+              <th>Adresa</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {faculties.map((f) => (
+              <tr key={f.id}>
+                {editingId === f.id ? (
+                  <>
+                    <td><input className="ad-input" value={editForm.naziv} onChange={(e) => setEditForm({ ...editForm, naziv: e.target.value })} /></td>
+                    <td><input className="ad-input" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} /></td>
+                    <td><input className="ad-input" value={editForm.adresa} onChange={(e) => setEditForm({ ...editForm, adresa: e.target.value })} /></td>
+                    <td>
+                      <div className="ad-actions">
+                        <button className="ad-btn ad-btn--approve" onClick={() => saveEdit(f.id)}>Sačuvaj</button>
+                        <button className="ad-btn ad-btn--reject" onClick={cancelEdit}>Odustani</button>
+                      </div>
+                    </td>
+                  </>
+                ) : (
+                  <>
+                    <td>{f.naziv}</td>
+                    <td style={{ color: '#5a7a9a', fontSize: '0.85rem' }}>{f.email || '—'}</td>
+                    <td style={{ color: '#5a7a9a', fontSize: '0.85rem' }}>{f.adresa || '—'}</td>
+                    <td>
+                      <div className="ad-actions">
+                        <button className="ad-btn ad-btn--approve" onClick={() => startEdit(f)}>Uredi</button>
+                        <button className="ad-btn ad-btn--reject" onClick={() => onDelete(f.id)}>Obriši</button>
+                      </div>
+                    </td>
+                  </>
+                )}
+              </tr>
+            ))}
+            {faculties.length === 0 && (
+              <tr><td colSpan={4} className="ad-empty">Nema dodanih fakulteta.</td></tr>
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );

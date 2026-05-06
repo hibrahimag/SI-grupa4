@@ -1,8 +1,7 @@
 // frontend/src/services/auth.service.js
 // Handles all API communication for authentication.
-// Replace BASE_URL with your actual backend URL / env variable.
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api';
+import { apiRequest } from './api.js';
 
 /**
  * Sends login credentials to the backend.
@@ -10,21 +9,11 @@ const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api';
  * @param {string} password
  * @returns {Promise<{ token: string, user: object }>}
  */
-export async function loginUser(identifier, password) {
-  const response = await fetch(`${BASE_URL}/auth/login`, {
+export function loginUser(identifier, password) {
+  return apiRequest('/auth/login', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ identifier, password }),
   });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    // Throw the server's message so the UI can display it directly.
-    throw new Error(data.message ?? 'Prijava nije uspjela. Pokušajte ponovo.');
-  }
-
-  return data; // { token, user: { id, ime, prezime, role, ... } }
 }
 
 /**
@@ -33,4 +22,19 @@ export async function loginUser(identifier, password) {
 export function logoutUser() {
   sessionStorage.removeItem('token');
   sessionStorage.removeItem('user');
+}
+
+export function getPublicFaculties() {
+  return apiRequest('/auth/faculties');
+}
+
+export function checkAvailability(type, value) {
+  return apiRequest(`/auth/check?type=${encodeURIComponent(type)}&value=${encodeURIComponent(value)}`);
+}
+
+export function register(data) {
+  return apiRequest('/auth/register', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
 }

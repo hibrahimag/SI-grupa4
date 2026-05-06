@@ -9,6 +9,7 @@ import NotFoundPage          from '../pages/NotFoundPage';
 import ProfilePage           from '../pages/ProfilePage';
 import AdminDashboard        from '../pages/AdminDashboard';
 import LandingPage           from '../pages/LandingPage';
+import RegisterPage          from '../pages/RegisterPage';
 import PrivacyPolicy         from '../pages/PrivacyPolicy';
 import TermsAndConditions    from '../pages/TermsAndConditions';
 import CookiesPolicy         from '../pages/CookiesPolicy';
@@ -22,9 +23,10 @@ export default function AppRouter() {
     <BrowserRouter>
       <Routes>
         {/* Public */}
-        <Route path="/"        element={<LandingPage />} />
-        <Route path="/auth"    element={<AuthPage />} />
-        <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/"          element={<LandingPage />} />
+        <Route path="/auth"      element={<AuthPage />} />
+        <Route path="/register"  element={<RegisterPage />} />
+        <Route path="/privacy"   element={<PrivacyPolicy />} />
         <Route path="/terms"   element={<TermsAndConditions />} />
         <Route path="/cookies" element={<CookiesPolicy />} />
 
