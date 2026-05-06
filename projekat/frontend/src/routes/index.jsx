@@ -16,7 +16,11 @@ export default function AppRouter() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<AuthPage />} />
+        <Route path="/register" element={<AuthPage />} />
+        <Route path="/verify-email" element={<AuthPage />} />
         <Route path="/auth" element={<AuthPage />} />
+        <Route path="/auth/verify-email" element={<AuthPage />} />
         <Route path="/listings" element={<ListingsPage />} />
         <Route path="/applications" element={<ApplicationsPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />

@@ -10,7 +10,20 @@ export async function apiRequest(path, options = {}) {
   });
 
   if (!response.ok) {
-    throw new Error(`Request failed with status ${response.status}`);
+    let errorMessage = `Request failed with status ${response.status}`;
+
+    try {
+      const errorData = await response.json();
+      if (errorData?.message) {
+        errorMessage = errorData.message;
+      }
+    } catch {
+      // Keep fallback message when response is not JSON.
+    }
+
+    const error = new Error(errorMessage);
+    error.status = response.status;
+    throw error;
   }
 
   if (response.status === 204) {

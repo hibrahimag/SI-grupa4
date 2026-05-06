@@ -1,6 +1,14 @@
 const router = require('express').Router();
-const { authPlaceholderController } = require('../../business/controllers/auth.controller');
+const {
+  register,
+  login,
+  verifyEmail,
+  resendVerification,
+} = require('../../business/controllers/auth.controller');
 
-router.get('/', authPlaceholderController);
+router.post('/register', register);
+router.post('/login', login);
+router.get('/verify-email', verifyEmail);
+router.post('/resend-verification', resendVerification);
 
 module.exports = router;
