@@ -1,14 +1,16 @@
 import { useEffect } from "react";
+import { useTheme } from "../context/ThemeContext";
 
 export default function TermsAndConditions() {
+  const { darkMode } = useTheme(); 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
   const containerStyle = {
     minHeight: "100vh",
-    padding: "120px 1.5rem 80px",
-    background: "#f9fbff",
+    padding: "60px 1.5rem 80px",
+    background: darkMode ? "#111827" : "#f9fbff",
     display: "flex",
     justifyContent: "center",
   };
@@ -17,14 +19,14 @@ export default function TermsAndConditions() {
     maxWidth: "850px",
     width: "100%",
     lineHeight: 1.75,
-    color: "#1f2d3d",
+    color: darkMode ? "#f9fafb" : "#1f2d3d",
   };
 
   const headingStyle = {
     fontSize: "2.4rem",
     fontWeight: 700,
     marginBottom: "30px",
-    color: "#0d1f3c",
+    color: darkMode ? "#f1f5f9" : "#0d1f3c",
   };
 
   const sectionTitle = {
@@ -32,22 +34,30 @@ export default function TermsAndConditions() {
     fontWeight: 600,
     marginTop: "40px",
     marginBottom: "10px",
-    color: "#0d1f3c",
+    color: darkMode ? "#e2e8f0" : "#0d1f3c",
   };
 
   const paragraphStyle = {
     fontSize: "0.95rem",
-    color: "#445b78",
+    color: darkMode ? "#94a3b8" : "#445b78",
   };
 
   const listStyle = {
     paddingLeft: "20px",
     marginTop: "8px",
-    color: "#445b78",
+    color: darkMode ? "#94a3b8" : "#445b78",
     fontSize: "0.95rem",
   };
 
   return (
+    <div>
+      <div style={{ 
+  padding: "10px 25px",
+  background: darkMode ? "#1e2d45" : "#ffffff", 
+  borderBottom: darkMode ? "1px solid #2d3f5a" : "1px solid #e2e8f0"
+  }}>
+      <img src="/logo2.png" alt="PraksaHub" style={{ height: "50px" }} />
+    </div>
     <div style={containerStyle}>
       <div style={contentStyle}>
         <h1 style={headingStyle}>Uslovi korištenja</h1>
@@ -104,6 +114,7 @@ export default function TermsAndConditions() {
           Posljednje ažuriranje: April 2026.
         </p>
       </div>
+    </div>
     </div>
   );
 }

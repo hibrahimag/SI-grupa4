@@ -1,15 +1,17 @@
 import { useEffect } from "react";
+import { useTheme } from "../context/ThemeContext";
 
 export default function PrivacyPolicy() {
+  const { darkMode } = useTheme();
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
   const containerStyle = {
     minHeight: "100vh",
-    padding: "120px 2rem 80px",
-    background: "#f8fbff",
-    color: "#0d1f3c",
+    padding: "60px 2rem 80px",
+    background: darkMode ? "#111827" : "#f8fbff",
+    color: darkMode ? "#f9fafb" : "#0d1f3c",
   };
 
   const contentStyle = {
@@ -29,14 +31,29 @@ export default function PrivacyPolicy() {
     fontWeight: 700,
     marginTop: "40px",
     marginBottom: "12px",
+    color: darkMode ? "#e2e8f0" : "#0d1f3c"
   };
 
   const paragraphStyle = {
     fontSize: "15px",
-    color: "#3a5a8a",
+    color: darkMode ? "#94a3b8" : "#3a5a8a",
+  };
+
+  const listStyle = {
+    ...paragraphStyle,
+    paddingLeft: "2.5rem", 
+    marginTop: "8px",
   };
 
   return (
+    <div>
+      <div style={{ 
+  padding: "10px 25px",
+  background: darkMode ? "#1e2d45" : "#ffffff",  
+  borderBottom: darkMode ? "1px solid #2d3f5a" : "1px solid #e2e8f0"
+  }}>
+      <img src="/logo2.png" alt="PraksaHub" style={{ height: "50px" }} />
+    </div>
     <div style={containerStyle}>
       <div style={contentStyle}>
         <h1 style={headingStyle}>Politika privatnosti</h1>
@@ -48,7 +65,7 @@ export default function PrivacyPolicy() {
 
         <h2 style={sectionTitle}>1. Podaci koje prikupljamo</h2>
         <p style={paragraphStyle}>Možemo prikupljati sljedeće informacije:</p>
-        <ul style={paragraphStyle}>
+        <ul style={listStyle}>
           <li>Ime i prezime</li>
           <li>Email adresu</li>
           <li>Podatke o obrazovanju</li>
@@ -58,7 +75,7 @@ export default function PrivacyPolicy() {
 
         <h2 style={sectionTitle}>2. Kako koristimo podatke</h2>
         <p style={paragraphStyle}>Vaše podatke koristimo u svrhu:</p>
-        <ul style={paragraphStyle}>
+        <ul style={listStyle}>
           <li>Omogućavanja prijave na praksu</li>
           <li>Komunikacije između studenata i kompanija</li>
           <li>Praćenja statusa prijava</li>
@@ -93,6 +110,7 @@ export default function PrivacyPolicy() {
           Posljednje ažuriranje: April 2026.
         </p>
       </div>
+    </div>
     </div>
   );
 }

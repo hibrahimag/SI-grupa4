@@ -54,4 +54,50 @@ async function updateUserStatus(req, res) {
   }
 }
 
-module.exports = { getUsers, updateUserRole, updateUserStatus };
+async function getFaculties(req, res) {
+  try {
+    const faculties = await adminService.getFaculties();
+    res.json(faculties);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+}
+
+async function createFaculty(req, res) {
+  try {
+    const faculty = await adminService.createFaculty(req.body);
+    res.status(201).json(faculty);
+  } catch (err) {
+    res.status(err.status || 500).json({ message: err.message });
+  }
+}
+
+async function updateFaculty(req, res) {
+  try {
+    const { id } = req.params;
+    const numericId = Number(id);
+    if (!Number.isInteger(numericId) || numericId <= 0) {
+      return res.status(400).json({ message: 'Valid faculty id is required.' });
+    }
+    const faculty = await adminService.updateFaculty(numericId, req.body);
+    res.json(faculty);
+  } catch (err) {
+    res.status(err.status || 500).json({ message: err.message });
+  }
+}
+
+async function deleteFaculty(req, res) {
+  try {
+    const { id } = req.params;
+    const numericId = Number(id);
+    if (!Number.isInteger(numericId) || numericId <= 0) {
+      return res.status(400).json({ message: 'Valid faculty id is required.' });
+    }
+    await adminService.deleteFaculty(numericId);
+    res.json({ message: 'Faculty deleted successfully.' });
+  } catch (err) {
+    res.status(err.status || 500).json({ message: err.message });
+  }
+}
+
+module.exports = { getUsers, updateUserRole, updateUserStatus, getFaculties, createFaculty, updateFaculty, deleteFaculty };

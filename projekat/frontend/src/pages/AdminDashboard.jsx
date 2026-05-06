@@ -1,5 +1,6 @@
-import { useEffect, useReducer } from 'react';
-import { getUsers, updateUserRole, updateUserStatus } from '../services/adminService';
+import { useEffect, useReducer, useState } from 'react';
+import { getUsers, updateUserRole, updateUserStatus, getFaculties, createFaculty, updateFaculty, deleteFaculty } from '../services/adminService';
+import { useTheme } from '../context/ThemeContext';
 import './AdminDashboard.css';
 
 const ROLES = ['STUDENT', 'COMPANY', 'COORDINATOR', 'ADMIN'];
@@ -61,6 +62,8 @@ function reducer(state, action) {
         ...state,
         pending: state.pending.filter((u) => u.id !== action.payload),
       };
+    case 'SET_FACULTIES':
+      return { ...state, faculties: action.payload };
     case 'SHOW_TOAST':
       return { ...state, toast: action.payload };
     case 'HIDE_TOAST':
@@ -78,17 +81,28 @@ const initialState = {
   loading: true,
   pending: [],
   toast: null,
+  faculties: [],
 };
 
 export default function AdminDashboard() {
   const [state, dispatch] = useReducer(reducer, initialState);
-  const { view, statusFilter, roleFilter, users, loading, pending, toast } = state;
+  const { view, statusFilter, roleFilter, users, loading, pending, toast, faculties } = state;
+  const { darkMode } = useTheme();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     getUsers('PENDING')
-      .then((data) => dispatch({ type: 'SET_PENDING', payload: data }))
+      .then((data) => dispatch({ type: 'SET_PENDING', payload: data.filter((u) => u.role !== 'ADMIN') }))
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (view === 'faculties') {
+      getFaculties()
+        .then((data) => dispatch({ type: 'SET_FACULTIES', payload: data }))
+        .catch(() => showToast('Greška pri učitavanju fakulteta.', 'error'));
+    }
+  }, [view]);
 
   useEffect(() => {
     if (view === 'users') {
@@ -124,18 +138,78 @@ export default function AdminDashboard() {
     }
   }
 
+  async function handleAssignAdmin(email) {
+    try {
+      const allUsers = await getUsers();
+      const user = allUsers.find((u) => u.email === email);
+      if (!user) {
+        showToast('Korisnik s tim emailom nije pronađen.', 'error');
+        return;
+      }
+      await updateUserRole(user.id, 'ADMIN');
+      await updateUserStatus(user.id, 'ACTIVE');
+      dispatch({ type: 'REMOVE_PENDING', payload: user.id });
+      showToast(`${user.name} je sada admin.`);
+    } catch {
+      showToast('Greška pri dodjeli admin role.', 'error');
+    }
+  }
+
+  async function handleCreateFaculty(data) {
+    try {
+      const created = await createFaculty(data);
+      dispatch({ type: 'SET_FACULTIES', payload: [...faculties, created].sort((a, b) => a.naziv.localeCompare(b.naziv)) });
+      showToast('Fakultet uspješno dodan.');
+    } catch {
+      showToast('Greška pri dodavanju fakulteta.', 'error');
+    }
+  }
+
+  async function handleUpdateFaculty(id, data) {
+    try {
+      const updated = await updateFaculty(id, data);
+      dispatch({ type: 'SET_FACULTIES', payload: faculties.map((f) => (f.id === id ? updated : f)) });
+      showToast('Fakultet uspješno izmijenjen.');
+    } catch {
+      showToast('Greška pri izmjeni fakulteta.', 'error');
+    }
+  }
+
+  async function handleDeleteFaculty(id) {
+    try {
+      await deleteFaculty(id);
+      dispatch({ type: 'SET_FACULTIES', payload: faculties.filter((f) => f.id !== id) });
+      showToast('Fakultet uspješno obrisan.');
+    } catch {
+      showToast('Ne možete obrisati fakultet u upotrebi!', 'error');
+    }
+  }
+
   const visibleUsers = roleFilter
     ? users.filter((u) => u.role === roleFilter)
     : users;
 
   return (
-    <div className="ad-layout">
+    <div className={`ad-layout${darkMode ? ' dark' : ''}`}>
       {/* Sidebar */}
-      <aside className="ad-sidebar">
+      <aside className={`ad-sidebar${sidebarOpen ? ' open' : ''}`}>
         <div className="ad-logo">
-          <div className="ad-logo-name">PraksaHub</div>
+          <img src="/logo2.png" alt="PraksaHub" style={{ height: 40 }} />
           <div className="ad-logo-sub">Admin panel</div>
         </div>
+        {/* Toggle — vidljiv samo na mobilnom */}
+<button
+  className="ad-sidebar-toggle"
+  style={{ display: "none" }}
+  onClick={() => setSidebarOpen(o => !o)}
+>
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+    {sidebarOpen
+      ? <><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>
+      : <><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></>
+    }
+  </svg>
+</button>
 
         <div className="ad-nav-group">
           <div className="ad-nav-label">Pregled</div>
@@ -165,6 +239,12 @@ export default function AdminDashboard() {
             >
               Korisnici
             </button>
+            <button
+              className={`ad-nav-item ${view === 'faculties' ? 'active' : ''}`}
+              onClick={() => dispatch({ type: 'SET_VIEW', payload: 'faculties' })}
+            >
+              Fakulteti
+            </button>
           </nav>
         </div>
       </aside>
@@ -175,7 +255,7 @@ export default function AdminDashboard() {
           <DashboardView pending={pending} showToast={showToast} onStatusChange={handleStatusChange} />
         )}
         {view === 'roles' && (
-          <RolesView pending={pending} showToast={showToast} onStatusChange={handleStatusChange} />
+          <RolesView pending={pending} showToast={showToast} onStatusChange={handleStatusChange} onAssignAdmin={handleAssignAdmin} />
         )}
         {view === 'users' && (
           <UsersView
@@ -185,6 +265,14 @@ export default function AdminDashboard() {
             roleFilter={roleFilter}
             dispatch={dispatch}
             onRoleChange={handleRoleChange}
+          />
+        )}
+        {view === 'faculties' && (
+          <FacultiesView
+            faculties={faculties}
+            onCreate={handleCreateFaculty}
+            onUpdate={handleUpdateFaculty}
+            onDelete={handleDeleteFaculty}
           />
         )}
       </main>
@@ -234,8 +322,8 @@ function DashboardView({ pending, showToast, onStatusChange }) {
               <tr>
                 <th>Korisnik</th>
                 <th>Tip</th>
-                <th>Institucija</th>
-                <th>Datum</th>
+                <th className="ad-col-institution">Institucija</th>
+                <th className="ad-col-date">Datum</th>
                 <th></th>
               </tr>
             </thead>
@@ -253,8 +341,8 @@ function DashboardView({ pending, showToast, onStatusChange }) {
                       {u.role === 'STUDENT' ? 'Student' : u.role === 'COMPANY' ? 'Kompanija' : 'Koordinator'}
                     </span>
                   </td>
-                  <td style={{ color: '#5a7a9a', fontSize: '0.85rem' }}>{u.institution}</td>
-                  <td style={{ color: '#9aabbc', fontSize: '0.82rem' }}>{u.date}</td>
+                  <td className="ad-col-institution" style={{ color: '#5a7a9a', fontSize: '0.85rem' }}>{u.institution}</td>
+                  <td className="ad-col-date" style={{ color: '#9aabbc', fontSize: '0.82rem' }}>{u.date}</td>
                   <td>
                     <div className="ad-actions">
                       <button
@@ -341,7 +429,7 @@ function PendingTable({ rows, onStatusChange, emptyMsg }) {
   );
 }
 
-function RolesView({ pending, showToast, onStatusChange }) {
+function RolesView({ pending, showToast, onStatusChange, onAssignAdmin }) {
   const coordinatorsPending = pending.filter((u) => u.role === 'COORDINATOR');
   const companiesPending = pending.filter((u) => u.role === 'COMPANY');
 
@@ -349,7 +437,7 @@ function RolesView({ pending, showToast, onStatusChange }) {
     <div className="ad-content">
       <div className="ad-header">
         <h1 className="ad-title">Dodjela rola</h1>
-        <div className="ad-subtitle">Odobravanje koordinatora, kompanije i dodjela admin pristupa</div>
+        <div className="ad-subtitle">Odobravanje koordinatora i kompanija</div>
       </div>
 
       <div className="ad-roles-cols">
@@ -378,7 +466,8 @@ function RolesView({ pending, showToast, onStatusChange }) {
           className="ad-assign-form"
           onSubmit={(e) => {
             e.preventDefault();
-            showToast('Admin rola dodijeljena.');
+            const email = e.target.elements[0].value;
+            onAssignAdmin(email);
             e.target.reset();
           }}
         >
@@ -389,6 +478,121 @@ function RolesView({ pending, showToast, onStatusChange }) {
           <input type="email" placeholder="email@korisnik.ba" className="ad-input" required />
           <button type="submit" className="ad-btn ad-btn--primary">Dodijeli admin rolu</button>
         </form>
+      </div>
+    </div>
+  );
+}
+
+function FacultiesView({ faculties, onCreate, onUpdate, onDelete }) {
+  const [form, setForm] = useState({ naziv: '', email: '', adresa: '' });
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({});
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    onCreate(form);
+    setForm({ naziv: '', email: '', adresa: '' });
+  }
+
+  function startEdit(f) {
+    setEditingId(f.id);
+    setEditForm({ naziv: f.naziv, email: f.email || '', adresa: f.adresa || '' });
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditForm({});
+  }
+
+  function saveEdit(id) {
+    onUpdate(id, editForm);
+    cancelEdit();
+  }
+
+  return (
+    <div className="ad-content">
+      <div className="ad-header">
+        <h1 className="ad-title">Fakulteti</h1>
+        <div className="ad-subtitle">Upravljanje fakultetima u sistemu</div>
+      </div>
+
+      <div className="ad-section">
+        <div className="ad-section-header">
+          <h2 className="ad-section-title">Dodaj fakultet</h2>
+        </div>
+        <form className="ad-assign-form" onSubmit={handleSubmit}>
+          <input
+            className="ad-input"
+            placeholder="Naziv fakulteta *"
+            value={form.naziv}
+            onChange={(e) => setForm({ ...form, naziv: e.target.value })}
+            required
+          />
+          <input
+            className="ad-input"
+            placeholder="Email (opcionalno)"
+            value={form.email}
+            onChange={(e) => setForm({ ...form, email: e.target.value })}
+          />
+          <input
+            className="ad-input"
+            placeholder="Adresa (opcionalno)"
+            value={form.adresa}
+            onChange={(e) => setForm({ ...form, adresa: e.target.value })}
+          />
+          <button type="submit" className="ad-btn ad-btn--primary">Dodaj fakultet</button>
+        </form>
+      </div>
+
+      <div className="ad-section">
+        <div className="ad-section-header">
+          <h2 className="ad-section-title">Lista fakulteta</h2>
+          <span className="ad-section-count">{faculties.length} fakulteta</span>
+        </div>
+        <table className="ad-table">
+          <thead>
+            <tr>
+              <th>Naziv</th>
+              <th>Email</th>
+              <th>Adresa</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {faculties.map((f) => (
+              <tr key={f.id}>
+                {editingId === f.id ? (
+                  <>
+                    <td><input className="ad-input" value={editForm.naziv} onChange={(e) => setEditForm({ ...editForm, naziv: e.target.value })} /></td>
+                    <td><input className="ad-input" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} /></td>
+                    <td><input className="ad-input" value={editForm.adresa} onChange={(e) => setEditForm({ ...editForm, adresa: e.target.value })} /></td>
+                    <td>
+                      <div className="ad-actions">
+                        <button className="ad-btn ad-btn--approve" onClick={() => saveEdit(f.id)}>Sačuvaj</button>
+                        <button className="ad-btn ad-btn--reject" onClick={cancelEdit}>Odustani</button>
+                      </div>
+                    </td>
+                  </>
+                ) : (
+                  <>
+                    <td>{f.naziv}</td>
+                    <td style={{ color: '#5a7a9a', fontSize: '0.85rem' }}>{f.email || '—'}</td>
+                    <td style={{ color: '#5a7a9a', fontSize: '0.85rem' }}>{f.adresa || '—'}</td>
+                    <td>
+                      <div className="ad-actions">
+                        <button className="ad-btn ad-btn--approve" onClick={() => startEdit(f)}>Uredi</button>
+                        <button className="ad-btn ad-btn--reject" onClick={() => onDelete(f.id)}>Obriši</button>
+                      </div>
+                    </td>
+                  </>
+                )}
+              </tr>
+            ))}
+            {faculties.length === 0 && (
+              <tr><td colSpan={4} className="ad-empty">Nema dodanih fakulteta.</td></tr>
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );
@@ -442,8 +646,8 @@ function UsersView({ users, loading, statusFilter, roleFilter, dispatch, onRoleC
                 <th>Korisnik</th>
                 <th>Rola</th>
                 <th>Status</th>
-                <th>Institucija</th>
-                <th>Registrovan</th>
+                <th className="ad-col-institution">Institucija</th>
+                <th className="ad-col-date">Registrovan</th>
                 <th>Promijeni rolu</th>
               </tr>
             </thead>
@@ -465,8 +669,8 @@ function UsersView({ users, loading, statusFilter, roleFilter, dispatch, onRoleC
                   <td>
                     <span className={`ad-status-badge ad-status--${u.status.toLowerCase()}`}>{u.status}</span>
                   </td>
-                  <td style={{ color: '#5a7a9a', fontSize: '0.85rem' }}>{u.institution || '—'}</td>
-                  <td style={{ color: '#9aabbc', fontSize: '0.82rem' }}>
+                  <td className="ad-col-institution" style={{ color: '#5a7a9a', fontSize: '0.85rem' }}>{u.institution || '—'}</td>
+                  <td className="ad-col-date" style={{ color: '#9aabbc', fontSize: '0.82rem' }}>
                     {u.created_at ? u.created_at.slice(0, 10) : '—'}
                   </td>
                   <td>

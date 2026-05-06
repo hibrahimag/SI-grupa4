@@ -8,7 +8,7 @@
 .ad-layout {
   display: flex;
   min-height: 100vh;
-  background: #eeeee8;
+  background: #f0f6ff;
   font-family: 'Sora', 'Segoe UI', sans-serif;
   color: #0d1f3c;
 }
@@ -25,21 +25,24 @@
 }
 
 .ad-logo {
-  padding: 26px 24px 20px;
+  padding: 18px 20px 16px;
   border-bottom: 1px solid #e0edf9;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.ad-logo-name {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #0d1f3c;
-  letter-spacing: -0.02em;
+.ad-logo img {
+  height: 36px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+  margin-left: -40px;
 }
 
 .ad-logo-sub {
   font-size: 0.72rem;
   color: #9aabbc;
-  margin-top: 2px;
 }
 
 .ad-nav-group {
@@ -84,7 +87,7 @@
 }
 
 .ad-nav-item.active {
-  background: #0d1f3c;
+  background: #1a6fd4;
   color: #ffffff;
   font-weight: 600;
 }
@@ -227,7 +230,7 @@
   background: #ffffff;
   border: 1px solid #e0edf9;
   border-radius: 16px;
-  overflow: hidden;
+  overflow-x: auto;
   margin-bottom: 20px;
 }
 
@@ -610,3 +613,47 @@
   font-style: italic;
   padding: 20px 0;
 }
+/* ── Dark mode ── */
+.dark .ad-layout       { background: #0d1117; color: #e2e8f0; }
+.dark .ad-sidebar      { background: #111827; border-color: #1e2d40; }
+.dark .ad-logo         { border-color: #1e2d40; }
+.dark .ad-logo-name    { color: #e2e8f0; }
+.dark .ad-nav-item     { color: #7a9ab8; }
+.dark .ad-nav-item:hover { background: #1e2d40; color: #e2e8f0; }
+.dark .ad-nav-item.active { background: #1a6fd4; color: #fff; }
+
+.dark .ad-title        { color: #e2e8f0; }
+.dark .ad-subtitle     { color: #7a9ab8; }
+
+.dark .ad-stat-card    { background: #111827; border-color: #1e2d40; }
+.dark .ad-stat-value   { color: #e2e8f0; }
+
+.dark .ad-section      { background: #111827; border-color: #1e2d40; }
+.dark .ad-section-title { color: #e2e8f0; }
+.dark .ad-section-header { border-color: #1e2d40; }
+
+.dark .ad-table th     { color: #5a7a9a; border-color: #1e2d40; }
+.dark .ad-table td     { color: #cdd8e8; border-color: #1a2535; }
+.dark .ad-table tr:hover td { background: #161f2e; }
+
+.dark .ad-avatar       { background: #1e2d40; color: #7ab3e0; }
+.dark .ad-user-name    { color: #e2e8f0; }
+.dark .ad-user-email   { color: #5a7a9a; }
+
+.dark .ad-input        { background: #161f2e; border-color: #1e2d40; color: #e2e8f0; }
+.dark .ad-input:focus  { border-color: #1a6fd4; }
+.dark .ad-select       { background: #161f2e; border-color: #1e2d40; color: #e2e8f0; }
+
+.dark .ad-filter-btn   { background: #111827; border-color: #1e2d40; color: #7a9ab8; }
+.dark .ad-filter-btn:hover { background: #1e2d40; color: #e2e8f0; border-color: #2a4060; }
+.dark .ad-filter-btn.active { background: #1a6fd4; border-color: #1a6fd4; color: #fff; }
+
+.dark .ad-btn--reject  { background: transparent; border-color: #1e2d40; color: #7a9ab8; }
+.dark .ad-btn--reject:hover { background: #1e2d40; }
+
+.dark .ad-audit-row    { border-color: #1a2535; }
+.dark .ad-audit-action { color: #e2e8f0; }
+.dark .ad-audit-sub    { color: #5a7a9a; }
+.dark .ad-audit-footer { border-color: #1a2535; }
+.dark .ad-audit-footer button { background: transparent; border-color: #1e2d40; color: #7a9ab8; }
+.dark .ad-audit-footer button:hover { background: #1e2d40; }
