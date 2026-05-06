@@ -10,6 +10,10 @@ const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN ?? '8h';
 const SALT_ROUNDS    = 10;
 const EMAIL_RE       = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+//za reset lozinke
+const crypto = require('crypto');
+const { sendPasswordResetEmail } = require('./email.service');
+
 if (!JWT_SECRET) {
   throw new Error('JWT_SECRET environment variable is not set.');
 }
@@ -158,6 +162,9 @@ async function loginService(identifier, password) {
     },
   });
 
+
+
+
   // Deliberately vague: do not reveal whether the identifier exists
   if (!user) {
     throw new Error('Pogrešno korisničko ime/e-mail ili lozinka.');
@@ -202,4 +209,56 @@ async function loginService(identifier, password) {
   };
 }
 
-module.exports = { checkAvailability, getPublicFaculties, register, loginService };
+async function forgotPasswordService(email) {
+  const user = await User.findOne({
+    where: { email },
+  });
+
+  if (!user) {
+    return;
+  }
+
+  const resetToken = crypto.randomBytes(32).toString('hex');
+
+  user.passwordResetToken = resetToken;
+  user.passwordResetExpires = new Date(Date.now() + 60 * 60 * 1000);
+
+  await user.save();
+
+  const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+
+  await sendPasswordResetEmail(user.email, resetLink);
+}
+
+async function resetPasswordService(token, newPassword) {
+  const user = await User.findOne({
+    where: {
+      passwordResetToken: token,
+    },
+  });
+
+  if (!user) {
+    throw new Error('Neispravan token.');
+  }
+
+  if (!user.passwordResetExpires || user.passwordResetExpires < new Date()) {
+    throw new Error('Token je istekao.');
+  }
+
+  const hashedPassword = await bcrypt.hash(newPassword, SALT_ROUNDS);
+
+  user.passwordHash = hashedPassword;
+  user.passwordResetToken = null;
+  user.passwordResetExpires = null;
+
+  await user.save();
+}
+
+module.exports = {
+  checkAvailability,
+  getPublicFaculties,
+  register,
+  loginService,
+  forgotPasswordService,
+  resetPasswordService,
+};

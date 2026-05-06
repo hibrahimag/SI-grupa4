@@ -35,6 +35,14 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING(255),
         allowNull: false,
       },
+      passwordResetToken: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+      },
+      passwordResetExpires: {
+        type: DataTypes.DATE,
+        allowNull: true,
+      },
       role: {
         type: DataTypes.ENUM('STUDENT', 'COMPANY', 'COORDINATOR', 'ADMIN'),
         allowNull: false,

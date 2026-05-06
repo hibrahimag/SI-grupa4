@@ -18,6 +18,9 @@ import StudentDashboard      from '../pages/StudentDashboard';
 import KompanijaDashboard    from '../pages/KompanijaDashboard';
 import KoordinatorDashboard  from '../pages/KoordinatorDashboard';
 
+import ForgotPasswordPage from '../pages/ForgotPasswordPage';
+import ResetPasswordPage  from '../pages/ResetPasswordPage';
+
 export default function AppRouter() {
   return (
     <BrowserRouter>
@@ -29,6 +32,9 @@ export default function AppRouter() {
         <Route path="/privacy"   element={<PrivacyPolicy />} />
         <Route path="/terms"   element={<TermsAndConditions />} />
         <Route path="/cookies" element={<CookiesPolicy />} />
+
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password"  element={<ResetPasswordPage />} />
 
         {/* Role dashboards – each role lands on its own route */}
         <Route path="/dashboard/student" element={

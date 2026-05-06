@@ -1,13 +1,9 @@
 // frontend/src/services/auth.service.js
-// Handles all API communication for authentication.
 
 import { apiRequest } from './api.js';
 
 /**
  * Sends login credentials to the backend.
- * @param {string} identifier  – username or email
- * @param {string} password
- * @returns {Promise<{ token: string, user: object }>}
  */
 export function loginUser(identifier, password) {
   return apiRequest('/auth/login', {
@@ -17,21 +13,52 @@ export function loginUser(identifier, password) {
 }
 
 /**
- * Clears the session — call on logout.
+ * Clears the session.
  */
 export function logoutUser() {
   sessionStorage.removeItem('token');
   sessionStorage.removeItem('user');
 }
 
+/**
+ * Forgot password.
+ */
+export function requestPasswordReset(email) {
+  return apiRequest('/auth/forgot-password', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
+}
+
+/**
+ * Reset password.
+ */
+export function resetPassword(token, password) {
+  return apiRequest('/auth/reset-password', {
+    method: 'POST',
+    body: JSON.stringify({ token, password }),
+  });
+}
+
+/**
+ * Public faculties list.
+ */
 export function getPublicFaculties() {
   return apiRequest('/auth/faculties');
 }
 
+/**
+ * Username/email availability check.
+ */
 export function checkAvailability(type, value) {
-  return apiRequest(`/auth/check?type=${encodeURIComponent(type)}&value=${encodeURIComponent(value)}`);
+  return apiRequest(
+    `/auth/check?type=${encodeURIComponent(type)}&value=${encodeURIComponent(value)}`
+  );
 }
 
+/**
+ * Register user.
+ */
 export function register(data) {
   return apiRequest('/auth/register', {
     method: 'POST',
