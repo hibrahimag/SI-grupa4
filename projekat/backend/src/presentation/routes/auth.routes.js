@@ -1,8 +1,11 @@
-const router = require('express').Router();
-const authController = require('../../business/controllers/auth.controller');
+const { Router } = require('express');
+const { loginController, getPublicFaculties, checkAvailability, register } = require('../../business/controllers/auth.controller');
 
-router.get('/faculties', authController.getPublicFaculties);
-router.get('/check', authController.checkAvailability);
-router.post('/register', authController.register);
+const router = Router();
+
+router.get('/faculties', getPublicFaculties);
+router.get('/check', checkAvailability);
+router.post('/register', register);
+router.post('/login', loginController);
 
 module.exports = router;

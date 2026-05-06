@@ -2,15 +2,14 @@
 .reg-page {
   min-height: 100vh;
   background: linear-gradient(160deg, #e8f2ff 0%, #f0f6ff 55%, #ede8ff 100%);
-  font-family: 'Sora', 'Segoe UI', sans-serif;
-  color: #0d1f3c;
+  font-family: var(--font-sans);
+  color: var(--color-dark);
   display: flex;
   flex-direction: column;
 }
 
 .reg-page.dark {
   background: linear-gradient(160deg, #111827 0%, #1f2937 55%, #0f172a 100%);
-  color: #f9fafb;
 }
 
 /* Navbar */
@@ -22,7 +21,7 @@
   height: 68px;
   background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(14px);
-  border-bottom: 1px solid #d0e3f7;
+  border-bottom: 1px solid var(--color-border-mid);
   position: sticky;
   top: 0;
   z-index: 10;
@@ -30,16 +29,16 @@
 
 .dark .reg-nav {
   background: rgba(17, 24, 39, 0.9);
-  border-bottom-color: #374151;
+  border-bottom-color: var(--color-border);
 }
 
 .reg-nav-login {
-  font-size: 0.875rem;
-  color: #5a7a9a;
+  font-size: var(--font-size-base);
+  color: var(--color-muted);
 }
 
 .reg-nav-login a {
-  color: #1a6fd4;
+  color: var(--color-primary);
   font-weight: 600;
   text-decoration: none;
 }
@@ -59,17 +58,15 @@
 
 /* Card */
 .reg-card {
-  background: white;
+  background: var(--color-surface);
   border-radius: 20px;
   box-shadow: 0 20px 60px rgba(26, 111, 212, 0.14);
-  border: 1px solid #e0edf9;
+  border: 1px solid var(--color-border);
   width: 100%;
   max-width: 520px;
 }
 
 .dark .reg-card {
-  background: #1f2937;
-  border-color: #374151;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
 }
 
@@ -81,19 +78,15 @@
 .reg-title {
   font-size: 1.3rem;
   font-weight: 700;
-  color: #0d1f3c;
+  color: var(--color-dark);
   margin: 0 0 6px;
 }
 
-.dark .reg-title { color: #f9fafb; }
-
 .reg-subtitle {
-  font-size: 0.875rem;
-  color: #5a7a9a;
+  font-size: var(--font-size-base);
+  color: var(--color-muted);
   margin: 0 0 24px;
 }
-
-.dark .reg-subtitle { color: #9aabbc; }
 
 /* Role select cards */
 .reg-role-cards {
@@ -109,22 +102,21 @@
   align-items: center;
   gap: 12px;
   padding: 24px 12px;
-  border: 2px solid #e0edf9;
+  border: 2px solid var(--color-border);
   border-radius: 14px;
-  background: #f8fbff;
+  background: var(--color-surface-input);
   cursor: pointer;
-  transition: border-color 0.2s, background 0.2s, transform 0.2s;
+  transition: border-color var(--transition-fast), background var(--transition-fast), transform 0.2s;
   font-family: inherit;
 }
 
 .reg-role-card:hover {
-  border-color: #1a6fd4;
+  border-color: var(--color-primary);
   background: #eef5ff;
   transform: translateY(-2px);
 }
 
-.dark .reg-role-card { background: #161f2e; border-color: #1e2d40; }
-.dark .reg-role-card:hover { border-color: #1a6fd4; background: #1e2d40; }
+.dark .reg-role-card:hover { background: var(--color-border); }
 
 .reg-role-card-icon {
   width: 50px;
@@ -138,10 +130,8 @@
 .reg-role-card-label {
   font-size: 0.9rem;
   font-weight: 700;
-  color: #0d1f3c;
+  color: var(--color-dark);
 }
-
-.dark .reg-role-card-label { color: #e2e8f0; }
 
 /* Form */
 .reg-form {
@@ -164,42 +154,33 @@
 }
 
 .reg-label {
-  font-size: 0.78rem;
+  font-size: var(--font-size-sm);
   font-weight: 600;
-  color: #5a7a9a;
+  color: var(--color-muted);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
-
-.dark .reg-label { color: #9aabbc; }
 
 .reg-input,
 .reg-select,
 .reg-textarea {
   padding: 10px 14px;
-  border: 1.5px solid #d0e3f7;
-  border-radius: 8px;
-  font-size: 0.875rem;
+  border: 1.5px solid var(--color-border-mid);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
   font-family: inherit;
-  color: #0d1f3c;
-  background: #f8fbff;
+  color: var(--color-dark);
+  background: var(--color-surface-input);
   outline: none;
-  transition: border-color 0.15s;
+  transition: border-color var(--transition-fast);
 }
 
 .reg-input:focus,
 .reg-select:focus,
-.reg-textarea:focus { border-color: #1a6fd4; }
+.reg-textarea:focus { border-color: var(--color-primary); }
 
 .reg-input.error,
 .reg-select.error { border-color: #e05252; }
-
-.dark .reg-input,
-.dark .reg-select,
-.dark .reg-textarea { background: #161f2e; border-color: #1e2d40; color: #e2e8f0; }
-.dark .reg-input:focus,
-.dark .reg-select:focus,
-.dark .reg-textarea:focus { border-color: #1a6fd4; }
 
 .reg-textarea {
   resize: vertical;
@@ -209,17 +190,15 @@
 .reg-textarea-label {
   font-size: 0.9rem;
   font-weight: 600;
-  color: #0d1f3c;
+  color: var(--color-dark);
 }
-
-.dark .reg-textarea-label { color: #e2e8f0; }
 
 .reg-error-msg {
   font-size: 0.82rem;
-  color: #c0392b;
+  color: var(--color-danger);
   background: #fff5f5;
   border: 1px solid #f5c6c6;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 10px 14px;
 }
 
@@ -230,8 +209,8 @@
   display: flex;
   align-items: center;
   gap: 9px;
-  font-size: 0.85rem;
-  color: #5a7a9a;
+  font-size: var(--font-size-base);
+  color: var(--color-muted);
   cursor: pointer;
   user-select: none;
 }
@@ -240,26 +219,24 @@
   width: 16px;
   height: 16px;
   flex-shrink: 0;
-  accent-color: #1a6fd4;
+  accent-color: var(--color-primary);
   cursor: pointer;
 }
 
 .reg-terms a {
-  color: #1a6fd4;
+  color: var(--color-primary);
   font-weight: 600;
   text-decoration: none;
 }
 
 .reg-terms a:hover { text-decoration: underline; }
 
-.reg-terms--error { color: #c0392b; }
-
-.dark .reg-terms { color: #9aabbc; }
+.reg-terms--error { color: var(--color-danger); }
 .dark .reg-terms--error { color: #f87171; }
 
 .reg-terms-msg {
   font-size: 0.82rem;
-  color: #c0392b;
+  color: var(--color-danger);
   margin-top: -6px;
 }
 
@@ -276,27 +253,27 @@
 .reg-btn {
   padding: 11px 26px;
   border-radius: 9px;
-  font-size: 0.875rem;
+  font-size: var(--font-size-base);
   font-weight: 700;
   font-family: inherit;
   cursor: pointer;
   border: none;
-  transition: opacity 0.15s, transform 0.15s;
+  transition: opacity var(--transition-fast), transform var(--transition-fast);
 }
 
 .reg-btn:hover:not(:disabled) { opacity: 0.88; transform: translateY(-1px); }
 .reg-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
 .reg-btn--primary {
-  background: linear-gradient(135deg, #1a6fd4, #2d9cdb);
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
   color: #fff;
-  box-shadow: 0 4px 14px rgba(26, 111, 212, 0.3);
+  box-shadow: var(--shadow-btn);
 }
 
 .reg-btn--secondary {
   background: transparent;
-  color: #5a7a9a;
-  border: 1.5px solid #d0e3f7;
+  color: var(--color-muted);
+  border: 1.5px solid var(--color-border-mid);
 }
 
 .reg-btn--secondary:hover:not(:disabled) {
@@ -305,8 +282,7 @@
   opacity: 1;
 }
 
-.dark .reg-btn--secondary { border-color: #1e2d40; color: #9aabbc; }
-.dark .reg-btn--secondary:hover:not(:disabled) { background: #1e2d40; opacity: 1; }
+.dark .reg-btn--secondary:hover:not(:disabled) { background: var(--color-border); opacity: 1; }
 
 /* Availability field */
 .reg-avail-wrapper {
@@ -329,20 +305,17 @@
   pointer-events: none;
 }
 
-.reg-avail-ok         { color: #0e9e6e; }
+.reg-avail-ok         { color: var(--color-success); }
 .reg-avail-err        { color: #e05252; }
 .reg-avail-taken-icon { color: #d97706; }
-.reg-avail-spin       { color: #9aabbc; animation: reg-spin 0.75s linear infinite; }
+.reg-avail-spin       { color: var(--color-faint); animation: reg-spin 0.75s linear infinite; }
 
-.reg-input.success { border-color: #0e9e6e; }
-.dark .reg-input.success { border-color: #0e9e6e; }
-
-.reg-input.taken { border-color: #f59e0b; }
-.dark .reg-input.taken { border-color: #f59e0b; }
+.reg-input.success { border-color: var(--color-success); }
+.reg-input.taken   { border-color: #f59e0b; }
 
 .reg-avail-msg {
   font-size: 0.75rem;
-  color: #c0392b;
+  color: var(--color-danger);
   margin-top: 3px;
 }
 
@@ -374,7 +347,7 @@
   width: 68px;
   height: 68px;
   border-radius: 50%;
-  background: #e0f7ef;
+  background: var(--color-success-subtle);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -384,20 +357,16 @@
 .reg-success-title {
   font-size: 1.3rem;
   font-weight: 700;
-  color: #0d1f3c;
+  color: var(--color-dark);
   margin: 0 0 12px;
 }
 
-.dark .reg-success-title { color: #f9fafb; }
-
 .reg-success-msg {
   font-size: 0.9rem;
-  color: #5a7a9a;
+  color: var(--color-muted);
   line-height: 1.75;
   margin: 0;
 }
-
-.dark .reg-success-msg { color: #9aabbc; }
 
 /* ── Mobile responsiveness ── */
 @media (max-width: 480px) {

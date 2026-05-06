@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
-import { getPublicFaculties, register, checkAvailability } from '../services/authService';
+import { getPublicFaculties, register, checkAvailability } from '../services/auth.service';
 import { useTheme } from '../context/ThemeContext';
 import './RegisterPage.css';
 
