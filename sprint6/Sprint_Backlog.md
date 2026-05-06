@@ -13,7 +13,7 @@
 
 ## SB-01 – Registracija korisnika
 
-### US-01 – Kao student, želim da se registrujem u sistem kako bih kreirao svoj profil
+### US-01 - Kao student, želim da se registrujem u sistem kako bih kreirao svoj profil
 
 **Prioritet:** High
 
@@ -24,7 +24,7 @@
 - Sistem ne smije odobriti profil prije verifikacije od strane fakulteta
 - Sistem ne smije dozvoliti završetak registracije bez popunjenih obaveznih polja
 
-### US-02 – Kao koordinator, želim da se registrujem u sistem s odgovarajućim privilegijama
+### US-02 - Kao koordinator, želim da se registrujem u sistem s odgovarajućim privilegijama
 
 **Prioritet:** High
 
@@ -35,7 +35,7 @@
 - Sistem ne smije dozvoliti pristup privilegijama dok admin ne odobri account
 - Sistem ne smije dozvoliti registraciju s već postojećim emailom
 
-### US-03 – Kao kompanija, želim da se registrujem u sistem radi objavljivanja oglasa
+### US-03 - Kao kompanija, želim da se registrujem u sistem radi objavljivanja oglasa
 
 **Prioritet:** High
 
@@ -49,7 +49,7 @@
 
 ## SB-02 – Prijava korisnika
 
-### US-04 – Kao student, želim da se prijavim u sistem
+### US-04 - Kao student, želim da se prijavim u sistem
 
 **Prioritet:** High
 
@@ -59,7 +59,7 @@
 - Sistem ne smije dozvoliti pristup bez verifikovanog accounta
 - Sistem ne smije dozvoliti prijavu s nepostojećim emailom
 
-### US-05 – Kao koordinator, želim da se prijavim u sistem
+### US-05 - Kao koordinator, želim da se prijavim u sistem
 
 **Prioritet:** High
 
@@ -69,7 +69,7 @@
 - Korisnik treba dobiti poruku greške u slučaju pogrešnih kredencijala
 - Sistem ne smije dozvoliti pristup neodobrenom koordinatoru
 
-### US-06 – Kao kompanija, želim da se prijavim u sistem
+### US-06 - Kao kompanija, želim da se prijavim u sistem
 
 **Prioritet:** High
 
@@ -97,7 +97,7 @@ Tehnički zadatak: implementacija JWT autentifikacije, RBAC middlewarea, bcrypt 
 
 ## SB-28 – Obnavljanje lozinke
 
-### US-34 – Kao korisnik, želim da obnovim lozinku u slučaju zaboravljanja
+### US-34 - Kao korisnik, želim da obnovim lozinku u slučaju zaboravljanja
 
 **Prioritet:** High
 
@@ -112,7 +112,7 @@ Tehnički zadatak: implementacija JWT autentifikacije, RBAC middlewarea, bcrypt 
 
 ## SB-32 – Verifikacija email adrese
 
-### US-38 – Kao novi korisnik, želim da primim email za verifikaciju računa
+### US-38 - Kao novi korisnik, želim da primim email za verifikaciju računa
 
 **Prioritet:** High
 
@@ -127,7 +127,7 @@ Tehnički zadatak: implementacija JWT autentifikacije, RBAC middlewarea, bcrypt 
 
 ## SB-05 – Odobravanje korisničkog računa
 
-### US-58 – Kao administrator, želim pregledati zahtjev za registraciju i dodijeliti korisniku odgovarajuću rolu
+### US-58 - Kao administrator, želim pregledati zahtjev za registraciju i dodijeliti korisniku odgovarajuću rolu
 
 **Prioritet:** High
 
