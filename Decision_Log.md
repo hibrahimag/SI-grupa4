@@ -7,10 +7,10 @@
 - **Naziv odluke:** Pozicioniranje i scope tamnog režima rada
 - **Opis problema:** Trebalo je odlučiti gdje se kontrola tamnog režima smješta u aplikaciji i da li je dostupna neprijavljenim korisnicima, te kako se odabrana tema prenosi između stranica.
 - **Razmatrane opcije:**
-  - Opcija A: Prekidač za temu dostupan samo prijavljenim korisnicima unutar korisničkih postavki
-  - Opcija B: Prekidač smješten direktno na landing page-u, dostupan svim posjetiocima, s globalnom primjenom na sve stranice
+  - Opcija A: Opcija za promjenu teme dostupna samo prijavljenim korisnicima unutar korisničkih postavki
+  - Opcija B: Opcija za temu smještena direktno na landing page-u, dostupna svim posjetiocima, s globalnom primjenom na sve stranice
 - **Odabrana opcija:** Opcija B
-- **Razlog izbora:** Tamni režim je estetska preferencija korisnika koja ne zahtijeva prijavu. Smještanjem prekidača na landing page poboljšava se korisničko iskustvo već pri prvom kontaktu s platformom, a globalna primjena osigurava vizuelnu konzistentnost kroz cijelu aplikaciju.
+- **Razlog izbora:** Tamni režim je estetska preferencija korisnika koja ne zahtijeva prijavu. Smještanjem opcije (dugmeta) na landing page poboljšava se korisničko iskustvo već pri prvom kontaktu s platformom, a globalna primjena osigurava vizuelnu konzistentnost kroz cijelu aplikaciju.
 - **Posljedice odluke:** Odabrana tema mora biti pohranjena u localStorage-u browsera kako bi bila perzistentna između sesija i stranica. Sve komponente sistema moraju podržavati obje teme od trenutka implementacije.
 - **Status:** Aktivna
 
