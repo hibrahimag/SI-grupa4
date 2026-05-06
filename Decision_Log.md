@@ -1,46 +1,66 @@
-# Decision Log
+# Decision Log 
 
-## Sprint 1
+---
 
-Stakeholder map usvojen sa sljedećim izmjenama:
-- Izbačena finansijska služba kao institucionalni stakeholder
-- Ministarstvo obrazovanja zamijenjeno sa Univerzitetom
+## Sprint 5
 
-Product vision usvojen sa sljedećim izmjenama:
-- Dodane dodatne vrijednosti sistema za kompanije
-- Dodan još jedan korak za autentifikaciju i upravljanje korisnicima u okviru Scope MVP - verifikacija prijave
+---
 
-Product Backlog:
-- Napravljena promjena u korištenom template-u (prvobitna verzija se radila u pogrešnom).
+### DL-S5-01
+- **Datum:** 29.04.2026
+- **Naziv odluke:** Pozicioniranje i scope tamnog režima rada
+- **Opis problema:** Trebalo je odlučiti gdje se kontrola tamnog režima smješta u aplikaciji i da li je dostupna neprijavljenim korisnicima, te kako se odabrana tema prenosi između stranica.
+- **Razmatrane opcije:**
+  - Opcija A: Prekidač za temu dostupan samo prijavljenim korisnicima unutar korisničkih postavki
+  - Opcija B: Prekidač smješten direktno na landing page-u, dostupan svim posjetiocima, s globalnom primjenom na sve stranice
+- **Odabrana opcija:** Opcija B
+- **Razlog izbora:** Tamni režim je estetska preferencija korisnika koja ne zahtijeva prijavu. Smještanjem prekidača na landing page poboljšava se korisničko iskustvo već pri prvom kontaktu s platformom, a globalna primjena osigurava vizuelnu konzistentnost kroz cijelu aplikaciju.
+- **Posljedice odluke:** Odabrana tema mora biti pohranjena u localStorage-u browsera kako bi bila perzistentna između sesija i stranica. Sve komponente sistema moraju podržavati obje teme od trenutka implementacije.
+- **Status:** Aktivna
 
-Team Charter:
-- Usvojen bez većih izmjena.
+---
 
-Pitanje za Product Owner-a: 
-Da li koordinator fakulteta treba imati detaljan uvid u cijeli tok i napredak prakse kod studenta ili samo uvid u finalne informacije/evaluaciju. Da li je optimalno da finalni izvještaj generiše koordinator fakulteta ili kompanija koja će kasnije dostaviti izvještaj koordinatoru za internu upotrebu (vođenje statistike o broju studentata na praksi, kvaliteti praksi, eventualnim izmjenama u načinu rada…)
+### DL-S5-02
+- **Datum:** 26.04.2026
+- **Naziv odluke:** Korištenje mock podataka za demonstraciju admin dashboarda
+- **Opis problema:** Admin dashboard planiran je za implementaciju u sprintu 5, međutim registracija i prijava korisnika implementiraju se tek u sprintu 6. Bez stvarnih korisničkih podataka nije moguće demonstrirati funkcionalnosti pregleda i upravljanja računima.
+- **Razmatrane opcije:**
+  - Opcija A: Implementirati admin dashboard u sprintu 5 koristeći mock podatke za demonstraciju
+- **Odabrana opcija:** Opcija A
+- **Razlog izbora:** Zadržavanje planiranog rasporeda sprinta i mogućnost ranog testiranja i demonstracije UI-ja admin dashboarda bez čekanja na završetak autentifikacijskog modula...
+- **Posljedice odluke:** Mock podaci moraju obuhvatati reprezentativne primjere korisnika svih rola (studenti, kompanije, koordinatori) s različitim statusima računa. Mock podaci se uklanjaju i zamjenjuju stvarnim podacima po implementaciji autentifikacije u sprintu 6.
+- **Status:** Aktivna
 
-Odluka:
-Koordinator fakulteta ima uvid u kompletan tok realizacije prakse.
-Finalni izvještaj generiše kompanija nakon završetka prakse. Koordinator fakulteta ga koristi za internu evidenciju, analizu i praćenje kvaliteta praksi.
+---
 
-## Sprint 2
+## Sprint 6
 
+---
 
-Odluke nakon sastanka tima:
+### DL-S6-01
+- **Datum:** 05.05.2026
+- **Naziv odluke:** Dodavanje atributa `odsjek` u shemu baze podataka
+- **Opis problema:** Tokom implementacije registracije utvrđeno je da atribut `odsjek` nije bio uključen u inicijalnu shemu baze, iako je neophodan za studente i koordinatore kao relevantan akademski podatak.
+- **Razmatrane opcije:**
+  - Opcija A: Pohraniti odsjek kao slobodan tekstualni unos
+  - Opcija B: Dodati atribut `odsjek` kao strukturirano polje u Sequelize model korisnika
+- **Odabrana opcija:** Opcija B
+- **Razlog izbora:** Strukturirano polje omogućava dosljednost podataka i lakše filtriranje i pretraživanje po odsjeku u narednim sprintovima.
+- **Posljedice odluke:** Atribut `odsjek` dodan je u Sequelize model korisnika. Forme za registraciju studenta i koordinatora moraju uključivati ovo polje pri implementaciji u sprintu 6.
+- **Status:** Aktivna
 
-Set prioritetnih User Stories:
-- Registraciju usera mora verifikovati koordinator
-- Administrator odobrava registraciju kompanije
-- Koordinator ima uvid u sve podatke studenta
-- Sistem podržava više administratora  
-- Evidenciju aktivnosti studenta vide kompanija i koordinator
-- Evaluacija studenta se vrši na kraju prakse  
-- Dodano zatvaranje oglasa
-- Izvjestaj je krajnja potvrda o praksi bez mnogo detalja
+---
+ 
+### DL-S6-02
+- **Datum:** 05.05.2026
+- **Naziv odluke:** Definisanje toka aktivacije korisničkog računa (registracija → verifikacija emaila → odobrenje računa)
+- **Opis problema:** Trebalo je jasno definisati redoslijed koraka kroz koje korisnik prolazi od registracije do dobijanja pristupa sistemu, te šta se prikazuje korisniku u svakoj fazi tog procesa.
+- **Razmatrane opcije:**
+  - Opcija A: Korisnik dobija pristup odmah nakon registracije
+  - Opcija B: Dvostepeni proces - verifikacija emaila, pa zatim odobrenje računa od strane administratora/koordinatora; pristup se daje tek po završetku oba koraka
+- **Odabrana opcija:** Opcija B
+- **Razlog izbora:** Verifikacija emaila je preduvjet za odobravanje računa - koordinator ili administrator ne mogu odobriti račun čiji vlasnik nije potvrdio da ima pristup unesenoj email adresi. Tek nakon verifikacije emaila zahtjev postaje vidljiv koordinatoru/administratoru za odobravanje i dodjelu role.
+- **Posljedice odluke:** Tok aktivacije računa je sljedeći: (1) korisnik popunjava formu za registraciju, (2) sistem šalje verifikacioni email - ako korisnik pokuša pristupiti računu bez verifikacije preusmjerava se na stranicu "Verifikacija na čekanju", (3) korisnik verificira email - status prelazi u *email verificiran, račun na čekanju odobrenja*, (4) administrator/koordinator odobrava ili odbija račun, (5) korisnik dobija obavještenje i status prelazi u *aktivan*. JWT token se ne izdaje dok račun nije aktivan. Korisnik koji čeka odobrenje ima status "Čekamo da vas admin/koordinator odobri" i nema pristup nijednoj zaštićenoj ruti.
+- **Status:** Aktivna
 
-Početna lista NFR zahtjeva:
-- Izbačen admin panel i praćenje aktivnosti korisnika  
-- Dodane notifikacije kao novi zahtjev 
-
-Pitanje za Product Owner-a:  
-Na koji način implementirati izmjene akademskih podataka studenta (indeks, godina, odsjek). Da li koordinator mora odobriti svaku promjenu i kako riješiti slučaj promjene fakulteta odnosno kojem koordinatoru ide zahtjev?
+---
