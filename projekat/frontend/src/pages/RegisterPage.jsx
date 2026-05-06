@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
-import { getPublicFaculties, register, checkAvailability } from '../services/auth.service';
+import { getPublicFaculties, getPublicOdsjeci, register, checkAvailability } from '../services/auth.service';
 import { useTheme } from '../context/ThemeContext';
 import './RegisterPage.css';
 
@@ -28,6 +28,7 @@ export default function RegisterPage() {
   const [errorMsg, setErrorMsg] = useState('');
   const [faculties, setFaculties] = useState([]);
   const [facultyLoadError, setFacultyLoadError] = useState(false);
+  const [odsjeci, setOdsjeci] = useState([]);
   const [loading, setLoading] = useState(false);
   const [availability, setAvailability] = useState({ username: null, email: null });
   const availabilityTimers = useRef({});
@@ -62,6 +63,11 @@ export default function RegisterPage() {
     if (errors[field]) setErrors(p => ({ ...p, [field]: false }));
     if (field === 'username' || field === 'email') {
       scheduleAvailabilityCheck(field, value);
+    }
+    if (field === 'fakultetID' && value) {
+      setOdsjeci([]);
+      setFormData(p => ({ ...p, fakultetID: value, odsjekID: '' }));
+      getPublicOdsjeci(value).then(setOdsjeci).catch(() => setOdsjeci([]));
     }
   }
 
@@ -172,6 +178,7 @@ export default function RegisterPage() {
               errorMsg={errorMsg}
               faculties={faculties}
               facultyLoadError={facultyLoadError}
+              odsjeci={odsjeci}
               loading={loading}
               availability={availability}
               onChange={handleChange}
@@ -243,14 +250,14 @@ function RoleSelect({ onSelect, onBack }) {
   );
 }
 
-function Field({ label, field, type = 'text', placeholder, formData, errors, onChange }) {
+function Field({ label, field, type = 'text', placeholder, formData, errors, onChange, italicPlaceholder }) {
   return (
     <div className="reg-field">
       <label className="reg-label">{label}</label>
       <input
         type={type}
         placeholder={placeholder}
-        className={`reg-input${errors[field] ? ' error' : ''}`}
+        className={`reg-input${errors[field] ? ' error' : ''}${italicPlaceholder ? ' reg-input--italic-placeholder' : ''}`}
         value={formData[field] || ''}
         onChange={e => onChange(field, e.target.value)}
         autoComplete={type === 'password' ? 'new-password' : 'off'}
@@ -313,7 +320,7 @@ function AvailabilityField({ label, field, type = 'text', formData, errors, onCh
   );
 }
 
-function FormStep({ role, formData, errors, errorMsg, faculties, facultyLoadError, loading, availability, onChange, onSubmit, showBack, onBack }) {
+function FormStep({ role, formData, errors, errorMsg, faculties, facultyLoadError, odsjeci, loading, availability, onChange, onSubmit, showBack, onBack }) {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [termsError, setTermsError] = useState(false);
 
@@ -360,6 +367,10 @@ function FormStep({ role, formData, errors, errorMsg, faculties, facultyLoadErro
           </div>
         )}
 
+        {role === 'kompanija' && (
+          <Field label="Kontakt osoba (opcionalno)" field="kontaktOsoba" placeholder="Ime i prezime" formData={formData} errors={errors} onChange={onChange} italicPlaceholder />
+        )}
+
         {(role === 'student' || role === 'koordinator') && (
           <div className="reg-field">
             <label className="reg-label">Fakultet</label>
@@ -376,6 +387,25 @@ function FormStep({ role, formData, errors, errorMsg, faculties, facultyLoadErro
             {facultyLoadError && (
               <span style={{ fontSize: '0.78rem', color: '#c0392b' }}>Greška pri učitavanju fakulteta. Molimo osvježite stranicu.</span>
             )}
+          </div>
+        )}
+
+        {(role === 'student' || role === 'koordinator') && formData.fakultetID && (
+          <div className="reg-field">
+            <label className="reg-label">Odsjek (opcionalno)</label>
+            <select
+              className="reg-select"
+              value={formData.odsjekID || ''}
+              onChange={e => onChange('odsjekID', e.target.value)}
+            >
+              <option value="">-- Odaberite odsjek --</option>
+              {odsjeci.length === 0 && (
+                <option disabled value="">Odsjeci još nisu dodani za ovaj fakultet</option>
+              )}
+              {odsjeci.map(o => (
+                <option key={o.id} value={o.id}>{o.naziv}</option>
+              ))}
+            </select>
           </div>
         )}
 

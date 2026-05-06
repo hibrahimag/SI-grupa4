@@ -415,3 +415,7 @@
     padding: 36px 20px 32px;
   }
 }
+
+.reg-input--italic-placeholder::placeholder {
+  font-style: italic;
+}

@@ -14,6 +14,7 @@ const PrisustvoModel = require('./Prisustvo');
 const EvaluacijaModel = require('./Evaluacija');
 const UgovorModel = require('./Ugovor');
 const IzvjestajModel = require('./Izvjestaj');
+const OdsjekModel = require('./Odsjek');
 
 const User = UserModel(sequelize);
 const Student = StudentModel(sequelize);
@@ -28,6 +29,7 @@ const Prisustvo = PrisustvoModel(sequelize);
 const Evaluacija = EvaluacijaModel(sequelize);
 const Ugovor = UgovorModel(sequelize);
 const Izvjestaj = IzvjestajModel(sequelize);
+const Odsjek = OdsjekModel(sequelize);
 
 //relacije
 User.hasOne(Student, { foreignKey: 'userID' });
@@ -44,6 +46,15 @@ Koordinator.belongsTo(Fakultet, { foreignKey: 'fakultetID' });
 
 Fakultet.hasMany(Student, { foreignKey: 'fakultetID' });
 Student.belongsTo(Fakultet, { foreignKey: 'fakultetID' });
+
+Fakultet.hasMany(Odsjek, { foreignKey: 'fakultetID' });
+Odsjek.belongsTo(Fakultet, { foreignKey: 'fakultetID' });
+
+Odsjek.hasMany(Student, { foreignKey: 'odsjekID' });
+Student.belongsTo(Odsjek, { foreignKey: 'odsjekID' });
+
+Odsjek.hasMany(Koordinator, { foreignKey: 'odsjekID' });
+Koordinator.belongsTo(Odsjek, { foreignKey: 'odsjekID' });
 
 Kompanija.hasMany(Oglas, { foreignKey: 'kompanijaID' });
 Oglas.belongsTo(Kompanija, { foreignKey: 'kompanijaID' });
@@ -80,5 +91,5 @@ Koordinator.hasMany(Izvjestaj, { foreignKey: 'koordinatorID' });
 Izvjestaj.belongsTo(Koordinator, { foreignKey: 'koordinatorID' });
 
 //eksport
-module.exports = { sequelize, User, Student, Kompanija, Fakultet, Koordinator, Oglas, PrijavaNaPraksu, Praksa,
+module.exports = { sequelize, User, Student, Kompanija, Fakultet, Koordinator, Odsjek, Oglas, PrijavaNaPraksu, Praksa,
      Aktivnost, Prisustvo, Evaluacija, Ugovor, Izvjestaj };

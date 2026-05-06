@@ -21,6 +21,15 @@ async function getPublicFaculties(req, res) {
   }
 }
 
+async function getPublicOdsjeci(req, res) {
+  try {
+    const odsjeci = await authService.getPublicOdsjeci(Number(req.params.id));
+    res.json(odsjeci);
+  } catch (err) {
+    res.status(err.status || 500).json({ message: err.message });
+  }
+}
+
 async function register(req, res) {
   try {
     const data = await authService.register(req.body);
@@ -148,6 +157,7 @@ async function resetPasswordController(req, res) {
 module.exports = {
   checkAvailability,
   getPublicFaculties,
+  getPublicOdsjeci,
   register,
   loginController,
   verifyEmail,

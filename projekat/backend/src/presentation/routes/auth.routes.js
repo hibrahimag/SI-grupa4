@@ -5,6 +5,7 @@ const {
   forgotPasswordController,
   resetPasswordController,
   getPublicFaculties,
+  getPublicOdsjeci,
   checkAvailability,
   register,
   verifyEmail,
@@ -14,6 +15,7 @@ const {
 const router = Router();
 
 router.get('/faculties', getPublicFaculties);
+router.get('/faculties/:id/odsjeci', getPublicOdsjeci);
 router.get('/check', checkAvailability);
 router.post('/register', register);
 router.post('/login', loginController);

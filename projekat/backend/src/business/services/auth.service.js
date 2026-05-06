@@ -4,7 +4,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { Op, UniqueConstraintError } = require('sequelize');
-const { User, Student, Koordinator, Kompanija, Fakultet } = require('../../infrastructure/database/models');
+const { User, Student, Koordinator, Kompanija, Fakultet, Odsjek } = require('../../infrastructure/database/models');
 const sequelize = require('../../infrastructure/database/db');
 const { sendPasswordResetEmail } = require('./email.service');
 
@@ -50,6 +50,10 @@ async function getPublicFaculties() {
   return Fakultet.findAll({ attributes: ['id', 'naziv'], order: [['naziv', 'ASC']] });
 }
 
+async function getPublicOdsjeci(fakultetID) {
+  return Odsjek.findAll({ where: { fakultetID }, attributes: ['id', 'naziv'], order: [['naziv', 'ASC']] });
+}
+
 async function register(data) {
   const { role, username, email, password } = data;
 
@@ -84,7 +88,7 @@ async function register(data) {
 
   try {
     if (role === 'STUDENT') {
-      const { ime, prezime, fakultetID, year_of_study, index_number } = data;
+      const { ime, prezime, fakultetID, year_of_study, index_number, odsjekID } = data;
       const year = Number(year_of_study);
       if (!Number.isInteger(year) || year < 1) {
         const err = new Error('Godina studija mora biti pozitivan cijeli broj.');
@@ -115,7 +119,7 @@ async function register(data) {
           { transaction: t }
         );
         await Student.create(
-          { userID: createdUser.id, fakultetID: Number(fakultetID), year_of_study: year, index_number },
+          { userID: createdUser.id, fakultetID: Number(fakultetID), year_of_study: year, index_number, odsjekID: odsjekID ? Number(odsjekID) : null },
           { transaction: t }
         );
         return createdUser;
@@ -125,7 +129,7 @@ async function register(data) {
     }
 
     if (role === 'COORDINATOR') {
-      const { ime, prezime, fakultetID } = data;
+      const { ime, prezime, fakultetID, odsjekID } = data;
       const faculty = await Fakultet.findByPk(fakultetID);
       if (!faculty) {
         const err = new Error('Odabrani fakultet nije pronađen.');
@@ -149,7 +153,7 @@ async function register(data) {
           },
           { transaction: t }
         );
-        await Koordinator.create({ userID: createdUser.id, fakultetID: Number(fakultetID) }, { transaction: t });
+        await Koordinator.create({ userID: createdUser.id, fakultetID: Number(fakultetID), odsjekID: odsjekID ? Number(odsjekID) : null }, { transaction: t });
         return createdUser;
       });
       logVerificationLink(user.email, token);
@@ -157,7 +161,7 @@ async function register(data) {
     }
 
     if (role === 'COMPANY') {
-      const { naziv, adresa, telefon, opisPoslovanja } = data;
+      const { naziv, adresa, telefon, opisPoslovanja, kontaktOsoba } = data;
       const user = await sequelize.transaction(async (t) => {
         const createdUser = await User.create(
           {
@@ -176,7 +180,7 @@ async function register(data) {
           { transaction: t }
         );
         await Kompanija.create(
-          { userID: createdUser.id, naziv, adresa: adresa || null, telefon: telefon || null, opisPoslovanja: opisPoslovanja || null },
+          { userID: createdUser.id, naziv, adresa: adresa || null, telefon: telefon || null, opisPoslovanja: opisPoslovanja || null, kontaktOsoba: kontaktOsoba || null },
           { transaction: t }
         );
         return createdUser;
@@ -330,6 +334,7 @@ async function resetPasswordService(token, newPassword) {
 module.exports = {
   checkAvailability,
   getPublicFaculties,
+  getPublicOdsjeci,
   register,
   loginService,
   verifyEmail,
