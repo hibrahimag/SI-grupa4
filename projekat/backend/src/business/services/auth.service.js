@@ -1,21 +1,38 @@
-// backend/src/business/services/auth.service.js
+'use strict';
+
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const { Op, UniqueConstraintError } = require('sequelize');
 const { User, Student, Koordinator, Kompanija, Fakultet } = require('../../infrastructure/database/models');
 const sequelize = require('../../infrastructure/database/db');
-
-const JWT_SECRET     = process.env.JWT_SECRET;
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN ?? '8h';
-const SALT_ROUNDS    = 10;
-const EMAIL_RE       = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-//za reset lozinke
-const crypto = require('crypto');
 const { sendPasswordResetEmail } = require('./email.service');
+
+const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN ?? '8h';
+const SALT_ROUNDS = 10;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const VERIFICATION_EXPIRY_MS = 24 * 60 * 60 * 1000;
 
 if (!JWT_SECRET) {
   throw new Error('JWT_SECRET environment variable is not set.');
+}
+
+function generateVerificationData() {
+  return {
+    token: crypto.randomBytes(32).toString('hex'),
+    expiresAt: new Date(Date.now() + VERIFICATION_EXPIRY_MS),
+  };
+}
+
+function buildVerificationUrl(token) {
+  const frontendBaseUrl = process.env.FRONTEND_BASE_URL || process.env.FRONTEND_URL || 'http://localhost:5173';
+  return `${frontendBaseUrl}/verify-email?token=${token}`;
+}
+
+function logVerificationLink(email, token) {
+  const verificationUrl = buildVerificationUrl(token);
+  console.log(`[EMAIL VERIFICATION] ${email} -> ${verificationUrl}`);
 }
 
 async function checkAvailability(type, value) {
@@ -63,6 +80,7 @@ async function register(data) {
   }
 
   const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+  const { token, expiresAt } = generateVerificationData();
 
   try {
     if (role === 'STUDENT') {
@@ -79,17 +97,31 @@ async function register(data) {
         err.status = 404;
         throw err;
       }
-      return await sequelize.transaction(async (t) => {
-        const user = await User.create(
-          { ime, prezime, username, email, passwordHash, role: 'STUDENT', status: 'PENDING', institution: faculty.naziv },
+      const user = await sequelize.transaction(async (t) => {
+        const createdUser = await User.create(
+          {
+            ime,
+            prezime,
+            username,
+            email,
+            passwordHash,
+            role: 'STUDENT',
+            status: 'PENDING',
+            emailVerifikovan: false,
+            emailVerificationToken: token,
+            emailVerificationExpiresAt: expiresAt,
+            institution: faculty.naziv,
+          },
           { transaction: t }
         );
         await Student.create(
-          { userID: user.id, fakultetID: Number(fakultetID), year_of_study: year, index_number },
+          { userID: createdUser.id, fakultetID: Number(fakultetID), year_of_study: year, index_number },
           { transaction: t }
         );
-        return user;
+        return createdUser;
       });
+      logVerificationLink(user.email, token);
+      return { id: user.id, email: user.email, role: user.role };
     }
 
     if (role === 'COORDINATOR') {
@@ -100,29 +132,57 @@ async function register(data) {
         err.status = 404;
         throw err;
       }
-      return await sequelize.transaction(async (t) => {
-        const user = await User.create(
-          { ime, prezime, username, email, passwordHash, role: 'COORDINATOR', status: 'PENDING', institution: faculty.naziv },
+      const user = await sequelize.transaction(async (t) => {
+        const createdUser = await User.create(
+          {
+            ime,
+            prezime,
+            username,
+            email,
+            passwordHash,
+            role: 'COORDINATOR',
+            status: 'PENDING',
+            emailVerifikovan: false,
+            emailVerificationToken: token,
+            emailVerificationExpiresAt: expiresAt,
+            institution: faculty.naziv,
+          },
           { transaction: t }
         );
-        await Koordinator.create({ userID: user.id, fakultetID: Number(fakultetID) }, { transaction: t });
-        return user;
+        await Koordinator.create({ userID: createdUser.id, fakultetID: Number(fakultetID) }, { transaction: t });
+        return createdUser;
       });
+      logVerificationLink(user.email, token);
+      return { id: user.id, email: user.email, role: user.role };
     }
 
     if (role === 'COMPANY') {
       const { naziv, adresa, telefon, opisPoslovanja } = data;
-      return await sequelize.transaction(async (t) => {
-        const user = await User.create(
-          { ime: naziv, prezime: '', username, email, passwordHash, role: 'COMPANY', status: 'PENDING', institution: naziv },
+      const user = await sequelize.transaction(async (t) => {
+        const createdUser = await User.create(
+          {
+            ime: naziv,
+            prezime: '',
+            username,
+            email,
+            passwordHash,
+            role: 'COMPANY',
+            status: 'PENDING',
+            emailVerifikovan: false,
+            emailVerificationToken: token,
+            emailVerificationExpiresAt: expiresAt,
+            institution: naziv,
+          },
           { transaction: t }
         );
         await Kompanija.create(
-          { userID: user.id, naziv, adresa: adresa || null, telefon: telefon || null, opisPoslovanja: opisPoslovanja || null },
+          { userID: createdUser.id, naziv, adresa: adresa || null, telefon: telefon || null, opisPoslovanja: opisPoslovanja || null },
           { transaction: t }
         );
-        return user;
+        return createdUser;
       });
+      logVerificationLink(user.email, token);
+      return { id: user.id, email: user.email, role: user.role };
     }
 
     const err = new Error('Nepoznata rola.');
@@ -131,9 +191,7 @@ async function register(data) {
   } catch (err) {
     if (err instanceof UniqueConstraintError) {
       const field = err.errors?.[0]?.path;
-      const msg = field === 'email'
-        ? 'Email adresa je već registrovana.'
-        : 'Korisničko ime je već zauzeto.';
+      const msg = field === 'email' ? 'Email adresa je već registrovana.' : 'Korisničko ime je već zauzeto.';
       const conflict = new Error(msg);
       conflict.status = 409;
       throw conflict;
@@ -142,35 +200,21 @@ async function register(data) {
   }
 }
 
-/**
- * Validates credentials and returns a signed JWT + safe user payload.
- *
- * @param {string} identifier  – username or email (the user may type either)
- * @param {string} password    – plaintext password
- * @returns {{ token: string, user: object }}
- * @throws {Error} with a Bosnian user-facing message on any failure
- */
 async function loginService(identifier, password) {
-  // ── 1. Look up user by username OR email ──────────────────────────────────
   const user = await User.findOne({
     where: {
-      // Sequelize Op.or to match either column
-      [Op.or]: [
-        { username: identifier },
-        { email: identifier },
-      ],
+      [Op.or]: [{ username: identifier }, { email: identifier }],
     },
   });
 
-
-
-
-  // Deliberately vague: do not reveal whether the identifier exists
   if (!user) {
     throw new Error('Pogrešno korisničko ime/e-mail ili lozinka.');
   }
 
-  // ── 2. Check account status before verifying password ────────────────────
+  if (!user.emailVerifikovan) {
+    throw new Error('Email nije verifikovan. Verifikujte email prije prijave.');
+  }
+
   if (user.status === 'DEACTIVATED') {
     throw new Error('Vaš nalog je deaktiviran. Kontaktirajte administratora.');
   }
@@ -179,34 +223,70 @@ async function loginService(identifier, password) {
     throw new Error('Vaš nalog još nije aktivan. Sačekajte odobrenje administratora.');
   }
 
-  // ── 3. Verify password ────────────────────────────────────────────────────
   const passwordMatch = await bcrypt.compare(password, user.passwordHash);
-
   if (!passwordMatch) {
     throw new Error('Pogrešno korisničko ime/e-mail ili lozinka.');
   }
 
-  // ── 4. Sign JWT ───────────────────────────────────────────────────────────
-  const payload = {
-    id:   user.id,
-    role: user.role,
-  };
-
-  const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
-
-  // ── 5. Return token + safe user object (never expose passwordHash) ────────
+  const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
   return {
     token,
     user: {
-      id:          user.id,
-      ime:         user.ime,
-      prezime:     user.prezime,
-      username:    user.username,
-      email:       user.email,
-      role:        user.role,
+      id: user.id,
+      ime: user.ime,
+      prezime: user.prezime,
+      username: user.username,
+      email: user.email,
+      role: user.role,
       institution: user.institution,
+      status: user.status,
+      emailVerifikovan: user.emailVerifikovan,
     },
   };
+}
+
+async function verifyEmail(token) {
+  const user = await User.findOne({ where: { emailVerificationToken: token } });
+  if (!user) {
+    const err = new Error('Verifikacioni token nije validan.');
+    err.status = 400;
+    throw err;
+  }
+  if (!user.emailVerificationExpiresAt || user.emailVerificationExpiresAt < new Date()) {
+    const err = new Error('Verifikacioni token je istekao. Zatražite novi.');
+    err.status = 400;
+    throw err;
+  }
+
+  user.emailVerifikovan = true;
+  user.status = 'ACTIVE';
+  user.emailVerificationToken = null;
+  user.emailVerificationExpiresAt = null;
+  await user.save();
+
+  return { message: 'Email uspješno verifikovan.' };
+}
+
+async function resendVerification(email) {
+  const user = await User.findOne({ where: { email } });
+  if (!user) {
+    const err = new Error('Korisnik nije pronađen.');
+    err.status = 404;
+    throw err;
+  }
+  if (user.emailVerifikovan) {
+    const err = new Error('Email je već verifikovan.');
+    err.status = 400;
+    throw err;
+  }
+
+  const { token, expiresAt } = generateVerificationData();
+  user.emailVerificationToken = token;
+  user.emailVerificationExpiresAt = expiresAt;
+  await user.save();
+  logVerificationLink(user.email, token);
+
+  return { message: 'Novi verifikacioni link je generisan i ispisan u backend konzoli.' };
 }
 
 async function forgotPasswordService(email) {
@@ -219,22 +299,17 @@ async function forgotPasswordService(email) {
   }
 
   const resetToken = crypto.randomBytes(32).toString('hex');
-
   user.passwordResetToken = resetToken;
   user.passwordResetExpires = new Date(Date.now() + 60 * 60 * 1000);
-
   await user.save();
 
   const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
-
   await sendPasswordResetEmail(user.email, resetLink);
 }
 
 async function resetPasswordService(token, newPassword) {
   const user = await User.findOne({
-    where: {
-      passwordResetToken: token,
-    },
+    where: { passwordResetToken: token },
   });
 
   if (!user) {
@@ -246,11 +321,9 @@ async function resetPasswordService(token, newPassword) {
   }
 
   const hashedPassword = await bcrypt.hash(newPassword, SALT_ROUNDS);
-
   user.passwordHash = hashedPassword;
   user.passwordResetToken = null;
   user.passwordResetExpires = null;
-
   await user.save();
 }
 
@@ -259,6 +332,8 @@ module.exports = {
   getPublicFaculties,
   register,
   loginService,
+  verifyEmail,
+  resendVerification,
   forgotPasswordService,
   resetPasswordService,
 };

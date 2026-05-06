@@ -1,4 +1,4 @@
-// backend/src/business/controllers/auth.controller.js
+'use strict';
 
 const authService = require('../services/auth.service');
 
@@ -23,16 +23,13 @@ async function getPublicFaculties(req, res) {
 
 async function register(req, res) {
   try {
-    await authService.register(req.body);
-    res.status(201).json({ message: 'Registracija uspješna.' });
+    const data = await authService.register(req.body);
+    res.status(201).json({ message: 'Registracija uspješna.', ...data });
   } catch (err) {
     res.status(err.status || 500).json({ message: err.message });
   }
 }
 
-/**
- * POST /api/auth/login
- */
 async function loginController(req, res) {
   const { identifier, password } = req.body;
 
@@ -50,21 +47,47 @@ async function loginController(req, res) {
     const result = await authService.loginService(identifier.trim(), password);
     return res.status(200).json(result);
   } catch (err) {
-    const isExpected = [
+    const expectedMessages = [
       'Pogrešno korisničko ime/e-mail ili lozinka.',
       'Vaš nalog je deaktiviran. Kontaktirajte administratora.',
       'Vaš nalog još nije aktivan. Sačekajte odobrenje administratora.',
-    ].includes(err.message);
-
-    if (isExpected) {
-      return res.status(401).json({ message: err.message });
+      'Email nije verifikovan. Verifikujte email prije prijave.',
+    ];
+    if (expectedMessages.includes(err.message)) {
+      const status = err.message.includes('nije verifikovan') ? 403 : 401;
+      return res.status(status).json({ message: err.message });
     }
 
     console.error('[auth.controller] Unexpected error during login:', err);
-
     return res.status(500).json({
       message: 'Došlo je do greške na serveru. Pokušajte ponovo.',
     });
+  }
+}
+
+async function verifyEmail(req, res) {
+  try {
+    const { token } = req.query;
+    if (!token) {
+      return res.status(400).json({ message: 'Query parametar "token" je obavezan.' });
+    }
+    const data = await authService.verifyEmail(token);
+    return res.json(data);
+  } catch (err) {
+    return res.status(err.status || 500).json({ message: err.message });
+  }
+}
+
+async function resendVerification(req, res) {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: 'Polje "email" je obavezno.' });
+    }
+    const data = await authService.resendVerification(email);
+    return res.json(data);
+  } catch (err) {
+    return res.status(err.status || 500).json({ message: err.message });
   }
 }
 
@@ -79,13 +102,11 @@ async function forgotPasswordController(req, res) {
 
   try {
     await authService.forgotPasswordService(email.trim());
-
     return res.status(200).json({
       message: 'Ako nalog postoji, link za reset lozinke je poslan na e-mail.',
     });
   } catch (err) {
     console.error('[auth.controller] Password reset request error:', err);
-
     return res.status(500).json({
       message: 'Došlo je do greške pri slanju reset linka.',
     });
@@ -109,24 +130,15 @@ async function resetPasswordController(req, res) {
 
   try {
     await authService.resetPasswordService(token, password);
-
     return res.status(200).json({
       message: 'Lozinka je uspješno promijenjena.',
     });
   } catch (err) {
-    const isExpected = [
-      'Neispravan token.',
-      'Token je istekao.',
-    ].includes(err.message);
-
+    const isExpected = ['Neispravan token.', 'Token je istekao.'].includes(err.message);
     if (isExpected) {
-      return res.status(400).json({
-        message: err.message,
-      });
+      return res.status(400).json({ message: err.message });
     }
-
     console.error('[auth.controller] Password reset error:', err);
-
     return res.status(500).json({
       message: 'Došlo je do greške pri resetovanju lozinke.',
     });
@@ -138,6 +150,8 @@ module.exports = {
   getPublicFaculties,
   register,
   loginController,
+  verifyEmail,
+  resendVerification,
   forgotPasswordController,
   resetPasswordController,
 };
