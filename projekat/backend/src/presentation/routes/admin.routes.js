@@ -12,4 +12,9 @@ router.get('/users', adminController.getUsers);
 router.patch('/users/:id/role', adminController.updateUserRole);
 router.patch('/users/:id/status', adminController.updateUserStatus);
 
+router.get('/faculties', adminController.getFaculties);
+router.post('/faculties', adminController.createFaculty);
+router.put('/faculties/:id', adminController.updateFaculty);
+router.delete('/faculties/:id', adminController.deleteFaculty);
+
 module.exports = router;

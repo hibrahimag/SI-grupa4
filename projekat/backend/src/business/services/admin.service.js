@@ -1,6 +1,6 @@
 'use strict';
 
-const { User } = require('../../infrastructure/database/models');
+const { User, Fakultet, Koordinator, Student } = require('../../infrastructure/database/models');
 
 const ALLOWED_ROLES = ['STUDENT', 'COMPANY', 'COORDINATOR', 'ADMIN'];
 
@@ -62,4 +62,53 @@ async function updateUserStatus(id, status) {
   return mapUser(user);
 }
 
-module.exports = { getUsers, updateUserRole, updateUserStatus };
+async function getFaculties() {
+  return Fakultet.findAll({ order: [['naziv', 'ASC']] });
+}
+
+async function createFaculty({ naziv, email, adresa }) {
+  if (!naziv || !naziv.trim()) {
+    const err = new Error('Field "naziv" is required.');
+    err.status = 400;
+    throw err;
+  }
+  return Fakultet.create({ naziv: naziv.trim(), email: email || null, adresa: adresa || null });
+}
+
+async function updateFaculty(id, { naziv, email, adresa }) {
+  const faculty = await Fakultet.findByPk(id);
+  if (!faculty) {
+    const err = new Error('Faculty not found.');
+    err.status = 404;
+    throw err;
+  }
+  if (naziv !== undefined) faculty.naziv = naziv.trim();
+  if (email !== undefined) faculty.email = email || null;
+  if (adresa !== undefined) faculty.adresa = adresa || null;
+  await faculty.save();
+  return faculty;
+}
+
+async function deleteFaculty(id) {
+  const faculty = await Fakultet.findByPk(id);
+  if (!faculty) {
+    const err = new Error('Faculty not found.');
+    err.status = 404;
+    throw err;
+  }
+  const coordinatorCount = await Koordinator.count({ where: { fakultetID: id } });
+  if (coordinatorCount > 0) {
+    const err = new Error('Cannot delete faculty with linked coordinators.');
+    err.status = 409;
+    throw err;
+  }
+  const studentCount = await Student.count({ where: { fakultetID: id } });
+  if (studentCount > 0) {
+    const err = new Error('Cannot delete faculty with linked students.');
+    err.status = 409;
+    throw err;
+  }
+  await faculty.destroy();
+}
+
+module.exports = { getUsers, updateUserRole, updateUserStatus, getFaculties, createFaculty, updateFaculty, deleteFaculty };

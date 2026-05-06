@@ -191,7 +191,7 @@
 
   .ad-btn { padding: 5px 8px; font-size: 0.72rem; width: 100%; text-align: center; }
 
-  .ad-section { overflow-x: hidden; }
+  .ad-section { overflow-x: auto; }
   
 }
 

@@ -1,69 +1,67 @@
 // frontend/src/services/auth.service.js
-// Handles all API communication for authentication.
-// Replace BASE_URL with your actual backend URL / env variable.
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api';
+import { apiRequest } from './api.js';
 
 /**
  * Sends login credentials to the backend.
- * @param {string} identifier  – username or email
- * @param {string} password
- * @returns {Promise<{ token: string, user: object }>}
  */
-export async function loginUser(identifier, password) {
-  const response = await fetch(`${BASE_URL}/auth/login`, {
+export function loginUser(identifier, password) {
+  return apiRequest('/auth/login', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ identifier, password }),
   });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    // Throw the server's message so the UI can display it directly.
-    throw new Error(data.message ?? 'Prijava nije uspjela. Pokušajte ponovo.');
-  }
-
-  return data; // { token, user: { id, ime, prezime, role, ... } }
 }
 
 /**
- * Clears the session — call on logout.
+ * Clears the session.
  */
 export function logoutUser() {
   sessionStorage.removeItem('token');
   sessionStorage.removeItem('user');
 }
 
-// reset password
-export async function requestPasswordReset(email) {
-  const response = await fetch(`${BASE_URL}/auth/forgot-password`, {
+/**
+ * Forgot password.
+ */
+export function requestPasswordReset(email) {
+  return apiRequest('/auth/forgot-password', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email }),
   });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message ?? 'Zahtjev za reset lozinke nije uspio.');
-  }
-
-  return data;
 }
 
-export async function resetPassword(token, password) {
-  const response = await fetch(`${BASE_URL}/auth/reset-password`, {
+/**
+ * Reset password.
+ */
+export function resetPassword(token, password) {
+  return apiRequest('/auth/reset-password', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ token, password }),
   });
+}
 
-  const data = await response.json();
+/**
+ * Public faculties list.
+ */
+export function getPublicFaculties() {
+  return apiRequest('/auth/faculties');
+}
 
-  if (!response.ok) {
-    throw new Error(data.message ?? 'Reset lozinke nije uspio.');
-  }
+/**
+ * Username/email availability check.
+ */
+export function checkAvailability(type, value) {
+  return apiRequest(
+    `/auth/check?type=${encodeURIComponent(type)}&value=${encodeURIComponent(value)}`
+  );
+}
 
-  return data;
+/**
+ * Register user.
+ */
+export function register(data) {
+  return apiRequest('/auth/register', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
 }
