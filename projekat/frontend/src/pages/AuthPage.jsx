@@ -1,6 +1,6 @@
 // frontend/src/pages/AuthPage.jsx
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { loginUser } from '../services/auth.service';
 import './AuthPage.css';
@@ -193,6 +193,12 @@ export default function AuthPage() {
                   <IconEye crossed={showPass} />
                 </button>
               </div>
+
+              <div className="auth-form__helper">
+              <Link to="/forgot-password" className="auth-link">
+                Zaboravili ste lozinku?
+              </Link>
+            </div>
             </div>
 
             <button type="submit" className="auth-btn" disabled={loading}>

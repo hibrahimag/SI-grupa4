@@ -1,5 +1,9 @@
 // backend/src/business/controllers/auth.controller.js
-const { loginService } = require('../services/auth.service');
+const {
+  loginService,
+  forgotPasswordService,
+  resetPasswordService,
+} = require('../services/auth.service');
 
 /**
  * POST /api/auth/login
@@ -44,4 +48,65 @@ async function loginController(req, res) {
   }
 }
 
-module.exports = { loginController };
+
+async function forgotPasswordController(req, res) {
+  const { email } = req.body;
+
+  if (!email || typeof email !== 'string' || email.trim() === '') {
+    return res.status(400).json({ message: 'E-mail adresa je obavezna.' });
+  }
+
+  try {
+    await forgotPasswordService(email.trim());
+
+    return res.status(200).json({
+      message: 'Ako nalog postoji, link za reset lozinke je poslan na e-mail.',
+    });
+  } catch (err) {
+    console.error('[auth.controller] Password reset request error:', err);
+    return res.status(500).json({
+      message: 'Došlo je do greške pri slanju reset linka.',
+    });
+  }
+}
+
+async function resetPasswordController(req, res) {
+  const { token, password } = req.body;
+
+  if (!token || typeof token !== 'string') {
+    return res.status(400).json({ message: 'Token je obavezan.' });
+  }
+
+  if (!password || typeof password !== 'string' || password.length < 8) {
+    return res.status(400).json({
+      message: 'Nova lozinka mora imati najmanje 8 karaktera.',
+    });
+  }
+
+  try {
+    await resetPasswordService(token, password);
+
+    return res.status(200).json({
+      message: 'Lozinka je uspješno promijenjena.',
+    });
+  } catch (err) {
+    const isExpected = ['Neispravan token.', 'Token je istekao.'].includes(
+      err.message
+    );
+
+    if (isExpected) {
+      return res.status(400).json({ message: err.message });
+    }
+
+    console.error('[auth.controller] Password reset error:', err);
+    return res.status(500).json({
+      message: 'Došlo je do greške pri resetovanju lozinke.',
+    });
+  }
+}
+
+module.exports = {
+  loginController,
+  forgotPasswordController,
+  resetPasswordController,
+};

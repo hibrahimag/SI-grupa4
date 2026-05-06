@@ -34,3 +34,36 @@ export function logoutUser() {
   sessionStorage.removeItem('token');
   sessionStorage.removeItem('user');
 }
+
+// reset password
+export async function requestPasswordReset(email) {
+  const response = await fetch(`${BASE_URL}/auth/forgot-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message ?? 'Zahtjev za reset lozinke nije uspio.');
+  }
+
+  return data;
+}
+
+export async function resetPassword(token, password) {
+  const response = await fetch(`${BASE_URL}/auth/reset-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, password }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message ?? 'Reset lozinke nije uspio.');
+  }
+
+  return data;
+}
