@@ -713,3 +713,64 @@ loginService(identifier, password):
 
 **Rizici, problemi ili greške:**
 - Promjene su ograničene na testove, tako da nije bilo rizika za produkcijsku logiku.
+
+  ---
+  ## Unos 15 — Implementacija email verifikacije i odobravanja korisnika
+
+| Polje | Sadržaj |
+|---|---|
+| **Datum** | 07.05.2026 |
+| **Sprint broj** | 6 |
+| **Alat** | ChatGPT (GPT-5, OpenAI) i Cursor|
+| **Ko je koristio** | aglamoc1 |
+| **Svrha korištenja** | Implementacija email verifikacije i odobravanja korisničkih računa |
+
+### Kratak opis upita
+
+> Potrebno je implementirati email verifikaciju nakon registracije korisnika i sistem odobravanja korisničkih računa od strane admina. Korisnik nakon registracije treba potvrditi email adresu putem verifikacijskog linka, nakon čega prelazi u PENDING status i ne može se prijaviti dok račun ne bude odobren. Admin dashboard treba sadržavati sekciju za pregled zahtjeva, detalje korisnika i approve/reject akcije sa slanjem email obavijesti.
+
+---
+
+### Šta je AI predložio ili generisao
+
+- Generisanje verifikacionog tokena za email i slanje verifikacionog linka korisniku
+- Backend logiku za verifikaciju email adrese i prelazak korisnika u fazu čekanja odobrenja
+- Status-based autentifikaciju korisnika (blokada prijave dok email nije verifikovan i nalog nije odobren)
+- Approve/reject workflow za administratore, sa evidencijom ko je i kada izvršio akciju
+- Slanje email obavještenja korisniku nakon odobrenja ili odbijanja zahtjeva
+- Admin dashboard funkcionalnosti za pregled i obradu zahtjeva korisnika
+
+---
+
+### Šta je tim prihvatio
+
+- Kompletnu logiku verifikacije email adrese
+- Workflow odobravanja/odbijanja korisnika nakon verifikacije
+- Statusnu kontrolu prijave korisnika
+- Email notifikacije za ključne promjene statusa naloga
+
+---
+
+### Šta je tim izmijenio
+
+- Poruke grešaka i statusa lokalizovane na bosanski jezik
+- UI prikaz pending i overdue korisnika u admin panelu
+- Frontend API pozive refaktorisao tako da koriste postojeće servisne metode i strukturu projekta
+
+---
+
+### Šta je tim odbacio
+
+- Automatsko odobravanje korisnika odmah nakon verifikacije emaila
+- Mogućnost prijave korisnika dok je nalog u `PENDING` stanju
+
+---
+
+### Rizici, problemi ili greške
+
+- Povremeni problemi sa SMTP konfiguracijom i isporukom verifikacionih emailova
+- Merge konflikti prilikom integracije auth i admin funkcionalnosti
+- Potreba za migracijama baze zbog novih polja za verifikaciju i odobravanje korisnika
+- Moguć dupli poziv verifikacije, što može dati poruku “neispravan token” iako je prvi poziv uspio
+
+---
