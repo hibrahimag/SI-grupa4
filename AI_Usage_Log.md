@@ -668,3 +668,49 @@ loginService(identifier, password):
 - `Router.use() requires a middleware function` greška u `admin.routes.js` — stari placeholder middleware exportovao je funkciju direktno, dok novi exportuje named export; riješeno destrukturiranjem `{ authenticate }` i `{ authorize }` pri importu
 - `bcrypt` modul nije bio instaliran — riješeno pokretanjem `npm install bcrypt@5 jsonwebtoken` u `backend/` direktoriju
 - `ROLE_ROUTES` nedostupan u scope-u `LandingPage` komponente jer je bio definisan unutar `AreasCarousel` — uzrokovalo bijeli ekran; riješeno izvlačenjem na nivo modula
+
+
+---
+
+## Unos 14 — Dopuna postojećeg backend test suite-a nedostajućim unit i route testovima
+
+| Polje | Sadržaj |
+|---|---|
+| **Datum** | 07.05.2026 |
+| **Sprint broj** | 6 |
+| **Alat** | Codex / ChatGPT |
+| **Ko je koristio** | haristucakovic |
+| **Svrha korištenja** | Dopuna postojećeg backend test suite-a nedostajućim unit i route testovima |
+
+**Kratak opis upita:**
+
+> Potrebno je dopuniti postojeći backend test suite bez izmjene produkcijskog koda. Fokus je na dodavanju nedostajućih testova za auth rute i servise, approval workflow rute i servise, te placeholder endpoint. Testovi trebaju pokriti public odsjek endpoint, email verification, resend verification email funkcionalnost, approval tok i placeholder rutu.
+
+**Šta je AI predložio ili generisao:**
+- Dopunu `auth.routes.test.js` testovima za:
+  - public odsjek endpoint
+  - verify-email endpoint
+  - resend-verification-email endpoint
+- Dopunu `auth.service.test.js` testovima za:
+  - public odsjek servisnu logiku
+  - email verification servisnu logiku
+  - resend verification email servisnu logiku
+- Nove/dopunjene testove za approval workflow u:
+  - `approval.routes.test.js`
+  - `approval.service.test.js`
+- Dopunu `placeholder.routes.test.js` testovima za placeholder endpoint
+- Prijedlog pokretanja relevantnih Jest testova preko `--runInBand`
+
+**Šta je tim prihvatio:**
+- Dodavanje nedostajućih auth route i service testova
+- Dodavanje approval workflow route i service testova
+- Dodavanje placeholder endpoint testova
+
+**Šta je tim izmijenio:**
+- Ručno su dorađene poruke i očekivani rezultati u testovima radi usklađivanja sa stvarnim ponašanjem aplikacije
+
+**Šta je tim odbacio:**
+- Redundantne test slučajeve koji nisu potrebni za konkretan test slučaj
+
+**Rizici, problemi ili greške:**
+- Promjene su ograničene na testove, tako da nije bilo rizika za produkcijsku logiku.
