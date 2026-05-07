@@ -45,7 +45,7 @@ beforeAll(async () => {
     passwordHash,
     role: 'STUDENT',
     status: 'PENDING',
-    emailVerifikovan: false,
+    emailVerifikovan: true,
     created_at: new Date(),
   });
 });

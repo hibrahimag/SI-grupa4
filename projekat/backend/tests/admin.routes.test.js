@@ -32,6 +32,7 @@ function makeMockUser(overrides = {}) {
     role: 'STUDENT',
     status: 'PENDING',
     institution: 'FIT',
+    emailVerifikovan: true,
     created_at: new Date('2025-01-01'),
   };
   const data = { ...base, ...overrides };
