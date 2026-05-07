@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { loginUser } from '../services/auth.service';
+import { loginUser, resendVerificationEmail } from '../services/auth.service';
 import './AuthPage.css';
 
 // Role → redirect path mapping
@@ -65,11 +65,16 @@ export default function AuthPage() {
   const [password,   setPassword]   = useState('');
   const [showPass,   setShowPass]   = useState(false);
   const [error,      setError]      = useState('');
+  const [info,       setInfo]       = useState('');
   const [loading,    setLoading]    = useState(false);
+  const [resending,  setResending]  = useState(false);
+
+  const canResendVerification = error.toLowerCase().includes('verifik');
 
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
+    setInfo('');
 
     if (!identifier.trim()) {
       setError('Unesite korisničko ime ili e-mail adresu.');
@@ -96,6 +101,25 @@ export default function AuthPage() {
       }
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleResendVerification() {
+    if (!identifier.trim()) {
+      setError('Unesite e-mail adresu za ponovno slanje verifikacije.');
+      return;
+    }
+
+    setResending(true);
+    setError('');
+    setInfo('');
+    try {
+      const result = await resendVerificationEmail(identifier.trim());
+      setInfo(result.message);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setResending(false);
     }
   }
 
@@ -151,6 +175,7 @@ export default function AuthPage() {
                 <span>{error}</span>
               </div>
             )}
+            {info && <div className="auth-success">{info}</div>}
 
             <div className="auth-field">
               <label className="auth-label" htmlFor="identifier">
@@ -205,6 +230,16 @@ export default function AuthPage() {
               {loading && <span className="auth-btn__spinner" aria-hidden="true" />}
               {loading ? 'Prijavljivanje…' : 'Prijavite se'}
             </button>
+            {canResendVerification && (
+              <button
+                type="button"
+                className="auth-btn auth-btn--secondary"
+                onClick={handleResendVerification}
+                disabled={resending}
+              >
+                {resending ? 'Slanje...' : 'Pošalji ponovo verifikacioni email'}
+              </button>
+            )}
           </form>
 
           <div className="auth-roles">

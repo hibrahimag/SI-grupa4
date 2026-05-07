@@ -52,6 +52,14 @@ module.exports = (sequelize) => {
         allowNull: false,
         defaultValue: false,
       },
+      emailVerificationToken: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+      },
+      emailVerificationTokenExpiresAt: {
+        type: DataTypes.DATE,
+        allowNull: true,
+      },
       status: {
         type: DataTypes.ENUM('PENDING', 'ACTIVE', 'DEACTIVATED'),
         allowNull: false,

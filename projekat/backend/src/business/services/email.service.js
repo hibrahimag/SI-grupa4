@@ -1,18 +1,22 @@
 const nodemailer = require('nodemailer');
 
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT),
+  host: process.env.MAIL_HOST || process.env.SMTP_HOST,
+  port: Number(process.env.MAIL_PORT || process.env.SMTP_PORT),
   secure: false,
   auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
+    user: process.env.MAIL_USER || process.env.SMTP_USER,
+    pass: process.env.MAIL_PASS || process.env.SMTP_PASS,
   },
 });
 
+function getSender() {
+  return process.env.MAIL_FROM || process.env.MAIL_USER || process.env.SMTP_USER;
+}
+
 async function sendPasswordResetEmail(to, resetLink) {
   await transporter.sendMail({
-    from: process.env.SMTP_USER,
+    from: getSender(),
     to,
     subject: 'Reset lozinke',
     html: `
@@ -24,6 +28,21 @@ async function sendPasswordResetEmail(to, resetLink) {
   });
 }
 
+async function sendEmailVerificationEmail(to, verificationLink) {
+  await transporter.sendMail({
+    from: getSender(),
+    to,
+    subject: 'Verifikacija email adrese',
+    html: `
+      <h2>Potvrdite vašu email adresu</h2>
+      <p>Kliknite na link ispod kako biste aktivirali nalog:</p>
+      <a href="${verificationLink}">${verificationLink}</a>
+      <p>Link važi 24 sata.</p>
+    `,
+  });
+}
+
 module.exports = {
   sendPasswordResetEmail,
+  sendEmailVerificationEmail,
 };

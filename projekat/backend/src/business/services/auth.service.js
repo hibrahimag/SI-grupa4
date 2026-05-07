@@ -12,10 +12,45 @@ const EMAIL_RE       = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 //za reset lozinke
 const crypto = require('crypto');
-const { sendPasswordResetEmail } = require('./email.service');
+const { sendPasswordResetEmail, sendEmailVerificationEmail } = require('./email.service');
 
 if (!JWT_SECRET) {
   throw new Error('JWT_SECRET environment variable is not set.');
+}
+
+const EMAIL_VERIFICATION_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
+
+function createEmailVerificationTokenData() {
+  const rawToken = crypto.randomBytes(32).toString('hex');
+  const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+  const expiresAt = new Date(Date.now() + EMAIL_VERIFICATION_TOKEN_TTL_MS);
+  return { rawToken, tokenHash, expiresAt };
+}
+
+async function setVerificationTokenForUser(user) {
+  const { rawToken, tokenHash, expiresAt } = createEmailVerificationTokenData();
+  user.emailVerificationToken = tokenHash;
+  user.emailVerificationTokenExpiresAt = expiresAt;
+  await user.save();
+  return rawToken;
+}
+
+function getFrontendBaseUrl() {
+  return process.env.FRONTEND_URL || process.env.FRONTEND_BASE_URL;
+}
+
+async function sendVerificationEmailForUser(user) {
+  const token = await setVerificationTokenForUser(user);
+  const frontendBaseUrl = getFrontendBaseUrl();
+
+  if (!frontendBaseUrl) {
+    const err = new Error('FRONTEND_URL environment variable is not set.');
+    err.status = 500;
+    throw err;
+  }
+
+  const verificationLink = `${frontendBaseUrl}/verify-email?token=${token}`;
+  await sendEmailVerificationEmail(user.email, verificationLink);
 }
 
 async function checkAvailability(type, value) {
@@ -79,7 +114,7 @@ async function register(data) {
         err.status = 404;
         throw err;
       }
-      return await sequelize.transaction(async (t) => {
+      const user = await sequelize.transaction(async (t) => {
         const user = await User.create(
           { ime, prezime, username, email, passwordHash, role: 'STUDENT', status: 'PENDING', institution: faculty.naziv },
           { transaction: t }
@@ -90,6 +125,8 @@ async function register(data) {
         );
         return user;
       });
+      await sendVerificationEmailForUser(user);
+      return user;
     }
 
     if (role === 'COORDINATOR') {
@@ -100,7 +137,7 @@ async function register(data) {
         err.status = 404;
         throw err;
       }
-      return await sequelize.transaction(async (t) => {
+      const user = await sequelize.transaction(async (t) => {
         const user = await User.create(
           { ime, prezime, username, email, passwordHash, role: 'COORDINATOR', status: 'PENDING', institution: faculty.naziv },
           { transaction: t }
@@ -108,11 +145,13 @@ async function register(data) {
         await Koordinator.create({ userID: user.id, fakultetID: Number(fakultetID) }, { transaction: t });
         return user;
       });
+      await sendVerificationEmailForUser(user);
+      return user;
     }
 
     if (role === 'COMPANY') {
       const { naziv, adresa, telefon, opisPoslovanja } = data;
-      return await sequelize.transaction(async (t) => {
+      const user = await sequelize.transaction(async (t) => {
         const user = await User.create(
           { ime: naziv, prezime: '', username, email, passwordHash, role: 'COMPANY', status: 'PENDING', institution: naziv },
           { transaction: t }
@@ -123,6 +162,8 @@ async function register(data) {
         );
         return user;
       });
+      await sendVerificationEmailForUser(user);
+      return user;
     }
 
     const err = new Error('Nepoznata rola.');
@@ -173,6 +214,10 @@ async function loginService(identifier, password) {
   // ── 2. Check account status before verifying password ────────────────────
   if (user.status === 'DEACTIVATED') {
     throw new Error('Vaš nalog je deaktiviran. Kontaktirajte administratora.');
+  }
+
+  if (!user.emailVerifikovan) {
+    throw new Error('Niste verifikovali email adresu. Ne možete se prijaviti.');
   }
 
   if (user.status === 'PENDING') {
@@ -254,6 +299,47 @@ async function resetPasswordService(token, newPassword) {
   await user.save();
 }
 
+async function verifyEmailService(token) {
+  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+  const user = await User.findOne({
+    where: {
+      emailVerificationToken: tokenHash,
+    },
+  });
+
+  if (!user) {
+    const err = new Error('Neispravan verifikacioni token.');
+    err.status = 400;
+    throw err;
+  }
+
+  if (!user.emailVerificationTokenExpiresAt || user.emailVerificationTokenExpiresAt < new Date()) {
+    const err = new Error('Verifikacioni token je istekao.');
+    err.status = 400;
+    throw err;
+  }
+
+  user.emailVerifikovan = true;
+  user.emailVerificationToken = null;
+  user.emailVerificationTokenExpiresAt = null;
+  await user.save();
+}
+
+async function resendVerificationEmailService(email) {
+  const user = await User.findOne({ where: { email } });
+  if (!user) {
+    return;
+  }
+
+  if (user.emailVerifikovan) {
+    const err = new Error('Email adresa je već verifikovana.');
+    err.status = 400;
+    throw err;
+  }
+
+  await sendVerificationEmailForUser(user);
+}
+
 module.exports = {
   checkAvailability,
   getPublicFaculties,
@@ -261,4 +347,6 @@ module.exports = {
   loginService,
   forgotPasswordService,
   resetPasswordService,
+  verifyEmailService,
+  resendVerificationEmailService,
 };

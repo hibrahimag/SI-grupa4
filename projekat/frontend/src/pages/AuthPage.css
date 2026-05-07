@@ -301,6 +301,19 @@
   cursor: not-allowed;
 }
 
+.auth-btn--secondary {
+  background: transparent;
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
+  box-shadow: none;
+  padding: 11px 20px;
+}
+
+.auth-btn--secondary:hover:not(:disabled) {
+  background: var(--color-primary-subtle);
+  opacity: 1;
+}
+
 .auth-btn__spinner {
   display: inline-block;
   width: 16px;

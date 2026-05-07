@@ -472,7 +472,7 @@ function SuccessStep({ role, onDone }) {
       </div>
       <h2 className="reg-success-title">Registracija uspješna!</h2>
       <p className="reg-success-msg">
-        Hvala vam na registraciji, čekamo {approver} da odobri Vaš profil.
+        Registracija uspješna. Provjerite email za verifikaciju računa, zatim čekamo {approver} da odobri Vaš profil.
       </p>
     </div>
   );
