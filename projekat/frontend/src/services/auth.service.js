@@ -65,3 +65,14 @@ export function register(data) {
     body: JSON.stringify(data),
   });
 }
+
+export function verifyEmailToken(token) {
+  return apiRequest(`/auth/verify-email?token=${encodeURIComponent(token)}`);
+}
+
+export function resendVerificationEmail(email) {
+  return apiRequest('/auth/resend-verification-email', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
+}
