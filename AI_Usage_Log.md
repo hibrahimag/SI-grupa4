@@ -699,7 +699,6 @@ loginService(identifier, password):
   - `approval.routes.test.js`
   - `approval.service.test.js`
 - Dopunu `placeholder.routes.test.js` testovima za placeholder endpoint
-- Prijedlog pokretanja relevantnih Jest testova preko `--runInBand`
 
 **Šta je tim prihvatio:**
 - Dodavanje nedostajućih auth route i service testova
