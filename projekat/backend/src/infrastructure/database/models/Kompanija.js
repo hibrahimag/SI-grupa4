@@ -31,6 +31,10 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING(30),
         allowNull: true,
       },
+      kontaktOsoba: {
+        type: DataTypes.STRING(150),
+        allowNull: true,
+      },
     },
     {
       tableName: 'kompanije',
