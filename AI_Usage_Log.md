@@ -548,3 +548,57 @@ privremeno se koriste mock podaci pošto je audit log odvojeni US
 **Rizici, problemi ili greške:**
 - `getPublicOdsjeci` funkcija dodana u `auth.service.js` ali zaboravljena u `module.exports` — uhvaćeno tokom provjere prije pokretanja, riješeno odmah
 - `ECONNRESET` greška pri prvom pokretanju servera — Supabase je prekinuo konekciju tokom `sync({ alter: true })` koji izvršava više `ALTER TABLE` naredbi zaredom; riješeno ponovnim pokretanjem
+
+## Unos 12 — Implementacija test suite-a za backend
+
+| Polje | Sadržaj |
+|---|---|
+| **Datum** | 07.05.2026 |
+| **Sprint broj** | 5 |
+| **Alat** | Claude Code (claude-sonnet-4-6) |
+| **Ko je koristio** | hhusic1 |
+| **Svrha korištenja** | Pisanje unit, mock i integracijskih testova za auth i admin module |
+
+**Kratak opis upita:**
+
+> Napisati kompletni test suite za backend koristeći Jest i Supertest. Pokriti auth i admin module sa tri nivoa testiranja: unit testovi za middleware i service funkcije, mock testovi za route/controller sloj (bez prave baze), i integracijski testovi koji koriste pravu Supabase bazu.
+
+npr.
+PATCH /api/admin/users/:id/role (body: role)
+- 200: findByPk vraća korisnika, body { role:'COORDINATOR' } → status 200, res.body.user.role='COORDINATOR', save() pozvan
+- 200: body { role:'admin' } → res.body.user.role='ADMIN'
+- 400: body {} → status 400, message matcha /role/i
+- 400: body { role:'SUPERADMIN' } → status 400
+- 400: id='abc' → status 400
+- 400: id=-1 → status 400
+- 404: findByPk vraća null → status 404, message matcha /not found/i
+
+
+loginService(identifier, password):
+- throws: findOne vraća null → 'Pogrešno korisničko ime/e-mail ili lozinka.'
+- throws: user.status='DEACTIVATED' → 'Vaš nalog je deaktiviran...'
+- throws: user.status='PENDING' → 'Vaš nalog još nije aktivan...'
+- throws: bcrypt.compare=false → 'Pogrešno korisničko ime/e-mail ili lozinka.'
+- OK: bcrypt.compare=true, jwt.sign='mocked.jwt.token' → { token, user bez passwordHash }
+- OK: jwt.sign pozvan s { id:42, role:'ADMIN' } i 'test-secret'
+- DEACTIVATED provjera PRIJE bcrypt → bcrypt.compare nije pozvan
+- PENDING provjera PRIJE bcrypt → bcrypt.compare nije pozvan
+
+**Šta je AI predložio ili generisao:**
+- 8 test fajlova: `auth.middleware.test.js`, `rbac.middleware.test.js`, `auth.service.test.js`, `admin.service.test.js`, `auth.routes.test.js`, `admin.routes.test.js`, `auth.routes.integration.test.js`, `admin.routes.integration.test.js`
+- `jest.config.js` i konfiguraciju `package.json` s dva odvojena skripta: `npm test` (bez baze) i `npm run test:integration` (s bazom)
+- Ukupno 143 testa
+
+**Šta je tim prihvatio:**
+- Kompletnu strukturu testova i podjelu na mock/unit/integration
+- Sve test fajlove bez izmjena
+
+**Šta je tim izmijenio:**
+- Ništa strukturalno — samo ispravke mock helpera (`emailVerifikovan`, `approvalStatus`) nakon što je tim dodao nova polja u servise
+
+**Šta je tim odbacio:**
+- Nekoliko redundantnih testova u `admin.service.test.js` koji su bili pokriveni i u route testovima
+
+**Rizici, problemi ili greške:**
+- Nakon dva git pull-a tim je dodao nove provjere (`emailVerifikovan`, `approvalStatus`) u servise, što je srušilo 6-7 testova — zahtijevalo ažuriranje mock helpera
+- Integracijski testovi zahtijevaju `.env` s DB kredencijalima — ne mogu ih pokrenuti svi članovi tima
