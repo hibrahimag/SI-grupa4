@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
+import { useAuth } from '../context/AuthContext';
 
 /* ─── SVG Icons ─── */
 const IconBriefcase = ({ size = 22, color = "currentColor" }) => (
@@ -371,7 +372,15 @@ const NAV_LINKS = [
   { label: "O platformi",      sectionId: "o-platformi" },
 ];
 
+  const ROLE_ROUTES = {
+    STUDENT:     '/dashboard/student',
+    COMPANY:     '/dashboard/company',
+    COORDINATOR: '/dashboard/coordinator',
+    ADMIN:       '/admin',
+  };
+
 export default function LandingPage() {
+  const { user, logout } = useAuth();
   const { darkMode, setDarkMode } = useTheme();
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -447,23 +456,50 @@ export default function LandingPage() {
             >{darkMode ? <IconSun size={17} color="#f9fafb" /> : <IconMoon size={17} color="#3a5a8a" />}
             </button>
 
-            <Link to="/login" style={{
-              padding: "8px 18px", borderRadius: 8, fontSize: 14, fontWeight: 600,
-              color: "#1a6fd4", textDecoration: "none", border: "1.5px solid #1a6fd4",
-              background: "transparent", transition: "all 0.2s",
-            }}
-              onMouseEnter={e => { e.currentTarget.style.background = "#1a6fd4"; e.currentTarget.style.color = "#fff"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#1a6fd4"; }}
-            >Prijavi se</Link>
+            {user ? (
+              <>
+                <Link to={ROLE_ROUTES[user.role] ?? '/dashboard'} style={{
+                  padding: "8px 18px", borderRadius: 8, fontSize: 14, fontWeight: 600,
+                  color: "#fff", textDecoration: "none",
+                  background: "linear-gradient(135deg,#1a6fd4,#2d9cdb)",
+                  transition: "opacity 0.2s",
+                }}
+                  {...hov({ opacity: "0.88" }, { opacity: "1" })}
+                >
+                  {user.ime} {user.prezime}
+                </Link>
+                <button onClick={logout} style={{
+                  ...btnOutline,
+                  padding: "8px 18px",
+                  fontSize: 14,
+                  background: "transparent",
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                }}
+                  {...hov({ background: "#e8f1fb" }, { background: "transparent" })}
+                >Odjavi se</button>
+              </>
+            ) : (
+              <>
+                <Link to="/auth" style={{
+                  padding: "8px 18px", borderRadius: 8, fontSize: 14, fontWeight: 600,
+                  color: "#1a6fd4", textDecoration: "none", border: "1.5px solid #1a6fd4",
+                  background: "transparent", transition: "all 0.2s",
+                }}
+                  onMouseEnter={e => { e.currentTarget.style.background = "#1a6fd4"; e.currentTarget.style.color = "#fff"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#1a6fd4"; }}
+                >Prijavi se</Link>
 
-            <Link to="/register" style={{
-              padding: "8px 18px", borderRadius: 8, fontSize: 14, fontWeight: 600,
-              color: "#fff", textDecoration: "none",
-              background: "linear-gradient(135deg,#1a6fd4,#2d9cdb)",
-              transition: "opacity 0.2s",
-            }}
-              {...hov({ opacity: "0.88" }, { opacity: "1" })}
-            >Registruj se</Link>
+                <Link to="/register" style={{
+                  padding: "8px 18px", borderRadius: 8, fontSize: 14, fontWeight: 600,
+                  color: "#fff", textDecoration: "none",
+                  background: "linear-gradient(135deg,#1a6fd4,#2d9cdb)",
+                  transition: "opacity 0.2s",
+                }}
+                  {...hov({ opacity: "0.88" }, { opacity: "1" })}
+                >Registruj se</Link>
+              </>
+            )}
           </div>
           <button
             className="lp-darkmode-mobile"
@@ -502,8 +538,32 @@ export default function LandingPage() {
           </button>
       ))}
       <div className="lp-mobile-divider" />
-      <Link to="/login" onClick={() => setMobileMenuOpen(false)}>Prijavi se</Link>
-      <Link to="/register" className="lp-mobile-btn-primary" onClick={() => setMobileMenuOpen(false)}>Registruj se</Link>
+        {user ? (
+          <>
+            <Link
+              to={ROLE_ROUTES[user.role] ?? '/dashboard'}
+              className="lp-mobile-btn-primary"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Moj dashboard
+            </Link>
+            <button onClick={logout} style={{
+              ...btnOutline,
+              padding: "8px 18px",
+              fontSize: 14,
+              background: "transparent",
+              cursor: "pointer",
+              fontFamily: "inherit",
+            }}
+              {...hov({ background: "#e8f1fb" }, { background: "transparent" })}
+            >Odjavi se</button>
+          </>
+        ) : (
+        <>
+          <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>Prijavi se</Link>
+          <Link to="/register" className="lp-mobile-btn-primary" onClick={() => setMobileMenuOpen(false)}>Registruj se</Link>
+        </>
+      )}
       </div>
 
       {/* ══════════════ HERO ══════════════ */}
@@ -668,7 +728,7 @@ export default function LandingPage() {
                 </li>
               ))}
             </ul>
-            <Link to="/register?role=company" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "12px 26px", borderRadius: 10, background: "linear-gradient(135deg,#6d4ce1,#8b6cf0)", color: "white", textDecoration: "none", fontWeight: 700, fontSize: 15, boxShadow: "0 4px 16px rgba(109,76,225,0.3)" }}>
+            <Link to="/register?role=kompanija" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "12px 26px", borderRadius: 10, background: "linear-gradient(135deg,#6d4ce1,#8b6cf0)", color: "white", textDecoration: "none", fontWeight: 700, fontSize: 15, boxShadow: "0 4px 16px rgba(109,76,225,0.3)" }}>
               Registruj kompaniju <IconArrowRight size={14} color="white" />
             </Link>
           </div>
@@ -692,12 +752,12 @@ export default function LandingPage() {
               {
                 role: "Kompanija", Icon: IconBriefcase, color: "#6d4ce1", bg: "#ede8ff", border: "#c9bbf5", top: "#6d4ce1",
                 desc: "Objavljuje oglase, pregledava prijave, selektuje kandidate i vodi evidenciju prakse.",
-                cta: { label: "Registruj kompaniju", to: "/register?role=company" },
+                cta: { label: "Registruj kompaniju", to: "/register?role=kompanija" },
               },
               {
                 role: "Koordinator", Icon: IconClipboard, color: "#0e9e6e", bg: "#e0f7ef", border: "#a3e4be", top: "#0e9e6e",
                 desc: "Odobrava prakse, prati napredak studenata i generiše izvještaje za fakultet.",
-                cta: { label: "Registruj se", to: "/register?role=coordinator" },
+                cta: { label: "Registruj se", to: "/register?role=koordinator" },
               },
               {
                 role: "Administrator", Icon: IconSettings, color: "#e07b1a", bg: "#fef0dd", border: "#fcd5a4", top: "#e07b1a",
@@ -735,10 +795,10 @@ export default function LandingPage() {
             Pridruži se stotinama studenata koji su već pronašli svoju prvu profesionalnu praksu putem PraksaHub platforme.
           </p>
           <div className="lp-cta-btns" style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
-            <Link to="/register" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "14px 30px", borderRadius: 10, fontSize: 15, fontWeight: 700, color: "#0d1f3c", textDecoration: "none", background: "white", boxShadow: "0 4px 20px rgba(0,0,0,0.2)", transition: "transform 0.2s" }}
+            <Link to="/register?role=student" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "14px 30px", borderRadius: 10, fontSize: 15, fontWeight: 700, color: "#0d1f3c", textDecoration: "none", background: "white", boxShadow: "0 4px 20px rgba(0,0,0,0.2)", transition: "transform 0.2s" }}
               {...hov({ transform: "translateY(-2px)" }, { transform: "translateY(0)" })}
             >Registruj se besplatno <IconArrowRight size={14} color="#0d1f3c" /></Link>
-            <Link to="/login" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "14px 30px", borderRadius: 10, fontSize: 15, fontWeight: 700, color: "white", textDecoration: "none", border: "1.5px solid rgba(255,255,255,0.35)", transition: "background 0.2s" }}
+            <Link to="/auth" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "14px 30px", borderRadius: 10, fontSize: 15, fontWeight: 700, color: "white", textDecoration: "none", border: "1.5px solid rgba(255,255,255,0.35)", transition: "background 0.2s" }}
               {...hov({ background: "rgba(255,255,255,0.08)" }, { background: "transparent" })}
             >Prijavi se</Link>
           </div>
@@ -813,6 +873,7 @@ export default function LandingPage() {
       </footer>
 
       <style>{`@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}`}</style>
+
     </div>
   );
 }
