@@ -1,4 +1,4 @@
-'use strict';
+// backend/src/business/controllers/auth.controller.js
 
 const authService = require('../services/auth.service');
 
@@ -21,24 +21,18 @@ async function getPublicFaculties(req, res) {
   }
 }
 
-async function getPublicOdsjeci(req, res) {
-  try {
-    const odsjeci = await authService.getPublicOdsjeci(Number(req.params.id));
-    res.json(odsjeci);
-  } catch (err) {
-    res.status(err.status || 500).json({ message: err.message });
-  }
-}
-
 async function register(req, res) {
   try {
-    const data = await authService.register(req.body);
-    res.status(201).json({ message: 'Registracija uspješna.', ...data });
+    await authService.register(req.body);
+    res.status(201).json({ message: 'Registracija uspješna. Provjerite email za verifikaciju računa.' });
   } catch (err) {
     res.status(err.status || 500).json({ message: err.message });
   }
 }
 
+/**
+ * POST /api/auth/login
+ */
 async function loginController(req, res) {
   const { identifier, password } = req.body;
 
@@ -56,47 +50,24 @@ async function loginController(req, res) {
     const result = await authService.loginService(identifier.trim(), password);
     return res.status(200).json(result);
   } catch (err) {
-    const expectedMessages = [
+    const isExpected = [
       'Pogrešno korisničko ime/e-mail ili lozinka.',
       'Vaš nalog je deaktiviran. Kontaktirajte administratora.',
       'Vaš nalog još nije aktivan. Sačekajte odobrenje administratora.',
-      'Email nije verifikovan. Verifikujte email prije prijave.',
-    ];
-    if (expectedMessages.includes(err.message)) {
-      const status = err.message.includes('nije verifikovan') ? 403 : 401;
-      return res.status(status).json({ message: err.message });
+      'Niste verifikovali email adresu. Ne možete se prijaviti.',
+      'Vaš korisnički račun čeka odobrenje administratora ili koordinatora.',
+      'Vaš korisnički račun još nije odobren.',
+    ].includes(err.message);
+
+    if (isExpected || err.message.startsWith('Vaš zahtjev je odbijen.')) {
+      return res.status(401).json({ message: err.message });
     }
 
     console.error('[auth.controller] Unexpected error during login:', err);
+
     return res.status(500).json({
       message: 'Došlo je do greške na serveru. Pokušajte ponovo.',
     });
-  }
-}
-
-async function verifyEmail(req, res) {
-  try {
-    const { token } = req.query;
-    if (!token) {
-      return res.status(400).json({ message: 'Query parametar "token" je obavezan.' });
-    }
-    const data = await authService.verifyEmail(token);
-    return res.json(data);
-  } catch (err) {
-    return res.status(err.status || 500).json({ message: err.message });
-  }
-}
-
-async function resendVerification(req, res) {
-  try {
-    const { email } = req.body;
-    if (!email) {
-      return res.status(400).json({ message: 'Polje "email" je obavezno.' });
-    }
-    const data = await authService.resendVerification(email);
-    return res.json(data);
-  } catch (err) {
-    return res.status(err.status || 500).json({ message: err.message });
   }
 }
 
@@ -111,11 +82,13 @@ async function forgotPasswordController(req, res) {
 
   try {
     await authService.forgotPasswordService(email.trim());
+
     return res.status(200).json({
       message: 'Ako nalog postoji, link za reset lozinke je poslan na e-mail.',
     });
   } catch (err) {
     console.error('[auth.controller] Password reset request error:', err);
+
     return res.status(500).json({
       message: 'Došlo je do greške pri slanju reset linka.',
     });
@@ -139,17 +112,85 @@ async function resetPasswordController(req, res) {
 
   try {
     await authService.resetPasswordService(token, password);
+
     return res.status(200).json({
       message: 'Lozinka je uspješno promijenjena.',
     });
   } catch (err) {
-    const isExpected = ['Neispravan token.', 'Token je istekao.'].includes(err.message);
+    const isExpected = [
+      'Neispravan token.',
+      'Token je istekao.',
+    ].includes(err.message);
+
     if (isExpected) {
-      return res.status(400).json({ message: err.message });
+      return res.status(400).json({
+        message: err.message,
+      });
     }
+
     console.error('[auth.controller] Password reset error:', err);
+
     return res.status(500).json({
       message: 'Došlo je do greške pri resetovanju lozinke.',
+    });
+  }
+}
+
+async function verifyEmailController(req, res) {
+  const { token } = req.query;
+
+  if (!token || typeof token !== 'string') {
+    return res.status(400).json({
+      message: 'Verifikacioni token je obavezan.',
+    });
+  }
+
+  try {
+    await authService.verifyEmailService(token);
+    return res.status(200).json({
+      message: 'Email adresa je uspješno verifikovana.',
+    });
+  } catch (err) {
+    const isExpected = [
+      'Neispravan verifikacioni token.',
+      'Verifikacioni token je istekao.',
+    ].includes(err.message);
+
+    if (isExpected) {
+      return res.status(400).json({
+        message: err.message,
+      });
+    }
+
+    return res.status(err.status || 500).json({
+      message: err.message || 'Došlo je do greške pri verifikaciji email adrese.',
+    });
+  }
+}
+
+async function resendVerificationEmailController(req, res) {
+  const { email } = req.body;
+
+  if (!email || typeof email !== 'string' || email.trim() === '') {
+    return res.status(400).json({
+      message: 'E-mail adresa je obavezna.',
+    });
+  }
+
+  try {
+    await authService.resendVerificationEmailService(email.trim());
+    return res.status(200).json({
+      message: 'Ako nalog postoji i nije verifikovan, poslali smo novi verifikacioni email.',
+    });
+  } catch (err) {
+    if (err.message === 'Email adresa je već verifikovana.') {
+      return res.status(400).json({
+        message: err.message,
+      });
+    }
+
+    return res.status(err.status || 500).json({
+      message: err.message || 'Došlo je do greške pri ponovnom slanju verifikacionog emaila.',
     });
   }
 }
@@ -157,11 +198,10 @@ async function resetPasswordController(req, res) {
 module.exports = {
   checkAvailability,
   getPublicFaculties,
-  getPublicOdsjeci,
   register,
   loginController,
-  verifyEmail,
-  resendVerification,
   forgotPasswordController,
   resetPasswordController,
+  verifyEmailController,
+  resendVerificationEmailController,
 };

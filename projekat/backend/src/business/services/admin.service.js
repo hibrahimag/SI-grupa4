@@ -57,7 +57,25 @@ async function updateUserStatus(id, status) {
     err.status = 404;
     throw err;
   }
+  if (status === 'ACTIVE' && !user.emailVerifikovan) {
+    const err = new Error('Korisnik ne može biti aktiviran dok email adresa nije verifikovana.');
+    err.status = 400;
+    throw err;
+  }
   user.status = status;
+  if (status === 'ACTIVE') {
+    user.approvalStatus = 'APPROVED';
+    user.approvedAt = new Date();
+    user.rejectedAt = null;
+    user.rejectedBy = null;
+    user.rejectionReason = null;
+  } else if (status === 'DEACTIVATED') {
+    user.approvalStatus = 'REJECTED';
+    user.rejectedAt = new Date();
+  } else if (status === 'PENDING') {
+    user.approvalStatus = 'PENDING_APPROVAL';
+    user.approvalRequestedAt = new Date();
+  }
   await user.save();
   return mapUser(user);
 }

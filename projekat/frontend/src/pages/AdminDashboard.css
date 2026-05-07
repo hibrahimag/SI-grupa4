@@ -651,6 +651,23 @@
 .dark .ad-btn--reject  { background: transparent; border-color: #1e2d40; color: #7a9ab8; }
 .dark .ad-btn--reject:hover { background: #1e2d40; }
 
+.ad-overdue-badge {
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #b42318;
+  background: #fee4e2;
+}
+
+.ad-approval-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 12px;
+}
+
 .dark .ad-audit-row    { border-color: #1a2535; }
 .dark .ad-audit-action { color: #e2e8f0; }
 .dark .ad-audit-sub    { color: #5a7a9a; }

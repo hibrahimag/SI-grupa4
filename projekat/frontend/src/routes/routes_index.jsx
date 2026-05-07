@@ -20,6 +20,7 @@ import KoordinatorDashboard  from '../pages/KoordinatorDashboard';
 
 import ForgotPasswordPage from '../pages/ForgotPasswordPage';
 import ResetPasswordPage  from '../pages/ResetPasswordPage';
+import VerifyEmailPage    from '../pages/VerifyEmailPage';
 
 export default function AppRouter() {
   return (
@@ -38,6 +39,7 @@ export default function AppRouter() {
 
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password"  element={<ResetPasswordPage />} />
+        <Route path="/verify-email"    element={<VerifyEmailPage />} />
 
         {/* Role dashboards – each role lands on its own route */}
         <Route path="/dashboard/student" element={

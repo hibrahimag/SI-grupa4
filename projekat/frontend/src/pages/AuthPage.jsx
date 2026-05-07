@@ -1,240 +1,256 @@
-import { useEffect, useRef, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useTheme } from '../context/ThemeContext';
-import { loginUser } from '../services/auth.service';
-import { apiRequest } from '../services/api';
+// frontend/src/pages/AuthPage.jsx
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { loginUser, resendVerificationEmail } from '../services/auth.service';
+import './AuthPage.css';
 
+// Role → redirect path mapping
 const ROLE_ROUTES = {
-  STUDENT: '/dashboard/student',
-  COMPANY: '/dashboard/company',
+  STUDENT:     '/dashboard/student',
+  COMPANY:     '/dashboard/company',
   COORDINATOR: '/dashboard/coordinator',
-  ADMIN: '/admin',
+  ADMIN:       '/admin',
 };
 
+function IconWarning() {
+  return (
+    <svg
+      className="auth-error__icon"
+      xmlns="http://www.w3.org/2000/svg"
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+      <line x1="12" y1="9" x2="12" y2="13" />
+      <line x1="12" y1="17" x2="12.01" y2="17" />
+    </svg>
+  );
+}
+
+function IconEye({ crossed }) {
+  if (crossed) {
+    return (
+      <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24"
+        fill="none" stroke="currentColor" strokeWidth="2"
+        strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+        <line x1="1" y1="1" x2="23" y2="23" />
+      </svg>
+    );
+  }
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24"
+      fill="none" stroke="currentColor" strokeWidth="2"
+      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
 export default function AuthPage() {
-  const { darkMode } = useTheme();
+  const navigate  = useNavigate();
   const { login } = useAuth();
-  const location = useLocation();
-  const navigate = useNavigate();
-  const isVerifyRoute = location.pathname === '/verify-email' || location.pathname === '/auth/verify-email';
-  const lastVerifiedTokenRef = useRef(null);
 
   const [identifier, setIdentifier] = useState('');
-  const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
-  const [showResend, setShowResend] = useState(false);
+  const [password,   setPassword]   = useState('');
+  const [showPass,   setShowPass]   = useState(false);
+  const [error,      setError]      = useState('');
+  const [info,       setInfo]       = useState('');
+  const [loading,    setLoading]    = useState(false);
+  const [resending,  setResending]  = useState(false);
 
-  useEffect(() => {
-    if (!isVerifyRoute) return;
+  const canResendVerification = error.toLowerCase().includes('verifik');
 
-    const token = new URLSearchParams(location.search).get('token');
-    if (!token) {
-      setError('Verifikacioni token nije pronađen u URL-u.');
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setError('');
+    setInfo('');
+
+    if (!identifier.trim()) {
+      setError('Unesite korisničko ime ili e-mail adresu.');
       return;
     }
-    if (lastVerifiedTokenRef.current === token) return;
-    lastVerifiedTokenRef.current = token;
-
-    async function verifyEmail() {
-      setIsLoading(true);
-      setError('');
-      setMessage('');
-      try {
-        const response = await apiRequest(`/auth/verify-email?token=${encodeURIComponent(token)}`);
-        setMessage(response?.message || 'Email uspješno verifikovan.');
-      } catch (err) {
-        setError(err.message || 'Verifikacija email-a nije uspjela.');
-      } finally {
-        setIsLoading(false);
-      }
+    if (!password) {
+      setError('Unesite lozinku.');
+      return;
     }
 
-    verifyEmail();
-  }, [isVerifyRoute, location.search]);
-
-  async function handleLogin(e) {
-    e.preventDefault();
-    setIsLoading(true);
-    setError('');
-    setMessage('');
-    setShowResend(false);
-
+    setLoading(true);
     try {
       const { token, user } = await loginUser(identifier.trim(), password);
       login(token, user);
-      navigate(ROLE_ROUTES[user.role] ?? '/', { replace: true });
+      const destination = ROLE_ROUTES[user.role] ?? '/dashboard';
+      navigate(destination, { replace: true });
     } catch (err) {
-      const isUnverifiedEmail = err.message?.toLowerCase().includes('nije verifikovan') || err.status === 403;
-      setError(err.message || 'Prijava nije uspjela.');
-      if (isUnverifiedEmail) {
-        setShowResend(true);
+      // Translate browser-level network errors; server errors pass through
+      // already formatted in Bosnian from auth.service.js.
+      if (err.message === 'Failed to fetch') {
+        setError('Nije moguće uspostaviti vezu sa serverom. Provjerite internet konekciju.');
+      } else {
+        setError(err.message);
       }
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   }
 
   async function handleResendVerification() {
-    const email = identifier.includes('@') ? identifier.trim() : '';
-    if (!email) {
-      setError('Za ponovno slanje unesite e-mail adresu u polje za prijavu.');
+    if (!identifier.trim()) {
+      setError('Unesite e-mail adresu za ponovno slanje verifikacije.');
       return;
     }
 
-    setIsLoading(true);
+    setResending(true);
     setError('');
-    setMessage('');
+    setInfo('');
     try {
-      const response = await apiRequest('/auth/resend-verification', {
-        method: 'POST',
-        body: JSON.stringify({ email }),
-      });
-      setMessage(response?.message || 'Novi verifikacioni link je poslan.');
+      const result = await resendVerificationEmail(identifier.trim());
+      setInfo(result.message);
     } catch (err) {
-      setError(err.message || 'Neuspješno slanje verifikacionog linka.');
+      setError(err.message);
     } finally {
-      setIsLoading(false);
+      setResending(false);
     }
   }
 
-  if (isVerifyRoute) {
-    return (
-      <main style={pageStyle(darkMode)}>
-        <section style={cardStyle(darkMode, 480)}>
-          <h1 style={{ marginTop: 0 }}>Verifikacija email-a</h1>
-          {isLoading && <p>Verifikacija u toku...</p>}
-          {message && <p style={{ color: darkMode ? '#86efac' : '#0e9e6e' }}>{message}</p>}
-          {error && <p style={{ color: '#dc2626' }}>{error}</p>}
-          <Link to="/login" style={primaryButtonStyle}>
-            Idi na prijavu
-          </Link>
-        </section>
-      </main>
-    );
-  }
-
   return (
-    <main style={pageStyle(darkMode)}>
-      <section style={cardStyle(darkMode, 520)}>
-        <h1 style={{ margin: '0 0 1rem' }}>Prijava</h1>
-
-        {message && <p style={{ color: darkMode ? '#86efac' : '#0e9e6e' }}>{message}</p>}
-        {error && <p style={{ color: '#dc2626' }}>{error}</p>}
-
-        <form onSubmit={handleLogin}>
-          <label htmlFor="identifier">Korisničko ime ili email</label>
-          <input
-            id="identifier"
-            type="text"
-            value={identifier}
-            onChange={(e) => setIdentifier(e.target.value)}
-            required
-            style={inputStyle(darkMode)}
-          />
-
-          <label htmlFor="password">Lozinka</label>
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            style={inputStyle(darkMode)}
-          />
-
-          <button type="submit" disabled={isLoading} style={submitStyle}>
-            {isLoading ? 'Molimo sačekaj...' : 'Prijavi se'}
-          </button>
-        </form>
-
-        <div style={{ marginTop: '1rem' }}>
-          <p style={{ marginBottom: '0.4rem' }}>Niste dobili verifikacioni email?</p>
-          <button type="button" onClick={handleResendVerification} disabled={isLoading} style={linkButtonStyle(darkMode)}>
-            Pošalji verifikacioni email ponovo na unesenu adresu
-          </button>
+    <div className="auth-page">
+      {/* ── Left panel – branding ── */}
+      <aside className="auth-panel auth-panel--brand">
+        <div className="auth-brand">
+          <div className="auth-brand__wordmark">PraksaHub</div>
+          <h1 className="auth-brand__title">
+            Vaš most prema<br />profesionalnom svijetu.
+          </h1>
+          <p className="auth-brand__sub">
+            Platforma za upravljanje stručnom praksom koja povezuje
+            studente, kompanije i koordinatore.
+          </p>
         </div>
 
-        {showResend && (
-          <p style={{ marginTop: '0.75rem', color: darkMode ? '#facc15' : '#b45309' }}>
-            Email nije verifikovan. Možeš poslati novi verifikacioni link klikom iznad.
-          </p>
-        )}
+        <ul className="auth-features">
+          <li className="auth-feature">
+            <span className="auth-feature__dot auth-feature__dot--blue" />
+            <span>Studenti pronalaze i prijavljuju se na prakse</span>
+          </li>
+          <li className="auth-feature">
+            <span className="auth-feature__dot auth-feature__dot--purple" />
+            <span>Kompanije objavljuju oglase i biraju kandidate</span>
+          </li>
+          <li className="auth-feature">
+            <span className="auth-feature__dot auth-feature__dot--green" />
+            <span>Koordinatori prate napredak i odobravaju prakse</span>
+          </li>
+        </ul>
 
-        <p style={{ marginTop: '1rem' }}>
-          Nemaš nalog? <Link to="/register">Registruj se</Link>
+        <p className="auth-panel__footer">
+          &copy; {new Date().getFullYear()} PraksaHub. Sva prava zadržana.
         </p>
-      </section>
-    </main>
+      </aside>
+
+      {/* ── Right panel – form ── */}
+      <main className="auth-panel auth-panel--form">
+        <div className="auth-card">
+          <header className="auth-card__header">
+            <h2 className="auth-card__title">Prijava</h2>
+            <p className="auth-card__subtitle">
+              Dobrodošli nazad. Unesite vaše podatke za pristup sistemu.
+            </p>
+          </header>
+
+          <form className="auth-form" onSubmit={handleSubmit} noValidate>
+            {error && (
+              <div className="auth-error" role="alert">
+                <IconWarning />
+                <span>{error}</span>
+              </div>
+            )}
+            {info && <div className="auth-success">{info}</div>}
+
+            <div className="auth-field">
+              <label className="auth-label" htmlFor="identifier">
+                Korisničko ime ili e-mail
+              </label>
+              <input
+                id="identifier"
+                type="text"
+                className="auth-input"
+                placeholder="korisnik@example.com"
+                autoComplete="username"
+                value={identifier}
+                onChange={e => setIdentifier(e.target.value)}
+                disabled={loading}
+              />
+            </div>
+
+            <div className="auth-field">
+              <label className="auth-label" htmlFor="password">
+                Lozinka
+              </label>
+              <div className="auth-input-wrap">
+                <input
+                  id="password"
+                  type={showPass ? 'text' : 'password'}
+                  className="auth-input auth-input--padded-right"
+                  placeholder="••••••••"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  disabled={loading}
+                />
+                <button
+                  type="button"
+                  className="auth-toggle-pass"
+                  onClick={() => setShowPass(v => !v)}
+                  aria-label={showPass ? 'Sakrij lozinku' : 'Prikaži lozinku'}
+                  tabIndex={-1}
+                >
+                  <IconEye crossed={showPass} />
+                </button>
+              </div>
+
+              <div className="auth-form__helper">
+              <Link to="/forgot-password" className="auth-link">
+                Zaboravili ste lozinku?
+              </Link>
+            </div>
+            </div>
+
+            <button type="submit" className="auth-btn" disabled={loading}>
+              {loading && <span className="auth-btn__spinner" aria-hidden="true" />}
+              {loading ? 'Prijavljivanje…' : 'Prijavite se'}
+            </button>
+            {canResendVerification && (
+              <button
+                type="button"
+                className="auth-btn auth-btn--secondary"
+                onClick={handleResendVerification}
+                disabled={resending}
+              >
+                {resending ? 'Slanje...' : 'Pošalji ponovo verifikacioni email'}
+              </button>
+            )}
+          </form>
+
+          <div className="auth-roles">
+            <span className="auth-roles__label">Pristup za:</span>
+            <span className="auth-role-chip auth-role-chip--student">Studente</span>
+            <span className="auth-role-chip auth-role-chip--company">Kompanije</span>
+            <span className="auth-role-chip auth-role-chip--coordinator">Koordinatore</span>
+            <span className="auth-role-chip auth-role-chip--admin">Admins</span>
+          </div>
+        </div>
+      </main>
+    </div>
   );
-}
-
-function pageStyle(darkMode) {
-  return {
-    minHeight: '100vh',
-    padding: '2rem 1rem',
-    background: darkMode ? '#111827' : '#f0f6ff',
-    color: darkMode ? '#f9fafb' : '#0d1f3c',
-  };
-}
-
-function cardStyle(darkMode, width) {
-  return {
-    maxWidth: width,
-    margin: '2.5rem auto',
-    padding: '1.5rem',
-    borderRadius: 16,
-    border: darkMode ? '1px solid #374151' : '1px solid #d0e3f7',
-    background: darkMode ? '#1f2937' : 'white',
-    boxShadow: darkMode ? 'none' : '0 8px 24px rgba(26, 111, 212, 0.12)',
-  };
-}
-
-function inputStyle(darkMode) {
-  return {
-    width: '100%',
-    margin: '0.35rem 0 0.85rem',
-    padding: '10px 12px',
-    borderRadius: 10,
-    border: darkMode ? '1px solid #4b5563' : '1px solid #c7d8eb',
-    background: darkMode ? '#111827' : '#fff',
-    color: darkMode ? '#f9fafb' : '#0d1f3c',
-    boxSizing: 'border-box',
-  };
-}
-
-const submitStyle = {
-  width: '100%',
-  border: 'none',
-  padding: '11px 14px',
-  borderRadius: 10,
-  color: '#fff',
-  fontWeight: 700,
-  cursor: 'pointer',
-  background: 'linear-gradient(135deg,#1a6fd4,#2d9cdb)',
-};
-
-const primaryButtonStyle = {
-  display: 'inline-block',
-  marginTop: '0.75rem',
-  padding: '10px 16px',
-  borderRadius: 10,
-  textDecoration: 'none',
-  color: '#fff',
-  background: 'linear-gradient(135deg,#1a6fd4,#2d9cdb)',
-  fontWeight: 600,
-};
-
-function linkButtonStyle(darkMode) {
-  return {
-    border: 'none',
-    background: 'transparent',
-    color: darkMode ? '#93c5fd' : '#1a6fd4',
-    padding: 0,
-    fontWeight: 600,
-    cursor: 'pointer',
-    textDecoration: 'underline',
-  };
 }
