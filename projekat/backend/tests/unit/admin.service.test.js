@@ -3,14 +3,16 @@
 jest.mock('../../src/infrastructure/database/models', () => ({
   User: { findAll: jest.fn(), findByPk: jest.fn() },
   Fakultet: { findAll: jest.fn(), findByPk: jest.fn(), create: jest.fn() },
+  Odsjek: { findAll: jest.fn(), findByPk: jest.fn(), create: jest.fn() },
   Koordinator: { count: jest.fn() },
   Student: { count: jest.fn() },
 }));
 
-const { User, Fakultet, Koordinator, Student } = require('../../src/infrastructure/database/models');
+const { User, Fakultet, Odsjek, Koordinator, Student } = require('../../src/infrastructure/database/models');
 const {
   getUsers, updateUserRole, updateUserStatus,
   getFaculties, createFaculty, updateFaculty, deleteFaculty,
+  getOdsjeci, createOdsjek, deleteOdsjek,
 } = require('../../src/business/services/admin.service');
 
 function makeDbUser(overrides = {}) {
@@ -28,6 +30,14 @@ function makeFaculty(overrides = {}) {
   return {
     id: 1, naziv: 'FIT', email: 'fit@unsa.ba', adresa: 'Zmaja od Bosne',
     save: jest.fn().mockResolvedValue(undefined),
+    destroy: jest.fn().mockResolvedValue(undefined),
+    ...overrides,
+  };
+}
+
+function makeOdsjek(overrides = {}) {
+  return {
+    id: 1, naziv: 'Racunarstvo', fakultetID: 1,
     destroy: jest.fn().mockResolvedValue(undefined),
     ...overrides,
   };
@@ -110,6 +120,51 @@ describe('updateUserStatus', () => {
       User.findByPk.mockResolvedValue(makeDbUser());
       await expect(updateUserStatus(1, status)).resolves.toMatchObject({ status });
     }
+  });
+
+  test('baca 400 ako se neverifikovan korisnik aktivira', async () => {
+    User.findByPk.mockResolvedValue(makeDbUser({ emailVerifikovan: false }));
+
+    await expect(updateUserStatus(1, 'ACTIVE')).rejects.toMatchObject({ status: 400 });
+  });
+
+  test('ACTIVE status postavlja approval metapodatke za odobren korisnik', async () => {
+    const mockUser = makeDbUser({
+      status: 'PENDING',
+      approvalStatus: 'PENDING_APPROVAL',
+      rejectedAt: new Date('2025-01-01'),
+      rejectedBy: 2,
+      rejectionReason: 'Nije kompletno',
+    });
+    User.findByPk.mockResolvedValue(mockUser);
+
+    await updateUserStatus(1, 'ACTIVE');
+
+    expect(mockUser.approvalStatus).toBe('APPROVED');
+    expect(mockUser.approvedAt).toBeInstanceOf(Date);
+    expect(mockUser.rejectedAt).toBeNull();
+    expect(mockUser.rejectedBy).toBeNull();
+    expect(mockUser.rejectionReason).toBeNull();
+  });
+
+  test('DEACTIVATED status oznacava korisnika kao odbijenog', async () => {
+    const mockUser = makeDbUser({ status: 'ACTIVE', approvalStatus: 'APPROVED' });
+    User.findByPk.mockResolvedValue(mockUser);
+
+    await updateUserStatus(1, 'DEACTIVATED');
+
+    expect(mockUser.approvalStatus).toBe('REJECTED');
+    expect(mockUser.rejectedAt).toBeInstanceOf(Date);
+  });
+
+  test('PENDING status vraca zahtjev na cekanje odobrenja', async () => {
+    const mockUser = makeDbUser({ status: 'ACTIVE', approvalStatus: 'APPROVED' });
+    User.findByPk.mockResolvedValue(mockUser);
+
+    await updateUserStatus(1, 'PENDING');
+
+    expect(mockUser.approvalStatus).toBe('PENDING_APPROVAL');
+    expect(mockUser.approvalRequestedAt).toBeInstanceOf(Date);
   });
 });
 
@@ -320,5 +375,74 @@ describe('deleteFaculty', () => {
 
     await expect(deleteFaculty(1)).rejects.toThrow(/coordinator/i);
     expect(Student.count).not.toHaveBeenCalled();
+  });
+});
+
+describe('getOdsjeci', () => {
+  test('vraca odsjeke za postojeci fakultet sortirane po nazivu ASC', async () => {
+    const odsjeci = [makeOdsjek(), makeOdsjek({ id: 2, naziv: 'Softversko inzenjerstvo' })];
+    Fakultet.findByPk.mockResolvedValue(makeFaculty());
+    Odsjek.findAll.mockResolvedValue(odsjeci);
+
+    const result = await getOdsjeci(1);
+
+    expect(result).toBe(odsjeci);
+    expect(Odsjek.findAll).toHaveBeenCalledWith({
+      where: { fakultetID: 1 },
+      order: [['naziv', 'ASC']],
+    });
+  });
+
+  test('baca 404 ako fakultet ne postoji', async () => {
+    Fakultet.findByPk.mockResolvedValue(null);
+
+    await expect(getOdsjeci(999)).rejects.toMatchObject({ status: 404 });
+    expect(Odsjek.findAll).not.toHaveBeenCalled();
+  });
+});
+
+describe('createOdsjek', () => {
+  test('kreira odsjek za postojeci fakultet i trimuje naziv', async () => {
+    const created = makeOdsjek({ naziv: 'Softversko inzenjerstvo' });
+    Fakultet.findByPk.mockResolvedValue(makeFaculty());
+    Odsjek.create.mockResolvedValue(created);
+
+    const result = await createOdsjek(1, '  Softversko inzenjerstvo  ');
+
+    expect(result).toBe(created);
+    expect(Odsjek.create).toHaveBeenCalledWith({
+      naziv: 'Softversko inzenjerstvo',
+      fakultetID: 1,
+    });
+  });
+
+  test('baca 400 ako naziv nije proslijedjen', async () => {
+    await expect(createOdsjek(1, '   ')).rejects.toMatchObject({ status: 400 });
+    expect(Fakultet.findByPk).not.toHaveBeenCalled();
+    expect(Odsjek.create).not.toHaveBeenCalled();
+  });
+
+  test('baca 404 ako fakultet ne postoji', async () => {
+    Fakultet.findByPk.mockResolvedValue(null);
+
+    await expect(createOdsjek(999, 'Racunarstvo')).rejects.toMatchObject({ status: 404 });
+    expect(Odsjek.create).not.toHaveBeenCalled();
+  });
+});
+
+describe('deleteOdsjek', () => {
+  test('brise postojeci odsjek', async () => {
+    const odsjek = makeOdsjek();
+    Odsjek.findByPk.mockResolvedValue(odsjek);
+
+    await expect(deleteOdsjek(1)).resolves.toBeUndefined();
+
+    expect(odsjek.destroy).toHaveBeenCalledTimes(1);
+  });
+
+  test('baca 404 ako odsjek ne postoji', async () => {
+    Odsjek.findByPk.mockResolvedValue(null);
+
+    await expect(deleteOdsjek(999)).rejects.toMatchObject({ status: 404 });
   });
 });
