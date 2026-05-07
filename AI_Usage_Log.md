@@ -405,3 +405,65 @@ privremeno se koriste mock podaci pošto je audit log odvojeni US
 
 **Rizici, problemi ili greške:**
 - `useState` nije bio importan u `AdminDashboard.jsx` nakon dodavanja `sidebarOpen` stanja - uzrokovalo `ReferenceError: useState is not defined` i bijeli ekran; riješeno dodavanjem `useState` u import iz Reacta
+
+---
+# AI Usage Log — Sprint 6
+
+## Unos 9 — Implementacija Password Reset funkcionalnosti
+
+| Polje | Sadržaj |
+|---|---|
+| **Datum** | 07.05.2026 |
+| **Sprint broj** | 6 |
+| **Alat** | ChatGPT (GPT-5, OpenAI) |
+| **Ko je koristio** | tvoje_korisnicko_ime |
+| **Svrha korištenja** | Implementacija funkcionalnosti obnavljanja lozinke |
+
+**Kratak opis upita:**
+
+> Potrebno je implementirati kompletan password reset flow za autentifikaciju korisnika. Funkcionalnost treba uključivati backend endpointe za zahtjev resetovanja lozinke i postavljanje nove lozinke, generisanje sigurnosnog tokena sa istekom važenja, slanje reset emaila putem Gmail SMTP servera, te frontend stranice za unos email adrese i postavljanje nove lozinke. Dizajn frontend stranica mora biti usklađen sa postojećim AuthPage izgledom i styling sistemom aplikacije.
+
+---
+
+**Šta je AI predložio ili generisao:**
+- Backend implementaciju `forgotPasswordService` i `resetPasswordService`
+- Generisanje reset tokena korištenjem `crypto.randomBytes`
+- Logiku za expiry tokena (`passwordResetExpires`)
+- Integraciju Gmail SMTP servera preko `nodemailer`
+- `email.service.js` za slanje reset emailova
+- Nove backend rute:
+  - `POST /auth/forgot-password`
+  - `POST /auth/reset-password`
+- Frontend stranice:
+  - `ForgotPasswordPage.jsx`
+  - `ResetPasswordPage.jsx`
+
+---
+
+**Šta je tim prihvatio:**
+- Kompletnu backend logiku za password reset
+- Token-based reset pristup
+- Gmail SMTP integraciju
+
+---
+
+**Šta je tim izmijenio:**
+- Prilagođene poruke grešaka i validacije na bosanskom jeziku
+- Usklađen frontend spacing i positioning sa postojećim `AuthPage.css`
+- Refaktorisani frontend servisi da koriste postojeći `apiRequest` helper
+
+---
+
+**Šta je tim odbacio:**
+- Direktno otkrivanje da li email postoji u sistemu (iz sigurnosnih razloga)
+- Korištenje obične Gmail lozinke umjesto App Password pristupa
+
+---
+
+**Rizici, problemi ili greške:**
+- Gmail SMTP autentifikacija inicijalno nije radila zbog potrebe za Google App Password konfiguracijom
+- Merge konflikti nakon spajanja sa `develop` branchom zahtijevali ručno spajanje auth controller/service fajlova
+- Potrebno ručno dodavanje novih kolona u Supabase bazu:
+  - `passwordResetToken`
+  - `passwordResetExpires`
+- Reset token mora biti pravilno invalidiran nakon uspješne promjene lozinke
