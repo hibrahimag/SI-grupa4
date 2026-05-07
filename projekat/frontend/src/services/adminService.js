@@ -40,3 +40,25 @@ export function updateFaculty(id, data) {
 export function deleteFaculty(id) {
   return apiRequest(`/admin/faculties/${id}`, { method: 'DELETE' });
 }
+
+export function getUserApprovalRequests() {
+  return apiRequest('/approval-requests/users');
+}
+
+export function getUserApprovalRequestById(id) {
+  return apiRequest(`/approval-requests/users/${id}`);
+}
+
+export function approveUserRequest(id, role) {
+  return apiRequest(`/approval-requests/users/${id}/approve`, {
+    method: 'PATCH',
+    body: JSON.stringify({ role }),
+  });
+}
+
+export function rejectUserRequest(id, rejectionReason) {
+  return apiRequest(`/approval-requests/users/${id}/reject`, {
+    method: 'PATCH',
+    body: JSON.stringify({ rejectionReason }),
+  });
+}
