@@ -55,9 +55,11 @@ async function loginController(req, res) {
       'Vaš nalog je deaktiviran. Kontaktirajte administratora.',
       'Vaš nalog još nije aktivan. Sačekajte odobrenje administratora.',
       'Niste verifikovali email adresu. Ne možete se prijaviti.',
+      'Vaš korisnički račun čeka odobrenje administratora ili koordinatora.',
+      'Vaš korisnički račun još nije odobren.',
     ].includes(err.message);
 
-    if (isExpected) {
+    if (isExpected || err.message.startsWith('Vaš zahtjev je odbijen.')) {
       return res.status(401).json({ message: err.message });
     }
 

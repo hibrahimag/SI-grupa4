@@ -42,7 +42,35 @@ async function sendEmailVerificationEmail(to, verificationLink) {
   });
 }
 
+async function sendAccountApprovedEmail(to, role) {
+  await transporter.sendMail({
+    from: getSender(),
+    to,
+    subject: 'Vaš račun je odobren',
+    html: `
+      <h2>Račun je odobren</h2>
+      <p>Vaš korisnički račun je uspješno odobren.</p>
+      <p>Dodijeljena rola: <strong>${role}</strong></p>
+    `,
+  });
+}
+
+async function sendAccountRejectedEmail(to, reason) {
+  await transporter.sendMail({
+    from: getSender(),
+    to,
+    subject: 'Vaš zahtjev je odbijen',
+    html: `
+      <h2>Zahtjev za odobrenje je odbijen</h2>
+      <p>Nažalost, vaš korisnički račun nije odobren.</p>
+      <p>Razlog odbijanja: <strong>${reason}</strong></p>
+    `,
+  });
+}
+
 module.exports = {
   sendPasswordResetEmail,
   sendEmailVerificationEmail,
+  sendAccountApprovedEmail,
+  sendAccountRejectedEmail,
 };

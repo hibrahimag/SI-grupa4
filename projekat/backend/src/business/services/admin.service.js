@@ -63,6 +63,19 @@ async function updateUserStatus(id, status) {
     throw err;
   }
   user.status = status;
+  if (status === 'ACTIVE') {
+    user.approvalStatus = 'APPROVED';
+    user.approvedAt = new Date();
+    user.rejectedAt = null;
+    user.rejectedBy = null;
+    user.rejectionReason = null;
+  } else if (status === 'DEACTIVATED') {
+    user.approvalStatus = 'REJECTED';
+    user.rejectedAt = new Date();
+  } else if (status === 'PENDING') {
+    user.approvalStatus = 'PENDING_APPROVAL';
+    user.approvalRequestedAt = new Date();
+  }
   await user.save();
   return mapUser(user);
 }

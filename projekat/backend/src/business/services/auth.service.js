@@ -224,6 +224,21 @@ async function loginService(identifier, password) {
     throw new Error('Vaš nalog još nije aktivan. Sačekajte odobrenje administratora.');
   }
 
+  if (user.role !== 'ADMIN') {
+    if (user.approvalStatus === 'PENDING_APPROVAL') {
+      throw new Error('Vaš korisnički račun čeka odobrenje administratora ili koordinatora.');
+    }
+
+    if (user.approvalStatus === 'REJECTED') {
+      const reason = user.rejectionReason ? ` Razlog: ${user.rejectionReason}` : '';
+      throw new Error(`Vaš zahtjev je odbijen.${reason}`);
+    }
+
+    if (user.approvalStatus !== 'APPROVED') {
+      throw new Error('Vaš korisnički račun još nije odobren.');
+    }
+  }
+
   // ── 3. Verify password ────────────────────────────────────────────────────
   const passwordMatch = await bcrypt.compare(password, user.passwordHash);
 
@@ -320,6 +335,13 @@ async function verifyEmailService(token) {
   }
 
   user.emailVerifikovan = true;
+  user.approvalStatus = 'PENDING_APPROVAL';
+  user.approvalRequestedAt = new Date();
+  user.approvedAt = null;
+  user.approvedBy = null;
+  user.rejectedAt = null;
+  user.rejectedBy = null;
+  user.rejectionReason = null;
   user.emailVerificationToken = null;
   user.emailVerificationTokenExpiresAt = null;
   await user.save();
