@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { verifyEmailToken } from '../services/auth.service';
 import './AuthPage.css';
@@ -8,8 +8,14 @@ export default function VerifyEmailPage() {
   const navigate = useNavigate();
   const [status, setStatus] = useState('loading');
   const [message, setMessage] = useState('Provjeravamo verifikacioni link...');
+  const hasVerifiedRef = useRef(false);
 
   useEffect(() => {
+    if (hasVerifiedRef.current) {
+      return;
+    }
+    hasVerifiedRef.current = true;
+
     const token = searchParams.get('token');
     if (!token) {
       setStatus('error');

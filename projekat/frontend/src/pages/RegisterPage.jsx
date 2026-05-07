@@ -155,52 +155,52 @@ export default function RegisterPage() {
 
   return (
     <div className={`reg-page${darkMode ? ' dark' : ''}`}>
-      <nav className="reg-nav">
-        <Link to="/">
-          <img src="/logo2.png" alt="PraksaHub" style={{ height: 44 }} />
-        </Link>
-      </nav>
+      <div className="reg-layout">
+        <main className="reg-panel reg-panel--form">
+          <div className="reg-card">
+            {step === 'role-select' && (
+              <RoleSelect
+                onSelect={r => { setErrors({}); setErrorMsg(''); setRole(r); setStep('form'); }}
+                onBack={() => navigate('/')}
+              />
+            )}
 
-      <div className="reg-center">
-        <div className="reg-card">
-          {step === 'role-select' && (
-            <RoleSelect
-              onSelect={r => { setErrors({}); setErrorMsg(''); setRole(r); setStep('form'); }}
-              onBack={() => navigate('/')}
-            />
-          )}
+            {step === 'form' && (
+              <FormStep
+                role={role}
+                formData={formData}
+                errors={errors}
+                errorMsg={errorMsg}
+                faculties={faculties}
+                facultyLoadError={facultyLoadError}
+                odsjeci={odsjeci}
+                loading={loading}
+                availability={availability}
+                onChange={handleChange}
+                onSubmit={handleFormSubmit}
+                showBack={!initialRole}
+                onBack={handleBack}
+              />
+            )}
 
-          {step === 'form' && (
-            <FormStep
-              role={role}
-              formData={formData}
-              errors={errors}
-              errorMsg={errorMsg}
-              faculties={faculties}
-              facultyLoadError={facultyLoadError}
-              odsjeci={odsjeci}
-              loading={loading}
-              availability={availability}
-              onChange={handleChange}
-              onSubmit={handleFormSubmit}
-              showBack={!initialRole}
-              onBack={handleBack}
-            />
-          )}
+            {step === 'opisPoslovanja' && (
+              <OpisStep
+                errorMsg={errorMsg}
+                loading={loading}
+                onSkip={() => doRegister(null)}
+                onFinish={v => doRegister(v || null)}
+              />
+            )}
 
-          {step === 'opisPoslovanja' && (
-            <OpisStep
-              errorMsg={errorMsg}
-              loading={loading}
-              onSkip={() => doRegister(null)}
-              onFinish={v => doRegister(v || null)}
-            />
-          )}
+            {step === 'success' && (
+              <SuccessStep role={role} onDone={() => navigate('/')} />
+            )}
+          </div>
+        </main>
 
-          {step === 'success' && (
-            <SuccessStep role={role} onDone={() => navigate('/')} />
-          )}
-        </div>
+        <aside className="reg-panel reg-panel--brand">
+          <BrandPanel role={role} step={step} />
+        </aside>
       </div>
     </div>
   );
@@ -357,8 +357,10 @@ function FormStep({ role, formData, errors, errorMsg, faculties, facultyLoadErro
 
         <AvailabilityField label="Korisničko ime" field="username" formData={formData} errors={errors} onChange={onChange} availability={availability} />
         <AvailabilityField label="Email" field="email" type="email" formData={formData} errors={errors} onChange={onChange} availability={availability} />
-        <Field label="Lozinka" field="password" type="password" formData={formData} errors={errors} onChange={onChange} />
-        <Field label="Potvrda lozinke" field="confirmPassword" type="password" formData={formData} errors={errors} onChange={onChange} />
+        <div className="reg-form-row">
+          <Field label="Lozinka" field="password" type="password" formData={formData} errors={errors} onChange={onChange} />
+          <Field label="Potvrda lozinke" field="confirmPassword" type="password" formData={formData} errors={errors} onChange={onChange} />
+        </div>
 
         {role === 'kompanija' && (
           <div className="reg-form-row">
@@ -481,6 +483,67 @@ function OpisStep({ errorMsg, loading, onSkip, onFinish }) {
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+const BRAND_CONTENT = {
+  student: {
+    heading: 'Kreiraj svoj račun',
+    text: 'Pronađi praksu koja gradi tvoju karijeru. Poveži se s vodećim kompanijama i stekni iskustvo koje otvara vrata.',
+    points: [
+      'Prijavi se na oglase brzo i jednostavno',
+      'Prati status prijave u realnom vremenu',
+      'Dobij potvrdu prakse direktno na platformi',
+    ],
+  },
+  koordinator: {
+    heading: 'Upravljajte stručnom praksom',
+    text: 'Pomozite studentima vašeg fakulteta da pronađu pravu praksu i pratite njihov napredak na jednom mjestu.',
+    points: [
+      'Pregledajte i odobravajte prijave studenata',
+      'Sarađujte s kompanijama direktno',
+      'Pratite tok i evaluaciju svake prakse',
+    ],
+  },
+  kompanija: {
+    heading: 'Pronađite talente budućnosti',
+    text: 'Objavite oglase i povežite se s talentovanim studentima. Investirajte u buduće profesionalce koji će graditi vaš tim.',
+    points: [
+      'Objavite oglase za stručnu praksu',
+      'Birajte kandidate koji odgovaraju vašim potrebama',
+      'Pratite tok prakse u realnom vremenu',
+    ],
+  },
+  default: {
+    heading: 'Vaš most prema profesionalnom svijetu',
+    text: 'Platforma koja spaja studente, kompanije i koordinatore kroz jedinstveni sistem upravljanja stručnom praksom.',
+    points: [
+      'Za studente — pronađi svoju prvu praksu',
+      'Za kompanije — pronađi talente budućnosti',
+      'Za koordinatore — upravljaj cijelim procesom',
+    ],
+  },
+};
+
+function BrandPanel({ role, step }) {
+  const content = (role && step === 'form') || step === 'opisPoslovanja'
+    ? (BRAND_CONTENT[role] ?? BRAND_CONTENT.default)
+    : BRAND_CONTENT.default;
+
+  return (
+    <div className="reg-brand">
+      <Link to="/" className="reg-brand__wordmark">PraksaHub</Link>
+      <div className="reg-brand__body">
+        <h2 className="reg-brand__heading">{content.heading}</h2>
+        <p className="reg-brand__text">{content.text}</p>
+        <ul className="reg-brand__points">
+          {content.points.map((p, i) => (
+            <li key={i}>{p}</li>
+          ))}
+        </ul>
+      </div>
+      <p className="reg-brand__footer">&copy; {new Date().getFullYear()} PraksaHub. Sva prava zadržana.</p>
     </div>
   );
 }
