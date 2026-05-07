@@ -114,12 +114,12 @@ describe('POST /api/auth/resend-verification-email', () => {
   test('400 - email je vec verifikovan', async () => {
     authService.resendVerificationEmailService.mockRejectedValueOnce(
       Object.assign(
-        new Error('Email adresa je ve' + String.fromCharCode(196, 8225) + ' verifikovana.'),
+        new Error('Email adresa je vec verifikovana.'),
         { status: 400 }
       )
     );
     authService.resendVerificationEmailService.mockRejectedValue(
-      new Error('Email adresa je veÄ‡ verifikovana.')
+      new Error('Email adresa je vec verifikovana.')
     );
 
     const res = await request(app)
@@ -127,7 +127,7 @@ describe('POST /api/auth/resend-verification-email', () => {
       .send({ email: 'haris@test.com' });
 
     expect(res.status).toBe(400);
-    expect(res.body.message).toBe('Email adresa je veÄ‡ verifikovana.');
+    expect(res.body.message).toBe('Email adresa je vec verifikovana.');
   });
 
   test('500 - neocekivana greska slanja', async () => {
