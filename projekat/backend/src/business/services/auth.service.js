@@ -128,7 +128,7 @@ async function register(data) {
         );
         return createdUser;
       });
-      await sendVerificationEmailForUser(user);
+      try { await sendVerificationEmailForUser(user); } catch (e) { console.error('[register] Email send failed:', e.message); }
       return user;
     }
 
@@ -151,7 +151,7 @@ async function register(data) {
         );
         return createdUser;
       });
-      await sendVerificationEmailForUser(user);
+      try { await sendVerificationEmailForUser(user); } catch (e) { console.error('[register] Email send failed:', e.message); }
       return user;
     }
 
@@ -168,7 +168,7 @@ async function register(data) {
         );
         return createdUser;
       });
-      await sendVerificationEmailForUser(user);
+      try { await sendVerificationEmailForUser(user); } catch (e) { console.error('[register] Email send failed:', e.message); }
       return user;
     }
 

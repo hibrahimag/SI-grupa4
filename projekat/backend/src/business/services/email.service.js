@@ -1,18 +1,18 @@
 const nodemailer = require('nodemailer');
 
 const transporter = nodemailer.createTransport({
-  host: process.env.MAIL_HOST || process.env.SMTP_HOST,
-  port: Number(process.env.MAIL_PORT || process.env.SMTP_PORT),
+  host: process.env.MAIL_HOST,
+  port: Number(process.env.MAIL_PORT),
   secure: false,
   family: 4,
   auth: {
-    user: process.env.MAIL_USER || process.env.SMTP_USER,
-    pass: process.env.MAIL_PASS || process.env.SMTP_PASS,
+    user: process.env.MAIL_USER,
+    pass: process.env.MAIL_PASS,
   },
 });
 
 function getSender() {
-  return process.env.MAIL_FROM || process.env.MAIL_USER || process.env.SMTP_USER;
+  return process.env.MAIL_FROM || process.env.MAIL_USER;
 }
 
 async function sendPasswordResetEmail(to, resetLink) {
