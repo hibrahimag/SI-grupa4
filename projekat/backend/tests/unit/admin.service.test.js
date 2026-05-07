@@ -18,6 +18,7 @@ function makeDbUser(overrides = {}) {
     id: 1, ime: 'Haris', prezime: 'Husic',
     email: 'haris@test.com', role: 'STUDENT',
     status: 'PENDING', institution: 'FIT',
+    emailVerifikovan: true,
     created_at: new Date('2025-01-01'),
   };
   return { ...base, ...overrides, save: jest.fn().mockResolvedValue(undefined) };

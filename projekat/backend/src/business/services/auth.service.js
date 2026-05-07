@@ -6,33 +6,50 @@ const crypto = require('crypto');
 const { Op, UniqueConstraintError } = require('sequelize');
 const { User, Student, Koordinator, Kompanija, Fakultet, Odsjek } = require('../../infrastructure/database/models');
 const sequelize = require('../../infrastructure/database/db');
-const { sendPasswordResetEmail } = require('./email.service');
+const { sendPasswordResetEmail, sendEmailVerificationEmail } = require('./email.service');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN ?? '8h';
 const SALT_ROUNDS = 10;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const VERIFICATION_EXPIRY_MS = 24 * 60 * 60 * 1000;
+const EMAIL_VERIFICATION_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
 
 if (!JWT_SECRET) {
   throw new Error('JWT_SECRET environment variable is not set.');
 }
 
-function generateVerificationData() {
-  return {
-    token: crypto.randomBytes(32).toString('hex'),
-    expiresAt: new Date(Date.now() + VERIFICATION_EXPIRY_MS),
-  };
+function createEmailVerificationTokenData() {
+  const rawToken = crypto.randomBytes(32).toString('hex');
+  const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+  const expiresAt = new Date(Date.now() + EMAIL_VERIFICATION_TOKEN_TTL_MS);
+  return { rawToken, tokenHash, expiresAt };
 }
 
-function buildVerificationUrl(token) {
-  const frontendBaseUrl = process.env.FRONTEND_BASE_URL || process.env.FRONTEND_URL || 'http://localhost:5173';
-  return `${frontendBaseUrl}/verify-email?token=${token}`;
+async function setVerificationTokenForUser(user) {
+  const { rawToken, tokenHash, expiresAt } = createEmailVerificationTokenData();
+  user.emailVerificationToken = tokenHash;
+  user.emailVerificationTokenExpiresAt = expiresAt;
+  await user.save();
+  return rawToken;
 }
 
-function logVerificationLink(email, token) {
-  const verificationUrl = buildVerificationUrl(token);
-  console.log(`[EMAIL VERIFICATION] ${email} -> ${verificationUrl}`);
+function getFrontendBaseUrl() {
+  return process.env.FRONTEND_URL || process.env.FRONTEND_BASE_URL;
+}
+
+async function sendVerificationEmailForUser(user) {
+  const token = await setVerificationTokenForUser(user);
+  const frontendBaseUrl = getFrontendBaseUrl();
+  const verificationLink = frontendBaseUrl
+    ? `${frontendBaseUrl}/verify-email?token=${token}`
+    : null;
+
+  if (!frontendBaseUrl || !process.env.MAIL_HOST) {
+    console.log(`[EMAIL VERIFICATION] ${user.email} -> ${verificationLink ?? '(FRONTEND_URL not set)'}`);
+    return;
+  }
+
+  await sendEmailVerificationEmail(user.email, verificationLink);
 }
 
 async function checkAvailability(type, value) {
@@ -84,7 +101,6 @@ async function register(data) {
   }
 
   const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
-  const { token, expiresAt } = generateVerificationData();
 
   try {
     if (role === 'STUDENT') {
@@ -103,19 +119,7 @@ async function register(data) {
       }
       const user = await sequelize.transaction(async (t) => {
         const createdUser = await User.create(
-          {
-            ime,
-            prezime,
-            username,
-            email,
-            passwordHash,
-            role: 'STUDENT',
-            status: 'PENDING',
-            emailVerifikovan: false,
-            emailVerificationToken: token,
-            emailVerificationExpiresAt: expiresAt,
-            institution: faculty.naziv,
-          },
+          { ime, prezime, username, email, passwordHash, role: 'STUDENT', status: 'PENDING', institution: faculty.naziv },
           { transaction: t }
         );
         await Student.create(
@@ -124,8 +128,8 @@ async function register(data) {
         );
         return createdUser;
       });
-      logVerificationLink(user.email, token);
-      return { id: user.id, email: user.email, role: user.role };
+      await sendVerificationEmailForUser(user);
+      return user;
     }
 
     if (role === 'COORDINATOR') {
@@ -138,45 +142,24 @@ async function register(data) {
       }
       const user = await sequelize.transaction(async (t) => {
         const createdUser = await User.create(
-          {
-            ime,
-            prezime,
-            username,
-            email,
-            passwordHash,
-            role: 'COORDINATOR',
-            status: 'PENDING',
-            emailVerifikovan: false,
-            emailVerificationToken: token,
-            emailVerificationExpiresAt: expiresAt,
-            institution: faculty.naziv,
-          },
+          { ime, prezime, username, email, passwordHash, role: 'COORDINATOR', status: 'PENDING', institution: faculty.naziv },
           { transaction: t }
         );
-        await Koordinator.create({ userID: createdUser.id, fakultetID: Number(fakultetID), odsjekID: odsjekID ? Number(odsjekID) : null }, { transaction: t });
+        await Koordinator.create(
+          { userID: createdUser.id, fakultetID: Number(fakultetID), odsjekID: odsjekID ? Number(odsjekID) : null },
+          { transaction: t }
+        );
         return createdUser;
       });
-      logVerificationLink(user.email, token);
-      return { id: user.id, email: user.email, role: user.role };
+      await sendVerificationEmailForUser(user);
+      return user;
     }
 
     if (role === 'COMPANY') {
       const { naziv, adresa, telefon, opisPoslovanja, kontaktOsoba } = data;
       const user = await sequelize.transaction(async (t) => {
         const createdUser = await User.create(
-          {
-            ime: naziv,
-            prezime: '',
-            username,
-            email,
-            passwordHash,
-            role: 'COMPANY',
-            status: 'PENDING',
-            emailVerifikovan: false,
-            emailVerificationToken: token,
-            emailVerificationExpiresAt: expiresAt,
-            institution: naziv,
-          },
+          { ime: naziv, prezime: '', username, email, passwordHash, role: 'COMPANY', status: 'PENDING', institution: naziv },
           { transaction: t }
         );
         await Kompanija.create(
@@ -185,8 +168,8 @@ async function register(data) {
         );
         return createdUser;
       });
-      logVerificationLink(user.email, token);
-      return { id: user.id, email: user.email, role: user.role };
+      await sendVerificationEmailForUser(user);
+      return user;
     }
 
     const err = new Error('Nepoznata rola.');
@@ -227,6 +210,21 @@ async function loginService(identifier, password) {
     throw new Error('Vaš nalog još nije aktivan. Sačekajte odobrenje administratora.');
   }
 
+  if (user.role !== 'ADMIN') {
+    if (user.approvalStatus === 'PENDING_APPROVAL') {
+      throw new Error('Vaš korisnički račun čeka odobrenje administratora ili koordinatora.');
+    }
+
+    if (user.approvalStatus === 'REJECTED') {
+      const reason = user.rejectionReason ? ` Razlog: ${user.rejectionReason}` : '';
+      throw new Error(`Vaš zahtjev je odbijen.${reason}`);
+    }
+
+    if (user.approvalStatus !== 'APPROVED') {
+      throw new Error('Vaš korisnički račun još nije odobren.');
+    }
+  }
+
   const passwordMatch = await bcrypt.compare(password, user.passwordHash);
   if (!passwordMatch) {
     throw new Error('Pogrešno korisničko ime/e-mail ili lozinka.');
@@ -249,54 +247,54 @@ async function loginService(identifier, password) {
   };
 }
 
-async function verifyEmail(token) {
-  const user = await User.findOne({ where: { emailVerificationToken: token } });
+async function verifyEmailService(token) {
+  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+  const user = await User.findOne({
+    where: { emailVerificationToken: tokenHash },
+  });
+
   if (!user) {
-    const err = new Error('Verifikacioni token nije validan.');
+    const err = new Error('Neispravan verifikacioni token.');
     err.status = 400;
     throw err;
   }
-  if (!user.emailVerificationExpiresAt || user.emailVerificationExpiresAt < new Date()) {
-    const err = new Error('Verifikacioni token je istekao. Zatražite novi.');
+
+  if (!user.emailVerificationTokenExpiresAt || user.emailVerificationTokenExpiresAt < new Date()) {
+    const err = new Error('Verifikacioni token je istekao.');
     err.status = 400;
     throw err;
   }
 
   user.emailVerifikovan = true;
-  user.status = 'ACTIVE';
+  user.approvalStatus = 'PENDING_APPROVAL';
+  user.approvalRequestedAt = new Date();
+  user.approvedAt = null;
+  user.approvedBy = null;
+  user.rejectedAt = null;
+  user.rejectedBy = null;
+  user.rejectionReason = null;
   user.emailVerificationToken = null;
-  user.emailVerificationExpiresAt = null;
+  user.emailVerificationTokenExpiresAt = null;
   await user.save();
-
-  return { message: 'Email uspješno verifikovan.' };
 }
 
-async function resendVerification(email) {
+async function resendVerificationEmailService(email) {
   const user = await User.findOne({ where: { email } });
   if (!user) {
-    const err = new Error('Korisnik nije pronađen.');
-    err.status = 404;
-    throw err;
+    return;
   }
+
   if (user.emailVerifikovan) {
-    const err = new Error('Email je već verifikovan.');
+    const err = new Error('Email adresa je već verifikovana.');
     err.status = 400;
     throw err;
   }
 
-  const { token, expiresAt } = generateVerificationData();
-  user.emailVerificationToken = token;
-  user.emailVerificationExpiresAt = expiresAt;
-  await user.save();
-  logVerificationLink(user.email, token);
-
-  return { message: 'Novi verifikacioni link je generisan i ispisan u backend konzoli.' };
+  await sendVerificationEmailForUser(user);
 }
 
 async function forgotPasswordService(email) {
-  const user = await User.findOne({
-    where: { email },
-  });
+  const user = await User.findOne({ where: { email } });
 
   if (!user) {
     return;
@@ -312,9 +310,7 @@ async function forgotPasswordService(email) {
 }
 
 async function resetPasswordService(token, newPassword) {
-  const user = await User.findOne({
-    where: { passwordResetToken: token },
-  });
+  const user = await User.findOne({ where: { passwordResetToken: token } });
 
   if (!user) {
     throw new Error('Neispravan token.');
@@ -337,8 +333,8 @@ module.exports = {
   getPublicOdsjeci,
   register,
   loginService,
-  verifyEmail,
-  resendVerification,
   forgotPasswordService,
   resetPasswordService,
+  verifyEmailService,
+  resendVerificationEmailService,
 };

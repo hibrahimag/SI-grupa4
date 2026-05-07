@@ -36,6 +36,8 @@ function makeUser(overrides = {}) {
     role: 'STUDENT', status: 'ACTIVE',
     passwordHash: '$2b$10$hashedpassword',
     institution: null,
+    emailVerifikovan: true,
+    approvalStatus: 'APPROVED',
     passwordResetToken: null,
     passwordResetExpires: null,
     save: jest.fn().mockResolvedValue(undefined),

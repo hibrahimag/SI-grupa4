@@ -56,7 +56,7 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING(255),
         allowNull: true,
       },
-      emailVerificationExpiresAt: {
+      emailVerificationTokenExpiresAt: {
         type: DataTypes.DATE,
         allowNull: true,
       },
@@ -64,6 +64,35 @@ module.exports = (sequelize) => {
         type: DataTypes.ENUM('PENDING', 'ACTIVE', 'DEACTIVATED'),
         allowNull: false,
         defaultValue: 'PENDING',
+      },
+      approvalStatus: {
+        type: DataTypes.ENUM('PENDING_APPROVAL', 'APPROVED', 'REJECTED'),
+        allowNull: false,
+        defaultValue: 'PENDING_APPROVAL',
+      },
+      approvalRequestedAt: {
+        type: DataTypes.DATE,
+        allowNull: true,
+      },
+      approvedBy: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      },
+      approvedAt: {
+        type: DataTypes.DATE,
+        allowNull: true,
+      },
+      rejectedBy: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      },
+      rejectedAt: {
+        type: DataTypes.DATE,
+        allowNull: true,
+      },
+      rejectionReason: {
+        type: DataTypes.TEXT,
+        allowNull: true,
       },
       institution: {
         type: DataTypes.STRING(150),

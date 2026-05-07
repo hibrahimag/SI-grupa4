@@ -1,5 +1,20 @@
 import { useEffect, useReducer, useState } from 'react';
-import { getUsers, updateUserRole, updateUserStatus, getFaculties, createFaculty, updateFaculty, deleteFaculty, getOdsjeci, createOdsjek, deleteOdsjek } from '../services/adminService';
+import {
+  getUsers,
+  updateUserRole,
+  updateUserStatus,
+  getFaculties,
+  createFaculty,
+  updateFaculty,
+  deleteFaculty,
+  getOdsjeci,
+  createOdsjek,
+  deleteOdsjek,
+  getUserApprovalRequests,
+  getUserApprovalRequestById,
+  approveUserRequest,
+  rejectUserRequest,
+} from '../services/adminService';
 import { useTheme } from '../context/ThemeContext';
 import './AdminDashboard.css';
 
@@ -64,6 +79,10 @@ function reducer(state, action) {
       };
     case 'SET_FACULTIES':
       return { ...state, faculties: action.payload };
+    case 'SET_USER_APPROVAL_REQUESTS':
+      return { ...state, userApprovalRequests: action.payload };
+    case 'SET_SELECTED_APPROVAL_REQUEST':
+      return { ...state, selectedApprovalRequest: action.payload };
     case 'SHOW_TOAST':
       return { ...state, toast: action.payload };
     case 'HIDE_TOAST':
@@ -82,11 +101,13 @@ const initialState = {
   pending: [],
   toast: null,
   faculties: [],
+  userApprovalRequests: [],
+  selectedApprovalRequest: null,
 };
 
 export default function AdminDashboard() {
   const [state, dispatch] = useReducer(reducer, initialState);
-  const { view, statusFilter, roleFilter, users, loading, pending, toast, faculties } = state;
+  const { view, statusFilter, roleFilter, users, loading, pending, toast, faculties, userApprovalRequests, selectedApprovalRequest } = state;
   const { darkMode } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -112,6 +133,14 @@ export default function AdminDashboard() {
         .catch(() => showToast('Greška pri učitavanju korisnika.', 'error'));
     }
   }, [view, statusFilter]);
+
+  useEffect(() => {
+    if (view === 'user-approvals') {
+      getUserApprovalRequests()
+        .then((data) => dispatch({ type: 'SET_USER_APPROVAL_REQUESTS', payload: data }))
+        .catch(() => showToast('Greška pri učitavanju zahtjeva za odobravanje.', 'error'));
+    }
+  }, [view]);
 
   function showToast(message, type = 'success') {
     dispatch({ type: 'SHOW_TOAST', payload: { message, type } });
@@ -185,6 +214,39 @@ export default function AdminDashboard() {
     }
   }
 
+  async function handleOpenApprovalDetails(id) {
+    try {
+      const data = await getUserApprovalRequestById(id);
+      dispatch({ type: 'SET_SELECTED_APPROVAL_REQUEST', payload: data });
+    } catch {
+      showToast('Greška pri učitavanju detalja zahtjeva.', 'error');
+    }
+  }
+
+  async function handleApproveUserRequest(id, role) {
+    try {
+      await approveUserRequest(id, role);
+      dispatch({ type: 'SET_SELECTED_APPROVAL_REQUEST', payload: null });
+      const refreshed = await getUserApprovalRequests();
+      dispatch({ type: 'SET_USER_APPROVAL_REQUESTS', payload: refreshed });
+      showToast(`Zahtjev odobren. Dodijeljena rola: ${role}.`);
+    } catch (err) {
+      showToast(err.message || 'Greška pri odobravanju zahtjeva.', 'error');
+    }
+  }
+
+  async function handleRejectUserRequest(id, reason) {
+    try {
+      await rejectUserRequest(id, reason);
+      dispatch({ type: 'SET_SELECTED_APPROVAL_REQUEST', payload: null });
+      const refreshed = await getUserApprovalRequests();
+      dispatch({ type: 'SET_USER_APPROVAL_REQUESTS', payload: refreshed });
+      showToast('Zahtjev odbijen.');
+    } catch (err) {
+      showToast(err.message || 'Greška pri odbijanju zahtjeva.', 'error');
+    }
+  }
+
   const visibleUsers = roleFilter
     ? users.filter((u) => u.role === roleFilter)
     : users;
@@ -245,6 +307,12 @@ export default function AdminDashboard() {
             >
               Fakulteti
             </button>
+            <button
+              className={`ad-nav-item ${view === 'user-approvals' ? 'active' : ''}`}
+              onClick={() => dispatch({ type: 'SET_VIEW', payload: 'user-approvals' })}
+            >
+              User approval
+            </button>
           </nav>
         </div>
       </aside>
@@ -273,6 +341,16 @@ export default function AdminDashboard() {
             onCreate={handleCreateFaculty}
             onUpdate={handleUpdateFaculty}
             onDelete={handleDeleteFaculty}
+          />
+        )}
+        {view === 'user-approvals' && (
+          <UserApprovalsView
+            requests={userApprovalRequests}
+            selected={selectedApprovalRequest}
+            onOpenDetails={handleOpenApprovalDetails}
+            onApprove={handleApproveUserRequest}
+            onReject={handleRejectUserRequest}
+            onCloseDetails={() => dispatch({ type: 'SET_SELECTED_APPROVAL_REQUEST', payload: null })}
           />
         )}
       </main>
@@ -800,6 +878,105 @@ function UsersView({ users, loading, statusFilter, roleFilter, dispatch, onRoleC
               )}
             </tbody>
           </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function UserApprovalsView({ requests, selected, onOpenDetails, onApprove, onReject, onCloseDetails }) {
+  const [selectedRole, setSelectedRole] = useState('STUDENT');
+  const [rejectionReason, setRejectionReason] = useState('');
+
+  useEffect(() => {
+    if (selected) {
+      setSelectedRole(selected.role || 'STUDENT');
+      setRejectionReason('');
+    }
+  }, [selected]);
+
+  return (
+    <div className="ad-content">
+      <div className="ad-header">
+        <h1 className="ad-title">User approval</h1>
+        <div className="ad-subtitle">Zahtjevi nakon email verifikacije</div>
+      </div>
+
+      <div className="ad-section">
+        <div className="ad-section-header">
+          <h2 className="ad-section-title">Zahtjevi korisničkih računa</h2>
+          <span className="ad-section-count">{requests.length} na čekanju</span>
+        </div>
+        <table className="ad-table">
+          <thead>
+            <tr>
+              <th>Korisnik</th>
+              <th>Email</th>
+              <th>Datum verifikacije</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {requests.map((u) => (
+              <tr key={u.id}>
+                <td>{`${u.ime} ${u.prezime}`.trim()}</td>
+                <td>{u.email}</td>
+                <td>{u.approvalRequestedAt ? String(u.approvalRequestedAt).slice(0, 10) : '—'}</td>
+                <td>
+                  <span className={`ad-status-badge ad-status--pending`}>PENDING_APPROVAL</span>
+                  {u.overdue && <span className="ad-overdue-badge">OVERDUE</span>}
+                </td>
+                <td>
+                  <button className="ad-btn ad-btn--approve" onClick={() => onOpenDetails(u.id)}>
+                    Detalji
+                  </button>
+                </td>
+              </tr>
+            ))}
+            {requests.length === 0 && (
+              <tr>
+                <td colSpan={5} className="ad-empty">Nema zahtjeva na čekanju.</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {selected && (
+        <div className="ad-section">
+          <div className="ad-section-header">
+            <h2 className="ad-section-title">Detalji zahtjeva #{selected.id}</h2>
+          </div>
+          <p><strong>Ime:</strong> {selected.ime} {selected.prezime}</p>
+          <p><strong>Email:</strong> {selected.email}</p>
+          <p><strong>Trenutna rola:</strong> {selected.role}</p>
+
+          <div className="ad-approval-actions">
+            <select className="ad-select" value={selectedRole} onChange={(e) => setSelectedRole(e.target.value)}>
+              <option value="STUDENT">STUDENT</option>
+              <option value="COMPANY">COMPANY</option>
+              <option value="COORDINATOR">COORDINATOR</option>
+            </select>
+            <button className="ad-btn ad-btn--approve" onClick={() => onApprove(selected.id, selectedRole)}>
+              Odobri i dodijeli rolu
+            </button>
+          </div>
+
+          <div className="ad-approval-actions">
+            <input
+              className="ad-input"
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              placeholder="Razlog odbijanja (obavezno)"
+            />
+            <button className="ad-btn ad-btn--reject" onClick={() => onReject(selected.id, rejectionReason)}>
+              Odbij zahtjev
+            </button>
+            <button className="ad-btn ad-btn--primary" onClick={onCloseDetails}>
+              Zatvori
+            </button>
+          </div>
         </div>
       )}
     </div>

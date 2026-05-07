@@ -25,13 +25,13 @@ beforeAll(async () => {
       ime: 'Active', prezime: 'User',
       username: `${PREFIX}active`, email: `${PREFIX}active@test.com`,
       passwordHash, role: 'STUDENT', status: 'ACTIVE',
-      emailVerifikovan: true, created_at: new Date(),
+      emailVerifikovan: true, approvalStatus: 'APPROVED', created_at: new Date(),
     }),
     User.create({
       ime: 'Pending', prezime: 'User',
       username: `${PREFIX}pending`, email: `${PREFIX}pending@test.com`,
       passwordHash, role: 'STUDENT', status: 'PENDING',
-      emailVerifikovan: false, created_at: new Date(),
+      emailVerifikovan: true, created_at: new Date(),
     }),
     User.create({
       ime: 'Deactivated', prezime: 'User',
