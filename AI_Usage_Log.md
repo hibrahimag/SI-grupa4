@@ -467,3 +467,84 @@ privremeno se koriste mock podaci pošto je audit log odvojeni US
   - `passwordResetToken`
   - `passwordResetExpires`
 - Reset token mora biti pravilno invalidiran nakon uspješne promjene lozinke
+
+## Unos 10 — Implementacija registracije korisnika i upravljanja fakultetima
+
+| Polje | Sadržaj |
+|---|---|
+| **Datum** | 06.05.2026 |
+| **Sprint broj** | 6 |
+| **Alat** | Claude Code (claude-sonnet-4-6) |
+| **Ko je koristio** | hhodzic9 |
+| **Svrha korištenja** | Implementacija registracije za studente, koordinatore i kompanije, te CRUD upravljanje fakultetima u admin panelu |
+
+**Kratak opis upita:**
+
+> Implementirati registraciju korisnika s tri tipa naloga: Student, Koordinator i Kompanija. Registracija treba biti u više koraka — odabir uloge, popunjavanje forme, opcionalni korak za opis kompanije. Forma treba imati validaciju, provjeru dostupnosti korisničkog imena i emaila u realnom vremenu, dropdown za odabir fakulteta, prihvatanje uslova korištenja i success korak s auto-redirectom. Backend treba kreirati korisnika i odgovarajući profil u transakciji. Admin panel treba dobiti sekciju za upravljanje fakultetima (dodaj, uredi, obriši).
+
+**Šta je AI predložio ili generisao:**
+- Kompletni `RegisterPage.jsx` — forma s komponentama `RoleSelect`, `FormStep`, `OpisStep`, `SuccessStep`; realno-vremenski `checkAvailability` s debounce od 500ms i vizuelnim indikatorima (spinner, checkmark, X); dropdown za fakultet; validacija svih polja; checkbox za uslove korištenja; auto-redirect nakon uspješne registracije
+- Kompletni `RegisterPage.css` — dizajn forme, kartica uloga, polja s greškama, availability indikatora, success ekrana
+- Backend `auth.service.js` — `register` funkcija koja pokriva sve tri uloge; transakcije za kreiranje `User` + `Student`/`Koordinator`/`Kompanija`; hashiranje lozinke; validacija emaila, lozinke, godine studija; provjera jedinstvenosti korisničkog imena i emaila; `checkAvailability` i `getPublicFaculties` funkcije
+- Backend `auth.controller.js` i `auth.routes.js` — endpoint za registraciju, provjeru dostupnosti i dohvat fakulteta
+- Frontend `auth.service.js` — `register`, `getPublicFaculties`, `checkAvailability` API pozivi
+- Frontend `adminService.js` — `getFaculties`, `createFaculty`, `updateFaculty`, `deleteFaculty`
+- Proširenje `AdminDashboard.jsx` — nova sekcija `FacultiesView` s formom za dodavanje fakulteta, tablicom s inline editovanjem i brisanjem
+- Backend admin service/controller/routes — `getFaculties`, `createFaculty`, `updateFaculty`, `deleteFaculty` s validacijom i zaštitom od brisanja fakulteta koji ima vezane studente ili koordinatore
+
+**Šta je tim prihvatio:**
+- Cjelokupnu strukturu registracije
+- Realno-vremensku provjeru dostupnosti s debounce logikom
+- Transakcijsko kreiranje korisnika i profila na backendu
+- Zaštitu od brisanja fakulteta koji ima vezane korisnike
+- Dizajn i raspored `RegisterPage`
+
+**Šta je tim izmijenio:**
+
+**Šta je tim odbacio:**
+
+**Rizici, problemi ili greške:**
+
+---
+
+## Unos 11 — Dodavanje odsjeka, kontakt osobe i upravljanja odsjecima (fix/missing-profile-fields)
+
+| Polje | Sadržaj |
+|---|---|
+| **Datum** | 07.05.2026 |
+| **Sprint broj** | 6 |
+| **Alat** | Claude Code (claude-sonnet-4-6) |
+| **Ko je koristio** | hhodzic9 |
+| **Svrha korištenja** | Dodavanje polja `odsjek` za studente i koordinatore, `kontaktOsoba` za kompanije, kreiranje `Odsjek` tabele i upravljanja odsjecima u admin panelu |
+
+**Kratak opis upita:**
+
+> Dodati polje `odsjek` (odsjek fakulteta) za studente i koordinatore, te polje `kontaktOsoba` za kompanije. Odsjek treba biti posebna tabela vezana za fakultet, a student/koordinator bira odsjek putem dropdowna pri registraciji. Dropdown se učitava dinamički nakon odabira fakulteta i nije obavezan. Admin treba moći upravljati odsjecima unutar upravljanja fakultetima. Polje `kontaktOsoba` je opcionalno tekstualno polje s italic placeholderom "Ime i prezime".
+
+**Šta je AI predložio ili generisao:**
+- Novi model `Odsjek.js` — tabela `odsjeci` s poljima `id`, `naziv`, `fakultetID`
+- Dodavanje nullable kolone `odsjekID` (FK) u modele `Student` i `Koordinator`
+- Dodavanje nullable kolone `kontaktOsoba` VARCHAR(150) u model `Kompanija`
+- Ažuriranje `index.js` — registracija modela, 4 nove asocijacije (`Fakultet→Odsjek`, `Odsjek→Student`, `Odsjek→Koordinator`), eksport `Odsjek`
+- Backend admin: `getOdsjeci`, `createOdsjek`, `deleteOdsjek` u service/controller/routes
+- Backend public endpoint `GET /api/auth/faculties/:id/odsjeci` za dohvat odsjeka pri registraciji
+- Ažuriranje `auth.service.js` — registracija studenta/koordinatora sada prima `odsjekID`, registracija kompanije prima `kontaktOsoba`
+- Frontend `RegisterPage.jsx` — dropdown za odsjek koji se učitava nakon odabira fakulteta, poruka "Odsjeci još nisu dodani" ako fakultet nema odsjeka, polje `kontaktOsoba` s italic placeholderom
+- Frontend `AdminDashboard.jsx` — `OdsjekPanel` komponenta unutar upravljanja fakultetima: expandabilni panel po redu, lista odsjeka s brisanjem, forma za dodavanje, dugme "Završi dodavanje"
+
+**Šta je tim prihvatio:**
+- Kompletnu arhitekturu `Odsjek` tabele vezane za `Fakultet`
+- `odsjekID` kao nullable FK na `Student` i `Koordinator` (ne briše postojeće podatke)
+- `kontaktOsoba` kao nullable polje na `Kompanija`
+- Odluku da se `fakultetID` zadrži na `Student` i `Koordinator` radi kompatibilnosti s postojećim kodom
+- Odsjek dropdown kao opcionalan u registraciji
+- UX odluku da odsjeci budu upravljani unutar admin panela za fakultete, a ne kao zasebna sekcija
+
+**Šta je tim izmijenio:**
+
+**Šta je tim odbacio:**
+- Inicijalni prijedlog jednostavnog VARCHAR polja za odsjek — odbačeno jer ne omogućava konzistentnost između studenata i koordinatora istog odsjeka
+
+**Rizici, problemi ili greške:**
+- `getPublicOdsjeci` funkcija dodana u `auth.service.js` ali zaboravljena u `module.exports` — uhvaćeno tokom provjere prije pokretanja, riješeno odmah
+- `ECONNRESET` greška pri prvom pokretanju servera — Supabase je prekinuo konekciju tokom `sync({ alter: true })` koji izvršava više `ALTER TABLE` naredbi zaredom; riješeno ponovnim pokretanjem
