@@ -1,26 +1,17 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
-const transporter = nodemailer.createTransport({
-  host: process.env.MAIL_HOST,
-  port: Number(process.env.MAIL_PORT),
-  secure: false,
-  family: 4,
-  auth: {
-    user: process.env.MAIL_USER,
-    pass: process.env.MAIL_PASS,
-  },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 function getSender() {
-  return process.env.MAIL_FROM || process.env.MAIL_USER;
+  return process.env.MAIL_FROM || 'PraksaHub <onboarding@resend.dev>';
 }
 
 async function sendPasswordResetEmail(to, resetLink) {
- await transporter.sendMail({
-  from: `"PraksaHub" <${process.env.SMTP_USER}>`,
-  to,
-  subject: 'Obnavljanje lozinke',
-  html: `
+  await resend.emails.send({
+    from: getSender(),
+    to,
+    subject: 'Obnavljanje lozinke',
+    html: `
     <div style="
       margin:0;
       padding:40px 20px;
@@ -134,12 +125,12 @@ async function sendPasswordResetEmail(to, resetLink) {
       </div>
     </div>
   `,
-});
+  });
 }
 
 async function sendEmailVerificationEmail(to, verificationLink) {
-  await transporter.sendMail({
-    from: `"PraksaHub" <${process.env.SMTP_USER}>`,
+  await resend.emails.send({
+    from: getSender(),
     to,
     subject: 'Verifikacija email adrese',
     html: `
@@ -262,8 +253,8 @@ async function sendEmailVerificationEmail(to, verificationLink) {
 }
 
 async function sendAccountApprovedEmail(to, role) {
-  await transporter.sendMail({
-    from: `"PraksaHub" <${process.env.SMTP_USER}>`,
+  await resend.emails.send({
+    from: getSender(),
     to,
     subject: 'Vaš račun je odobren',
     html: `
@@ -275,8 +266,8 @@ async function sendAccountApprovedEmail(to, role) {
 }
 
 async function sendAccountRejectedEmail(to, reason) {
-  await transporter.sendMail({
-    from: `"PraksaHub" <${process.env.SMTP_USER}>`,
+  await resend.emails.send({
+    from: getSender(),
     to,
     subject: 'Vaš zahtjev je odbijen',
     html: `
