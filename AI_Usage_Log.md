@@ -554,7 +554,7 @@ privremeno se koriste mock podaci pošto je audit log odvojeni US
 | Polje | Sadržaj |
 |---|---|
 | **Datum** | 07.05.2026 |
-| **Sprint broj** | 5 |
+| **Sprint broj** | 6 |
 | **Alat** | Claude Code (claude-sonnet-4-6) |
 | **Ko je koristio** | hhusic1 |
 | **Svrha korištenja** | Pisanje unit, mock i integracijskih testova za auth i admin module |
@@ -602,3 +602,69 @@ loginService(identifier, password):
 **Rizici, problemi ili greške:**
 - Nakon dva git pull-a tim je dodao nove provjere (`emailVerifikovan`, `approvalStatus`) u servise, što je srušilo 6-7 testova — zahtijevalo ažuriranje mock helpera
 - Integracijski testovi zahtijevaju `.env` s DB kredencijalima — ne mogu ih pokrenuti svi članovi tima
+
+## Unos 13 — Implementacija login funkcionalnosti (frontend + backend)
+
+| Polje | Sadržaj |
+|---|---|
+| **Datum** | 03.05.2026 |
+| **Sprint broj** | 6 |
+| **Alat** | Claude (claude-sonnet-4-6, claude.ai) |
+| **Ko je koristio** | hibrahimag1 |
+| **Svrha korištenja** | Implementacija kompletne login funkcionalnosti za četiri korisničke uloge (STUDENT, COMPANY, COORDINATOR, ADMIN) — login stranica, validacija kredencijala, JWT autentifikacija, RBAC middleware, preusmjeravanje prema ulozi |
+
+**Kratak opis upita:**
+
+> Implementirati login funkcionalnost za web aplikaciju PraksaHub. Potrebno je kreirati jedinstvenu login stranicu s koje se svi korisnici prijavljuju, implementirati validaciju kredencijala koja sprječava neispravne podatke, te preusmjeriti korisnike na odgovarajuće dashboarde prema njihovoj ulozi. Dashboardi koji još nisu implementirani zamjenjuju se privremenim (dummy) stranicama. Uz to, uspostaviti dijeljeni CSS sistem tokena (design tokens) za konzistentnost dizajna, te implementirati backend autentifikaciju putem JWT tokena i RBAC middleware.
+
+---
+
+**Šta je AI predložio ili generisao:**
+
+- `frontend/src/styles/variables.css` — dijeljeni CSS design tokens (boje, fontovi, razmaci, sjene, radijusi) izvučeni iz postojećeg `AdminDashboard.css` radi konzistentnosti
+- `frontend/src/pages/AuthPage.jsx` — login stranica s dvopanelnim layoutom (branding panel + forma), SVG ikonama, validacijom, spinner animacijom, prikazom grešaka i role chip indikatorima
+- `frontend/src/pages/AuthPage.css` — stilovi za login stranicu koji koriste CSS varijable iz `variables.css`
+- `frontend/src/context/AuthContext.jsx` — proširenje konteksta s `login()` i `logout()` funkcijama, čuvanje sesije u `sessionStorage`
+- `frontend/src/services/auth.service.js` — fetch wrapper za `POST /api/auth/login` s bosanskim porukama greške
+- `frontend/src/routes/index.jsx` — dodavanje ruta za dashboarde po ulozi (`/dashboard/student`, `/dashboard/company`, `/dashboard/coordinator`)
+- `frontend/src/pages/StudentDashboard.jsx`, `KompanijaDashboard.jsx`, `KoordinatorDashboard.jsx` — privremene dummy stranice
+- `frontend/src/modules/auth/ProtectedRoute.jsx` — komponenta za zaštitu ruta prema ulozi; neautentificirani korisnici se preusmjeravaju na `/auth`, korisnici s pogrešnom ulogom na `/`
+- `backend/src/business/services/auth.service.js` — poslovna logika prijave: pretraga korisnika po usernamu ili emailu, provjera statusa naloga, bcrypt verifikacija lozinke, potpisivanje JWT tokena
+- `backend/src/business/controllers/auth.controller.js` — HTTP sloj: validacija tijela zahtjeva, poziv servisa, mapiranje grešaka na HTTP statuse
+- `backend/src/middleware/auth.middleware.js` — `authenticate` middleware: verifikacija Bearer tokena, postavljanje `req.user`
+- `backend/src/middleware/rbac.middleware.js` — `authorize(...roles)` middleware: provjera uloge prijavljenog korisnika
+- `backend/src/presentation/routes/auth.routes.js` — `POST /api/auth/login` ruta
+- Upute za CommonJS konverziju svih generisanih fajlova (projekat ne koristi ES Module sintaksu)
+- Upute za ispravku `admin.routes.js` — destrukturiranje `{ authenticate }` i `{ authorize }` umjesto importa cijelog modula
+- Izmjene u `LandingPage.jsx` — prikaz imena korisnika i dugmeta "Odjavi se" u navbaru kada postoji aktivna sesija, sa preusmjeravanjem na odgovarajući dashboard
+
+---
+
+**Šta je tim prihvatio:**
+
+- Kompletnu arhitekturu login toka (frontend + backend)
+- Dijeljeni `variables.css` sistem tokena
+- `AuthContext` s `sessionStorage` persistencijom
+- JWT autentifikaciju i RBAC middleware
+- `ProtectedRoute` komponentu smještenu u `modules/auth/`
+- Bosanske poruke grešaka na svim slojevima
+- Prikaz korisničkog imena i dugmeta "Odjavi se" u navbaru landing pagea
+
+---
+
+**Šta je tim izmijenio:**
+
+- Pozicioniranje `ROLE_ROUTES` konstante premješteno na nivo modula u `LandingPage.jsx` (bilo greškom definirano unutar `AreasCarousel` komponente što je uzrokovalo bijeli ekran)
+- Stilizacija dugmeta "Odjavi se" usklađena s postojećim `btnOutline` stilom iz landing pagea
+
+**Šta je tim odbacio:**
+
+---
+
+**Rizici, problemi ili greške:**
+
+- `Failed to fetch` greška u browseru uzrokovana nepokrenuti backend serverom — nije bila greška u kodu
+- `DB_URL undefined` greška pri pokretanju — `dotenv.config()` nije bio pozvan prije učitavanja `db.js`; riješeno premještanjem `require('dotenv').config()` na vrh `app.js`
+- `Router.use() requires a middleware function` greška u `admin.routes.js` — stari placeholder middleware exportovao je funkciju direktno, dok novi exportuje named export; riješeno destrukturiranjem `{ authenticate }` i `{ authorize }` pri importu
+- `bcrypt` modul nije bio instaliran — riješeno pokretanjem `npm install bcrypt@5 jsonwebtoken` u `backend/` direktoriju
+- `ROLE_ROUTES` nedostupan u scope-u `LandingPage` komponente jer je bio definisan unutar `AreasCarousel` — uzrokovalo bijeli ekran; riješeno izvlačenjem na nivo modula
