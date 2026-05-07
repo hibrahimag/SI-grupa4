@@ -41,6 +41,21 @@ export function deleteFaculty(id) {
   return apiRequest(`/admin/faculties/${id}`, { method: 'DELETE' });
 }
 
+export function getOdsjeci(fakultetID) {
+  return apiRequest(`/admin/faculties/${fakultetID}/odsjeci`);
+}
+
+export function createOdsjek(fakultetID, naziv) {
+  return apiRequest(`/admin/faculties/${fakultetID}/odsjeci`, {
+    method: 'POST',
+    body: JSON.stringify({ naziv }),
+  });
+}
+
+export function deleteOdsjek(id) {
+  return apiRequest(`/admin/odsjeci/${id}`, { method: 'DELETE' });
+}
+
 export function getUserApprovalRequests() {
   return apiRequest('/approval-requests/users');
 }

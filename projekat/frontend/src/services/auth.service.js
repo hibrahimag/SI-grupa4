@@ -66,6 +66,10 @@ export function register(data) {
   });
 }
 
+export function getPublicOdsjeci(fakultetID) {
+  return apiRequest(`/auth/faculties/${fakultetID}/odsjeci`);
+}
+
 export function verifyEmailToken(token) {
   return apiRequest(`/auth/verify-email?token=${encodeURIComponent(token)}`);
 }
