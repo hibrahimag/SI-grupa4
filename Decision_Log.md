@@ -58,3 +58,14 @@
 - **Status:** Aktivna
 
 ---
+
+### DL-S6-03
+- **Datum:** 03.05.2026
+- **Naziv odluke:** Dodavanje upravljanja fakultetima u admin panel
+- **Opis problema:** Tabela fakulteta postojala je u bazi podataka, međutim nije bila dostupna kroz admin panel, što je onemogućavalo administratorima pregled i upravljanje fakultetima direktno kroz aplikaciju.
+- **Razmatrane opcije:**
+  - Opcija A: Dodati stranicu za upravljanje fakultetima u admin panel s mogućnošću dodavanja, uređivanja i brisanja fakulteta
+- **Odabrana opcija:** Opcija A
+- **Razlog izbora:** Postojeća tabela fakulteta u bazi nije bila iskorištena kroz UI. Dodavanjem ove stranice u admin panel administrator dobija direktan uvid i kontrolu nad listom fakulteta u sistemu bez potrebe za direktnim pristupom bazi podataka.
+- **Posljedice odluke:** Admin panel proširen je novom stranicom "Fakulteti" koja prikazuje listu svih fakulteta u sistemu (naziv, email, adresa) te omogućava dodavanje novih fakulteta i uređivanje ili brisanje postojećih. Podaci se učitavaju iz postojeće tabele u bazi podataka.
+- **Status:** Aktivna
