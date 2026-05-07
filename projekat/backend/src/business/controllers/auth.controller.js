@@ -1,4 +1,4 @@
-// backend/src/business/controllers/auth.controller.js
+'use strict';
 
 const authService = require('../services/auth.service');
 
@@ -21,6 +21,15 @@ async function getPublicFaculties(req, res) {
   }
 }
 
+async function getPublicOdsjeci(req, res) {
+  try {
+    const odsjeci = await authService.getPublicOdsjeci(Number(req.params.id));
+    res.json(odsjeci);
+  } catch (err) {
+    res.status(err.status || 500).json({ message: err.message });
+  }
+}
+
 async function register(req, res) {
   try {
     await authService.register(req.body);
@@ -30,9 +39,6 @@ async function register(req, res) {
   }
 }
 
-/**
- * POST /api/auth/login
- */
 async function loginController(req, res) {
   const { identifier, password } = req.body;
 
@@ -54,7 +60,7 @@ async function loginController(req, res) {
       'Pogrešno korisničko ime/e-mail ili lozinka.',
       'Vaš nalog je deaktiviran. Kontaktirajte administratora.',
       'Vaš nalog još nije aktivan. Sačekajte odobrenje administratora.',
-      'Niste verifikovali email adresu. Ne možete se prijaviti.',
+      'Email nije verifikovan. Verifikujte email prije prijave.',
       'Vaš korisnički račun čeka odobrenje administratora ili koordinatora.',
       'Vaš korisnički račun još nije odobren.',
     ].includes(err.message);
@@ -64,7 +70,6 @@ async function loginController(req, res) {
     }
 
     console.error('[auth.controller] Unexpected error during login:', err);
-
     return res.status(500).json({
       message: 'Došlo je do greške na serveru. Pokušajte ponovo.',
     });
@@ -82,13 +87,11 @@ async function forgotPasswordController(req, res) {
 
   try {
     await authService.forgotPasswordService(email.trim());
-
     return res.status(200).json({
       message: 'Ako nalog postoji, link za reset lozinke je poslan na e-mail.',
     });
   } catch (err) {
     console.error('[auth.controller] Password reset request error:', err);
-
     return res.status(500).json({
       message: 'Došlo je do greške pri slanju reset linka.',
     });
@@ -112,24 +115,15 @@ async function resetPasswordController(req, res) {
 
   try {
     await authService.resetPasswordService(token, password);
-
     return res.status(200).json({
       message: 'Lozinka je uspješno promijenjena.',
     });
   } catch (err) {
-    const isExpected = [
-      'Neispravan token.',
-      'Token je istekao.',
-    ].includes(err.message);
-
+    const isExpected = ['Neispravan token.', 'Token je istekao.'].includes(err.message);
     if (isExpected) {
-      return res.status(400).json({
-        message: err.message,
-      });
+      return res.status(400).json({ message: err.message });
     }
-
     console.error('[auth.controller] Password reset error:', err);
-
     return res.status(500).json({
       message: 'Došlo je do greške pri resetovanju lozinke.',
     });
@@ -198,6 +192,7 @@ async function resendVerificationEmailController(req, res) {
 module.exports = {
   checkAvailability,
   getPublicFaculties,
+  getPublicOdsjeci,
   register,
   loginController,
   forgotPasswordController,

@@ -6,6 +6,7 @@ process.env.FRONTEND_URL = 'http://localhost:5173';
 jest.mock('../../src/infrastructure/database/models', () => ({
   User: { findOne: jest.fn() },
   Fakultet: { findAll: jest.fn() },
+  Odsjek: { findAll: jest.fn() },
   Student: {},
   Koordinator: {},
   Kompanija: {},
@@ -13,20 +14,25 @@ jest.mock('../../src/infrastructure/database/models', () => ({
 jest.mock('../../src/infrastructure/database/db', () => ({ transaction: jest.fn() }));
 jest.mock('../../src/business/services/email.service', () => ({
   sendPasswordResetEmail: jest.fn().mockResolvedValue(undefined),
+  sendEmailVerificationEmail: jest.fn().mockResolvedValue(undefined),
 }));
 jest.mock('bcrypt');
 jest.mock('jsonwebtoken');
 
-const { User, Fakultet } = require('../../src/infrastructure/database/models');
+const { User, Fakultet, Odsjek } = require('../../src/infrastructure/database/models');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { sendPasswordResetEmail } = require('../../src/business/services/email.service');
+const crypto = require('crypto');
+const { sendPasswordResetEmail, sendEmailVerificationEmail } = require('../../src/business/services/email.service');
 const {
   loginService,
   checkAvailability,
   getPublicFaculties,
+  getPublicOdsjeci,
   forgotPasswordService,
   resetPasswordService,
+  verifyEmailService,
+  resendVerificationEmailService,
 } = require('../../src/business/services/auth.service');
 
 function makeUser(overrides = {}) {
@@ -36,6 +42,8 @@ function makeUser(overrides = {}) {
     role: 'STUDENT', status: 'ACTIVE',
     passwordHash: '$2b$10$hashedpassword',
     institution: null,
+    emailVerifikovan: true,
+    approvalStatus: 'APPROVED',
     passwordResetToken: null,
     passwordResetExpires: null,
     save: jest.fn().mockResolvedValue(undefined),
@@ -247,6 +255,108 @@ describe('getPublicFaculties', () => {
   test('vraća prazan niz ako nema fakulteta', async () => {
     Fakultet.findAll.mockResolvedValue([]);
     const result = await getPublicFaculties();
+    expect(result).toEqual([]);
+  });
+});
+
+describe('verifyEmailService', () => {
+  test('baca 400 za neispravan verifikacioni token', async () => {
+    User.findOne.mockResolvedValue(null);
+
+    await expect(verifyEmailService('wrongtoken')).rejects.toMatchObject({ status: 400 });
+  });
+
+  test('baca 400 ako je verifikacioni token istekao', async () => {
+    User.findOne.mockResolvedValue(makeUser({
+      emailVerificationTokenExpiresAt: new Date(Date.now() - 1000),
+    }));
+
+    await expect(verifyEmailService('expiredtoken')).rejects.toMatchObject({ status: 400 });
+  });
+
+  test('uspjesno verifikuje email i cisti token podatke', async () => {
+    const token = 'validtoken';
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const user = makeUser({
+      emailVerifikovan: false,
+      approvalStatus: null,
+      emailVerificationToken: tokenHash,
+      emailVerificationTokenExpiresAt: new Date(Date.now() + 3600000),
+      approvedBy: 2,
+      approvedAt: new Date('2025-01-01'),
+      rejectedBy: 3,
+      rejectedAt: new Date('2025-01-02'),
+      rejectionReason: 'Nije kompletno',
+    });
+    User.findOne.mockResolvedValue(user);
+
+    await verifyEmailService(token);
+
+    expect(User.findOne).toHaveBeenCalledWith({ where: { emailVerificationToken: tokenHash } });
+    expect(user.emailVerifikovan).toBe(true);
+    expect(user.approvalStatus).toBe('PENDING_APPROVAL');
+    expect(user.approvalRequestedAt).toBeInstanceOf(Date);
+    expect(user.emailVerificationToken).toBeNull();
+    expect(user.emailVerificationTokenExpiresAt).toBeNull();
+    expect(user.approvedBy).toBeNull();
+    expect(user.approvedAt).toBeNull();
+    expect(user.rejectedBy).toBeNull();
+    expect(user.rejectedAt).toBeNull();
+    expect(user.rejectionReason).toBeNull();
+    expect(user.save).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('resendVerificationEmailService', () => {
+  test('tiho vraca undefined ako korisnik ne postoji', async () => {
+    User.findOne.mockResolvedValue(null);
+
+    await expect(resendVerificationEmailService('missing@test.com')).resolves.toBeUndefined();
+    expect(sendEmailVerificationEmail).not.toHaveBeenCalled();
+  });
+
+  test('baca 400 ako je email vec verifikovan', async () => {
+    User.findOne.mockResolvedValue(makeUser({ emailVerifikovan: true }));
+
+    await expect(resendVerificationEmailService('haris@test.com')).rejects.toMatchObject({ status: 400 });
+  });
+
+  test('postavlja novi verifikacioni token za neverifikovanog korisnika', async () => {
+    const user = makeUser({
+      emailVerifikovan: false,
+      emailVerificationToken: null,
+      emailVerificationTokenExpiresAt: null,
+    });
+    User.findOne.mockResolvedValue(user);
+
+    await resendVerificationEmailService('haris@test.com');
+
+    expect(user.emailVerificationToken).toMatch(/^[a-f0-9]{64}$/);
+    expect(user.emailVerificationTokenExpiresAt).toBeInstanceOf(Date);
+    expect(user.save).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('getPublicOdsjeci', () => {
+  test('vraca odsjeke za dati fakultet sortirane po nazivu', async () => {
+    const odsjeci = [{ id: 1, naziv: 'Racunarstvo' }];
+    Odsjek.findAll.mockResolvedValue(odsjeci);
+
+    const result = await getPublicOdsjeci(1);
+
+    expect(result).toEqual(odsjeci);
+    expect(Odsjek.findAll).toHaveBeenCalledWith({
+      where: { fakultetID: 1 },
+      attributes: ['id', 'naziv'],
+      order: [['naziv', 'ASC']],
+    });
+  });
+
+  test('vraca prazan niz ako fakultet nema odsjeka', async () => {
+    Odsjek.findAll.mockResolvedValue([]);
+
+    const result = await getPublicOdsjeci(1);
+
     expect(result).toEqual([]);
   });
 });

@@ -1,24 +1,22 @@
-// backend/src/business/services/auth.service.js
+'use strict';
+
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { Op, UniqueConstraintError } = require('sequelize');
-const { User, Student, Koordinator, Kompanija, Fakultet } = require('../../infrastructure/database/models');
-const sequelize = require('../../infrastructure/database/db');
-
-const JWT_SECRET     = process.env.JWT_SECRET;
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN ?? '8h';
-const SALT_ROUNDS    = 10;
-const EMAIL_RE       = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-//za reset lozinke
 const crypto = require('crypto');
+const { Op, UniqueConstraintError } = require('sequelize');
+const { User, Student, Koordinator, Kompanija, Fakultet, Odsjek } = require('../../infrastructure/database/models');
+const sequelize = require('../../infrastructure/database/db');
 const { sendPasswordResetEmail, sendEmailVerificationEmail } = require('./email.service');
+
+const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN ?? '8h';
+const SALT_ROUNDS = 10;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_VERIFICATION_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
 
 if (!JWT_SECRET) {
   throw new Error('JWT_SECRET environment variable is not set.');
 }
-
-const EMAIL_VERIFICATION_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
 
 function createEmailVerificationTokenData() {
   const rawToken = crypto.randomBytes(32).toString('hex');
@@ -42,14 +40,15 @@ function getFrontendBaseUrl() {
 async function sendVerificationEmailForUser(user) {
   const token = await setVerificationTokenForUser(user);
   const frontendBaseUrl = getFrontendBaseUrl();
+  const verificationLink = frontendBaseUrl
+    ? `${frontendBaseUrl}/verify-email?token=${token}`
+    : null;
 
-  if (!frontendBaseUrl) {
-    const err = new Error('FRONTEND_URL environment variable is not set.');
-    err.status = 500;
-    throw err;
+  if (!frontendBaseUrl || !process.env.MAIL_HOST) {
+    console.log(`[EMAIL VERIFICATION] ${user.email} -> ${verificationLink ?? '(FRONTEND_URL not set)'}`);
+    return;
   }
 
-  const verificationLink = `${frontendBaseUrl}/verify-email?token=${token}`;
   await sendEmailVerificationEmail(user.email, verificationLink);
 }
 
@@ -66,6 +65,10 @@ async function checkAvailability(type, value) {
 
 async function getPublicFaculties() {
   return Fakultet.findAll({ attributes: ['id', 'naziv'], order: [['naziv', 'ASC']] });
+}
+
+async function getPublicOdsjeci(fakultetID) {
+  return Odsjek.findAll({ where: { fakultetID }, attributes: ['id', 'naziv'], order: [['naziv', 'ASC']] });
 }
 
 async function register(data) {
@@ -101,7 +104,7 @@ async function register(data) {
 
   try {
     if (role === 'STUDENT') {
-      const { ime, prezime, fakultetID, year_of_study, index_number } = data;
+      const { ime, prezime, fakultetID, year_of_study, index_number, odsjekID } = data;
       const year = Number(year_of_study);
       if (!Number.isInteger(year) || year < 1) {
         const err = new Error('Godina studija mora biti pozitivan cijeli broj.');
@@ -115,22 +118,22 @@ async function register(data) {
         throw err;
       }
       const user = await sequelize.transaction(async (t) => {
-        const user = await User.create(
+        const createdUser = await User.create(
           { ime, prezime, username, email, passwordHash, role: 'STUDENT', status: 'PENDING', institution: faculty.naziv },
           { transaction: t }
         );
         await Student.create(
-          { userID: user.id, fakultetID: Number(fakultetID), year_of_study: year, index_number },
+          { userID: createdUser.id, fakultetID: Number(fakultetID), year_of_study: year, index_number, odsjekID: odsjekID ? Number(odsjekID) : null },
           { transaction: t }
         );
-        return user;
+        return createdUser;
       });
       await sendVerificationEmailForUser(user);
       return user;
     }
 
     if (role === 'COORDINATOR') {
-      const { ime, prezime, fakultetID } = data;
+      const { ime, prezime, fakultetID, odsjekID } = data;
       const faculty = await Fakultet.findByPk(fakultetID);
       if (!faculty) {
         const err = new Error('Odabrani fakultet nije pronađen.');
@@ -138,29 +141,32 @@ async function register(data) {
         throw err;
       }
       const user = await sequelize.transaction(async (t) => {
-        const user = await User.create(
+        const createdUser = await User.create(
           { ime, prezime, username, email, passwordHash, role: 'COORDINATOR', status: 'PENDING', institution: faculty.naziv },
           { transaction: t }
         );
-        await Koordinator.create({ userID: user.id, fakultetID: Number(fakultetID) }, { transaction: t });
-        return user;
+        await Koordinator.create(
+          { userID: createdUser.id, fakultetID: Number(fakultetID), odsjekID: odsjekID ? Number(odsjekID) : null },
+          { transaction: t }
+        );
+        return createdUser;
       });
       await sendVerificationEmailForUser(user);
       return user;
     }
 
     if (role === 'COMPANY') {
-      const { naziv, adresa, telefon, opisPoslovanja } = data;
+      const { naziv, adresa, telefon, opisPoslovanja, kontaktOsoba } = data;
       const user = await sequelize.transaction(async (t) => {
-        const user = await User.create(
+        const createdUser = await User.create(
           { ime: naziv, prezime: '', username, email, passwordHash, role: 'COMPANY', status: 'PENDING', institution: naziv },
           { transaction: t }
         );
         await Kompanija.create(
-          { userID: user.id, naziv, adresa: adresa || null, telefon: telefon || null, opisPoslovanja: opisPoslovanja || null },
+          { userID: createdUser.id, naziv, adresa: adresa || null, telefon: telefon || null, opisPoslovanja: opisPoslovanja || null, kontaktOsoba: kontaktOsoba || null },
           { transaction: t }
         );
-        return user;
+        return createdUser;
       });
       await sendVerificationEmailForUser(user);
       return user;
@@ -172,9 +178,7 @@ async function register(data) {
   } catch (err) {
     if (err instanceof UniqueConstraintError) {
       const field = err.errors?.[0]?.path;
-      const msg = field === 'email'
-        ? 'Email adresa je već registrovana.'
-        : 'Korisničko ime je već zauzeto.';
+      const msg = field === 'email' ? 'Email adresa je već registrovana.' : 'Korisničko ime je već zauzeto.';
       const conflict = new Error(msg);
       conflict.status = 409;
       throw conflict;
@@ -183,41 +187,23 @@ async function register(data) {
   }
 }
 
-/**
- * Validates credentials and returns a signed JWT + safe user payload.
- *
- * @param {string} identifier  – username or email (the user may type either)
- * @param {string} password    – plaintext password
- * @returns {{ token: string, user: object }}
- * @throws {Error} with a Bosnian user-facing message on any failure
- */
 async function loginService(identifier, password) {
-  // ── 1. Look up user by username OR email ──────────────────────────────────
   const user = await User.findOne({
     where: {
-      // Sequelize Op.or to match either column
-      [Op.or]: [
-        { username: identifier },
-        { email: identifier },
-      ],
+      [Op.or]: [{ username: identifier }, { email: identifier }],
     },
   });
 
-
-
-
-  // Deliberately vague: do not reveal whether the identifier exists
   if (!user) {
     throw new Error('Pogrešno korisničko ime/e-mail ili lozinka.');
   }
 
-  // ── 2. Check account status before verifying password ────────────────────
-  if (user.status === 'DEACTIVATED') {
-    throw new Error('Vaš nalog je deaktiviran. Kontaktirajte administratora.');
+  if (!user.emailVerifikovan) {
+    throw new Error('Email nije verifikovan. Verifikujte email prije prijave.');
   }
 
-  if (!user.emailVerifikovan) {
-    throw new Error('Niste verifikovali email adresu. Ne možete se prijaviti.');
+  if (user.status === 'DEACTIVATED') {
+    throw new Error('Vaš nalog je deaktiviran. Kontaktirajte administratora.');
   }
 
   if (user.status === 'PENDING') {
@@ -239,87 +225,32 @@ async function loginService(identifier, password) {
     }
   }
 
-  // ── 3. Verify password ────────────────────────────────────────────────────
   const passwordMatch = await bcrypt.compare(password, user.passwordHash);
-
   if (!passwordMatch) {
     throw new Error('Pogrešno korisničko ime/e-mail ili lozinka.');
   }
 
-  // ── 4. Sign JWT ───────────────────────────────────────────────────────────
-  const payload = {
-    id:   user.id,
-    role: user.role,
-  };
-
-  const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
-
-  // ── 5. Return token + safe user object (never expose passwordHash) ────────
+  const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
   return {
     token,
     user: {
-      id:          user.id,
-      ime:         user.ime,
-      prezime:     user.prezime,
-      username:    user.username,
-      email:       user.email,
-      role:        user.role,
+      id: user.id,
+      ime: user.ime,
+      prezime: user.prezime,
+      username: user.username,
+      email: user.email,
+      role: user.role,
       institution: user.institution,
+      status: user.status,
+      emailVerifikovan: user.emailVerifikovan,
     },
   };
-}
-
-async function forgotPasswordService(email) {
-  const user = await User.findOne({
-    where: { email },
-  });
-
-  if (!user) {
-    return;
-  }
-
-  const resetToken = crypto.randomBytes(32).toString('hex');
-
-  user.passwordResetToken = resetToken;
-  user.passwordResetExpires = new Date(Date.now() + 60 * 60 * 1000);
-
-  await user.save();
-
-  const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
-
-  await sendPasswordResetEmail(user.email, resetLink);
-}
-
-async function resetPasswordService(token, newPassword) {
-  const user = await User.findOne({
-    where: {
-      passwordResetToken: token,
-    },
-  });
-
-  if (!user) {
-    throw new Error('Neispravan token.');
-  }
-
-  if (!user.passwordResetExpires || user.passwordResetExpires < new Date()) {
-    throw new Error('Token je istekao.');
-  }
-
-  const hashedPassword = await bcrypt.hash(newPassword, SALT_ROUNDS);
-
-  user.passwordHash = hashedPassword;
-  user.passwordResetToken = null;
-  user.passwordResetExpires = null;
-
-  await user.save();
 }
 
 async function verifyEmailService(token) {
   const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
   const user = await User.findOne({
-    where: {
-      emailVerificationToken: tokenHash,
-    },
+    where: { emailVerificationToken: tokenHash },
   });
 
   if (!user) {
@@ -362,9 +293,44 @@ async function resendVerificationEmailService(email) {
   await sendVerificationEmailForUser(user);
 }
 
+async function forgotPasswordService(email) {
+  const user = await User.findOne({ where: { email } });
+
+  if (!user) {
+    return;
+  }
+
+  const resetToken = crypto.randomBytes(32).toString('hex');
+  user.passwordResetToken = resetToken;
+  user.passwordResetExpires = new Date(Date.now() + 60 * 60 * 1000);
+  await user.save();
+
+  const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+  await sendPasswordResetEmail(user.email, resetLink);
+}
+
+async function resetPasswordService(token, newPassword) {
+  const user = await User.findOne({ where: { passwordResetToken: token } });
+
+  if (!user) {
+    throw new Error('Neispravan token.');
+  }
+
+  if (!user.passwordResetExpires || user.passwordResetExpires < new Date()) {
+    throw new Error('Token je istekao.');
+  }
+
+  const hashedPassword = await bcrypt.hash(newPassword, SALT_ROUNDS);
+  user.passwordHash = hashedPassword;
+  user.passwordResetToken = null;
+  user.passwordResetExpires = null;
+  await user.save();
+}
+
 module.exports = {
   checkAvailability,
   getPublicFaculties,
+  getPublicOdsjeci,
   register,
   loginService,
   forgotPasswordService,

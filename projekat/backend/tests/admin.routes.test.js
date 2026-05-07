@@ -18,10 +18,26 @@ jest.mock('../src/infrastructure/database/models', () => ({
     findAll: jest.fn(),
     findByPk: jest.fn(),
   },
+  Fakultet: {
+    findAll: jest.fn(),
+    findByPk: jest.fn(),
+    create: jest.fn(),
+  },
+  Odsjek: {
+    findAll: jest.fn(),
+    findByPk: jest.fn(),
+    create: jest.fn(),
+  },
+  Koordinator: {
+    count: jest.fn(),
+  },
+  Student: {
+    count: jest.fn(),
+  },
 }));
 
 const app = require('../src/app');
-const { User } = require('../src/infrastructure/database/models');
+const { User, Fakultet, Odsjek, Koordinator, Student } = require('../src/infrastructure/database/models');
 
 function makeMockUser(overrides = {}) {
   const base = {
@@ -32,10 +48,33 @@ function makeMockUser(overrides = {}) {
     role: 'STUDENT',
     status: 'PENDING',
     institution: 'FIT',
+    emailVerifikovan: true,
     created_at: new Date('2025-01-01'),
   };
   const data = { ...base, ...overrides };
   return { ...data, save: jest.fn().mockResolvedValue(undefined) };
+}
+
+function makeMockFaculty(overrides = {}) {
+  return {
+    id: 1,
+    naziv: 'FIT',
+    email: 'fit@unsa.ba',
+    adresa: 'Zmaja od Bosne',
+    save: jest.fn().mockResolvedValue(undefined),
+    destroy: jest.fn().mockResolvedValue(undefined),
+    ...overrides,
+  };
+}
+
+function makeMockOdsjek(overrides = {}) {
+  return {
+    id: 1,
+    naziv: 'Racunarstvo',
+    fakultetID: 1,
+    destroy: jest.fn().mockResolvedValue(undefined),
+    ...overrides,
+  };
 }
 
 beforeEach(() => jest.clearAllMocks());
@@ -193,6 +232,191 @@ describe('PATCH /api/admin/users/:id/role', () => {
 
     expect(res.status).toBe(404);
     expect(res.body.message).toMatch(/not found/i);
+  });
+});
+
+describe('GET /api/admin/faculties', () => {
+  test('200 - vraca listu fakulteta', async () => {
+    Fakultet.findAll.mockResolvedValue([makeMockFaculty()]);
+
+    const res = await request(app).get('/api/admin/faculties');
+
+    expect(res.status).toBe(200);
+    expect(res.body[0]).toMatchObject({ id: 1, naziv: 'FIT' });
+    expect(Fakultet.findAll).toHaveBeenCalledWith(
+      expect.objectContaining({ order: [['naziv', 'ASC']] })
+    );
+  });
+
+  test('500 - greska baze vraca 500', async () => {
+    Fakultet.findAll.mockRejectedValue(new Error('DB failed'));
+
+    const res = await request(app).get('/api/admin/faculties');
+
+    expect(res.status).toBe(500);
+    expect(res.body.message).toBe('DB failed');
+  });
+});
+
+describe('POST /api/admin/faculties', () => {
+  test('201 - kreira fakultet', async () => {
+    Fakultet.create.mockResolvedValue(makeMockFaculty({ naziv: 'PMF' }));
+
+    const res = await request(app)
+      .post('/api/admin/faculties')
+      .send({ naziv: ' PMF ', email: 'pmf@unsa.ba', adresa: 'Sarajevo' });
+
+    expect(res.status).toBe(201);
+    expect(res.body).toMatchObject({ naziv: 'PMF' });
+    expect(Fakultet.create).toHaveBeenCalledWith({
+      naziv: 'PMF',
+      email: 'pmf@unsa.ba',
+      adresa: 'Sarajevo',
+    });
+  });
+
+  test('400 - naziv je obavezan', async () => {
+    const res = await request(app)
+      .post('/api/admin/faculties')
+      .send({ email: 'fit@unsa.ba' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.message).toMatch(/naziv/i);
+  });
+});
+
+describe('PUT /api/admin/faculties/:id', () => {
+  test('200 - azurira fakultet', async () => {
+    const faculty = makeMockFaculty({ naziv: 'Stari naziv' });
+    Fakultet.findByPk.mockResolvedValue(faculty);
+
+    const res = await request(app)
+      .put('/api/admin/faculties/1')
+      .send({ naziv: 'Novi naziv' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.naziv).toBe('Novi naziv');
+    expect(faculty.save).toHaveBeenCalledTimes(1);
+  });
+
+  test('400 - id mora biti pozitivan broj', async () => {
+    const res = await request(app)
+      .put('/api/admin/faculties/abc')
+      .send({ naziv: 'FIT' });
+
+    expect(res.status).toBe(400);
+    expect(Fakultet.findByPk).not.toHaveBeenCalled();
+  });
+
+  test('404 - fakultet ne postoji', async () => {
+    Fakultet.findByPk.mockResolvedValue(null);
+
+    const res = await request(app)
+      .put('/api/admin/faculties/999')
+      .send({ naziv: 'FIT' });
+
+    expect(res.status).toBe(404);
+  });
+});
+
+describe('DELETE /api/admin/faculties/:id', () => {
+  test('200 - brise fakultet bez povezanih zapisa', async () => {
+    const faculty = makeMockFaculty();
+    Fakultet.findByPk.mockResolvedValue(faculty);
+    Koordinator.count.mockResolvedValue(0);
+    Student.count.mockResolvedValue(0);
+
+    const res = await request(app).delete('/api/admin/faculties/1');
+
+    expect(res.status).toBe(200);
+    expect(faculty.destroy).toHaveBeenCalledTimes(1);
+  });
+
+  test('409 - ne brise fakultet sa koordinatorima', async () => {
+    Fakultet.findByPk.mockResolvedValue(makeMockFaculty());
+    Koordinator.count.mockResolvedValue(1);
+
+    const res = await request(app).delete('/api/admin/faculties/1');
+
+    expect(res.status).toBe(409);
+    expect(Student.count).not.toHaveBeenCalled();
+  });
+});
+
+describe('GET /api/admin/faculties/:id/odsjeci', () => {
+  test('200 - vraca odsjeke za fakultet', async () => {
+    Fakultet.findByPk.mockResolvedValue(makeMockFaculty());
+    Odsjek.findAll.mockResolvedValue([makeMockOdsjek()]);
+
+    const res = await request(app).get('/api/admin/faculties/1/odsjeci');
+
+    expect(res.status).toBe(200);
+    expect(res.body[0]).toMatchObject({ naziv: 'Racunarstvo', fakultetID: 1 });
+    expect(Odsjek.findAll).toHaveBeenCalledWith({
+      where: { fakultetID: 1 },
+      order: [['naziv', 'ASC']],
+    });
+  });
+
+  test('400 - faculty id mora biti pozitivan broj', async () => {
+    const res = await request(app).get('/api/admin/faculties/0/odsjeci');
+
+    expect(res.status).toBe(400);
+    expect(Odsjek.findAll).not.toHaveBeenCalled();
+  });
+
+  test('404 - fakultet ne postoji', async () => {
+    Fakultet.findByPk.mockResolvedValue(null);
+
+    const res = await request(app).get('/api/admin/faculties/999/odsjeci');
+
+    expect(res.status).toBe(404);
+  });
+});
+
+describe('POST /api/admin/faculties/:id/odsjeci', () => {
+  test('201 - kreira odsjek', async () => {
+    Fakultet.findByPk.mockResolvedValue(makeMockFaculty());
+    Odsjek.create.mockResolvedValue(makeMockOdsjek({ naziv: 'Softversko inzenjerstvo' }));
+
+    const res = await request(app)
+      .post('/api/admin/faculties/1/odsjeci')
+      .send({ naziv: ' Softversko inzenjerstvo ' });
+
+    expect(res.status).toBe(201);
+    expect(res.body.naziv).toBe('Softversko inzenjerstvo');
+    expect(Odsjek.create).toHaveBeenCalledWith({
+      naziv: 'Softversko inzenjerstvo',
+      fakultetID: 1,
+    });
+  });
+
+  test('400 - naziv je obavezan', async () => {
+    const res = await request(app)
+      .post('/api/admin/faculties/1/odsjeci')
+      .send({});
+
+    expect(res.status).toBe(400);
+  });
+});
+
+describe('DELETE /api/admin/odsjeci/:id', () => {
+  test('200 - brise odsjek', async () => {
+    const odsjek = makeMockOdsjek();
+    Odsjek.findByPk.mockResolvedValue(odsjek);
+
+    const res = await request(app).delete('/api/admin/odsjeci/1');
+
+    expect(res.status).toBe(200);
+    expect(odsjek.destroy).toHaveBeenCalledTimes(1);
+  });
+
+  test('404 - odsjek ne postoji', async () => {
+    Odsjek.findByPk.mockResolvedValue(null);
+
+    const res = await request(app).delete('/api/admin/odsjeci/999');
+
+    expect(res.status).toBe(404);
   });
 });
 
