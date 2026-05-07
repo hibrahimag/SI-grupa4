@@ -8,8 +8,6 @@ const {
   getPublicOdsjeci,
   checkAvailability,
   register,
-  verifyEmailController,
-  resendVerificationEmailController,
 } = require('../../business/controllers/auth.controller');
 
 const router = Router();
@@ -19,8 +17,6 @@ router.get('/faculties/:id/odsjeci', getPublicOdsjeci);
 router.get('/check', checkAvailability);
 router.post('/register', register);
 router.post('/login', loginController);
-router.get('/verify-email', verifyEmailController);
-router.post('/resend-verification-email', resendVerificationEmailController);
 router.post('/forgot-password', forgotPasswordController);
 router.post('/reset-password', resetPasswordController);
 

@@ -6,50 +6,15 @@ const crypto = require('crypto');
 const { Op, UniqueConstraintError } = require('sequelize');
 const { User, Student, Koordinator, Kompanija, Fakultet, Odsjek } = require('../../infrastructure/database/models');
 const sequelize = require('../../infrastructure/database/db');
-const { sendPasswordResetEmail, sendEmailVerificationEmail } = require('./email.service');
+const { sendPasswordResetEmail } = require('./email.service');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN ?? '8h';
 const SALT_ROUNDS = 10;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const EMAIL_VERIFICATION_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
 
 if (!JWT_SECRET) {
   throw new Error('JWT_SECRET environment variable is not set.');
-}
-
-function createEmailVerificationTokenData() {
-  const rawToken = crypto.randomBytes(32).toString('hex');
-  const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
-  const expiresAt = new Date(Date.now() + EMAIL_VERIFICATION_TOKEN_TTL_MS);
-  return { rawToken, tokenHash, expiresAt };
-}
-
-async function setVerificationTokenForUser(user) {
-  const { rawToken, tokenHash, expiresAt } = createEmailVerificationTokenData();
-  user.emailVerificationToken = tokenHash;
-  user.emailVerificationTokenExpiresAt = expiresAt;
-  await user.save();
-  return rawToken;
-}
-
-function getFrontendBaseUrl() {
-  return process.env.FRONTEND_URL || process.env.FRONTEND_BASE_URL;
-}
-
-async function sendVerificationEmailForUser(user) {
-  const token = await setVerificationTokenForUser(user);
-  const frontendBaseUrl = getFrontendBaseUrl();
-  const verificationLink = frontendBaseUrl
-    ? `${frontendBaseUrl}/verify-email?token=${token}`
-    : null;
-
-  if (!frontendBaseUrl || !process.env.MAIL_HOST) {
-    console.log(`[EMAIL VERIFICATION] ${user.email} -> ${verificationLink ?? '(FRONTEND_URL not set)'}`);
-    return;
-  }
-
-  await sendEmailVerificationEmail(user.email, verificationLink);
 }
 
 async function checkAvailability(type, value) {
@@ -128,7 +93,6 @@ async function register(data) {
         );
         return createdUser;
       });
-      try { await sendVerificationEmailForUser(user); } catch (e) { console.error('[register] Email send failed:', e.message); }
       return user;
     }
 
@@ -151,7 +115,6 @@ async function register(data) {
         );
         return createdUser;
       });
-      try { await sendVerificationEmailForUser(user); } catch (e) { console.error('[register] Email send failed:', e.message); }
       return user;
     }
 
@@ -168,7 +131,6 @@ async function register(data) {
         );
         return createdUser;
       });
-      try { await sendVerificationEmailForUser(user); } catch (e) { console.error('[register] Email send failed:', e.message); }
       return user;
     }
 
@@ -196,10 +158,6 @@ async function loginService(identifier, password) {
 
   if (!user) {
     throw new Error('Pogrešno korisničko ime/e-mail ili lozinka.');
-  }
-
-  if (!user.emailVerifikovan) {
-    throw new Error('Email nije verifikovan. Verifikujte email prije prijave.');
   }
 
   if (user.status === 'DEACTIVATED') {
@@ -242,55 +200,8 @@ async function loginService(identifier, password) {
       role: user.role,
       institution: user.institution,
       status: user.status,
-      emailVerifikovan: user.emailVerifikovan,
     },
   };
-}
-
-async function verifyEmailService(token) {
-  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
-  const user = await User.findOne({
-    where: { emailVerificationToken: tokenHash },
-  });
-
-  if (!user) {
-    const err = new Error('Neispravan verifikacioni token.');
-    err.status = 400;
-    throw err;
-  }
-
-  if (!user.emailVerificationTokenExpiresAt || user.emailVerificationTokenExpiresAt < new Date()) {
-    const err = new Error('Verifikacioni token je istekao.');
-    err.status = 400;
-    throw err;
-  }
-
-  user.emailVerifikovan = true;
-  user.approvalStatus = 'PENDING_APPROVAL';
-  user.approvalRequestedAt = new Date();
-  user.approvedAt = null;
-  user.approvedBy = null;
-  user.rejectedAt = null;
-  user.rejectedBy = null;
-  user.rejectionReason = null;
-  user.emailVerificationToken = null;
-  user.emailVerificationTokenExpiresAt = null;
-  await user.save();
-}
-
-async function resendVerificationEmailService(email) {
-  const user = await User.findOne({ where: { email } });
-  if (!user) {
-    return;
-  }
-
-  if (user.emailVerifikovan) {
-    const err = new Error('Email adresa je već verifikovana.');
-    err.status = 400;
-    throw err;
-  }
-
-  await sendVerificationEmailForUser(user);
 }
 
 async function forgotPasswordService(email) {
@@ -335,6 +246,4 @@ module.exports = {
   loginService,
   forgotPasswordService,
   resetPasswordService,
-  verifyEmailService,
-  resendVerificationEmailService,
 };

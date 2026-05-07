@@ -33,7 +33,7 @@ async function getPublicOdsjeci(req, res) {
 async function register(req, res) {
   try {
     await authService.register(req.body);
-    res.status(201).json({ message: 'Registracija uspješna. Provjerite email za verifikaciju računa.' });
+    res.status(201).json({ message: 'Registracija uspješna.' });
   } catch (err) {
     res.status(err.status || 500).json({ message: err.message });
   }
@@ -60,7 +60,6 @@ async function loginController(req, res) {
       'Pogrešno korisničko ime/e-mail ili lozinka.',
       'Vaš nalog je deaktiviran. Kontaktirajte administratora.',
       'Vaš nalog još nije aktivan. Sačekajte odobrenje administratora.',
-      'Email nije verifikovan. Verifikujte email prije prijave.',
       'Vaš korisnički račun čeka odobrenje administratora ili koordinatora.',
       'Vaš korisnički račun još nije odobren.',
     ].includes(err.message);
@@ -130,65 +129,6 @@ async function resetPasswordController(req, res) {
   }
 }
 
-async function verifyEmailController(req, res) {
-  const { token } = req.query;
-
-  if (!token || typeof token !== 'string') {
-    return res.status(400).json({
-      message: 'Verifikacioni token je obavezan.',
-    });
-  }
-
-  try {
-    await authService.verifyEmailService(token);
-    return res.status(200).json({
-      message: 'Email adresa je uspješno verifikovana.',
-    });
-  } catch (err) {
-    const isExpected = [
-      'Neispravan verifikacioni token.',
-      'Verifikacioni token je istekao.',
-    ].includes(err.message);
-
-    if (isExpected) {
-      return res.status(400).json({
-        message: err.message,
-      });
-    }
-
-    return res.status(err.status || 500).json({
-      message: err.message || 'Došlo je do greške pri verifikaciji email adrese.',
-    });
-  }
-}
-
-async function resendVerificationEmailController(req, res) {
-  const { email } = req.body;
-
-  if (!email || typeof email !== 'string' || email.trim() === '') {
-    return res.status(400).json({
-      message: 'E-mail adresa je obavezna.',
-    });
-  }
-
-  try {
-    await authService.resendVerificationEmailService(email.trim());
-    return res.status(200).json({
-      message: 'Ako nalog postoji i nije verifikovan, poslali smo novi verifikacioni email.',
-    });
-  } catch (err) {
-    if (err.message === 'Email adresa je već verifikovana.') {
-      return res.status(400).json({
-        message: err.message,
-      });
-    }
-
-    return res.status(err.status || 500).json({
-      message: err.message || 'Došlo je do greške pri ponovnom slanju verifikacionog emaila.',
-    });
-  }
-}
-
 module.exports = {
   checkAvailability,
   getPublicFaculties,
@@ -197,6 +137,4 @@ module.exports = {
   loginController,
   forgotPasswordController,
   resetPasswordController,
-  verifyEmailController,
-  resendVerificationEmailController,
 };
