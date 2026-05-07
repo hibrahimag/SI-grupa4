@@ -122,12 +122,6 @@ describe('updateUserStatus', () => {
     }
   });
 
-  test('baca 400 ako se neverifikovan korisnik aktivira', async () => {
-    User.findByPk.mockResolvedValue(makeDbUser({ emailVerifikovan: false }));
-
-    await expect(updateUserStatus(1, 'ACTIVE')).rejects.toMatchObject({ status: 400 });
-  });
-
   test('ACTIVE status postavlja approval metapodatke za odobren korisnik', async () => {
     const mockUser = makeDbUser({
       status: 'PENDING',

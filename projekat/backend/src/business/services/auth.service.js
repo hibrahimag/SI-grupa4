@@ -119,7 +119,7 @@ async function register(data) {
       }
       const user = await sequelize.transaction(async (t) => {
         const createdUser = await User.create(
-          { ime, prezime, username, email, passwordHash, role: 'STUDENT', status: 'PENDING', institution: faculty.naziv },
+          { ime, prezime, username, email, passwordHash, role: 'STUDENT', status: 'ACTIVE', approvalStatus: 'APPROVED', institution: faculty.naziv },
           { transaction: t }
         );
         await Student.create(
@@ -142,7 +142,7 @@ async function register(data) {
       }
       const user = await sequelize.transaction(async (t) => {
         const createdUser = await User.create(
-          { ime, prezime, username, email, passwordHash, role: 'COORDINATOR', status: 'PENDING', institution: faculty.naziv },
+          { ime, prezime, username, email, passwordHash, role: 'COORDINATOR', status: 'ACTIVE', approvalStatus: 'APPROVED', institution: faculty.naziv },
           { transaction: t }
         );
         await Koordinator.create(
@@ -159,7 +159,7 @@ async function register(data) {
       const { naziv, adresa, telefon, opisPoslovanja, kontaktOsoba } = data;
       const user = await sequelize.transaction(async (t) => {
         const createdUser = await User.create(
-          { ime: naziv, prezime: '', username, email, passwordHash, role: 'COMPANY', status: 'PENDING', institution: naziv },
+          { ime: naziv, prezime: '', username, email, passwordHash, role: 'COMPANY', status: 'ACTIVE', approvalStatus: 'APPROVED', institution: naziv },
           { transaction: t }
         );
         await Kompanija.create(
