@@ -14,7 +14,10 @@ jest.mock('../../src/infrastructure/database/models', () => ({
 jest.mock('../../src/infrastructure/database/db', () => ({ transaction: jest.fn() }));
 jest.mock('../../src/business/services/email.service', () => ({
   sendPasswordResetEmail: jest.fn().mockResolvedValue(undefined),
+<<<<<<< HEAD
   sendEmailVerificationEmail: jest.fn().mockResolvedValue(undefined),
+=======
+>>>>>>> main
 }));
 jest.mock('bcrypt');
 jest.mock('jsonwebtoken');
@@ -23,7 +26,11 @@ const { User, Fakultet, Odsjek } = require('../../src/infrastructure/database/mo
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+<<<<<<< HEAD
 const { sendPasswordResetEmail, sendEmailVerificationEmail } = require('../../src/business/services/email.service');
+=======
+const { sendPasswordResetEmail } = require('../../src/business/services/email.service');
+>>>>>>> main
 const {
   loginService,
   checkAvailability,
@@ -31,8 +38,11 @@ const {
   getPublicOdsjeci,
   forgotPasswordService,
   resetPasswordService,
+<<<<<<< HEAD
   verifyEmailService,
   resendVerificationEmailService,
+=======
+>>>>>>> main
 } = require('../../src/business/services/auth.service');
 
 function makeUser(overrides = {}) {
@@ -259,6 +269,7 @@ describe('getPublicFaculties', () => {
   });
 });
 
+<<<<<<< HEAD
 describe('verifyEmailService', () => {
   test('baca 400 za neispravan verifikacioni token', async () => {
     User.findOne.mockResolvedValue(null);
@@ -337,6 +348,8 @@ describe('resendVerificationEmailService', () => {
   });
 });
 
+=======
+>>>>>>> main
 describe('getPublicOdsjeci', () => {
   test('vraca odsjeke za dati fakultet sortirane po nazivu', async () => {
     const odsjeci = [{ id: 1, naziv: 'Racunarstvo' }];

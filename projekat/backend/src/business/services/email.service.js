@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 const nodemailer = require('nodemailer');
 
 const transporter = nodemailer.createTransport({
@@ -20,6 +21,37 @@ async function sendPasswordResetEmail(to, resetLink) {
   to,
   subject: 'Obnavljanje lozinke',
   html: `
+=======
+async function brevoSend({ to, subject, html }) {
+  const senderEmail = process.env.BREVO_SENDER_EMAIL;
+  const senderName = process.env.BREVO_SENDER_NAME || 'PraksaHub';
+
+  const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: {
+      'api-key': process.env.BREVO_API_KEY,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      sender: { email: senderEmail, name: senderName },
+      to: [{ email: to }],
+      subject,
+      htmlContent: html,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Brevo API greška: ${response.status} ${error}`);
+  }
+}
+
+async function sendPasswordResetEmail(to, resetLink) {
+  await brevoSend({
+    to,
+    subject: 'Obnavljanje lozinke',
+    html: `
+>>>>>>> main
     <div style="
       margin:0;
       padding:40px 20px;
@@ -133,12 +165,20 @@ async function sendPasswordResetEmail(to, resetLink) {
       </div>
     </div>
   `,
+<<<<<<< HEAD
 });
 }
 
 async function sendEmailVerificationEmail(to, verificationLink) {
   await transporter.sendMail({
     from: `"PraksaHub" <${process.env.SMTP_USER}>`,
+=======
+  });
+}
+
+async function sendEmailVerificationEmail(to, verificationLink) {
+  await brevoSend({
+>>>>>>> main
     to,
     subject: 'Verifikacija email adrese',
     html: `
@@ -261,8 +301,12 @@ async function sendEmailVerificationEmail(to, verificationLink) {
 }
 
 async function sendAccountApprovedEmail(to, role) {
+<<<<<<< HEAD
   await transporter.sendMail({
     from: `"PraksaHub" <${process.env.SMTP_USER}>`,
+=======
+  await brevoSend({
+>>>>>>> main
     to,
     subject: 'Vaš račun je odobren',
     html: `
@@ -274,8 +318,12 @@ async function sendAccountApprovedEmail(to, role) {
 }
 
 async function sendAccountRejectedEmail(to, reason) {
+<<<<<<< HEAD
   await transporter.sendMail({
     from: `"PraksaHub" <${process.env.SMTP_USER}>`,
+=======
+  await brevoSend({
+>>>>>>> main
     to,
     subject: 'Vaš zahtjev je odbijen',
     html: `
@@ -291,4 +339,8 @@ module.exports = {
   sendEmailVerificationEmail,
   sendAccountApprovedEmail,
   sendAccountRejectedEmail,
+<<<<<<< HEAD
 };
+=======
+};
+>>>>>>> main

@@ -30,8 +30,6 @@ export default function AppRouter() {
         <Route path="/"          element={<LandingPage />} />
         <Route path="/auth"      element={<AuthPage />} />
         <Route path="/login"     element={<AuthPage />} />
-        <Route path="/verify-email" element={<AuthPage />} />
-        <Route path="/auth/verify-email" element={<AuthPage />} />
         <Route path="/register"  element={<RegisterPage />} />
         <Route path="/privacy"   element={<PrivacyPolicy />} />
         <Route path="/terms"   element={<TermsAndConditions />} />
