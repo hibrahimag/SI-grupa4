@@ -1,22 +1,29 @@
-const nodemailer = require('nodemailer');
+async function brevoSend({ to, subject, html }) {
+  const senderEmail = process.env.BREVO_SENDER_EMAIL;
+  const senderName = process.env.BREVO_SENDER_NAME || 'PraksaHub';
 
-const transporter = nodemailer.createTransport({
-  host: 'smtp-relay.brevo.com',
-  port: 587,
-  secure: false,
-  auth: {
-    user: process.env.BREVO_SMTP_USER,
-    pass: process.env.BREVO_SMTP_PASS,
-  },
-});
+  const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: {
+      'api-key': process.env.BREVO_API_KEY,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      sender: { email: senderEmail, name: senderName },
+      to: [{ email: to }],
+      subject,
+      htmlContent: html,
+    }),
+  });
 
-function getSender() {
-  return process.env.MAIL_FROM || 'PraksaHub <no-reply@praksahub.local>';
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Brevo API greška: ${response.status} ${error}`);
+  }
 }
 
 async function sendPasswordResetEmail(to, resetLink) {
-  await transporter.sendMail({
-    from: getSender(),
+  await brevoSend({
     to,
     subject: 'Obnavljanje lozinke',
     html: `
@@ -137,8 +144,7 @@ async function sendPasswordResetEmail(to, resetLink) {
 }
 
 async function sendEmailVerificationEmail(to, verificationLink) {
-  await transporter.sendMail({
-    from: getSender(),
+  await brevoSend({
     to,
     subject: 'Verifikacija email adrese',
     html: `
@@ -261,8 +267,7 @@ async function sendEmailVerificationEmail(to, verificationLink) {
 }
 
 async function sendAccountApprovedEmail(to, role) {
-  await transporter.sendMail({
-    from: getSender(),
+  await brevoSend({
     to,
     subject: 'Vaš račun je odobren',
     html: `
@@ -274,8 +279,7 @@ async function sendAccountApprovedEmail(to, role) {
 }
 
 async function sendAccountRejectedEmail(to, reason) {
-  await transporter.sendMail({
-    from: getSender(),
+  await brevoSend({
     to,
     subject: 'Vaš zahtjev je odbijen',
     html: `
