@@ -6,7 +6,7 @@ const crypto = require('crypto');
 const { Op, UniqueConstraintError } = require('sequelize');
 const { User, Student, Koordinator, Kompanija, Fakultet, Odsjek } = require('../../infrastructure/database/models');
 const sequelize = require('../../infrastructure/database/db');
-const { sendPasswordResetEmail } = require('./email.service');
+const { sendPasswordResetEmail, sendEmailVerificationEmail } = require('./email.service');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN ?? '8h';
@@ -93,6 +93,12 @@ async function register(data) {
         );
         return createdUser;
       });
+      const verificationToken = crypto.randomBytes(32).toString('hex');
+      user.emailVerificationToken = verificationToken;
+      user.emailVerificationTokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      await user.save();
+      const verificationLink = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
+      await sendEmailVerificationEmail(user.email, verificationLink);
       return user;
     }
 
@@ -115,6 +121,12 @@ async function register(data) {
         );
         return createdUser;
       });
+      const verificationToken = crypto.randomBytes(32).toString('hex');
+      user.emailVerificationToken = verificationToken;
+      user.emailVerificationTokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      await user.save();
+      const verificationLink = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
+      await sendEmailVerificationEmail(user.email, verificationLink);
       return user;
     }
 
@@ -131,6 +143,12 @@ async function register(data) {
         );
         return createdUser;
       });
+      const verificationToken = crypto.randomBytes(32).toString('hex');
+      user.emailVerificationToken = verificationToken;
+      user.emailVerificationTokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      await user.save();
+      const verificationLink = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
+      await sendEmailVerificationEmail(user.email, verificationLink);
       return user;
     }
 
@@ -188,6 +206,10 @@ async function loginService(identifier, password) {
     throw new Error('Pogrešno korisničko ime/e-mail ili lozinka.');
   }
 
+  if (!user.emailVerifikovan) {
+    throw new Error('EMAIL_NOT_VERIFIED');
+  }
+
   const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
   return {
     token,
@@ -238,6 +260,35 @@ async function resetPasswordService(token, newPassword) {
   await user.save();
 }
 
+async function verifyEmailService(token) {
+  const user = await User.findOne({ where: { emailVerificationToken: token } });
+  if (!user) {
+    const err = new Error('Neispravan verifikacioni token.');
+    err.status = 400;
+    throw err;
+  }
+  if (user.emailVerificationTokenExpiresAt < new Date()) {
+    const err = new Error('Verifikacioni token je istekao.');
+    err.status = 400;
+    throw err;
+  }
+  user.emailVerifikovan = true;
+  user.emailVerificationToken = null;
+  user.emailVerificationTokenExpiresAt = null;
+  await user.save();
+}
+
+async function resendVerificationEmailService(email) {
+  const user = await User.findOne({ where: { email } });
+  if (!user || user.emailVerifikovan) return;
+  const token = crypto.randomBytes(32).toString('hex');
+  user.emailVerificationToken = token;
+  user.emailVerificationTokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  await user.save();
+  const link = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
+  await sendEmailVerificationEmail(user.email, link);
+}
+
 module.exports = {
   checkAvailability,
   getPublicFaculties,
@@ -246,4 +297,6 @@ module.exports = {
   loginService,
   forgotPasswordService,
   resetPasswordService,
+  verifyEmailService,
+  resendVerificationEmailService,
 };

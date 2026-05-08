@@ -1,13 +1,21 @@
-const { Resend } = require('resend');
+const nodemailer = require('nodemailer');
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const transporter = nodemailer.createTransport({
+  host: 'smtp-relay.brevo.com',
+  port: 587,
+  secure: false,
+  auth: {
+    user: process.env.BREVO_SMTP_USER,
+    pass: process.env.BREVO_SMTP_PASS,
+  },
+});
 
 function getSender() {
-  return process.env.MAIL_FROM || 'PraksaHub <onboarding@resend.dev>';
+  return process.env.MAIL_FROM || 'PraksaHub <no-reply@praksahub.local>';
 }
 
 async function sendPasswordResetEmail(to, resetLink) {
-  await resend.emails.send({
+  await transporter.sendMail({
     from: getSender(),
     to,
     subject: 'Obnavljanje lozinke',
@@ -129,7 +137,7 @@ async function sendPasswordResetEmail(to, resetLink) {
 }
 
 async function sendEmailVerificationEmail(to, verificationLink) {
-  await resend.emails.send({
+  await transporter.sendMail({
     from: getSender(),
     to,
     subject: 'Verifikacija email adrese',
@@ -253,7 +261,7 @@ async function sendEmailVerificationEmail(to, verificationLink) {
 }
 
 async function sendAccountApprovedEmail(to, role) {
-  await resend.emails.send({
+  await transporter.sendMail({
     from: getSender(),
     to,
     subject: 'Vaš račun je odobren',
@@ -266,7 +274,7 @@ async function sendAccountApprovedEmail(to, role) {
 }
 
 async function sendAccountRejectedEmail(to, reason) {
-  await resend.emails.send({
+  await transporter.sendMail({
     from: getSender(),
     to,
     subject: 'Vaš zahtjev je odbijen',

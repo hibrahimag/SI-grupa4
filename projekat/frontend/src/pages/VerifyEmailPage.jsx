@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { verifyEmailToken } from '../services/auth.service';
 import './AuthPage.css';
 
 export default function VerifyEmailPage() {
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
   const [status, setStatus] = useState('loading');
   const [message, setMessage] = useState('Provjeravamo verifikacioni link...');
   const hasVerifiedRef = useRef(false);
@@ -25,10 +24,9 @@ export default function VerifyEmailPage() {
 
     async function verify() {
       try {
-        const result = await verifyEmailToken(token);
+        await verifyEmailToken(token);
         setStatus('success');
-        setMessage(result.message || 'Email adresa je uspješno verifikovana.');
-        setTimeout(() => navigate('/auth', { replace: true }), 2500);
+        setMessage('Email adresa je uspješno verifikovana. Vaš račun čeka odobrenje.');
       } catch (err) {
         setStatus('error');
         setMessage(err.message || 'Verifikacija nije uspjela.');
@@ -36,7 +34,7 @@ export default function VerifyEmailPage() {
     }
 
     verify();
-  }, [navigate, searchParams]);
+  }, [searchParams]);
 
   return (
     <div className="auth-page">

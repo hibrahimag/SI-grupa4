@@ -56,6 +56,10 @@ async function loginController(req, res) {
     const result = await authService.loginService(identifier.trim(), password);
     return res.status(200).json(result);
   } catch (err) {
+    if (err.message === 'EMAIL_NOT_VERIFIED') {
+      return res.status(403).json({ message: 'EMAIL_NOT_VERIFIED' });
+    }
+
     const isExpected = [
       'Pogrešno korisničko ime/e-mail ili lozinka.',
       'Vaš nalog je deaktiviran. Kontaktirajte administratora.',
@@ -129,6 +133,30 @@ async function resetPasswordController(req, res) {
   }
 }
 
+async function verifyEmailController(req, res) {
+  const { token } = req.query;
+  if (!token) return res.status(400).json({ message: 'Token je obavezan.' });
+  try {
+    await authService.verifyEmailService(token);
+    return res.status(200).json({ message: 'Email adresa je uspješno verifikovana.' });
+  } catch (err) {
+    const expected = ['Neispravan verifikacioni token.', 'Verifikacioni token je istekao.'];
+    return res.status(err.status || 400).json({ message: expected.includes(err.message) ? err.message : 'Greška pri verifikaciji.' });
+  }
+}
+
+async function resendVerificationEmailController(req, res) {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ message: 'Email je obavezan.' });
+  try {
+    await authService.resendVerificationEmailService(email.trim());
+    return res.status(200).json({ message: 'Ako nalog postoji, verifikacioni email je poslan.' });
+  } catch (err) {
+    console.error('[auth.controller] Resend verification error:', err);
+    return res.status(500).json({ message: 'Greška pri slanju verifikacionog emaila.' });
+  }
+}
+
 module.exports = {
   checkAvailability,
   getPublicFaculties,
@@ -137,4 +165,6 @@ module.exports = {
   loginController,
   forgotPasswordController,
   resetPasswordController,
+  verifyEmailController,
+  resendVerificationEmailController,
 };
