@@ -12,52 +12,11 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN ?? '8h';
 const SALT_ROUNDS = 10;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-<<<<<<< HEAD
-const EMAIL_VERIFICATION_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
-=======
->>>>>>> main
 
 if (!JWT_SECRET) {
   throw new Error('JWT_SECRET environment variable is not set.');
 }
 
-<<<<<<< HEAD
-function createEmailVerificationTokenData() {
-  const rawToken = crypto.randomBytes(32).toString('hex');
-  const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
-  const expiresAt = new Date(Date.now() + EMAIL_VERIFICATION_TOKEN_TTL_MS);
-  return { rawToken, tokenHash, expiresAt };
-}
-
-async function setVerificationTokenForUser(user) {
-  const { rawToken, tokenHash, expiresAt } = createEmailVerificationTokenData();
-  user.emailVerificationToken = tokenHash;
-  user.emailVerificationTokenExpiresAt = expiresAt;
-  await user.save();
-  return rawToken;
-}
-
-function getFrontendBaseUrl() {
-  return process.env.FRONTEND_URL || process.env.FRONTEND_BASE_URL;
-}
-
-async function sendVerificationEmailForUser(user) {
-  const token = await setVerificationTokenForUser(user);
-  const frontendBaseUrl = getFrontendBaseUrl();
-  const verificationLink = frontendBaseUrl
-    ? `${frontendBaseUrl}/verify-email?token=${token}`
-    : null;
-
-  if (!frontendBaseUrl || !process.env.MAIL_HOST) {
-    console.log(`[EMAIL VERIFICATION] ${user.email} -> ${verificationLink ?? '(FRONTEND_URL not set)'}`);
-    return;
-  }
-
-  await sendEmailVerificationEmail(user.email, verificationLink);
-}
-
-=======
->>>>>>> main
 async function checkAvailability(type, value) {
   if (!['username', 'email'].includes(type) || !value) {
     const err = new Error('Neispravni parametri.');
@@ -125,11 +84,7 @@ async function register(data) {
       }
       const user = await sequelize.transaction(async (t) => {
         const createdUser = await User.create(
-<<<<<<< HEAD
-          { ime, prezime, username, email, passwordHash, role: 'STUDENT', status: 'PENDING', institution: faculty.naziv },
-=======
           { ime, prezime, username, email, passwordHash, role: 'STUDENT', status: 'ACTIVE', approvalStatus: 'APPROVED', institution: faculty.naziv },
->>>>>>> main
           { transaction: t }
         );
         await Student.create(
@@ -138,16 +93,12 @@ async function register(data) {
         );
         return createdUser;
       });
-<<<<<<< HEAD
-      await sendVerificationEmailForUser(user);
-=======
       const verificationToken = crypto.randomBytes(32).toString('hex');
       user.emailVerificationToken = verificationToken;
       user.emailVerificationTokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
       await user.save();
       const verificationLink = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
       await sendEmailVerificationEmail(user.email, verificationLink);
->>>>>>> main
       return user;
     }
 
@@ -161,11 +112,7 @@ async function register(data) {
       }
       const user = await sequelize.transaction(async (t) => {
         const createdUser = await User.create(
-<<<<<<< HEAD
-          { ime, prezime, username, email, passwordHash, role: 'COORDINATOR', status: 'PENDING', institution: faculty.naziv },
-=======
           { ime, prezime, username, email, passwordHash, role: 'COORDINATOR', status: 'ACTIVE', approvalStatus: 'APPROVED', institution: faculty.naziv },
->>>>>>> main
           { transaction: t }
         );
         await Koordinator.create(
@@ -174,16 +121,12 @@ async function register(data) {
         );
         return createdUser;
       });
-<<<<<<< HEAD
-      await sendVerificationEmailForUser(user);
-=======
       const verificationToken = crypto.randomBytes(32).toString('hex');
       user.emailVerificationToken = verificationToken;
       user.emailVerificationTokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
       await user.save();
       const verificationLink = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
       await sendEmailVerificationEmail(user.email, verificationLink);
->>>>>>> main
       return user;
     }
 
@@ -191,11 +134,7 @@ async function register(data) {
       const { naziv, adresa, telefon, opisPoslovanja, kontaktOsoba } = data;
       const user = await sequelize.transaction(async (t) => {
         const createdUser = await User.create(
-<<<<<<< HEAD
-          { ime: naziv, prezime: '', username, email, passwordHash, role: 'COMPANY', status: 'PENDING', institution: naziv },
-=======
           { ime: naziv, prezime: '', username, email, passwordHash, role: 'COMPANY', status: 'ACTIVE', approvalStatus: 'APPROVED', institution: naziv },
->>>>>>> main
           { transaction: t }
         );
         await Kompanija.create(
@@ -204,16 +143,12 @@ async function register(data) {
         );
         return createdUser;
       });
-<<<<<<< HEAD
-      await sendVerificationEmailForUser(user);
-=======
       const verificationToken = crypto.randomBytes(32).toString('hex');
       user.emailVerificationToken = verificationToken;
       user.emailVerificationTokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
       await user.save();
       const verificationLink = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
       await sendEmailVerificationEmail(user.email, verificationLink);
->>>>>>> main
       return user;
     }
 
@@ -243,13 +178,6 @@ async function loginService(identifier, password) {
     throw new Error('Pogrešno korisničko ime/e-mail ili lozinka.');
   }
 
-<<<<<<< HEAD
-  if (!user.emailVerifikovan) {
-    throw new Error('Email nije verifikovan. Verifikujte email prije prijave.');
-  }
-
-=======
->>>>>>> main
   if (user.status === 'DEACTIVATED') {
     throw new Error('Vaš nalog je deaktiviran. Kontaktirajte administratora.');
   }
@@ -278,13 +206,10 @@ async function loginService(identifier, password) {
     throw new Error('Pogrešno korisničko ime/e-mail ili lozinka.');
   }
 
-<<<<<<< HEAD
-=======
   if (!user.emailVerifikovan) {
     throw new Error('EMAIL_NOT_VERIFIED');
   }
 
->>>>>>> main
   const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
   return {
     token,
@@ -297,63 +222,10 @@ async function loginService(identifier, password) {
       role: user.role,
       institution: user.institution,
       status: user.status,
-<<<<<<< HEAD
-      emailVerifikovan: user.emailVerifikovan,
-=======
->>>>>>> main
     },
   };
 }
 
-<<<<<<< HEAD
-async function verifyEmailService(token) {
-  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
-  const user = await User.findOne({
-    where: { emailVerificationToken: tokenHash },
-  });
-
-  if (!user) {
-    const err = new Error('Neispravan verifikacioni token.');
-    err.status = 400;
-    throw err;
-  }
-
-  if (!user.emailVerificationTokenExpiresAt || user.emailVerificationTokenExpiresAt < new Date()) {
-    const err = new Error('Verifikacioni token je istekao.');
-    err.status = 400;
-    throw err;
-  }
-
-  user.emailVerifikovan = true;
-  user.approvalStatus = 'PENDING_APPROVAL';
-  user.approvalRequestedAt = new Date();
-  user.approvedAt = null;
-  user.approvedBy = null;
-  user.rejectedAt = null;
-  user.rejectedBy = null;
-  user.rejectionReason = null;
-  user.emailVerificationToken = null;
-  user.emailVerificationTokenExpiresAt = null;
-  await user.save();
-}
-
-async function resendVerificationEmailService(email) {
-  const user = await User.findOne({ where: { email } });
-  if (!user) {
-    return;
-  }
-
-  if (user.emailVerifikovan) {
-    const err = new Error('Email adresa je već verifikovana.');
-    err.status = 400;
-    throw err;
-  }
-
-  await sendVerificationEmailForUser(user);
-}
-
-=======
->>>>>>> main
 async function forgotPasswordService(email) {
   const user = await User.findOne({ where: { email } });
 
@@ -388,8 +260,6 @@ async function resetPasswordService(token, newPassword) {
   await user.save();
 }
 
-<<<<<<< HEAD
-=======
 async function verifyEmailService(token) {
   const user = await User.findOne({ where: { emailVerificationToken: token } });
   if (!user) {
@@ -419,7 +289,6 @@ async function resendVerificationEmailService(email) {
   await sendEmailVerificationEmail(user.email, link);
 }
 
->>>>>>> main
 module.exports = {
   checkAvailability,
   getPublicFaculties,
