@@ -51,6 +51,7 @@ describe('GET /api/auth/faculties', () => {
   });
 });
 
+<<<<<<< HEAD
 describe('GET /api/auth/verify-email', () => {
   test('200 - uspjesna verifikacija emaila', async () => {
     authService.verifyEmailService.mockResolvedValue(undefined);
@@ -144,6 +145,8 @@ describe('POST /api/auth/resend-verification-email', () => {
   });
 });
 
+=======
+>>>>>>> main
 describe('GET /api/auth/faculties/:id/odsjeci', () => {
   test('200 - vraca listu odsjeka za fakultet', async () => {
     authService.getPublicOdsjeci.mockResolvedValue([

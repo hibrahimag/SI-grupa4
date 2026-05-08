@@ -193,7 +193,7 @@ export default function RegisterPage() {
             )}
 
             {step === 'success' && (
-              <SuccessStep role={role} onDone={() => navigate('/')} />
+              <SuccessStep role={role} />
             )}
           </div>
         </main>
@@ -548,12 +548,7 @@ function BrandPanel({ role, step }) {
   );
 }
 
-function SuccessStep({ role, onDone }) {
-  useEffect(() => {
-    const t = setTimeout(onDone, 5000);
-    return () => clearTimeout(t);
-  }, [onDone]);
-
+function SuccessStep({ role }) {
   const approver = role === 'student' ? 'koordinatora vašeg fakulteta' : 'admina';
 
   return (
@@ -565,8 +560,11 @@ function SuccessStep({ role, onDone }) {
       </div>
       <h2 className="reg-success-title">Registracija uspješna!</h2>
       <p className="reg-success-msg">
-        Registracija uspješna. Provjerite email za verifikaciju računa, zatim čekamo {approver} da odobri Vaš profil.
+        Poslali smo verifikacioni email na vašu adresu. Kliknite na link u emailu da aktivirate nalog, zatim čekamo {approver} da odobri Vaš profil.
       </p>
+      <Link to="/auth" className="reg-success-link" style={{ marginTop: '16px', display: 'inline-block' }}>
+        Idi na prijavu
+      </Link>
     </div>
   );
 }
