@@ -774,3 +774,4 @@ loginService(identifier, password):
 - Moguć dupli poziv verifikacije, što može dati poruku “neispravan token” iako je prvi poziv uspio
 
 ---
+# AI Usage Log — Sprint 7
