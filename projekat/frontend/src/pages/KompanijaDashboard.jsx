@@ -1,8 +1,9 @@
 // frontend/src/pages/KompanijaDashboard.jsx
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { getCompanyProfile, updateCompanyProfile } from '../services/companyProfile.service';
 import './KompanijaDashboard.css';
 
 const VIEWS = {
@@ -12,15 +13,50 @@ const VIEWS = {
   EDIT_PROFILE: 'uredi-profil',
 };
 
+const EMPTY_PROFILE = {
+  naziv: '',
+  opisPoslovanja: '',
+  djelatnost: '',
+  adresa: '',
+  telefon: '',
+  kontaktOsoba: '',
+};
+
 export default function KompanijaDashboard() {
   const [view, setView] = useState(VIEWS.DASHBOARD);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [companyProfile, setCompanyProfile] = useState(null);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [profileError, setProfileError] = useState('');
   const { user, logout } = useAuth();
   const { darkMode } = useTheme();
   const navigate = useNavigate();
 
-  const companyName = user?.institution || user?.ime || 'Kompanija';
-  const profileStatus = user?.email && companyName !== 'Kompanija' ? 'Profil aktivan' : 'Profil u pripremi';
+  const companyName = companyProfile?.naziv || user?.institution || user?.ime || 'Kompanija';
+  const accountStatus = getAccountStatusDisplay(user?.status);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadCompanyProfile() {
+      setProfileLoading(true);
+      setProfileError('');
+      try {
+        const profile = await getCompanyProfile();
+        if (active) setCompanyProfile(profile);
+      } catch (err) {
+        if (active) setProfileError(err.message || 'Greška pri učitavanju profila kompanije.');
+      } finally {
+        if (active) setProfileLoading(false);
+      }
+    }
+
+    loadCompanyProfile();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   function openView(nextView) {
     setView(nextView);
@@ -30,6 +66,13 @@ export default function KompanijaDashboard() {
   function handleLogout() {
     logout();
     navigate('/auth', { replace: true });
+  }
+
+  async function handleSaveCompanyProfile(data) {
+    const result = await updateCompanyProfile(data);
+    const updatedProfile = result.profile || result;
+    setCompanyProfile(updatedProfile);
+    return updatedProfile;
   }
 
   return (
@@ -72,7 +115,7 @@ export default function KompanijaDashboard() {
         </div>
 
         <div className="cd-nav-group">
-          <div className="cd-nav-label">Nalog</div>
+          <div className="cd-nav-label">Profil</div>
           <nav className="cd-nav">
             <button
               type="button"
@@ -92,7 +135,7 @@ export default function KompanijaDashboard() {
         {view === VIEWS.DASHBOARD && (
           <DashboardShell
             companyName={companyName}
-            profileStatus={profileStatus}
+            accountStatus={accountStatus}
             onOpenView={openView}
           />
         )}
@@ -101,44 +144,53 @@ export default function KompanijaDashboard() {
         )}
         {view === VIEWS.PROFILE && (
           <ProfileShell
-            user={user}
-            companyName={companyName}
-            profileStatus={profileStatus}
+            profile={companyProfile}
+            loading={profileLoading}
+            error={profileError}
             onEdit={() => openView(VIEWS.EDIT_PROFILE)}
           />
         )}
-        {view === VIEWS.EDIT_PROFILE && <EditProfileShell companyName={companyName} />}
+        {view === VIEWS.EDIT_PROFILE && (
+          <EditProfileShell
+            profile={companyProfile}
+            loading={profileLoading}
+            error={profileError}
+            onSave={handleSaveCompanyProfile}
+            onCancel={() => openView(VIEWS.PROFILE)}
+          />
+        )}
       </main>
     </div>
   );
 }
 
-function DashboardShell({ companyName, profileStatus, onOpenView }) {
+function DashboardShell({ companyName, accountStatus, onOpenView }) {
   const stats = [
     { label: 'Aktivni oglasi', value: '0', sub: 'Nema aktivnih oglasa', tone: 'blue' },
     { label: 'Ukupno oglasa', value: '0', sub: 'Nema kreiranih oglasa', tone: 'muted' },
-    { label: 'Status profila', value: profileStatus, sub: companyName, tone: 'green' },
+    { label: 'Rola', value: 'COMPANY', sub: accountStatus.label, tone: accountStatus.tone, compact: true },
   ];
 
   const quickActions = [
     { label: 'Kreiraj oglas', desc: 'Pripremite novi oglas za praksu' },
     { label: 'Moji oglasi', desc: 'Pregled oglasa kompanije', view: VIEWS.LISTINGS },
-    { label: 'Profil kompanije', desc: 'Osnovni podaci naloga', view: VIEWS.PROFILE },
-    { label: 'Uredi profil', desc: 'Priprema izmjene podataka', view: VIEWS.EDIT_PROFILE },
+    { label: 'Profil kompanije', desc: 'Osnovni podaci kompanije', view: VIEWS.PROFILE },
+    { label: 'Uredi profil', desc: 'Izmjena podataka profila', view: VIEWS.EDIT_PROFILE },
   ];
 
   return (
     <div className="cd-content">
       <header className="cd-header">
         <h1 className="cd-title">Dashboard kompanije</h1>
+        <p className="cd-company-name">{companyName}</p>
         <p className="cd-subtitle">
-          Upravljajte profilom kompanije i oglasima za stručnu praksu iz jednog pregleda.
+          Upravljajte profilom kompanije i oglasima za praksu.
         </p>
       </header>
 
       <section className="cd-stats-grid" aria-label="Sažetak kompanije">
         {stats.map((stat) => (
-          <article key={stat.label} className="cd-stat-card">
+          <article key={stat.label} className={`cd-stat-card${stat.compact ? ' cd-stat-card--compact' : ''}`}>
             <span className="cd-stat-label">{stat.label}</span>
             <span className="cd-stat-value">{stat.value}</span>
             <span className={`cd-stat-sub cd-stat-sub--${stat.tone}`}>{stat.sub}</span>
@@ -186,21 +238,21 @@ function ListingsShell() {
   );
 }
 
-function ProfileShell({ user, companyName, profileStatus, onEdit }) {
+function ProfileShell({ profile, loading, error, onEdit }) {
   const fields = [
-    { label: 'Naziv', value: companyName },
-    { label: 'Email', value: user?.email || 'Nije dostupno' },
-    { label: 'Korisničko ime', value: user?.username || 'Nije dostupno' },
-    { label: 'Institucija', value: user?.institution || 'Nije dostupno' },
-    { label: 'Status naloga', value: user?.status || 'Nije dostupno' },
-    { label: 'Profil', value: profileStatus },
+    { label: 'Naziv kompanije', value: profile?.naziv },
+    { label: 'Opis kompanije', value: profile?.opisPoslovanja },
+    { label: 'Djelatnost', value: profile?.djelatnost },
+    { label: 'Adresa', value: profile?.adresa },
+    { label: 'Telefon', value: profile?.telefon },
+    { label: 'Kontakt osoba', value: profile?.kontaktOsoba },
   ];
 
   return (
     <div className="cd-content">
       <header className="cd-header">
         <h1 className="cd-title">Profil kompanije</h1>
-        <p className="cd-subtitle">Osnovni podaci povezani s prijavljenim kompanijskim nalogom.</p>
+        <p className="cd-subtitle">Osnovni podaci profila kompanije.</p>
       </header>
 
       <section className="cd-section">
@@ -210,25 +262,83 @@ function ProfileShell({ user, companyName, profileStatus, onEdit }) {
             Uredi profil
           </button>
         </div>
-        <div className="cd-profile-grid">
-          {fields.map((field) => (
-            <div key={field.label} className="cd-profile-field">
-              <span className="cd-profile-label">{field.label}</span>
-              <span className="cd-profile-value">{field.value}</span>
-            </div>
-          ))}
-        </div>
+        {loading && <div className="cd-inline-message">Učitavanje profila kompanije...</div>}
+        {!loading && error && <div className="cd-inline-message cd-inline-message--error">{error}</div>}
+        {!loading && !error && (
+          <div className="cd-profile-grid">
+            {fields.map((field) => (
+              <div key={field.label} className="cd-profile-field">
+                <span className="cd-profile-label">{field.label}</span>
+                <span className="cd-profile-value">{displayValue(field.value)}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );
 }
 
-function EditProfileShell({ companyName }) {
+function EditProfileShell({ profile, loading, error, onSave, onCancel }) {
+  const [formData, setFormData] = useState(EMPTY_PROFILE);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [saveError, setSaveError] = useState('');
+  const [saveMessage, setSaveMessage] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setFormData(profileToForm(profile));
+    setFieldErrors({});
+    setSaveError('');
+    setSaveMessage('');
+  }, [profile]);
+
+  function handleChange(field, value) {
+    setFormData((current) => ({ ...current, [field]: value }));
+    if (fieldErrors[field]) {
+      setFieldErrors((current) => ({ ...current, [field]: false }));
+    }
+    setSaveError('');
+    setSaveMessage('');
+  }
+
+  function validate() {
+    const nextErrors = {};
+    if (!formData.naziv.trim()) nextErrors.naziv = true;
+    if (!formData.adresa.trim()) nextErrors.adresa = true;
+    setFieldErrors(nextErrors);
+
+    if (Object.keys(nextErrors).length > 0) {
+      setSaveError('Naziv kompanije i adresa su obavezni.');
+      return false;
+    }
+
+    return true;
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    if (!validate()) return;
+
+    setSaving(true);
+    setSaveError('');
+    setSaveMessage('');
+    try {
+      const updatedProfile = await onSave(formData);
+      setFormData(profileToForm(updatedProfile));
+      setSaveMessage('Profil kompanije je uspješno sačuvan.');
+    } catch (err) {
+      setSaveError(err.message || 'Greška pri čuvanju profila kompanije.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <div className="cd-content">
       <header className="cd-header">
         <h1 className="cd-title">Uredi profil</h1>
-        <p className="cd-subtitle">Pregled informacija koje opisuju profil kompanije.</p>
+        <p className="cd-subtitle">Ažurirajte osnovne informacije profila kompanije.</p>
       </header>
 
       <section className="cd-section">
@@ -236,34 +346,120 @@ function EditProfileShell({ companyName }) {
           <h2 className="cd-section-title">Informacije kompanije</h2>
           <span className="cd-section-count">Profil</span>
         </div>
-        <div className="cd-placeholder-form" aria-label="Informacije profila kompanije">
-          <div className="cd-form-row">
-            <div className="cd-form-field">
-              <span className="cd-form-label">Naziv kompanije</span>
-              <div className="cd-input-shell">{companyName}</div>
+        {loading && <div className="cd-inline-message">Učitavanje profila kompanije...</div>}
+        {!loading && error && <div className="cd-inline-message cd-inline-message--error">{error}</div>}
+        {!loading && !error && (
+          <form className="cd-profile-form" aria-label="Informacije profila kompanije" onSubmit={handleSubmit}>
+            {saveError && <div className="cd-inline-message cd-inline-message--error">{saveError}</div>}
+            {saveMessage && <div className="cd-inline-message cd-inline-message--success">{saveMessage}</div>}
+
+            <div className="cd-form-row">
+              <ProfileInput
+                label="Naziv kompanije"
+                field="naziv"
+                value={formData.naziv}
+                error={fieldErrors.naziv}
+                onChange={handleChange}
+              />
+              <ProfileInput
+                label="Djelatnost"
+                field="djelatnost"
+                value={formData.djelatnost}
+                onChange={handleChange}
+              />
             </div>
-            <div className="cd-form-field">
-              <span className="cd-form-label">Kontakt osoba</span>
-              <div className="cd-input-shell">Nije uneseno</div>
+
+            <div className="cd-form-row">
+              <ProfileInput
+                label="Adresa"
+                field="adresa"
+                value={formData.adresa}
+                error={fieldErrors.adresa}
+                onChange={handleChange}
+              />
+              <ProfileInput
+                label="Telefon"
+                field="telefon"
+                value={formData.telefon}
+                onChange={handleChange}
+              />
             </div>
-          </div>
-          <div className="cd-form-row">
+
+            <ProfileInput
+              label="Kontakt osoba"
+              field="kontaktOsoba"
+              value={formData.kontaktOsoba}
+              onChange={handleChange}
+            />
+
             <div className="cd-form-field">
-              <span className="cd-form-label">Adresa</span>
-              <div className="cd-input-shell">Nije uneseno</div>
+              <label className="cd-form-label" htmlFor="company-opisPoslovanja">Opis kompanije</label>
+              <textarea
+                id="company-opisPoslovanja"
+                className="cd-textarea"
+                value={formData.opisPoslovanja}
+                onChange={(event) => handleChange('opisPoslovanja', event.target.value)}
+                rows={5}
+              />
             </div>
-            <div className="cd-form-field">
-              <span className="cd-form-label">Telefon</span>
-              <div className="cd-input-shell">Nije uneseno</div>
+
+            <div className="cd-form-actions">
+              <button type="submit" className="cd-btn cd-btn--primary" disabled={saving}>
+                {saving ? 'Čuvanje...' : 'Sačuvaj promjene'}
+              </button>
+              <button type="button" className="cd-btn cd-btn--secondary" onClick={onCancel} disabled={saving}>
+                Odustani
+              </button>
             </div>
-          </div>
-          <div className="cd-form-field">
-            <span className="cd-form-label">Opis poslovanja</span>
-            <div className="cd-textarea-shell">Kratak opis kompanije.</div>
-          </div>
-          <div className="cd-inline-note">Izmjene profila trenutno nisu dostupne.</div>
-        </div>
+          </form>
+        )}
       </section>
     </div>
   );
+}
+
+function ProfileInput({ label, field, value, error = false, onChange }) {
+  const inputId = `company-${field}`;
+
+  return (
+    <div className="cd-form-field">
+      <label className="cd-form-label" htmlFor={inputId}>{label}</label>
+      <input
+        id={inputId}
+        className={`cd-input${error ? ' cd-input--error' : ''}`}
+        type="text"
+        value={value}
+        onChange={(event) => onChange(field, event.target.value)}
+      />
+    </div>
+  );
+}
+
+function profileToForm(profile) {
+  return {
+    naziv: profile?.naziv || '',
+    opisPoslovanja: profile?.opisPoslovanja || '',
+    djelatnost: profile?.djelatnost || '',
+    adresa: profile?.adresa || '',
+    telefon: profile?.telefon || '',
+    kontaktOsoba: profile?.kontaktOsoba || '',
+  };
+}
+
+function getAccountStatusDisplay(status) {
+  const normalizedStatus = String(status || '').toUpperCase();
+
+  if (normalizedStatus === 'ACTIVE') {
+    return { label: 'Aktivno', tone: 'green' };
+  }
+
+  if (normalizedStatus === 'DEACTIVATED') {
+    return { label: 'Deaktivirano', tone: 'red' };
+  }
+
+  return { label: 'Nepoznato', tone: 'muted' };
+}
+
+function displayValue(value) {
+  return value && String(value).trim() ? value : 'Nije uneseno';
 }
