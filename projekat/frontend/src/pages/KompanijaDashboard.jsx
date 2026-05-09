@@ -22,6 +22,8 @@ const EMPTY_PROFILE = {
   kontaktOsoba: '',
 };
 
+const PROFILE_FIELDS = ['naziv', 'opisPoslovanja', 'djelatnost', 'adresa', 'telefon', 'kontaktOsoba'];
+
 export default function KompanijaDashboard() {
   const [view, setView] = useState(VIEWS.DASHBOARD);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -70,7 +72,7 @@ export default function KompanijaDashboard() {
 
   async function handleSaveCompanyProfile(data) {
     const result = await updateCompanyProfile(data);
-    const updatedProfile = result.profile || result;
+    const updatedProfile = getUpdatedCompanyProfile(result, data, companyProfile);
     setCompanyProfile(updatedProfile);
     return updatedProfile;
   }
@@ -262,8 +264,8 @@ function ProfileShell({ profile, loading, error, onEdit }) {
             Uredi profil
           </button>
         </div>
-        {loading && <div className="cd-inline-message">Učitavanje profila kompanije...</div>}
-        {!loading && error && <div className="cd-inline-message cd-inline-message--error">{error}</div>}
+        {loading && <div className="cd-inline-message" role="status">Učitavanje profila kompanije...</div>}
+        {!loading && error && <div className="cd-inline-message cd-inline-message--error" role="alert">{error}</div>}
         {!loading && !error && (
           <div className="cd-profile-grid">
             {fields.map((field) => (
@@ -324,7 +326,8 @@ function EditProfileShell({ profile, loading, error, onSave, onCancel }) {
     setSaveError('');
     setSaveMessage('');
     try {
-      const updatedProfile = await onSave(formData);
+      const payload = normalizeCompanyProfilePayload(formData);
+      const updatedProfile = await onSave(payload);
       setFormData(profileToForm(updatedProfile));
       setSaveMessage('Profil kompanije je uspješno sačuvan.');
     } catch (err) {
@@ -346,12 +349,12 @@ function EditProfileShell({ profile, loading, error, onSave, onCancel }) {
           <h2 className="cd-section-title">Informacije kompanije</h2>
           <span className="cd-section-count">Profil</span>
         </div>
-        {loading && <div className="cd-inline-message">Učitavanje profila kompanije...</div>}
-        {!loading && error && <div className="cd-inline-message cd-inline-message--error">{error}</div>}
+        {loading && <div className="cd-inline-message" role="status">Učitavanje profila kompanije...</div>}
+        {!loading && error && <div className="cd-inline-message cd-inline-message--error" role="alert">{error}</div>}
         {!loading && !error && (
           <form className="cd-profile-form" aria-label="Informacije profila kompanije" onSubmit={handleSubmit}>
-            {saveError && <div className="cd-inline-message cd-inline-message--error">{saveError}</div>}
-            {saveMessage && <div className="cd-inline-message cd-inline-message--success">{saveMessage}</div>}
+            {saveError && <div className="cd-inline-message cd-inline-message--error" role="alert">{saveError}</div>}
+            {saveMessage && <div className="cd-inline-message cd-inline-message--success" role="status">{saveMessage}</div>}
 
             <div className="cd-form-row">
               <ProfileInput
@@ -444,6 +447,50 @@ function profileToForm(profile) {
     telefon: profile?.telefon || '',
     kontaktOsoba: profile?.kontaktOsoba || '',
   };
+}
+
+function normalizeCompanyProfilePayload(data) {
+  return {
+    naziv: normalizeProfileString(data?.naziv),
+    opisPoslovanja: normalizeOptionalProfileString(data?.opisPoslovanja),
+    djelatnost: normalizeOptionalProfileString(data?.djelatnost),
+    adresa: normalizeProfileString(data?.adresa),
+    telefon: normalizeOptionalProfileString(data?.telefon),
+    kontaktOsoba: normalizeOptionalProfileString(data?.kontaktOsoba),
+  };
+}
+
+function normalizeProfileString(value) {
+  return value === null || value === undefined ? '' : String(value).trim();
+}
+
+function normalizeOptionalProfileString(value) {
+  const normalized = normalizeProfileString(value);
+  return normalized || null;
+}
+
+function getUpdatedCompanyProfile(result, submittedData, currentProfile) {
+  if (isCompanyProfileObject(result?.profile)) {
+    return result.profile;
+  }
+
+  if (isCompanyProfileObject(result)) {
+    return result;
+  }
+
+  return {
+    ...(currentProfile || {}),
+    ...submittedData,
+  };
+}
+
+function isCompanyProfileObject(value) {
+  return Boolean(
+    value &&
+      typeof value === 'object' &&
+      !Array.isArray(value) &&
+      PROFILE_FIELDS.some((field) => Object.prototype.hasOwnProperty.call(value, field))
+  );
 }
 
 function getAccountStatusDisplay(status) {
