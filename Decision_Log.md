@@ -69,3 +69,6 @@
 - **Razlog izbora:** Postojeća tabela fakulteta u bazi nije bila iskorištena kroz UI. Dodavanjem ove stranice u admin panel administrator dobija direktan uvid i kontrolu nad listom fakulteta u sistemu bez potrebe za direktnim pristupom bazi podataka.
 - **Posljedice odluke:** Admin panel proširen je novom stranicom "Fakulteti" koja prikazuje listu svih fakulteta u sistemu (naziv, email, adresa) te omogućava dodavanje novih fakulteta i uređivanje ili brisanje postojećih. Podaci se učitavaju iz postojeće tabele u bazi podataka.
 - **Status:** Aktivna
+
+---
+## Sprint 7
