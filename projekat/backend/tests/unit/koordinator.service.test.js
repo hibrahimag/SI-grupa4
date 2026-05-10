@@ -82,6 +82,7 @@ function makeMockPrijava(overrides = {}) {
   return {
     id: 100,
     status: 'PODNESENA',
+    Student: makeMockStudent(),
     update: jest.fn().mockResolvedValue(undefined),
     ...overrides,
   };
@@ -91,9 +92,6 @@ beforeEach(() => jest.clearAllMocks());
 
 // ── getDashboardStats ─────────────────────────────────────────────────────────
 describe('getDashboardStats', () => {
-  // Testira: funkcija agregira sve statistike iz baze i vraća ispravan objekat
-  // Ulaz: svi count mockovi vraćaju brojeve
-  // Očekivani izlaz: objekat s ukupno, podnesene, odobrene, odbijene, aktivnePrakse, zavrsene
   test('vraća ispravne statistike', async () => {
     db.PrijavaNaPraksu.count
       .mockResolvedValueOnce(10)
@@ -116,9 +114,6 @@ describe('getDashboardStats', () => {
     });
   });
 
-  // Testira: funkcija poziva count sa ispravnim where filterima
-  // Ulaz: svi count mockovi vraćaju 0
-  // Očekivani izlaz: PrijavaNaPraksu.count pozvan 4 puta s ispravnim statusima
   test('poziva count s ispravnim where filterima', async () => {
     db.PrijavaNaPraksu.count.mockResolvedValue(0);
     db.Praksa.count.mockResolvedValue(0);
@@ -131,9 +126,6 @@ describe('getDashboardStats', () => {
     expect(db.PrijavaNaPraksu.count).toHaveBeenCalledWith({ where: { status: 'ODBIJENA' } });
   });
 
-  // Testira: funkcija propagira grešku kada DB baci exception
-  // Ulaz: PrijavaNaPraksu.count baca Error
-  // Očekivani izlaz: getDashboardStats baca istu grešku
   test('propagira grešku iz baze', async () => {
     db.PrijavaNaPraksu.count.mockRejectedValue(new Error('DB error'));
 
@@ -144,15 +136,16 @@ describe('getDashboardStats', () => {
 // ── getPrijave ────────────────────────────────────────────────────────────────
 describe('getPrijave', () => {
   // Testira: funkcija vraća paginiran rezultat s ispravnim metapodacima
-  // Ulaz: { stranica: 1, limit: 15 }, findAndCountAll vraća count=20 i 15 redova
+  // Ulaz: { stranica: 1, limit: 15, koordinatorUserId: 1 }, koordinator postoji
   // Očekivani izlaz: objekat s prijave, ukupno=20, stranice=2, trenutnaStranica=1
   test('vraća paginiran rezultat s ispravnim metapodacima', async () => {
+    db.Koordinator.findOne.mockResolvedValue(makeMockKoordinator());
     db.PrijavaNaPraksu.findAndCountAll.mockResolvedValue({
       count: 20,
       rows: Array(15).fill(makeMockPrijava()),
     });
 
-    const result = await getPrijave({ stranica: 1, limit: 15 });
+    const result = await getPrijave({ stranica: 1, limit: 15, koordinatorUserId: 1 });
 
     expect(result.ukupno).toBe(20);
     expect(result.stranice).toBe(2);
@@ -161,12 +154,13 @@ describe('getPrijave', () => {
   });
 
   // Testira: funkcija prosljeđuje status filter u where klauzulu
-  // Ulaz: { status: 'PODNESENA', stranica: 1, limit: 15 }
+  // Ulaz: { status: 'PODNESENA', stranica: 1, limit: 15, koordinatorUserId: 1 }
   // Očekivani izlaz: findAndCountAll pozvan s where: { status: 'PODNESENA' }
   test('prosljeđuje status filter u where klauzulu', async () => {
+    db.Koordinator.findOne.mockResolvedValue(makeMockKoordinator());
     db.PrijavaNaPraksu.findAndCountAll.mockResolvedValue({ count: 0, rows: [] });
 
-    await getPrijave({ status: 'PODNESENA', stranica: 1, limit: 15 });
+    await getPrijave({ status: 'PODNESENA', stranica: 1, limit: 15, koordinatorUserId: 1 });
 
     expect(db.PrijavaNaPraksu.findAndCountAll).toHaveBeenCalledWith(
       expect.objectContaining({ where: { status: 'PODNESENA' } })
@@ -174,12 +168,13 @@ describe('getPrijave', () => {
   });
 
   // Testira: funkcija ne dodaje where filter kada status nije proslijeđen
-  // Ulaz: { stranica: 1, limit: 15 } bez statusa
+  // Ulaz: { stranica: 1, limit: 15, koordinatorUserId: 1 } bez statusa
   // Očekivani izlaz: findAndCountAll pozvan s where: {}
   test('ne filtrira po statusu kada nije proslijeđen', async () => {
+    db.Koordinator.findOne.mockResolvedValue(makeMockKoordinator());
     db.PrijavaNaPraksu.findAndCountAll.mockResolvedValue({ count: 0, rows: [] });
 
-    await getPrijave({ stranica: 1, limit: 15 });
+    await getPrijave({ stranica: 1, limit: 15, koordinatorUserId: 1 });
 
     expect(db.PrijavaNaPraksu.findAndCountAll).toHaveBeenCalledWith(
       expect.objectContaining({ where: {} })
@@ -187,47 +182,80 @@ describe('getPrijave', () => {
   });
 
   // Testira: ispravno računa offset za drugu stranicu
-  // Ulaz: { stranica: 2, limit: 10 }
+  // Ulaz: { stranica: 2, limit: 10, koordinatorUserId: 1 }
   // Očekivani izlaz: findAndCountAll pozvan s offset: 10
   test('ispravno računa offset za drugu stranicu', async () => {
+    db.Koordinator.findOne.mockResolvedValue(makeMockKoordinator());
     db.PrijavaNaPraksu.findAndCountAll.mockResolvedValue({ count: 0, rows: [] });
 
-    await getPrijave({ stranica: 2, limit: 10 });
+    await getPrijave({ stranica: 2, limit: 10, koordinatorUserId: 1 });
 
     expect(db.PrijavaNaPraksu.findAndCountAll).toHaveBeenCalledWith(
       expect.objectContaining({ offset: 10, limit: 10 })
     );
   });
+
+  // Testira: funkcija baca KOORDINATOR_NOT_FOUND kada koordinator ne postoji
+  // Ulaz: Koordinator.findOne vraća null
+  // Očekivani izlaz: baca Error s porukom 'KOORDINATOR_NOT_FOUND'
+  test('baca KOORDINATOR_NOT_FOUND kada koordinator ne postoji', async () => {
+    db.Koordinator.findOne.mockResolvedValue(null);
+
+    await expect(getPrijave({ stranica: 1, limit: 15, koordinatorUserId: 999 }))
+      .rejects.toThrow('KOORDINATOR_NOT_FOUND');
+    expect(db.PrijavaNaPraksu.findAndCountAll).not.toHaveBeenCalled();
+  });
 });
 
 // ── getPrijavaById ────────────────────────────────────────────────────────────
 describe('getPrijavaById', () => {
-  // Testira: funkcija vraća prijavu kada postoji u bazi
-  // Ulaz: id=100, findByPk vraća prijavu
+  // Testira: funkcija vraća prijavu kada postoji i pripada istom fakultetu
+  // Ulaz: id=100, koordinatorUserId=1, koordinator i student imaju isti fakultetID=5
   // Očekivani izlaz: objekat prijave s id=100
   test('vraća prijavu kada postoji', async () => {
+    db.Koordinator.findOne.mockResolvedValue(makeMockKoordinator());
     db.PrijavaNaPraksu.findByPk.mockResolvedValue(makeMockPrijava());
 
-    const result = await getPrijavaById(100);
+    const result = await getPrijavaById(100, 1);
 
     expect(result.id).toBe(100);
   });
 
-  // Testira: funkcija baca NOT_FOUND grešku kada prijava ne postoji
-  // Ulaz: id=999, findByPk vraća null
+  // Testira: funkcija baca NOT_FOUND kada prijava ne postoji
+  // Ulaz: id=999, koordinatorUserId=1, findByPk vraća null
   // Očekivani izlaz: baca Error s porukom 'NOT_FOUND'
   test('baca NOT_FOUND kada prijava ne postoji', async () => {
+    db.Koordinator.findOne.mockResolvedValue(makeMockKoordinator());
     db.PrijavaNaPraksu.findByPk.mockResolvedValue(null);
 
-    await expect(getPrijavaById(999)).rejects.toThrow('NOT_FOUND');
+    await expect(getPrijavaById(999, 1)).rejects.toThrow('NOT_FOUND');
+  });
+
+  // Testira: funkcija baca NOT_FOUND kada prijava je s drugog fakulteta
+  // Ulaz: id=100, koordinator ima fakultetID=5, student ima fakultetID=99
+  // Očekivani izlaz: baca Error s porukom 'NOT_FOUND'
+  test('baca NOT_FOUND kada prijava je s drugog fakulteta', async () => {
+    db.Koordinator.findOne.mockResolvedValue(makeMockKoordinator({ fakultetID: 5 }));
+    db.PrijavaNaPraksu.findByPk.mockResolvedValue(
+      makeMockPrijava({ Student: makeMockStudent({ fakultetID: 99 }) })
+    );
+
+    await expect(getPrijavaById(100, 1)).rejects.toThrow('NOT_FOUND');
+  });
+
+  // Testira: funkcija baca KOORDINATOR_NOT_FOUND kada koordinator ne postoji
+  // Ulaz: Koordinator.findOne vraća null
+  // Očekivani izlaz: baca Error s porukom 'KOORDINATOR_NOT_FOUND'
+  test('baca KOORDINATOR_NOT_FOUND kada koordinator ne postoji', async () => {
+    db.Koordinator.findOne.mockResolvedValue(null);
+
+    await expect(getPrijavaById(100, 999)).rejects.toThrow('KOORDINATOR_NOT_FOUND');
+    expect(db.PrijavaNaPraksu.findByPk).not.toHaveBeenCalled();
   });
 });
 
 // ── odluciOPrijavi ────────────────────────────────────────────────────────────
 describe('odluciOPrijavi', () => {
-  // Testira: funkcija postavlja status ODOBRENA i poziva update
-  // Ulaz: id=100, odluka='odobrena', razlog='', koordinatorUserId=1
-  // Očekivani izlaz: { id: 100, status: 'ODOBRENA' }, update pozvan s ispravnim podacima
   test('odobrava prijavu i postavlja status ODOBRENA', async () => {
     const prijava = makeMockPrijava();
     db.PrijavaNaPraksu.findByPk.mockResolvedValue(prijava);
@@ -240,9 +268,6 @@ describe('odluciOPrijavi', () => {
     );
   });
 
-  // Testira: funkcija postavlja status ODBIJENA i čuva razlog
-  // Ulaz: id=100, odluka='odbijena', razlog='Nepotpuna dokumentacija'
-  // Očekivani izlaz: { id: 100, status: 'ODBIJENA' }, update pozvan s razlogom
   test('odbija prijavu i čuva razlog odbijanja', async () => {
     const prijava = makeMockPrijava();
     db.PrijavaNaPraksu.findByPk.mockResolvedValue(prijava);
@@ -258,27 +283,18 @@ describe('odluciOPrijavi', () => {
     );
   });
 
-  // Testira: funkcija baca NOT_FOUND kada prijava ne postoji
-  // Ulaz: findByPk vraća null
-  // Očekivani izlaz: baca Error s porukom 'NOT_FOUND'
   test('baca NOT_FOUND kada prijava ne postoji', async () => {
     db.PrijavaNaPraksu.findByPk.mockResolvedValue(null);
 
     await expect(odluciOPrijavi(999, 'odobrena', '', 1)).rejects.toThrow('NOT_FOUND');
   });
 
-  // Testira: funkcija baca INVALID_STATUS kada prijava ima finalni status
-  // Ulaz: prijava s statusom 'ODOBRENA' (već finalizirana)
-  // Očekivani izlaz: baca Error s porukom 'INVALID_STATUS'
   test('baca INVALID_STATUS kada prijava već ima finalni status', async () => {
     db.PrijavaNaPraksu.findByPk.mockResolvedValue(makeMockPrijava({ status: 'ODOBRENA' }));
 
     await expect(odluciOPrijavi(100, 'odobrena', '', 1)).rejects.toThrow('INVALID_STATUS');
   });
 
-  // Testira: funkcija prihvata prijavu sa statusom U_RAZMATRANJU
-  // Ulaz: prijava s statusom 'U_RAZMATRANJU'
-  // Očekivani izlaz: uspješno ažurira bez greške
   test('prihvata prijavu sa statusom U_RAZMATRANJU', async () => {
     const prijava = makeMockPrijava({ status: 'U_RAZMATRANJU' });
     db.PrijavaNaPraksu.findByPk.mockResolvedValue(prijava);
@@ -291,9 +307,6 @@ describe('odluciOPrijavi', () => {
 
 // ── getStudenti ───────────────────────────────────────────────────────────────
 describe('getStudenti', () => {
-  // Testira: funkcija filtrira studente po fakultetID koordinatora
-  // Ulaz: koordinatorUserId=1, koordinator ima fakultetID=5
-  // Očekivani izlaz: Student.findAll pozvan s where: { fakultetID: 5 }
   test('filtrira studente po fakultetID koordinatora', async () => {
     db.Koordinator.findOne.mockResolvedValue(makeMockKoordinator());
     db.Student.findAll.mockResolvedValue([makeMockStudent()]);
@@ -305,9 +318,6 @@ describe('getStudenti', () => {
     );
   });
 
-  // Testira: funkcija baca KOORDINATOR_NOT_FOUND kada koordinator ne postoji
-  // Ulaz: koordinatorUserId=999, Koordinator.findOne vraća null
-  // Očekivani izlaz: baca Error s porukom 'KOORDINATOR_NOT_FOUND'
   test('baca KOORDINATOR_NOT_FOUND kada koordinator ne postoji', async () => {
     db.Koordinator.findOne.mockResolvedValue(null);
 
@@ -315,9 +325,6 @@ describe('getStudenti', () => {
     expect(db.Student.findAll).not.toHaveBeenCalled();
   });
 
-  // Testira: funkcija vraća prazan niz kada nema studenata na fakultetu
-  // Ulaz: koordinatorUserId=1, Student.findAll vraća []
-  // Očekivani izlaz: []
   test('vraća prazan niz kada nema studenata', async () => {
     db.Koordinator.findOne.mockResolvedValue(makeMockKoordinator());
     db.Student.findAll.mockResolvedValue([]);
@@ -327,9 +334,6 @@ describe('getStudenti', () => {
     expect(result).toEqual([]);
   });
 
-  // Testira: pretraga jednom riječju dodaje Op.or filter na ime i prezime
-  // Ulaz: koordinatorUserId=1, pretraga='Amina'
-  // Očekivani izlaz: Student.findAll pozvan s include koji sadrži where s Op.or
   test('pretraga jednom riječju dodaje filter na ime i prezime', async () => {
     db.Koordinator.findOne.mockResolvedValue(makeMockKoordinator());
     db.Student.findAll.mockResolvedValue([]);
@@ -346,12 +350,13 @@ describe('getStudenti', () => {
 // ── getPrakse ─────────────────────────────────────────────────────────────────
 describe('getPrakse', () => {
   // Testira: funkcija vraća sve prakse bez filtera kada status nije proslijeđen
-  // Ulaz: status='' (prazan string)
+  // Ulaz: status='' (prazan string), koordinatorUserId=1
   // Očekivani izlaz: Praksa.findAll pozvan s where: {}
   test('vraća sve prakse bez filtera kada status nije proslijeđen', async () => {
+    db.Koordinator.findOne.mockResolvedValue(makeMockKoordinator());
     db.Praksa.findAll.mockResolvedValue([]);
 
-    await getPrakse('');
+    await getPrakse('', 1);
 
     expect(db.Praksa.findAll).toHaveBeenCalledWith(
       expect.objectContaining({ where: {} })
@@ -359,12 +364,13 @@ describe('getPrakse', () => {
   });
 
   // Testira: funkcija filtrira prakse po statusu i konvertuje u uppercase
-  // Ulaz: status='aktivna' (lowercase)
+  // Ulaz: status='aktivna' (lowercase), koordinatorUserId=1
   // Očekivani izlaz: Praksa.findAll pozvan s where: { status: 'AKTIVNA' }
   test('filtrira prakse po statusu i konvertuje u uppercase', async () => {
+    db.Koordinator.findOne.mockResolvedValue(makeMockKoordinator());
     db.Praksa.findAll.mockResolvedValue([]);
 
-    await getPrakse('aktivna');
+    await getPrakse('aktivna', 1);
 
     expect(db.Praksa.findAll).toHaveBeenCalledWith(
       expect.objectContaining({ where: { status: 'AKTIVNA' } })
@@ -372,22 +378,30 @@ describe('getPrakse', () => {
   });
 
   // Testira: funkcija vraća prazan niz kada nema praksi
-  // Ulaz: Praksa.findAll vraća []
+  // Ulaz: Praksa.findAll vraća [], koordinatorUserId=1
   // Očekivani izlaz: []
   test('vraća prazan niz kada nema praksi', async () => {
+    db.Koordinator.findOne.mockResolvedValue(makeMockKoordinator());
     db.Praksa.findAll.mockResolvedValue([]);
 
-    const result = await getPrakse();
+    const result = await getPrakse('', 1);
 
     expect(result).toEqual([]);
+  });
+
+  // Testira: funkcija baca KOORDINATOR_NOT_FOUND kada koordinator ne postoji
+  // Ulaz: Koordinator.findOne vraća null
+  // Očekivani izlaz: baca Error s porukom 'KOORDINATOR_NOT_FOUND'
+  test('baca KOORDINATOR_NOT_FOUND kada koordinator ne postoji', async () => {
+    db.Koordinator.findOne.mockResolvedValue(null);
+
+    await expect(getPrakse('', 999)).rejects.toThrow('KOORDINATOR_NOT_FOUND');
+    expect(db.Praksa.findAll).not.toHaveBeenCalled();
   });
 });
 
 // ── approveStudent ────────────────────────────────────────────────────────────
 describe('approveStudent', () => {
-  // Testira: funkcija uspješno odobrava studenta i šalje email
-  // Ulaz: studentUserId=10, koordinatorUserId=1, sve provjere prolaze
-  // Očekivani izlaz: { id: 10, approvalStatus: 'APPROVED' }, save() i email pozvan
   test('uspješno odobrava studenta i šalje email', async () => {
     const user = makeMockUser();
     db.Koordinator.findOne.mockResolvedValue(makeMockKoordinator());
@@ -404,9 +418,6 @@ describe('approveStudent', () => {
     expect(result).toEqual({ id: 10, approvalStatus: 'APPROVED' });
   });
 
-  // Testira: funkcija baca KOORDINATOR_NOT_FOUND kada koordinator ne postoji
-  // Ulaz: Koordinator.findOne vraća null
-  // Očekivani izlaz: baca Error s porukom 'KOORDINATOR_NOT_FOUND'
   test('baca KOORDINATOR_NOT_FOUND kada koordinator ne postoji', async () => {
     db.Koordinator.findOne.mockResolvedValue(null);
 
@@ -414,9 +425,6 @@ describe('approveStudent', () => {
     expect(db.Student.findOne).not.toHaveBeenCalled();
   });
 
-  // Testira: funkcija baca STUDENT_NOT_FOUND_OR_WRONG_FACULTY kada student nije s istog fakulteta
-  // Ulaz: Student.findOne vraća null (student s drugog fakulteta ili ne postoji)
-  // Očekivani izlaz: baca Error s porukom 'STUDENT_NOT_FOUND_OR_WRONG_FACULTY'
   test('baca STUDENT_NOT_FOUND_OR_WRONG_FACULTY za studenta s drugog fakulteta', async () => {
     db.Koordinator.findOne.mockResolvedValue(makeMockKoordinator());
     db.Student.findOne.mockResolvedValue(null);
@@ -425,9 +433,6 @@ describe('approveStudent', () => {
     expect(db.User.findByPk).not.toHaveBeenCalled();
   });
 
-  // Testira: funkcija baca EMAIL_NOT_VERIFIED kada student nije verifikovao email
-  // Ulaz: user.emailVerifikovan = false
-  // Očekivani izlaz: baca Error s porukom 'EMAIL_NOT_VERIFIED'
   test('baca EMAIL_NOT_VERIFIED kada student nije verifikovao email', async () => {
     db.Koordinator.findOne.mockResolvedValue(makeMockKoordinator());
     db.Student.findOne.mockResolvedValue(makeMockStudent());
@@ -437,9 +442,6 @@ describe('approveStudent', () => {
     expect(sendAccountApprovedEmail).not.toHaveBeenCalled();
   });
 
-  // Testira: funkcija baca INVALID_STATUS kada student već nije PENDING_APPROVAL
-  // Ulaz: user.approvalStatus = 'APPROVED'
-  // Očekivani izlaz: baca Error s porukom 'INVALID_STATUS'
   test('baca INVALID_STATUS kada student već nije PENDING_APPROVAL', async () => {
     db.Koordinator.findOne.mockResolvedValue(makeMockKoordinator());
     db.Student.findOne.mockResolvedValue(makeMockStudent());
@@ -449,9 +451,6 @@ describe('approveStudent', () => {
     expect(sendAccountApprovedEmail).not.toHaveBeenCalled();
   });
 
-  // Testira: funkcija baca NOT_FOUND kada user nije pronađen ili nije STUDENT
-  // Ulaz: User.findByPk vraća null
-  // Očekivani izlaz: baca Error s porukom 'NOT_FOUND'
   test('baca NOT_FOUND kada user ne postoji', async () => {
     db.Koordinator.findOne.mockResolvedValue(makeMockKoordinator());
     db.Student.findOne.mockResolvedValue(makeMockStudent());
@@ -463,9 +462,6 @@ describe('approveStudent', () => {
 
 // ── rejectStudent ─────────────────────────────────────────────────────────────
 describe('rejectStudent', () => {
-  // Testira: funkcija uspješno odbija studenta s razlogom i šalje email
-  // Ulaz: studentUserId=10, razlog='Nepotpuna dokumentacija', koordinatorUserId=1
-  // Očekivani izlaz: { id: 10, approvalStatus: 'REJECTED' }, save() i email pozvan
   test('uspješno odbija studenta i šalje email', async () => {
     const user = makeMockUser();
     db.Koordinator.findOne.mockResolvedValue(makeMockKoordinator());
@@ -483,25 +479,16 @@ describe('rejectStudent', () => {
     expect(result).toEqual({ id: 10, approvalStatus: 'REJECTED' });
   });
 
-  // Testira: funkcija baca RAZLOG_REQUIRED kada razlog nije proslijeđen
-  // Ulaz: razlog=undefined
-  // Očekivani izlaz: baca Error s porukom 'RAZLOG_REQUIRED'
   test('baca RAZLOG_REQUIRED kada razlog nije proslijeđen', async () => {
     await expect(rejectStudent(10, undefined, 1)).rejects.toThrow('RAZLOG_REQUIRED');
     expect(db.Koordinator.findOne).not.toHaveBeenCalled();
   });
 
-  // Testira: funkcija baca RAZLOG_REQUIRED kada je razlog prazan string
-  // Ulaz: razlog='   ' (samo razmaci)
-  // Očekivani izlaz: baca Error s porukom 'RAZLOG_REQUIRED'
   test('baca RAZLOG_REQUIRED kada je razlog prazan string', async () => {
     await expect(rejectStudent(10, '   ', 1)).rejects.toThrow('RAZLOG_REQUIRED');
     expect(db.Koordinator.findOne).not.toHaveBeenCalled();
   });
 
-  // Testira: funkcija baca KOORDINATOR_NOT_FOUND kada koordinator ne postoji
-  // Ulaz: Koordinator.findOne vraća null
-  // Očekivani izlaz: baca Error s porukom 'KOORDINATOR_NOT_FOUND'
   test('baca KOORDINATOR_NOT_FOUND kada koordinator ne postoji', async () => {
     db.Koordinator.findOne.mockResolvedValue(null);
 
@@ -509,9 +496,6 @@ describe('rejectStudent', () => {
     expect(db.Student.findOne).not.toHaveBeenCalled();
   });
 
-  // Testira: funkcija baca STUDENT_NOT_FOUND_OR_WRONG_FACULTY za studenta s drugog fakulteta
-  // Ulaz: Student.findOne vraća null
-  // Očekivani izlaz: baca Error s porukom 'STUDENT_NOT_FOUND_OR_WRONG_FACULTY'
   test('baca STUDENT_NOT_FOUND_OR_WRONG_FACULTY za studenta s drugog fakulteta', async () => {
     db.Koordinator.findOne.mockResolvedValue(makeMockKoordinator());
     db.Student.findOne.mockResolvedValue(null);
@@ -520,9 +504,6 @@ describe('rejectStudent', () => {
     expect(db.User.findByPk).not.toHaveBeenCalled();
   });
 
-  // Testira: funkcija baca INVALID_STATUS kada student već nije PENDING_APPROVAL
-  // Ulaz: user.approvalStatus = 'REJECTED'
-  // Očekivani izlaz: baca Error s porukom 'INVALID_STATUS'
   test('baca INVALID_STATUS kada student već nije PENDING_APPROVAL', async () => {
     db.Koordinator.findOne.mockResolvedValue(makeMockKoordinator());
     db.Student.findOne.mockResolvedValue(makeMockStudent());

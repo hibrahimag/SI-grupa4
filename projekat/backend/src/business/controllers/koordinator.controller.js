@@ -18,7 +18,7 @@ const getDashboardStats = async (req, res) => {
 const getPrijave = async (req, res) => {
   try {
     const { status, stranica, limit } = req.query;
-    const data = await koordinatorService.getPrijave({ status, stranica, limit });
+    const data = await koordinatorService.getPrijave({ status, stranica, limit, koordinatorUserId: req.user.id  });
     res.json({ success: true, data });
   } catch (err) {
     console.error('[koordinator] getPrijave:', err);
@@ -29,7 +29,7 @@ const getPrijave = async (req, res) => {
 // GET /api/koordinator/prijave/:id
 const getPrijavaDetalji = async (req, res) => {
   try {
-    const data = await koordinatorService.getPrijavaById(req.params.id);
+    const data = await koordinatorService.getPrijavaById(req.params.id, req.user.id);
     res.json({ success: true, data });
   } catch (err) {
     if (err.message === 'NOT_FOUND') {
@@ -94,7 +94,7 @@ const getStudenti = async (req, res) => {
 // GET /api/koordinator/prakse?status=AKTIVNA
 const getPrakse = async (req, res) => {
   try {
-    const data = await koordinatorService.getPrakse(req.query.status || '');
+    const data = await koordinatorService.getPrakse(req.query.status || '', req.user.id);
     res.json({ success: true, data });
   } catch (err) {
     console.error('[koordinator] getPrakse:', err);

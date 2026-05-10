@@ -22,10 +22,16 @@ const getDashboardStats = async () => {
 };
 
 // ─── getPrijave ───────────────────────────────────────────────────────────────
-const getPrijave = async ({ status, stranica = 1, limit = 15 }) => {
+const getPrijave = async ({ status, stranica = 1, limit = 15, koordinatorUserId }) => {
   const offset = (parseInt(stranica) - 1) * parseInt(limit);
   const where  = {};
   if (status) where.status = status;
+
+  const koordinator = await db.Koordinator.findOne({
+    where: { userID: koordinatorUserId },
+    attributes: ['fakultetID'],
+  });
+  if (!koordinator) throw new Error('KOORDINATOR_NOT_FOUND');
 
   const { count, rows } = await db.PrijavaNaPraksu.findAndCountAll({
     where,
@@ -34,6 +40,7 @@ const getPrijave = async ({ status, stranica = 1, limit = 15 }) => {
     include: [
       {
         model: db.Student,
+        where: { fakultetID: koordinator.fakultetID },
         include: [{ model: db.User, attributes: ['ime', 'prezime', 'email'] }],
         attributes: ['id', 'index_number', 'year_of_study', 'odsjekID', 'fakultetID'],
       },
@@ -59,7 +66,12 @@ const getPrijave = async ({ status, stranica = 1, limit = 15 }) => {
 };
 
 // ─── getPrijavaById ───────────────────────────────────────────────────────────
-const getPrijavaById = async (id) => {
+const getPrijavaById = async (id, koordinatorUserId) => {
+  const koordinator = await db.Koordinator.findOne({
+    where: { userID: koordinatorUserId },
+    attributes: ['fakultetID'],
+  });
+  if (!koordinator) throw new Error('KOORDINATOR_NOT_FOUND');
   const prijava = await db.PrijavaNaPraksu.findByPk(id, {
     include: [
       {
@@ -78,6 +90,9 @@ const getPrijavaById = async (id) => {
     ],
   });
   if (!prijava) throw new Error('NOT_FOUND');
+  if (prijava.Student?.fakultetID !== koordinator.fakultetID) {
+    throw new Error('NOT_FOUND');
+  }
   return prijava;
 };
 
@@ -170,10 +185,16 @@ const getStudenti = async (koordinatorUserId, pretraga = '') => {
 };
 
 // ─── getPrakse ────────────────────────────────────────────────────────────────
-const getPrakse = async (status = '') => {
+const getPrakse = async (status = '', koordinatorUserId) => {
   if (!db.Praksa) return [];
   const where = {};
   if (status) where.status = status.toUpperCase();
+
+  const koordinator = await db.Koordinator.findOne({
+    where: { userID: koordinatorUserId },
+    attributes: ['fakultetID'],
+  });
+  if (!koordinator) throw new Error('KOORDINATOR_NOT_FOUND');
 
   return db.Praksa.findAll({
     where,
@@ -183,6 +204,7 @@ const getPrakse = async (status = '') => {
         include: [
           {
             model: db.Student,
+            where: { fakultetID: koordinator.fakultetID },
             attributes: ['id', 'index_number', 'year_of_study'],
             include: [{ model: db.User, attributes: ['ime', 'prezime', 'email'] }],
           },

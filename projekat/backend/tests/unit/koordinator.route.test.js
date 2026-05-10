@@ -135,13 +135,13 @@ describe('GET /api/koordinator/dashboard', () => {
   // Očekivani izlaz: HTTP 200, objekat sa ukupno, podnesene, odobrene, odbijene, aktivnePrakse, zavrsene
   test('200 — vraća dashboard statistike', async () => {
     db.PrijavaNaPraksu.count
-      .mockResolvedValueOnce(10)  // ukupno
-      .mockResolvedValueOnce(3)   // podnesene
-      .mockResolvedValueOnce(5)   // odobrene
-      .mockResolvedValueOnce(2);  // odbijene
+      .mockResolvedValueOnce(10)
+      .mockResolvedValueOnce(3)
+      .mockResolvedValueOnce(5)
+      .mockResolvedValueOnce(2);
     db.Praksa.count
-      .mockResolvedValueOnce(4)   // aktivne
-      .mockResolvedValueOnce(1);  // zavrsene
+      .mockResolvedValueOnce(4)
+      .mockResolvedValueOnce(1);
 
     const res = await request(app).get('/api/koordinator/dashboard');
 
@@ -173,9 +173,10 @@ describe('GET /api/koordinator/dashboard', () => {
 // ── GET /api/koordinator/prijave ──────────────────────────────────────────────
 describe('GET /api/koordinator/prijave', () => {
   // Testira: endpoint vraća paginiranu listu prijava
-  // Ulaz: GET /api/koordinator/prijave, findAndCountAll vraća 1 prijavu
+  // Ulaz: GET /api/koordinator/prijave, koordinator postoji, findAndCountAll vraća 1 prijavu
   // Očekivani izlaz: HTTP 200, data.prijave je niz, data.ukupno = 1
   test('200 — vraća listu prijava', async () => {
+    db.Koordinator.findOne.mockResolvedValue(makeMockKoordinator());
     db.PrijavaNaPraksu.findAndCountAll.mockResolvedValue({
       count: 1,
       rows: [makeMockPrijava()],
@@ -193,6 +194,7 @@ describe('GET /api/koordinator/prijave', () => {
   // Ulaz: GET /api/koordinator/prijave?status=PODNESENA
   // Očekivani izlaz: HTTP 200, findAndCountAll pozvan s where: { status: 'PODNESENA' }
   test('200 — filtrira po ?status=PODNESENA', async () => {
+    db.Koordinator.findOne.mockResolvedValue(makeMockKoordinator());
     db.PrijavaNaPraksu.findAndCountAll.mockResolvedValue({ count: 0, rows: [] });
 
     const res = await request(app).get('/api/koordinator/prijave?status=PODNESENA');
@@ -203,10 +205,23 @@ describe('GET /api/koordinator/prijave', () => {
     );
   });
 
+  // Testira: endpoint vraća 500 kada koordinator ne postoji u bazi
+  // Ulaz: GET /api/koordinator/prijave, Koordinator.findOne vraća null
+  // Očekivani izlaz: HTTP 500, success: false
+  test('500 — koordinator ne postoji vraća 500', async () => {
+    db.Koordinator.findOne.mockResolvedValue(null);
+
+    const res = await request(app).get('/api/koordinator/prijave');
+
+    expect(res.status).toBe(500);
+    expect(res.body.success).toBe(false);
+  });
+
   // Testira: endpoint vraća 500 kada DB baci grešku
   // Ulaz: GET /api/koordinator/prijave, findAndCountAll baca grešku
   // Očekivani izlaz: HTTP 500, success: false
   test('500 — greška baze vraća 500', async () => {
+    db.Koordinator.findOne.mockResolvedValue(makeMockKoordinator());
     db.PrijavaNaPraksu.findAndCountAll.mockRejectedValue(new Error('DB error'));
 
     const res = await request(app).get('/api/koordinator/prijave');
@@ -218,10 +233,11 @@ describe('GET /api/koordinator/prijave', () => {
 
 // ── GET /api/koordinator/prijave/:id ─────────────────────────────────────────
 describe('GET /api/koordinator/prijave/:id', () => {
-  // Testira: endpoint vraća detalje jedne prijave
-  // Ulaz: GET /api/koordinator/prijave/100, findByPk vraća prijavu
+  // Testira: endpoint vraća detalje jedne prijave s istog fakulteta
+  // Ulaz: GET /api/koordinator/prijave/100, koordinator postoji, findByPk vraća prijavu s istim fakultetID
   // Očekivani izlaz: HTTP 200, data.id = 100
   test('200 — vraća detalje prijave', async () => {
+    db.Koordinator.findOne.mockResolvedValue(makeMockKoordinator());
     db.PrijavaNaPraksu.findByPk.mockResolvedValue(makeMockPrijava());
 
     const res = await request(app).get('/api/koordinator/prijave/100');
@@ -232,15 +248,42 @@ describe('GET /api/koordinator/prijave/:id', () => {
   });
 
   // Testira: endpoint vraća 404 kada prijava ne postoji
-  // Ulaz: GET /api/koordinator/prijave/999, findByPk vraća null
+  // Ulaz: GET /api/koordinator/prijave/999, koordinator postoji, findByPk vraća null
   // Očekivani izlaz: HTTP 404, success: false
   test('404 — prijava ne postoji', async () => {
+    db.Koordinator.findOne.mockResolvedValue(makeMockKoordinator());
     db.PrijavaNaPraksu.findByPk.mockResolvedValue(null);
 
     const res = await request(app).get('/api/koordinator/prijave/999');
 
     expect(res.status).toBe(404);
     expect(res.body.success).toBe(false);
+  });
+
+  // Testira: endpoint vraća 404 kada prijava pripada studentu s drugog fakulteta
+  // Ulaz: GET /api/koordinator/prijave/100, prijava ima Student s drugačijim fakultetID
+  // Očekivani izlaz: HTTP 404, success: false
+  test('404 — prijava je s drugog fakulteta', async () => {
+    db.Koordinator.findOne.mockResolvedValue(makeMockKoordinator({ fakultetID: 5 }));
+    db.PrijavaNaPraksu.findByPk.mockResolvedValue(
+      makeMockPrijava({ Student: makeMockStudent({ fakultetID: 99 }) })
+    );
+
+    const res = await request(app).get('/api/koordinator/prijave/100');
+
+    expect(res.status).toBe(404);
+    expect(res.body.success).toBe(false);
+  });
+
+  // Testira: endpoint vraća 500 kada koordinator ne postoji
+  // Ulaz: GET /api/koordinator/prijave/100, Koordinator.findOne vraća null
+  // Očekivani izlaz: HTTP 500
+  test('500 — koordinator ne postoji vraća 500', async () => {
+    db.Koordinator.findOne.mockResolvedValue(null);
+
+    const res = await request(app).get('/api/koordinator/prijave/100');
+
+    expect(res.status).toBe(500);
   });
 });
 
@@ -593,10 +636,11 @@ describe('GET /api/koordinator/zahtjevi', () => {
 
 // ── GET /api/koordinator/prakse ───────────────────────────────────────────────
 describe('GET /api/koordinator/prakse', () => {
-  // Testira: endpoint vraća listu praksi
-  // Ulaz: GET /api/koordinator/prakse, Praksa.findAll vraća jednu praksu
+  // Testira: endpoint vraća listu praksi s koordinatorovog fakulteta
+  // Ulaz: GET /api/koordinator/prakse, koordinator postoji, Praksa.findAll vraća jednu praksu
   // Očekivani izlaz: HTTP 200, success: true, data je niz
   test('200 — vraća listu praksi', async () => {
+    db.Koordinator.findOne.mockResolvedValue(makeMockKoordinator());
     db.Praksa.findAll.mockResolvedValue([
       { id: 1, status: 'AKTIVNA', datumPocetka: new Date(), PrijavaNaPraksu: makeMockPrijava() },
     ]);
@@ -612,6 +656,7 @@ describe('GET /api/koordinator/prakse', () => {
   // Ulaz: GET /api/koordinator/prakse?status=AKTIVNA
   // Očekivani izlaz: HTTP 200, Praksa.findAll pozvan s where: { status: 'AKTIVNA' }
   test('200 — filtrira po ?status=AKTIVNA', async () => {
+    db.Koordinator.findOne.mockResolvedValue(makeMockKoordinator());
     db.Praksa.findAll.mockResolvedValue([]);
 
     const res = await request(app).get('/api/koordinator/prakse?status=AKTIVNA');
@@ -626,6 +671,7 @@ describe('GET /api/koordinator/prakse', () => {
   // Ulaz: GET /api/koordinator/prakse, Praksa.findAll vraća []
   // Očekivani izlaz: HTTP 200, data = []
   test('200 — vraća prazan niz kada nema praksi', async () => {
+    db.Koordinator.findOne.mockResolvedValue(makeMockKoordinator());
     db.Praksa.findAll.mockResolvedValue([]);
 
     const res = await request(app).get('/api/koordinator/prakse');
@@ -634,10 +680,23 @@ describe('GET /api/koordinator/prakse', () => {
     expect(res.body.data).toEqual([]);
   });
 
+  // Testira: endpoint vraća 500 kada koordinator ne postoji
+  // Ulaz: GET /api/koordinator/prakse, Koordinator.findOne vraća null
+  // Očekivani izlaz: HTTP 500, success: false
+  test('500 — koordinator ne postoji vraća 500', async () => {
+    db.Koordinator.findOne.mockResolvedValue(null);
+
+    const res = await request(app).get('/api/koordinator/prakse');
+
+    expect(res.status).toBe(500);
+    expect(res.body.success).toBe(false);
+  });
+
   // Testira: endpoint vraća 500 kada DB baci grešku
   // Ulaz: GET /api/koordinator/prakse, Praksa.findAll baca grešku
   // Očekivani izlaz: HTTP 500, success: false
   test('500 — greška baze vraća 500', async () => {
+    db.Koordinator.findOne.mockResolvedValue(makeMockKoordinator());
     db.Praksa.findAll.mockRejectedValue(new Error('DB error'));
 
     const res = await request(app).get('/api/koordinator/prakse');
