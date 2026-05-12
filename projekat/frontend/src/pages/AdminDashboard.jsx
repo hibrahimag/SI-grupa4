@@ -2,6 +2,7 @@ import { Fragment, useEffect, useMemo, useReducer, useState } from 'react';
 import {
   getUsers,
   updateUserRole,
+  updateUserStatus,
   getFaculties,
   createFaculty,
   updateFaculty,
@@ -73,6 +74,11 @@ function reducer(state, action) {
         ...state,
         users: state.users.map((u) => (u.id === action.payload.id ? { ...u, role: action.payload.role } : u)),
         roleUsers: state.roleUsers.map((u) => (u.id === action.payload.id ? { ...u, role: action.payload.role } : u)),
+      };
+    case 'SYNC_UPDATED_USER_STATUS':
+      return {
+        ...state,
+        users: state.users.map((u) => (u.id === action.payload.id ? { ...u, status: action.payload.status } : u)),
       };
     case 'SET_FACULTIES':
       return { ...state, faculties: action.payload };
@@ -182,6 +188,16 @@ export default function AdminDashboard() {
       refreshApprovalRequests();
     }
   }, [view]);
+
+  async function handleActivateUser(userId) {
+    try {
+      await updateUserStatus(userId, 'ACTIVE');
+      dispatch({ type: 'SYNC_UPDATED_USER_STATUS', payload: { id: userId, status: 'ACTIVE' } });
+      showToast('Nalog uspješno aktiviran.');
+    } catch (err) {
+      showToast(err.message || 'Greška pri aktivaciji naloga.', 'error');
+    }
+  }
 
   async function handleRoleChange(userId, role) {
     try {
@@ -355,7 +371,7 @@ export default function AdminDashboard() {
         )}
 
         {view === 'users' && (
-          <UsersView users={visibleUsers} loading={usersLoading} statusFilter={statusFilter} roleFilter={roleFilter} dispatch={dispatch} />
+          <UsersView users={visibleUsers} loading={usersLoading} statusFilter={statusFilter} roleFilter={roleFilter} dispatch={dispatch} onActivate={handleActivateUser} />
         )}
 
         {view === 'roles' && (
@@ -752,7 +768,9 @@ function FacultiesView({ faculties, onCreate, onUpdate, onDelete }) {
   );
 }
 
-function UsersView({ users, loading, statusFilter, roleFilter, dispatch }) {
+function UsersView({ users, loading, statusFilter, roleFilter, dispatch, onActivate }) {
+  const hasDeactivated = users.some((u) => u.status === 'DEACTIVATED');
+
   return (
     <div className="ad-content">
       <div className="ad-header">
@@ -795,6 +813,7 @@ function UsersView({ users, loading, statusFilter, roleFilter, dispatch }) {
                 <th>Status</th>
                 <th className="ad-col-institution">Institucija</th>
                 <th className="ad-col-date">Registrovan</th>
+                {hasDeactivated && <th>Akcije</th>}
               </tr>
             </thead>
             <tbody>
@@ -815,9 +834,18 @@ function UsersView({ users, loading, statusFilter, roleFilter, dispatch }) {
                   <td className="ad-col-date" style={{ color: '#9aabbc', fontSize: '0.82rem' }}>
                     {u.created_at ? u.created_at.slice(0, 10) : '—'}
                   </td>
+                  {hasDeactivated && (
+                    <td>
+                      {u.status === 'DEACTIVATED' && (
+                        <button className="ad-activate-btn" onClick={() => onActivate(u.id)}>
+                          Aktiviraj
+                        </button>
+                      )}
+                    </td>
+                  )}
                 </tr>
               ))}
-              {users.length === 0 && <tr><td colSpan={5} className="ad-empty">Nema korisnika za odabrani filter.</td></tr>}
+              {users.length === 0 && <tr><td colSpan={hasDeactivated ? 6 : 5} className="ad-empty">Nema korisnika za odabrani filter.</td></tr>}
             </tbody>
           </table>
         </div>

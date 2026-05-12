@@ -768,3 +768,28 @@
 .dark .ad-modal-backdrop {
   background: rgba(2, 6, 13, 0.72);
 }
+
+.ad-activate-btn {
+  padding: 5px 12px;
+  background: #16a34a;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.ad-activate-btn:hover {
+  background: #15803d;
+}
+
+.dark .ad-activate-btn {
+  background: #166534;
+}
+
+.dark .ad-activate-btn:hover {
+  background: #15803d;
+}
