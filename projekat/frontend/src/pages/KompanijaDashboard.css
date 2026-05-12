@@ -287,6 +287,86 @@
   margin: 0 0 18px;
 }
 
+.cd-listings-list {
+  padding: 18px 22px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cd-listing-card {
+  border: 1px solid #e0edf9;
+  border-radius: 12px;
+  background: #f8fbff;
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.cd-listing-main {
+  min-width: 0;
+}
+
+.cd-listing-title {
+  margin: 0 0 8px;
+  color: #0d1f3c;
+  font-size: 0.98rem;
+}
+
+.cd-listing-desc {
+  margin: 0;
+  color: #5a7a9a;
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+
+.cd-listing-meta {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cd-listing-meta span,
+.cd-listing-status {
+  border-radius: 999px;
+  padding: 5px 9px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.cd-listing-meta span {
+  background: #eef5ff;
+  color: #5a7a9a;
+}
+
+.cd-listing-side {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.cd-listing-status {
+  background: #e9fbf4;
+  color: #0e9e6e;
+}
+
+.cd-listing-status--zatvoren,
+.cd-listing-status--arhiviran {
+  background: #fff5f3;
+  color: #c0392b;
+}
+
+.cd-listing-date {
+  color: #5a7a9a;
+  font-size: 0.76rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 .cd-btn {
   padding: 8px 16px;
   border-radius: 8px;
@@ -500,7 +580,9 @@
 .cd-layout.dark .cd-action-title,
 .dark .cd-action-title,
 .cd-layout.dark .cd-profile-value,
-.dark .cd-profile-value {
+.dark .cd-profile-value,
+.cd-layout.dark .cd-listing-title,
+.dark .cd-listing-title {
   color: #e2e8f0;
 }
 
@@ -511,7 +593,11 @@
 .cd-layout.dark .cd-empty-text,
 .dark .cd-empty-text,
 .cd-layout.dark .cd-inline-note,
-.dark .cd-inline-note {
+.dark .cd-inline-note,
+.cd-layout.dark .cd-listing-desc,
+.dark .cd-listing-desc,
+.cd-layout.dark .cd-listing-date,
+.dark .cd-listing-date {
   color: #7a9ab8;
 }
 
@@ -537,9 +623,17 @@
 .cd-layout.dark .cd-textarea,
 .dark .cd-textarea,
 .cd-layout.dark .cd-profile-field,
-.dark .cd-profile-field {
+.dark .cd-profile-field,
+.cd-layout.dark .cd-listing-card,
+.dark .cd-listing-card {
   background: #161f2e;
   border-color: #1e2d40;
+  color: #cdd8e8;
+}
+
+.cd-layout.dark .cd-listing-meta span,
+.dark .cd-listing-meta span {
+  background: #1e2d40;
   color: #cdd8e8;
 }
 
@@ -694,6 +788,14 @@
   .cd-section-header {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .cd-listing-card {
+    flex-direction: column;
+  }
+
+  .cd-listing-side {
+    align-items: flex-start;
   }
 
   .cd-layout.dark .cd-sidebar,

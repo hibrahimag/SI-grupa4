@@ -21,6 +21,7 @@ import KoordinatorDashboard  from '../pages/KoordinatorDashboard';
 import ForgotPasswordPage from '../pages/ForgotPasswordPage';
 import ResetPasswordPage  from '../pages/ResetPasswordPage';
 import VerifyEmailPage    from '../pages/VerifyEmailPage';
+//import ListingPage from '../pages/ListingPage';
 
 export default function AppRouter() {
   return (
@@ -60,6 +61,13 @@ export default function AppRouter() {
             <AdminDashboard />
           </ProtectedRoute>
         } />
+
+        {/* ruta za kreiranje oglasa, samo za kompanije */}
+        <Route path="/dashboard/company/create" element={
+          <ProtectedRoute allowedRoles={['COMPANY']}>
+           <ListingsPage />
+          </ProtectedRoute>
+         } />
 
         {/* Generic / shared (keep for now, will be replaced per-role) */}
         <Route path="/dashboard"     element={<DashboardPage />} />

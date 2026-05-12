@@ -1,7 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import { getActiveListings } from '../services/listingsService';
 import './StudentDashboard.css';
 
 // ── Mock data ──────────────────────────────────────────────────────────────
@@ -136,16 +137,24 @@ const MOCK_PRAKSE = [
   },
 ];
 
-const SVE_TEHNOLOGIJE = [...new Set(MOCK_PRAKSE.flatMap(p => p.tehnologije))].sort();
+const MOCK_TEHNOLOGIJE = [...new Set(MOCK_PRAKSE.flatMap(p => p.tehnologije))].sort();
 
 function formatDate(dateStr) {
-  return new Date(dateStr).toLocaleDateString('bs-BA', {
+  if (!dateStr) return 'Nije uneseno';
+
+  const date = new Date(dateStr);
+  if (Number.isNaN(date.getTime())) return 'Nije uneseno';
+
+  return date.toLocaleDateString('bs-BA', {
     day: 'numeric', month: 'short', year: 'numeric',
   });
 }
 
 function relativeDate(dateStr) {
+  if (!dateStr) return 'Nije uneseno';
+
   const diff = Math.floor((Date.now() - new Date(dateStr)) / 86400000);
+  if (Number.isNaN(diff)) return 'Nije uneseno';
   if (diff === 0) return 'Danas';
   if (diff === 1) return 'Juče';
   if (diff < 7) return `Prije ${diff} dana`;
@@ -154,6 +163,10 @@ function relativeDate(dateStr) {
 }
 
 function trajanjeLabel(mj) {
+  if (!mj) return 'Trajanje nije uneseno';
+  if (typeof mj === 'string' && Number.isNaN(Number(mj))) return mj;
+
+  mj = Number(mj);
   if (mj === 1) return '1 mjesec';
   if (mj < 5) return `${mj} mjeseca`;
   return `${mj} mjeseci`;
@@ -161,6 +174,35 @@ function trajanjeLabel(mj) {
 
 function mjestLabel(n) {
   return n === 1 ? '1 mjesto' : `${n} mjesta`;
+}
+
+function normalizeListing(listing) {
+  const kompanija = listing.Kompanija || listing.kompanija || {};
+  const companyName = kompanija.naziv || 'Kompanija';
+  const initials = companyName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(part => part[0])
+    .join('')
+    .toUpperCase() || 'KO';
+
+  return {
+    id: listing.id,
+    naziv: listing.naziv,
+    kompanija: companyName,
+    logo: initials,
+    logoColor: '#1a6fd4',
+    opis: listing.opis || 'Opis oglasa nije unesen.',
+    tehnologije: listing.oblast ? [listing.oblast] : [],
+    trajanje: listing.trajanje,
+    brojMjesta: Number(listing.brojMjesta) || 0,
+    lokacija: kompanija.adresa || 'Lokacija nije unesena',
+    tip: 'Onsite',
+    datumObjave: listing.datumObjave,
+    rokPrijave: listing.rokPrijave,
+    stipendija: Boolean(listing.placenaPraksa),
+  };
 }
 
 // ── PraksaCard ─────────────────────────────────────────────────────────────
@@ -221,7 +263,7 @@ function PraksaCard({ praksa }) {
               <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
               <line x1="3" y1="10" x2="21" y2="10"/>
             </svg>
-            Počinje {formatDate(praksa.datumPocetka)}
+            Rok prijave {formatDate(praksa.rokPrijave)}
           </span>
         </div>
         <div className="sd-foot-right">
@@ -251,6 +293,40 @@ export default function StudentDashboard() {
   const [filterTrajanja, setFilterTrajanja] = useState([]);
   const [sortBy, setSortBy] = useState('najnovije');
   const [sectionsOpen, setSectionsOpen] = useState({ tech: false, duration: false, type: false, sort: false });
+  const [prakse, setPrakse] = useState([]);
+  const [loadingPrakse, setLoadingPrakse] = useState(true);
+  const [prakseError, setPrakseError] = useState('');
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadActiveListings() {
+      setLoadingPrakse(true);
+      setPrakseError('');
+
+      try {
+        const listings = await getActiveListings();
+        if (active) {
+          setPrakse(Array.isArray(listings) ? listings.map(normalizeListing) : []);
+        }
+      } catch (err) {
+        if (active) setPrakseError(err.message || 'Greška pri učitavanju oglasa.');
+      } finally {
+        if (active) setLoadingPrakse(false);
+      }
+    }
+
+    loadActiveListings();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const sveTehnologije = useMemo(() => {
+    const source = prakse.length ? prakse : [];
+    return [...new Set(source.flatMap(p => p.tehnologije))].sort();
+  }, [prakse]);
 
   function handleLogout() {
     logout();
@@ -258,7 +334,7 @@ export default function StudentDashboard() {
   }
 
   const filteredPrakse = useMemo(() => {
-    let r = [...MOCK_PRAKSE];
+    let r = [...prakse];
     if (search.trim()) {
       const s = search.trim().toLowerCase();
       r = r.filter(p =>
@@ -271,19 +347,21 @@ export default function StudentDashboard() {
     if (filterTips.length) r = r.filter(p => filterTips.includes(p.tip));
     if (filterTrajanja.length) r = r.filter(p =>
       filterTrajanja.some(range => {
-        if (range === '1-2') return p.trajanje <= 2;
-        if (range === '3') return p.trajanje === 3;
-        if (range === '4-5') return p.trajanje >= 4 && p.trajanje <= 5;
-        if (range === '6+') return p.trajanje >= 6;
+        const trajanje = Number(p.trajanje);
+        if (Number.isNaN(trajanje)) return false;
+        if (range === '1-2') return trajanje <= 2;
+        if (range === '3') return trajanje === 3;
+        if (range === '4-5') return trajanje >= 4 && trajanje <= 5;
+        if (range === '6+') return trajanje >= 6;
         return false;
       })
     );
     if (sortBy === 'najnovije') r.sort((a, b) => new Date(b.datumObjave) - new Date(a.datumObjave));
     else if (sortBy === 'najstarije') r.sort((a, b) => new Date(a.datumObjave) - new Date(b.datumObjave));
-    else if (sortBy === 'trajanje-asc') r.sort((a, b) => a.trajanje - b.trajanje);
-    else if (sortBy === 'trajanje-desc') r.sort((a, b) => b.trajanje - a.trajanje);
+    else if (sortBy === 'trajanje-asc') r.sort((a, b) => Number(a.trajanje) - Number(b.trajanje));
+    else if (sortBy === 'trajanje-desc') r.sort((a, b) => Number(b.trajanje) - Number(a.trajanje));
     return r;
-  }, [search, filterTehs, filterTips, filterTrajanja, sortBy]);
+  }, [prakse, search, filterTehs, filterTips, filterTrajanja, sortBy]);
 
   const hasFilters = search || filterTehs.length || filterTips.length || filterTrajanja.length;
 
@@ -417,7 +495,7 @@ export default function StudentDashboard() {
               </button>
               {sectionsOpen.tech && (
                 <div className="sd-sb-section-body">
-                  {SVE_TEHNOLOGIJE.map(t => (
+                  {sveTehnologije.map(t => (
                     <label key={t} className="sd-sb-checkbox-row">
                       <input type="checkbox" checked={filterTehs.includes(t)} onChange={() => toggleArr(setFilterTehs, t)} />
                       <span>{t}</span>
@@ -535,22 +613,26 @@ export default function StudentDashboard() {
           </div>
           <div className="sd-stats">
             <div className="sd-stat-card">
-              <span className="sd-stat-num">{MOCK_PRAKSE.length}</span>
+              <span className="sd-stat-num">{loadingPrakse ? '...' : prakse.length}</span>
               <span className="sd-stat-lbl">Aktivnih oglasa</span>
             </div>
             <div className="sd-stat-card">
-              <span className="sd-stat-num">{new Set(MOCK_PRAKSE.map(p => p.kompanija)).size}</span>
+              <span className="sd-stat-num">{loadingPrakse ? '...' : new Set(prakse.map(p => p.kompanija)).size}</span>
               <span className="sd-stat-lbl">Kompanija</span>
             </div>
             <div className="sd-stat-card">
-              <span className="sd-stat-num">{MOCK_PRAKSE.reduce((s, p) => s + p.brojMjesta, 0)}</span>
+              <span className="sd-stat-num">{loadingPrakse ? '...' : prakse.reduce((s, p) => s + p.brojMjesta, 0)}</span>
               <span className="sd-stat-lbl">Slobodnih mjesta</span>
             </div>
           </div>
         </header>
 
         <p className="sd-results-info">
-          {filteredPrakse.length === 0
+          {loadingPrakse
+            ? 'Ucitavanje oglasa...'
+            : prakseError
+              ? prakseError
+              : filteredPrakse.length === 0
             ? 'Nema rezultata'
             : <><strong>{filteredPrakse.length}</strong> {filteredPrakse.length === 1 ? 'oglas' : 'oglasa'} pronađeno{hasFilters && ' · filtrirano'}</>
           }
@@ -558,7 +640,16 @@ export default function StudentDashboard() {
 
         {/* List */}
         <div className="sd-list">
-          {filteredPrakse.length === 0 ? (
+          {loadingPrakse ? (
+            <div className="sd-empty">
+              <p className="sd-empty-title">Ucitavanje oglasa...</p>
+            </div>
+          ) : prakseError ? (
+            <div className="sd-empty">
+              <p className="sd-empty-title">Greska pri ucitavanju oglasa</p>
+              <p className="sd-empty-sub">{prakseError}</p>
+            </div>
+          ) : filteredPrakse.length === 0 ? (
             <div className="sd-empty">
               <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>

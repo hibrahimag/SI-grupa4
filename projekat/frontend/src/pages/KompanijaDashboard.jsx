@@ -5,12 +5,15 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { getCompanyProfile, updateCompanyProfile } from '../services/companyProfile.service';
 import './KompanijaDashboard.css';
+import { createListing, getCompanyListings } from '../services/listingsService';
+
 
 const VIEWS = {
   DASHBOARD: 'dashboard',
   LISTINGS: 'oglasi',
   PROFILE: 'profil',
   EDIT_PROFILE: 'uredi-profil',
+  CREATE_LISTING: 'create-oglas',
 };
 
 const EMPTY_PROFILE = {
@@ -28,6 +31,9 @@ export default function KompanijaDashboard() {
   const [view, setView] = useState(VIEWS.DASHBOARD);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [companyProfile, setCompanyProfile] = useState(null);
+  const [listings, setListings] = useState([]);
+  const [listingsLoading, setListingsLoading] = useState(true);
+  const [listingsError, setListingsError] = useState('');
   const [profileLoading, setProfileLoading] = useState(true);
   const [profileError, setProfileError] = useState('');
   const { user, logout } = useAuth();
@@ -40,20 +46,32 @@ export default function KompanijaDashboard() {
   useEffect(() => {
     let active = true;
 
-    async function loadCompanyProfile() {
+    async function loadCompanyData() {
       setProfileLoading(true);
+      setListingsLoading(true);
       setProfileError('');
+      setListingsError('');
       try {
-        const profile = await getCompanyProfile();
-        if (active) setCompanyProfile(profile);
+        const [profile, companyListings] = await Promise.all([
+          getCompanyProfile(),
+          getCompanyListings(),
+        ]);
+        if (active) {
+          setCompanyProfile(profile);
+          setListings(Array.isArray(companyListings) ? companyListings : []);
+        }
       } catch (err) {
+        if (active) setListingsError(err.message || 'Greska pri ucitavanju oglasa.');
         if (active) setProfileError(err.message || 'Greška pri učitavanju profila kompanije.');
       } finally {
-        if (active) setProfileLoading(false);
+        if (active) {
+          setProfileLoading(false);
+          setListingsLoading(false);
+        }
       }
     }
 
-    loadCompanyProfile();
+    loadCompanyData();
 
     return () => {
       active = false;
@@ -138,12 +156,15 @@ export default function KompanijaDashboard() {
           <DashboardShell
             companyName={companyName}
             accountStatus={accountStatus}
+            listings={listings}
+            listingsLoading={listingsLoading}
+            listingsError={listingsError}
             onOpenView={openView}
           />
         )}
         {view === VIEWS.LISTINGS && (
-          <ListingsShell />
-        )}
+         <ListingsShell listings={listings} loading={listingsLoading} error={listingsError} onOpenView={openView} />
+      )}
         {view === VIEWS.PROFILE && (
           <ProfileShell
             profile={companyProfile}
@@ -161,20 +182,44 @@ export default function KompanijaDashboard() {
             onCancel={() => openView(VIEWS.PROFILE)}
           />
         )}
+
+        {view === VIEWS.CREATE_LISTING && (
+          <CreateListingShell
+            onCancel={() => openView(VIEWS.LISTINGS)}
+            onCreated={(listing) => {
+              if (listing) {
+                setListings((current) => [listing, ...current]);
+              }
+              openView(VIEWS.LISTINGS);
+            }}
+          />
+         )}
       </main>
     </div>
   );
 }
 
-function DashboardShell({ companyName, accountStatus, onOpenView }) {
+function DashboardShell({ companyName, accountStatus, listings, listingsLoading, listingsError, onOpenView }) {
+  const activeListings = listings.filter((listing) => listing.status === 'AKTIVAN').length;
   const stats = [
-    { label: 'Aktivni oglasi', value: '0', sub: 'Nema aktivnih oglasa', tone: 'blue' },
-    { label: 'Ukupno oglasa', value: '0', sub: 'Nema kreiranih oglasa', tone: 'muted' },
+    {
+      label: 'Aktivni oglasi',
+      value: listingsLoading ? '...' : String(activeListings),
+      sub: activeListings === 1 ? '1 aktivan oglas' : `${activeListings} aktivnih oglasa`,
+      tone: 'blue',
+    },
+    {
+      label: 'Ukupno oglasa',
+      value: listingsLoading ? '...' : String(listings.length),
+      sub: listings.length === 1 ? '1 kreiran oglas' : `${listings.length} kreiranih oglasa`,
+      tone: 'muted',
+    },
     { label: 'Rola', value: 'COMPANY', sub: accountStatus.label, tone: accountStatus.tone, compact: true },
   ];
 
   const quickActions = [
-    { label: 'Kreiraj oglas', desc: 'Pripremite novi oglas za praksu' },
+   // { label: 'Kreiraj oglas', desc: 'Pripremite novi oglas za praksu' },
+    { label: 'Kreiraj oglas', desc: 'Pripremite novi oglas za praksu', view: VIEWS.CREATE_LISTING },
     { label: 'Moji oglasi', desc: 'Pregled oglasa kompanije', view: VIEWS.LISTINGS },
     { label: 'Profil kompanije', desc: 'Osnovni podaci kompanije', view: VIEWS.PROFILE },
     { label: 'Uredi profil', desc: 'Izmjena podataka profila', view: VIEWS.EDIT_PROFILE },
@@ -215,27 +260,55 @@ function DashboardShell({ companyName, accountStatus, onOpenView }) {
         ))}
       </section>
 
-      <ListingsShell />
+      <ListingsShell listings={listings} loading={listingsLoading} error={listingsError} onOpenView={onOpenView} />
     </div>
   );
 }
 
-function ListingsShell() {
+function ListingsShell({ listings = [], loading = false, error = '', onOpenView }) {
   return (
     <section className="cd-section">
       <div className="cd-section-header">
         <h2 className="cd-section-title">Moji oglasi</h2>
-        <span className="cd-section-count">0 oglasa</span>
+        <span className="cd-section-count">{listings.length} {listings.length === 1 ? 'oglas' : 'oglasa'}</span>
       </div>
+      {loading && <div className="cd-inline-message" role="status">Ucitavanje oglasa...</div>}
+      {!loading && error && <div className="cd-inline-message cd-inline-message--error" role="alert">{error}</div>}
+      {!loading && !error && listings.length > 0 && (
+        <div className="cd-listings-list">
+          {listings.map((listing) => (
+            <article key={listing.id} className="cd-listing-card">
+              <div className="cd-listing-main">
+                <h3 className="cd-listing-title">{listing.naziv}</h3>
+                <p className="cd-listing-desc">{listing.opis}</p>
+                <div className="cd-listing-meta">
+                  <span>{listing.oblast || 'Oblast nije unesena'}</span>
+                  <span>{listing.trajanje || 'Trajanje nije uneseno'}</span>
+                  <span>{listing.brojMjesta} {Number(listing.brojMjesta) === 1 ? 'mjesto' : 'mjesta'}</span>
+                </div>
+              </div>
+              <div className="cd-listing-side">
+                <span className={`cd-listing-status cd-listing-status--${String(listing.status || '').toLowerCase()}`}>
+                  {listing.status || 'Status'}
+                </span>
+                <span className="cd-listing-date">Rok: {formatListingDate(listing.rokPrijave)}</span>
+                <span className="cd-listing-date">Objava: {formatListingDate(listing.datumObjave)}</span>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+      {!loading && !error && listings.length === 0 && (
       <div className="cd-empty-state">
         <div className="cd-empty-title">Još nemate kreiranih oglasa.</div>
         <p className="cd-empty-text">
           Kada oglas bude kreiran, pojavit će se u ovom pregledu za kompaniju.
         </p>
-        <button type="button" className="cd-btn cd-btn--primary" disabled>
+        <button type="button" className="cd-btn cd-btn--primary"  onClick={() => onOpenView(VIEWS.CREATE_LISTING)}> 
           Kreiraj prvi oglas
         </button>
       </div>
+      )}
     </section>
   );
 }
@@ -421,6 +494,185 @@ function EditProfileShell({ profile, loading, error, onSave, onCancel }) {
   );
 }
 
+
+function CreateListingShell({ onCancel, onCreated }) {
+  const [formData, setFormData] = useState({
+    naziv: '',
+    opis: '',
+    brojMjesta: '',
+    rokPrijave: '',
+    trajanje: '',
+    oblast: '',
+    placenaPraksa: false,
+  });
+
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  function handleChange(field, value) {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    setError('');
+    setSuccess('');
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+
+    if (!formData.naziv || !formData.opis || !formData.brojMjesta || !formData.rokPrijave) {
+      setError('Naziv, opis, broj mjesta i rok prijave su obavezni.');
+      return;
+    }
+
+    setSaving(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      // 🔹 Ovdje pozovi API kada povežeš backend
+      const result = await createListing({
+        ...formData,
+        brojMjesta: Number(formData.brojMjesta),
+      });
+
+      setSuccess('Oglas je uspješno kreiran.');
+      setFormData({
+        naziv: '',
+        opis: '',
+        brojMjesta: '',
+        rokPrijave: '',
+        trajanje: '',
+        oblast: '',
+        placenaPraksa: false,
+      });
+      onCreated(result?.oglas || result);
+    } catch (err) {
+      setError('Greška pri kreiranju oglasa.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="cd-content">
+      <header className="cd-header">
+        <h1 className="cd-title">Kreiraj oglas</h1>
+        <p className="cd-subtitle">Unesite podatke za novi oglas za praksu.</p>
+      </header>
+
+      <section className="cd-section">
+        <form className="cd-profile-form" onSubmit={handleSubmit}>
+          {error && (
+            <div className="cd-inline-message cd-inline-message--error">
+              {error}
+            </div>
+          )}
+
+          {success && (
+            <div className="cd-inline-message cd-inline-message--success">
+              {success}
+            </div>
+          )}
+
+          <div className="cd-form-row">
+            <div className="cd-form-field">
+              <label className="cd-form-label">Naziv oglasa</label>
+              <input
+                className="cd-input"
+                type="text"
+                value={formData.naziv}
+                onChange={(e) => handleChange('naziv', e.target.value)}
+              />
+            </div>
+
+            <div className="cd-form-field">
+              <label className="cd-form-label">Broj mjesta</label>
+              <input
+                className="cd-input"
+                type="number"
+                value={formData.brojMjesta}
+                onChange={(e) => handleChange('brojMjesta', e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="cd-form-field">
+            <label className="cd-form-label">Opis</label>
+            <textarea
+              className="cd-textarea"
+              rows={4}
+              value={formData.opis}
+              onChange={(e) => handleChange('opis', e.target.value)}
+            />
+          </div>
+
+          <div className="cd-form-row">
+            <div className="cd-form-field">
+              <label className="cd-form-label">Rok prijave</label>
+              <input
+                className="cd-input"
+                type="date"
+                value={formData.rokPrijave}
+                onChange={(e) => handleChange('rokPrijave', e.target.value)}
+              />
+            </div>
+
+            <div className="cd-form-field">
+              <label className="cd-form-label">Trajanje</label>
+              <input
+                className="cd-input"
+                type="text"
+                value={formData.trajanje}
+                onChange={(e) => handleChange('trajanje', e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="cd-form-row">
+            <div className="cd-form-field">
+              <label className="cd-form-label">Oblast</label>
+              <input
+                className="cd-input"
+                type="text"
+                value={formData.oblast}
+                onChange={(e) => handleChange('oblast', e.target.value)}
+              />
+            </div>
+
+            <div className="cd-form-field" style={{ justifyContent: 'flex-end' }}>
+              <label className="cd-form-label">Plaćena praksa</label>
+              <input
+                type="checkbox"
+                checked={formData.placenaPraksa}
+                onChange={(e) => handleChange('placenaPraksa', e.target.checked)}
+              />
+            </div>
+          </div>
+
+          <div className="cd-form-actions">
+            <button
+              type="submit"
+              className="cd-btn cd-btn--primary"
+              disabled={saving}
+            >
+              {saving ? 'Kreiranje...' : 'Objavi oglas'}
+            </button>
+
+            <button
+              type="button"
+              className="cd-btn cd-btn--secondary"
+              onClick={onCancel}
+              disabled={saving}
+            >
+              Nazad
+            </button>
+          </div>
+        </form>
+      </section>
+    </div>
+  );
+}
+
 function ProfileInput({ label, field, value, error = false, onChange }) {
   const inputId = `company-${field}`;
 
@@ -509,4 +761,13 @@ function getAccountStatusDisplay(status) {
 
 function displayValue(value) {
   return value && String(value).trim() ? value : 'Nije uneseno';
+}
+
+function formatListingDate(value) {
+  if (!value) return 'Nije uneseno';
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Nije uneseno';
+
+  return date.toLocaleDateString('bs-BA');
 }
