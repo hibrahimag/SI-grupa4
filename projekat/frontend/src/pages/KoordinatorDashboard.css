@@ -517,3 +517,354 @@
   .kd-navbar-user { display: none; }
   .kd-tab-btn { font-size: var(--font-size-xs); padding: var(--space-2) var(--space-3); }
 }
+
+/* ── Navbar user area & profile menu ─────────────────────── */
+.kd-navbar-user-area {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.kd-navbar-user {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-md);
+  transition: background var(--transition-fast);
+}
+
+.kd-navbar-user:hover {
+  background: var(--color-faint);
+}
+
+.kd-profile-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 160px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  z-index: 200;
+}
+
+.kd-profile-menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  background: none;
+  border: none;
+  font-size: 0.85rem;
+  font-family: inherit;
+  color: var(--color-muted);
+  cursor: pointer;
+  text-align: left;
+}
+
+.kd-profile-menu-item:hover {
+  background: var(--color-faint);
+  color: var(--color-dark);
+}
+
+/* ── Settings full-screen overlay ────────────────────────── */
+.kd-settings-page {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  display: flex;
+  background: var(--color-bg);
+}
+
+.kd-settings-sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--color-border);
+  background: var(--color-surface);
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-6) 0 var(--space-4);
+}
+
+.kd-settings-sidebar-top {
+  padding: 0 var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.kd-settings-back {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: none;
+  border: none;
+  font-size: 0.82rem;
+  font-family: inherit;
+  color: var(--color-muted);
+  cursor: pointer;
+  padding: 0;
+}
+
+.kd-settings-back:hover {
+  color: var(--color-dark);
+}
+
+.kd-settings-sidebar-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-dark);
+}
+
+.kd-settings-nav {
+  padding: 0 var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.kd-settings-nav-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--color-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0 var(--space-3) var(--space-2);
+}
+
+.kd-settings-nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background: none;
+  border: none;
+  font-size: 0.85rem;
+  font-family: inherit;
+  color: var(--color-muted);
+  cursor: pointer;
+  text-align: left;
+}
+
+.kd-settings-nav-item.active {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.kd-settings-main {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-8) var(--space-10);
+}
+
+.kd-settings-content {
+  max-width: 560px;
+}
+
+.kd-settings-heading {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--color-dark);
+  margin: 0 0 var(--space-5);
+}
+
+.kd-settings-user-info {
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  margin-bottom: var(--space-6);
+}
+
+.kd-settings-user-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-dark);
+}
+
+.kd-settings-user-email {
+  font-size: 0.82rem;
+  color: var(--color-muted);
+  margin-top: var(--space-1);
+}
+
+.kd-settings-danger-zone {
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-md);
+  background: var(--color-danger-subtle);
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.kd-settings-danger-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-danger);
+}
+
+.kd-settings-danger-desc {
+  font-size: 0.83rem;
+  color: var(--color-muted);
+  line-height: 1.6;
+}
+
+.kd-settings-error {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-md);
+  background: var(--color-danger-subtle);
+  color: var(--color-danger);
+  font-size: 0.83rem;
+}
+
+.kd-settings-danger-btn {
+  align-self: flex-start;
+  padding: var(--space-2) var(--space-4);
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--color-danger);
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: opacity var(--transition-fast);
+}
+
+.kd-settings-danger-btn:hover {
+  opacity: 0.88;
+}
+
+/* ── Deactivation confirm modal ──────────────────────────── */
+.kd-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+}
+
+.kd-confirm-modal {
+  background: var(--color-surface);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  max-width: 440px;
+  padding: 28px 28px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.kd-confirm-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.kd-confirm-icon--danger {
+  background: var(--color-danger-subtle);
+  color: var(--color-danger);
+}
+
+.kd-confirm-icon--warn {
+  background: var(--color-warning-subtle);
+  color: var(--color-warning);
+}
+
+.kd-confirm-title {
+  margin: 0;
+  font-size: var(--font-size-md);
+  font-weight: 700;
+  color: var(--color-dark);
+}
+
+.kd-confirm-text {
+  margin: 0;
+  font-size: var(--font-size-base);
+  color: var(--color-muted);
+  line-height: 1.6;
+}
+
+.kd-confirm-warn-box {
+  background: var(--color-warning-subtle);
+  border: 1px solid var(--color-warning);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) 14px;
+}
+
+.kd-confirm-warn-label {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-warning);
+}
+
+.kd-confirm-app-list {
+  margin: 0;
+  padding-left: 18px;
+  font-size: var(--font-size-sm);
+  color: var(--color-muted);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.kd-confirm-actions {
+  display: flex;
+  gap: var(--space-2);
+  justify-content: flex-end;
+  margin-top: var(--space-1);
+}
+
+.kd-confirm-btn {
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: 0.82rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: opacity var(--transition-fast);
+}
+
+.kd-confirm-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.kd-confirm-btn--secondary {
+  background: none;
+  border: 1px solid var(--color-border);
+  color: var(--color-muted);
+}
+
+.kd-confirm-btn--secondary:hover:not(:disabled) {
+  background: var(--color-faint);
+}
+
+.kd-confirm-btn--danger {
+  background: var(--color-danger);
+  border: none;
+  color: #fff;
+}
+
+.kd-confirm-btn--danger:hover:not(:disabled) {
+  opacity: 0.88;
+}
