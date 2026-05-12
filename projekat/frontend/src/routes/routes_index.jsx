@@ -18,9 +18,9 @@ import StudentDashboard      from '../pages/StudentDashboard';
 import KompanijaDashboard    from '../pages/KompanijaDashboard';
 import KoordinatorDashboard  from '../pages/KoordinatorDashboard';
 
-import ForgotPasswordPage from '../pages/ForgotPasswordPage';
-import ResetPasswordPage  from '../pages/ResetPasswordPage';
-import VerifyEmailPage    from '../pages/VerifyEmailPage';
+import ForgotPasswordPage  from '../pages/ForgotPasswordPage';
+import ResetPasswordPage   from '../pages/ResetPasswordPage';
+import VerifyEmailPage     from '../pages/VerifyEmailPage';
 
 export default function AppRouter() {
   return (
