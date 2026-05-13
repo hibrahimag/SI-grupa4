@@ -621,6 +621,14 @@ export default function StudentDashboard() {
           <div className="sd-sidebar-footer" ref={profileMenuRef}>
             {profileMenuOpen && (
               <div className="sd-profile-menu">
+                <button className="sd-profile-menu-item" onClick={() => { setProfileMenuOpen(false); navigate('/profile'); }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                  </svg>
+                  <span>Profil</span>
+                </button>
+
                 <button className="sd-profile-menu-item" onClick={() => { setProfileMenuOpen(false); setSettingsOpen(true); setSettingsTab('account'); }}>
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="3"/>

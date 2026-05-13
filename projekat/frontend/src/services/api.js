@@ -25,3 +25,15 @@ export async function apiRequest(path, options = {}) {
 
   return response.json();
 }
+
+export async function getMyProfile() {
+  return apiRequest('/users/me');
+}
+ 
+export async function updateStudentProfile(data) {
+  return apiRequest('/users/student/update', {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+ 
