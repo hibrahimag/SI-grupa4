@@ -1,6 +1,9 @@
 const router = require('express').Router();
 const { authenticate } = require('../../middleware/auth.middleware');
+const { authorize } = require('../../middleware/rbac.middleware');
 const {
+  getCompanyProfileController,
+  updateCompanyProfileController,
   deactivationCheckController,
   deactivateAccountController,
   companyDeactivationCheckController,
@@ -8,6 +11,9 @@ const {
   coordinatorDeactivationCheckController,
   coordinatorDeactivateAccountController,
 } = require('../../business/controllers/users.controller');
+
+router.get('/company-profile', authenticate, authorize('COMPANY'), getCompanyProfileController);
+router.patch('/company-profile', authenticate, authorize('COMPANY'), updateCompanyProfileController);
 
 router.get('/deactivation-check', authenticate, deactivationCheckController);
 router.post('/deactivate', authenticate, deactivateAccountController);

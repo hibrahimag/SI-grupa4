@@ -1,6 +1,33 @@
 'use strict';
 
-const { checkDeactivation, deactivateMyAccount, checkCompanyDeactivation, deactivateCompanyAccount, checkCoordinatorDeactivation, deactivateCoordinatorAccount } = require('../services/users.service');
+const {
+  getCompanyProfile,
+  updateCompanyProfile,
+  checkDeactivation,
+  deactivateMyAccount,
+  checkCompanyDeactivation,
+  deactivateCompanyAccount,
+  checkCoordinatorDeactivation,
+  deactivateCoordinatorAccount,
+} = require('../services/users.service');
+
+async function getCompanyProfileController(req, res) {
+  try {
+    const profile = await getCompanyProfile(req.user.id);
+    res.json(profile);
+  } catch (err) {
+    res.status(err.status || 500).json({ message: err.message });
+  }
+}
+
+async function updateCompanyProfileController(req, res) {
+  try {
+    const profile = await updateCompanyProfile(req.user.id, req.body || {});
+    res.json({ message: 'Profil kompanije je uspješno sačuvan.', profile });
+  } catch (err) {
+    res.status(err.status || 500).json({ message: err.message });
+  }
+}
 
 async function deactivationCheckController(req, res) {
   try {
@@ -56,4 +83,13 @@ async function coordinatorDeactivateAccountController(req, res) {
   }
 }
 
-module.exports = { deactivationCheckController, deactivateAccountController, companyDeactivationCheckController, companyDeactivateAccountController, coordinatorDeactivationCheckController, coordinatorDeactivateAccountController };
+module.exports = {
+  getCompanyProfileController,
+  updateCompanyProfileController,
+  deactivationCheckController,
+  deactivateAccountController,
+  companyDeactivationCheckController,
+  companyDeactivateAccountController,
+  coordinatorDeactivationCheckController,
+  coordinatorDeactivateAccountController,
+};

@@ -1,8 +1,139 @@
 'use strict';
 
 const { Op } = require('sequelize');
-const { User, Student, Kompanija, Oglas, PrijavaNaPraksu, Koordinator } = require('../../infrastructure/database/models');
+const { sequelize, User, Student, Kompanija, Oglas, PrijavaNaPraksu, Koordinator } = require('../../infrastructure/database/models');
 const { sendStudentDeactivationToCompany, sendStudentDeactivationToKoordinator } = require('./email.service');
+
+const PROFILE_FIELDS = ['naziv', 'opisPoslovanja', 'djelatnost', 'adresa', 'telefon', 'kontaktOsoba'];
+const OPTIONAL_FIELDS = ['opisPoslovanja', 'djelatnost', 'telefon', 'kontaktOsoba'];
+
+function makeError(message, status) {
+  const err = new Error(message);
+  err.status = status;
+  return err;
+}
+
+function hasOwn(data, field) {
+  return Object.prototype.hasOwnProperty.call(data, field);
+}
+
+function normalizeString(value) {
+  if (value === null || value === undefined) return '';
+  return String(value).trim();
+}
+
+function normalizeRequired(value, message) {
+  const normalized = normalizeString(value);
+  if (!normalized) {
+    throw makeError(message, 400);
+  }
+  return normalized;
+}
+
+function normalizeOptional(value) {
+  const normalized = normalizeString(value);
+  return normalized || null;
+}
+
+function mapCompanyProfile(company) {
+  return {
+    naziv: company.naziv,
+    opisPoslovanja: company.opisPoslovanja,
+    djelatnost: company.djelatnost,
+    adresa: company.adresa,
+    telefon: company.telefon,
+    kontaktOsoba: company.kontaktOsoba,
+  };
+}
+
+function mapFallbackCompanyProfile(user) {
+  return {
+    naziv: user.ime || user.institution || user.username || 'Kompanija',
+    opisPoslovanja: null,
+    djelatnost: null,
+    adresa: null,
+    telefon: null,
+    kontaktOsoba: null,
+  };
+}
+
+async function getCompanyProfile(userId) {
+  const company = await Kompanija.findOne({ where: { userID: userId } });
+
+  if (company) {
+    return mapCompanyProfile(company);
+  }
+
+  const user = await User.findByPk(userId);
+  if (!user) {
+    throw makeError('Korisnik nije pronađen.', 404);
+  }
+
+  return mapFallbackCompanyProfile(user);
+}
+
+async function updateCompanyProfile(userId, data) {
+  const existingCompany = await Kompanija.findOne({ where: { userID: userId } });
+  const user = await User.findByPk(userId);
+
+  if (!user) {
+    throw makeError('Korisnik nije pronađen.', 404);
+  }
+
+  const fallbackNaziv = user.ime || user.institution || user.username || '';
+
+  const nextNaziv = normalizeRequired(
+    hasOwn(data, 'naziv') ? data.naziv : existingCompany?.naziv ?? fallbackNaziv,
+    'Naziv kompanije je obavezan.'
+  );
+
+  const nextAdresa = normalizeRequired(
+    hasOwn(data, 'adresa') ? data.adresa : existingCompany?.adresa,
+    'Adresa je obavezna.'
+  );
+
+  const updatedCompany = await sequelize.transaction(async (transaction) => {
+    let company = existingCompany;
+
+    if (!company) {
+      const createPayload = {
+        userID: userId,
+        naziv: nextNaziv,
+        adresa: nextAdresa,
+      };
+
+      for (const field of OPTIONAL_FIELDS) {
+        createPayload[field] = hasOwn(data, field) ? normalizeOptional(data[field]) : null;
+      }
+
+      company = await Kompanija.create(createPayload, { transaction });
+    } else {
+      const fieldsToSave = ['naziv', 'adresa'];
+
+      company.naziv = nextNaziv;
+      company.adresa = nextAdresa;
+
+      for (const field of OPTIONAL_FIELDS) {
+        if (hasOwn(data, field)) {
+          company[field] = normalizeOptional(data[field]);
+          fieldsToSave.push(field);
+        }
+      }
+
+      await company.save({ transaction, fields: fieldsToSave });
+    }
+
+    if (user.ime !== nextNaziv || user.institution !== nextNaziv) {
+      user.ime = nextNaziv;
+      user.institution = nextNaziv;
+      await user.save({ transaction, fields: ['ime', 'institution'] });
+    }
+
+    return company;
+  });
+
+  return mapCompanyProfile(updatedCompany);
+}
 
 async function checkDeactivation(userId) {
   const user = await User.findByPk(userId);
@@ -279,4 +410,13 @@ async function deactivateCoordinatorAccount(userId) {
   await user.save();
 }
 
-module.exports = { checkDeactivation, deactivateMyAccount, checkCompanyDeactivation, deactivateCompanyAccount, checkCoordinatorDeactivation, deactivateCoordinatorAccount };
+module.exports = {
+  getCompanyProfile,
+  updateCompanyProfile,
+  checkDeactivation,
+  deactivateMyAccount,
+  checkCompanyDeactivation,
+  deactivateCompanyAccount,
+  checkCoordinatorDeactivation,
+  deactivateCoordinatorAccount,
+};
