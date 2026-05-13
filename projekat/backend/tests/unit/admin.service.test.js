@@ -4,11 +4,14 @@ jest.mock('../../src/infrastructure/database/models', () => ({
   User: { findAll: jest.fn(), findByPk: jest.fn() },
   Fakultet: { findAll: jest.fn(), findByPk: jest.fn(), create: jest.fn() },
   Odsjek: { findAll: jest.fn(), findByPk: jest.fn(), create: jest.fn() },
-  Koordinator: { count: jest.fn() },
-  Student: { count: jest.fn() },
+  Koordinator: { count: jest.fn(), findOne: jest.fn() },
+  Student: { count: jest.fn(), findOne: jest.fn() },
+  Kompanija: { findOne: jest.fn() },
+  Oglas: { update: jest.fn() },
+  PrijavaNaPraksu: { update: jest.fn() },
 }));
 
-const { User, Fakultet, Odsjek, Koordinator, Student } = require('../../src/infrastructure/database/models');
+const { User, Fakultet, Odsjek, Koordinator, Student, Kompanija, Oglas, PrijavaNaPraksu } = require('../../src/infrastructure/database/models');
 const {
   getUsers, updateUserRole, updateUserStatus,
   getFaculties, createFaculty, updateFaculty, deleteFaculty,
@@ -159,6 +162,96 @@ describe('updateUserStatus', () => {
 
     expect(mockUser.approvalStatus).toBe('PENDING_APPROVAL');
     expect(mockUser.approvalRequestedAt).toBeInstanceOf(Date);
+  });
+
+  test('deaktivacija studenta otkazuje sve aktivne prijave', async () => {
+    const mockUser = makeDbUser({ role: 'STUDENT', status: 'ACTIVE' });
+    User.findByPk.mockResolvedValue(mockUser);
+    Student.findOne.mockResolvedValue({ id: 5 });
+    PrijavaNaPraksu.update.mockResolvedValue([2]);
+
+    await updateUserStatus(1, 'DEACTIVATED');
+
+    expect(PrijavaNaPraksu.update).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'ODUSTAO' }),
+      expect.objectContaining({ where: expect.objectContaining({ studentID: 5 }) })
+    );
+    expect(mockUser.status).toBe('DEACTIVATED');
+  });
+
+  test('deaktivacija studenta bez Student zapisa ne poziva PrijavaNaPraksu.update', async () => {
+    const mockUser = makeDbUser({ role: 'STUDENT', status: 'ACTIVE' });
+    User.findByPk.mockResolvedValue(mockUser);
+    Student.findOne.mockResolvedValue(null);
+
+    await updateUserStatus(1, 'DEACTIVATED');
+
+    expect(PrijavaNaPraksu.update).not.toHaveBeenCalled();
+    expect(mockUser.status).toBe('DEACTIVATED');
+  });
+
+  test('deaktivacija kompanije zatvara sve aktivne oglase', async () => {
+    const mockUser = makeDbUser({ role: 'COMPANY', status: 'ACTIVE' });
+    User.findByPk.mockResolvedValue(mockUser);
+    Kompanija.findOne.mockResolvedValue({ id: 10 });
+    Oglas.update.mockResolvedValue([3]);
+
+    await updateUserStatus(1, 'DEACTIVATED');
+
+    expect(Oglas.update).toHaveBeenCalledWith(
+      { status: 'ZATVOREN' },
+      expect.objectContaining({ where: expect.objectContaining({ kompanijaID: 10, status: 'AKTIVAN' }) })
+    );
+    expect(mockUser.status).toBe('DEACTIVATED');
+  });
+
+  test('deaktivacija kompanije bez Kompanija zapisa ne poziva Oglas.update', async () => {
+    const mockUser = makeDbUser({ role: 'COMPANY', status: 'ACTIVE' });
+    User.findByPk.mockResolvedValue(mockUser);
+    Kompanija.findOne.mockResolvedValue(null);
+
+    await updateUserStatus(1, 'DEACTIVATED');
+
+    expect(Oglas.update).not.toHaveBeenCalled();
+    expect(mockUser.status).toBe('DEACTIVATED');
+  });
+
+  test('deaktivacija koordinatora uklanja ga sa pending prijava', async () => {
+    const mockUser = makeDbUser({ role: 'COORDINATOR', status: 'ACTIVE' });
+    User.findByPk.mockResolvedValue(mockUser);
+    Koordinator.findOne.mockResolvedValue({ id: 7 });
+    PrijavaNaPraksu.update.mockResolvedValue([1]);
+
+    await updateUserStatus(1, 'DEACTIVATED');
+
+    expect(PrijavaNaPraksu.update).toHaveBeenCalledWith(
+      { koordinatorID: null },
+      expect.objectContaining({ where: expect.objectContaining({ koordinatorID: 7 }) })
+    );
+    expect(mockUser.status).toBe('DEACTIVATED');
+  });
+
+  test('deaktivacija koordinatora bez Koordinator zapisa ne poziva PrijavaNaPraksu.update', async () => {
+    const mockUser = makeDbUser({ role: 'COORDINATOR', status: 'ACTIVE' });
+    User.findByPk.mockResolvedValue(mockUser);
+    Koordinator.findOne.mockResolvedValue(null);
+
+    await updateUserStatus(1, 'DEACTIVATED');
+
+    expect(PrijavaNaPraksu.update).not.toHaveBeenCalled();
+    expect(mockUser.status).toBe('DEACTIVATED');
+  });
+
+  test('deaktivacija ADMIN korisnika ne poziva cleanup', async () => {
+    const mockUser = makeDbUser({ role: 'ADMIN', status: 'ACTIVE' });
+    User.findByPk.mockResolvedValue(mockUser);
+
+    await updateUserStatus(1, 'DEACTIVATED');
+
+    expect(Student.findOne).not.toHaveBeenCalled();
+    expect(Kompanija.findOne).not.toHaveBeenCalled();
+    expect(Koordinator.findOne).not.toHaveBeenCalled();
+    expect(mockUser.status).toBe('DEACTIVATED');
   });
 });
 

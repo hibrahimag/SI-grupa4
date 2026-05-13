@@ -769,6 +769,56 @@
   background: rgba(2, 6, 13, 0.72);
 }
 
+.ad-confirm-modal {
+  background: #ffffff;
+  border: 1px solid #e0edf9;
+  border-radius: 14px;
+  box-shadow: 0 20px 45px rgba(8, 31, 66, 0.28);
+  padding: 32px 28px 24px;
+  width: min(420px, 100%);
+  text-align: left;
+}
+
+.ad-confirm-icon {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 14px;
+  color: #dc2626;
+}
+
+.ad-confirm-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0f2a4a;
+  margin: 0 0 10px;
+}
+
+.ad-confirm-text {
+  font-size: 0.95rem;
+  color: #4a6a8a;
+  margin: 0 0 22px;
+  line-height: 1.5;
+}
+
+.ad-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.dark .ad-confirm-modal {
+  background: #111827;
+  border-color: #1e2d40;
+}
+
+.dark .ad-confirm-title {
+  color: #e2e8f0;
+}
+
+.dark .ad-confirm-text {
+  color: #94a3b8;
+}
+
 .ad-activate-btn {
   padding: 5px 12px;
   background: #16a34a;
@@ -792,4 +842,29 @@
 
 .dark .ad-activate-btn:hover {
   background: #15803d;
+}
+
+.ad-deactivate-btn {
+  padding: 5px 12px;
+  background: #dc2626;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.ad-deactivate-btn:hover {
+  background: #b91c1c;
+}
+
+.dark .ad-deactivate-btn {
+  background: #991b1b;
+}
+
+.dark .ad-deactivate-btn:hover {
+  background: #b91c1c;
 }

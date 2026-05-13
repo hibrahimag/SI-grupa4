@@ -98,6 +98,30 @@ describe('GET /api/users/company-deactivation-check', () => {
     expect(res.status).toBe(200);
     expect(res.body.canDeactivate).toBe(true);
   });
+
+  test('200 — canDeactivate false jer postoje aktivni oglasi s prijavama', async () => {
+    usersService.checkCompanyDeactivation.mockResolvedValue({
+      canDeactivate: false,
+      reason: 'AKTIVAN_SA_PRIJAVAMA',
+      oglasi: ['Oglas 1'],
+    });
+    const res = await request(app).get('/api/users/company-deactivation-check');
+    expect(res.status).toBe(200);
+    expect(res.body.canDeactivate).toBe(false);
+    expect(res.body.reason).toBe('AKTIVAN_SA_PRIJAVAMA');
+  });
+
+  test('404 — kompanija nije pronađena', async () => {
+    usersService.checkCompanyDeactivation.mockRejectedValue(err('Korisnik nije pronađen.', 404));
+    const res = await request(app).get('/api/users/company-deactivation-check');
+    expect(res.status).toBe(404);
+  });
+
+  test('500 — neočekivana greška', async () => {
+    usersService.checkCompanyDeactivation.mockRejectedValue(new Error('DB error'));
+    const res = await request(app).get('/api/users/company-deactivation-check');
+    expect(res.status).toBe(500);
+  });
 });
 
 // ── POST /api/users/company-deactivate ─────────────────────────────────────
@@ -115,6 +139,18 @@ describe('POST /api/users/company-deactivate', () => {
     expect(res.status).toBe(409);
     expect(res.body.code).toBe('AKTIVAN_SA_PRIJAVAMA');
   });
+
+  test('400 — nalog je već deaktiviran', async () => {
+    usersService.deactivateCompanyAccount.mockRejectedValue(err('Nalog je već deaktiviran.', 400));
+    const res = await request(app).post('/api/users/company-deactivate');
+    expect(res.status).toBe(400);
+  });
+
+  test('404 — korisnik nije pronađen', async () => {
+    usersService.deactivateCompanyAccount.mockRejectedValue(err('Korisnik nije pronađen.', 404));
+    const res = await request(app).post('/api/users/company-deactivate');
+    expect(res.status).toBe(404);
+  });
 });
 
 // ── GET /api/users/coordinator-deactivation-check ───────────────────────────
@@ -126,6 +162,30 @@ describe('GET /api/users/coordinator-deactivation-check', () => {
     expect(res.status).toBe(200);
     expect(res.body.pendingCount).toBe(0);
   });
+
+  test('200 — canDeactivate false jer postoje odobrene prakse', async () => {
+    usersService.checkCoordinatorDeactivation.mockResolvedValue({
+      canDeactivate: false,
+      reason: 'ODOBRENA_EXISTS',
+      studenti: ['Ana Anić'],
+    });
+    const res = await request(app).get('/api/users/coordinator-deactivation-check');
+    expect(res.status).toBe(200);
+    expect(res.body.canDeactivate).toBe(false);
+    expect(res.body.reason).toBe('ODOBRENA_EXISTS');
+  });
+
+  test('404 — koordinator nije pronađen', async () => {
+    usersService.checkCoordinatorDeactivation.mockRejectedValue(err('Korisnik nije pronađen.', 404));
+    const res = await request(app).get('/api/users/coordinator-deactivation-check');
+    expect(res.status).toBe(404);
+  });
+
+  test('500 — neočekivana greška', async () => {
+    usersService.checkCoordinatorDeactivation.mockRejectedValue(new Error('DB error'));
+    const res = await request(app).get('/api/users/coordinator-deactivation-check');
+    expect(res.status).toBe(500);
+  });
 });
 
 // ── POST /api/users/coordinator-deactivate ─────────────────────────────────
@@ -135,5 +195,24 @@ describe('POST /api/users/coordinator-deactivate', () => {
     usersService.deactivateCoordinatorAccount.mockResolvedValue(undefined);
     const res = await request(app).post('/api/users/coordinator-deactivate');
     expect(res.status).toBe(200);
+  });
+
+  test('409 — koordinator ima odobrenu praksu u toku', async () => {
+    usersService.deactivateCoordinatorAccount.mockRejectedValue(err('Koordinator ima odobrenu praksu.', 409, 'ODOBRENA_EXISTS'));
+    const res = await request(app).post('/api/users/coordinator-deactivate');
+    expect(res.status).toBe(409);
+    expect(res.body.code).toBe('ODOBRENA_EXISTS');
+  });
+
+  test('400 — nalog je već deaktiviran', async () => {
+    usersService.deactivateCoordinatorAccount.mockRejectedValue(err('Nalog je već deaktiviran.', 400));
+    const res = await request(app).post('/api/users/coordinator-deactivate');
+    expect(res.status).toBe(400);
+  });
+
+  test('404 — korisnik nije pronađen', async () => {
+    usersService.deactivateCoordinatorAccount.mockRejectedValue(err('Korisnik nije pronađen.', 404));
+    const res = await request(app).post('/api/users/coordinator-deactivate');
+    expect(res.status).toBe(404);
   });
 });
