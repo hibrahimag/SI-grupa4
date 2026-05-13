@@ -521,9 +521,6 @@ module.exports = {
   deactivateCompanyAccount,
   checkCoordinatorDeactivation,
   deactivateCoordinatorAccount,
-<<<<<<< feature/company-phone-validation
-=======
   getMyProfile,
   updateStudentProfile,
->>>>>>> develop
 };
