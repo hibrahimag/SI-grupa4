@@ -13,7 +13,6 @@ const app = require('../src/app');
 
 describe('placeholder routes', () => {
   test.each([
-    ['/api/users', 'Users module placeholder.'],
     ['/api/listings', 'Listings module placeholder.'],
     ['/api/applications', 'Applications module placeholder.'],
     ['/api/notifications', 'Notifications module placeholder.'],
