@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useReducer, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
   getUsers,
@@ -150,7 +150,6 @@ export default function AdminDashboard() {
 
 function handleLogout() { logout(); navigate('/'); }
 
-  const [sidebarOpen] = useState(false);
   const [confirmDeactivateId, setConfirmDeactivateId] = useState(null);
 
   function showToast(message, type = 'success') {
@@ -356,83 +355,140 @@ function handleLogout() { logout(); navigate('/'); }
 
       {/* ── Navbar ── */}
       <nav className="ad-navbar">
-        <div className="ad-navbar-inner">
-          <div className="ad-navbar-left">
-            <Link to="/">
-              <img src="/logo2.png" alt="PraksaHub" style={{ height: 48 }} />
-            </Link>
-            <div className="ad-navbar-divider" />
-            <div>
-              <div className="ad-navbar-title">Admin panel</div>
-              <div className="ad-navbar-subtitle">Upravljanje korisnicima, rolama i fakultetima</div>
+        <span className="ad-navbar-brand">PraksaHub</span>
+        <button className="ad-theme-btn" onClick={() => setDarkMode(!darkMode)} title="Promijeni temu">
+          {darkMode ? <IconSun size={17} /> : <IconMoon size={17} />}
+        </button>
+      </nav>
+
+      {/* ── Collapsing sidebar ── */}
+      <aside className="ad-sidebar">
+
+        {/* Collapsed icon strip */}
+        <div className="ad-sidebar-tab">
+          <div className="ad-sb-tab-icon" title="Pregled" onClick={() => dispatch({ type: 'SET_VIEW', payload: 'overview' })}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+              <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+            </svg>
+          </div>
+          <div className="ad-sb-tab-icon" style={{ position: 'relative' }} title="Odobravanje" onClick={() => dispatch({ type: 'SET_VIEW', payload: 'approvals' })}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+            {userApprovalRequests.length > 0 && <span className="ad-sb-badge">{userApprovalRequests.length}</span>}
+          </div>
+          <div className="ad-sb-tab-icon" title="Korisnici" onClick={() => dispatch({ type: 'SET_VIEW', payload: 'users' })}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+          </div>
+          <div className="ad-sb-tab-icon" title="Role i dozvole" onClick={() => dispatch({ type: 'SET_VIEW', payload: 'roles' })}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+          </div>
+          <div className="ad-sb-tab-icon" title="Fakulteti i odsjeci" onClick={() => dispatch({ type: 'SET_VIEW', payload: 'faculties' })}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+          </div>
+
+          {/* Tab footer */}
+          <div className="ad-sb-tab-footer">
+            <div className="ad-sb-tab-icon" title={`${user?.ime} ${user?.prezime}`}>
+              <div className="ad-nav-avatar">{initials(`${user?.ime || ''} ${user?.prezime || ''}`)}</div>
+            </div>
+            <div className="ad-sb-tab-icon" title="Odjavi se" onClick={handleLogout}>
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+              </svg>
             </div>
           </div>
-          <div className="ad-navbar-right">
-            <div className="ad-navbar-user">
-              {user?.ime} {user?.prezime}
-              <span className="ad-navbar-role-chip">Administrator</span>
+        </div>
+
+        {/* Expanded inner */}
+        <div className="ad-sidebar-inner">
+          <div className="ad-sidebar-scroll">
+            <div className="ad-nav-group">
+              <div className="ad-nav-label">Navigacija</div>
+              <nav className="ad-nav">
+                <button className={`ad-nav-item ${view === 'overview' ? 'active' : ''}`} onClick={() => dispatch({ type: 'SET_VIEW', payload: 'overview' })}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                    <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+                  </svg>
+                  Pregled
+                </button>
+                <button className={`ad-nav-item ${view === 'approvals' ? 'active' : ''}`} onClick={() => dispatch({ type: 'SET_VIEW', payload: 'approvals' })}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+                  </svg>
+                  Odobravanje naloga
+                  {userApprovalRequests.length > 0 && <span className="ad-badge">{userApprovalRequests.length}</span>}
+                </button>
+                <button className={`ad-nav-item ${view === 'users' ? 'active' : ''}`} onClick={() => dispatch({ type: 'SET_VIEW', payload: 'users' })}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                  </svg>
+                  Korisnici
+                </button>
+                <button className={`ad-nav-item ${view === 'roles' ? 'active' : ''}`} onClick={() => dispatch({ type: 'SET_VIEW', payload: 'roles' })}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                  Role i dozvole
+                </button>
+                <button className={`ad-nav-item ${view === 'faculties' ? 'active' : ''}`} onClick={() => dispatch({ type: 'SET_VIEW', payload: 'faculties' })}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+                  </svg>
+                  Fakulteti i odsjeci
+                </button>
+              </nav>
             </div>
-            <button
-              className="ad-navbar-theme-btn"
-              onClick={() => setDarkMode(!darkMode)}
-              title="Promijeni temu"
-            >
-              {darkMode ? <IconSun size={17} /> : <IconMoon size={17} />}
-            </button>
-            <button className="ad-btn ad-btn--logout" onClick={handleLogout}>
-              Odjavi se
+          </div>
+
+          <div className="ad-sidebar-footer">
+            <div className="ad-sb-footer-row">
+              <div className="ad-nav-avatar">{initials(`${user?.ime || ''} ${user?.prezime || ''}`)}</div>
+              <span className="ad-sb-footer-text">{user?.ime} {user?.prezime}</span>
+            </div>
+            <button className="ad-sb-footer-row" onClick={handleLogout}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+              </svg>
+              <span className="ad-sb-footer-text">Odjavi se</span>
             </button>
           </div>
         </div>
-      </nav>
+      </aside>
 
-      {/* ── Body (sidebar + main) ── */}
-      <div className="ad-body">
-  <aside className="ad-sidebar">
-    <div className="ad-nav-group">
-      <div className="ad-nav-label">Navigacija</div>
-      <nav className="ad-nav">
-        <button className={`ad-nav-item ${view === 'overview' ? 'active' : ''}`} onClick={() => dispatch({ type: 'SET_VIEW', payload: 'overview' })}>
+      {/* Tab nav — vidljiv samo na mobilnom */}
+      <nav className="ad-tab-nav">
+        <button className={`ad-tab-item ${view === 'overview' ? 'active' : ''}`} onClick={() => dispatch({ type: 'SET_VIEW', payload: 'overview' })}>
           Pregled
         </button>
-        <button className={`ad-nav-item ${view === 'approvals' ? 'active' : ''}`} onClick={() => dispatch({ type: 'SET_VIEW', payload: 'approvals' })}>
-          Odobravanje naloga
+        <button className={`ad-tab-item ${view === 'approvals' ? 'active' : ''}`} onClick={() => dispatch({ type: 'SET_VIEW', payload: 'approvals' })}>
+          Odobravanje
           {userApprovalRequests.length > 0 && <span className="ad-badge">{userApprovalRequests.length}</span>}
         </button>
-        <button className={`ad-nav-item ${view === 'users' ? 'active' : ''}`} onClick={() => dispatch({ type: 'SET_VIEW', payload: 'users' })}>
+        <button className={`ad-tab-item ${view === 'users' ? 'active' : ''}`} onClick={() => dispatch({ type: 'SET_VIEW', payload: 'users' })}>
           Korisnici
         </button>
-        <button className={`ad-nav-item ${view === 'roles' ? 'active' : ''}`} onClick={() => dispatch({ type: 'SET_VIEW', payload: 'roles' })}>
-          Role i dozvole
+        <button className={`ad-tab-item ${view === 'roles' ? 'active' : ''}`} onClick={() => dispatch({ type: 'SET_VIEW', payload: 'roles' })}>
+          Role
         </button>
-        <button className={`ad-nav-item ${view === 'faculties' ? 'active' : ''}`} onClick={() => dispatch({ type: 'SET_VIEW', payload: 'faculties' })}>
-          Fakulteti i odsjeci
+        <button className={`ad-tab-item ${view === 'faculties' ? 'active' : ''}`} onClick={() => dispatch({ type: 'SET_VIEW', payload: 'faculties' })}>
+          Fakulteti
         </button>
       </nav>
-    </div>
-  </aside>
 
-  {/* Tab nav — vidljiv samo na mobilnom */}
-  <nav className="ad-tab-nav">
-    <button className={`ad-tab-item ${view === 'overview' ? 'active' : ''}`} onClick={() => dispatch({ type: 'SET_VIEW', payload: 'overview' })}>
-      Pregled
-    </button>
-    <button className={`ad-tab-item ${view === 'approvals' ? 'active' : ''}`} onClick={() => dispatch({ type: 'SET_VIEW', payload: 'approvals' })}>
-      Odobravanje
-      {userApprovalRequests.length > 0 && <span className="ad-badge">{userApprovalRequests.length}</span>}
-    </button>
-    <button className={`ad-tab-item ${view === 'users' ? 'active' : ''}`} onClick={() => dispatch({ type: 'SET_VIEW', payload: 'users' })}>
-      Korisnici
-    </button>
-    <button className={`ad-tab-item ${view === 'roles' ? 'active' : ''}`} onClick={() => dispatch({ type: 'SET_VIEW', payload: 'roles' })}>
-      Role
-    </button>
-    <button className={`ad-tab-item ${view === 'faculties' ? 'active' : ''}`} onClick={() => dispatch({ type: 'SET_VIEW', payload: 'faculties' })}>
-      Fakulteti
-    </button>
-  </nav>
-
-  <main className="ad-main">
+      <main className="ad-main">
         {view === 'overview' && (
           <OverviewView
             stats={overviewStats}
@@ -471,7 +527,6 @@ function handleLogout() { logout(); navigate('/'); }
           <FacultiesView faculties={faculties} onCreate={handleCreateFaculty} onUpdate={handleUpdateFaculty} onDelete={handleDeleteFaculty} />
         )}
       </main>
-</div>
 
       {toast && <div className={`ad-toast ad-toast--${toast.type}`}>{toast.message}</div>}
 

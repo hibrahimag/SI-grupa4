@@ -5,7 +5,6 @@
   background: var(--color-bg);
   font-family: 'Sora', 'Segoe UI', sans-serif;
   color: var(--color-dark);
-  padding-left: 52px;
   padding-top: 60px;
 }
 
@@ -53,7 +52,7 @@
 }
 
 .cd-sidebar:hover {
-  width: 220px;
+  width: 280px;
   box-shadow: 4px 0 24px rgba(0,0,0,0.08);
 }
 
@@ -113,7 +112,7 @@
 
 /* Expanded inner */
 .cd-sidebar-inner {
-  width: 220px;
+  width: 280px;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -187,6 +186,12 @@
 
 .cd-main {
   min-height: 100vh;
+  margin-left: 52px;
+  transition: margin-left 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.cd-sidebar:hover ~ .cd-main {
+  margin-left: 280px;
 }
 
 .cd-content {
@@ -287,6 +292,7 @@
 }
 
 .cd-action-card {
+  position: relative;
   min-height: 118px;
   padding: 18px;
   text-align: left;
@@ -295,11 +301,12 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s, background 0.2s;
 }
 
-.cd-action-card:hover {
-  border-color: #c9bbf5;
+.cd-action-card:not(.cd-action-card--inactive):hover {
+  border-color: rgba(26,111,212,0.3);
+  background: rgba(26,111,212,0.04);
 }
 
 .cd-action-card--inactive {
@@ -321,6 +328,17 @@
   font-size: 0.78rem;
   color: #5a7a9a;
   line-height: 1.5;
+}
+
+.cd-action-arrow {
+  align-self: flex-end;
+  color: var(--color-muted, #5a7a9a);
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.cd-action-card:not(.cd-action-card--inactive):hover .cd-action-arrow {
+  transform: translateX(4px);
+  color: var(--color-primary, #1a6fd4);
 }
 
 .cd-section {

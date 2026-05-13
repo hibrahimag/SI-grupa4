@@ -1851,3 +1851,95 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* ── Main area expandable search bar ───────────────────────────────────── */
+.sd-main-search-wrap {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 20px;
+}
+
+.sd-main-search-inner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 26px;
+  border: 1.5px solid var(--color-border, #e0edf9);
+  background: var(--color-surface, #fff);
+  overflow: hidden;
+  transition:
+    width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    border-radius 0.35s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
+  cursor: text;
+}
+
+.sd-main-search-inner:hover,
+.sd-main-search-inner:focus-within {
+  width: 100%;
+  border-radius: 14px;
+  border-color: var(--color-primary, #1a6fd4);
+  box-shadow: 0 0 0 3px rgba(26, 111, 212, 0.1);
+}
+
+.sd-main-search-icon {
+  position: absolute;
+  left: 17px;
+  color: var(--color-muted, #5a7a9a);
+  pointer-events: none;
+  flex-shrink: 0;
+  transition: color 0.2s ease;
+}
+
+.sd-main-search-inner:hover .sd-main-search-icon,
+.sd-main-search-inner:focus-within .sd-main-search-icon {
+  color: var(--color-primary, #1a6fd4);
+}
+
+.sd-main-search-input {
+  width: 100%;
+  padding: 14px 48px 14px 50px;
+  border: none;
+  background: transparent;
+  color: var(--color-text, #0d1f3c);
+  font-size: 0.95rem;
+  font-family: inherit;
+  outline: none;
+  opacity: 0;
+  transition: opacity 0.15s ease 0.1s;
+  white-space: nowrap;
+}
+
+.sd-main-search-inner:hover .sd-main-search-input,
+.sd-main-search-inner:focus-within .sd-main-search-input {
+  opacity: 1;
+}
+
+.sd-main-search-input::placeholder {
+  color: var(--color-faint, #9aabbc);
+}
+
+.sd-main-search-clear {
+  position: absolute;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: var(--color-muted, #5a7a9a);
+  cursor: pointer;
+  border-radius: 50%;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+
+.sd-main-search-clear:hover {
+  background: var(--color-border, #e0edf9);
+  color: var(--color-text, #0d1f3c);
+}
