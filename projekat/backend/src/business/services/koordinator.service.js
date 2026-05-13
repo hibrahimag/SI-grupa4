@@ -129,7 +129,8 @@ const getStudenti = async (koordinatorUserId, pretraga = '') => {
 
   // 2. Build name search filter
   const userWhere = {
-    role: 'STUDENT', // samo korisnici sa STUDENT rolom
+    role: 'STUDENT',
+    approvalStatus: 'APPROVED', // samo korisnici sa STUDENT rolom
   };
   if (pretraga) {
   const dijelovi = pretraga.trim().split(/\s+/);
