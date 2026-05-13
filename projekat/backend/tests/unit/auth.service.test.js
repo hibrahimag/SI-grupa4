@@ -14,6 +14,7 @@ jest.mock('../../src/infrastructure/database/models', () => ({
 jest.mock('../../src/infrastructure/database/db', () => ({ transaction: jest.fn() }));
 jest.mock('../../src/business/services/email.service', () => ({
   sendPasswordResetEmail: jest.fn().mockResolvedValue(undefined),
+  sendEmailVerificationEmail: jest.fn().mockResolvedValue(undefined),
 }));
 jest.mock('bcrypt');
 jest.mock('jsonwebtoken');
@@ -30,7 +31,10 @@ const {
   getPublicOdsjeci,
   forgotPasswordService,
   resetPasswordService,
+  verifyEmailService,
+  resendVerificationEmailService,
 } = require('../../src/business/services/auth.service');
+const { sendEmailVerificationEmail } = require('../../src/business/services/email.service');
 
 function makeUser(overrides = {}) {
   return {
@@ -409,5 +413,84 @@ describe('resetPasswordService', () => {
     expect(mockUser.passwordResetToken).toBeNull();
     expect(mockUser.passwordResetExpires).toBeNull();
     expect(mockUser.save).toHaveBeenCalledTimes(1);
+  });
+});
+
+// ── loginService — approvalStatus i emailVerifikovan ─────────────────────────
+
+describe('loginService — approvalStatus i emailVerifikovan provjere', () => {
+  test('baca grešku ako je approvalStatus PENDING_APPROVAL', async () => {
+    User.findOne.mockResolvedValue(makeUser({ role: 'STUDENT', approvalStatus: 'PENDING_APPROVAL' }));
+    await expect(loginService('haris', 'Password1')).rejects.toThrow('čeka odobrenje');
+  });
+
+  test('baca grešku ako je approvalStatus REJECTED', async () => {
+    User.findOne.mockResolvedValue(makeUser({ role: 'STUDENT', approvalStatus: 'REJECTED', rejectionReason: 'Nevalidni podaci' }));
+    await expect(loginService('haris', 'Password1')).rejects.toThrow('odbijen');
+  });
+
+  test('baca grešku ako je approvalStatus nepoznat (nije APPROVED)', async () => {
+    User.findOne.mockResolvedValue(makeUser({ role: 'STUDENT', approvalStatus: 'UNKNOWN' }));
+    await expect(loginService('haris', 'Password1')).rejects.toThrow('nije odobren');
+  });
+
+  test('baca EMAIL_NOT_VERIFIED ako email nije verifikovan', async () => {
+    User.findOne.mockResolvedValue(makeUser({ emailVerifikovan: false }));
+    bcrypt.compare.mockResolvedValue(true);
+    await expect(loginService('haris', 'Password1')).rejects.toThrow('EMAIL_NOT_VERIFIED');
+  });
+});
+
+// ── verifyEmailService ────────────────────────────────────────────────────────
+
+describe('verifyEmailService', () => {
+  test('baca 400 ako token ne postoji u bazi', async () => {
+    User.findOne.mockResolvedValue(null);
+    await expect(verifyEmailService('badtoken')).rejects.toMatchObject({ status: 400 });
+  });
+
+  test('baca 400 ako je token istekao', async () => {
+    User.findOne.mockResolvedValue(makeUser({
+      emailVerificationToken: 'tok',
+      emailVerificationTokenExpiresAt: new Date(Date.now() - 1000),
+    }));
+    await expect(verifyEmailService('tok')).rejects.toMatchObject({ status: 400 });
+  });
+
+  test('postavlja emailVerifikovan na true uz validan token', async () => {
+    const user = makeUser({
+      emailVerificationToken: 'validtok',
+      emailVerificationTokenExpiresAt: new Date(Date.now() + 60000),
+    });
+    User.findOne.mockResolvedValue(user);
+    await verifyEmailService('validtok');
+    expect(user.emailVerifikovan).toBe(true);
+    expect(user.emailVerificationToken).toBeNull();
+    expect(user.save).toHaveBeenCalled();
+  });
+});
+
+// ── resendVerificationEmailService ────────────────────────────────────────────
+
+describe('resendVerificationEmailService', () => {
+  test('tiho vraća ako user ne postoji', async () => {
+    User.findOne.mockResolvedValue(null);
+    await expect(resendVerificationEmailService('ghost@test.com')).resolves.toBeUndefined();
+    expect(sendEmailVerificationEmail).not.toHaveBeenCalled();
+  });
+
+  test('tiho vraća ako je email već verifikovan', async () => {
+    User.findOne.mockResolvedValue(makeUser({ emailVerifikovan: true }));
+    await expect(resendVerificationEmailService('haris@test.com')).resolves.toBeUndefined();
+    expect(sendEmailVerificationEmail).not.toHaveBeenCalled();
+  });
+
+  test('šalje verifikacioni email ako user postoji i nije verifikovan', async () => {
+    const user = makeUser({ emailVerifikovan: false, emailVerificationToken: null });
+    User.findOne.mockResolvedValue(user);
+    await resendVerificationEmailService('haris@test.com');
+    expect(user.emailVerificationToken).not.toBeNull();
+    expect(user.save).toHaveBeenCalled();
+    expect(sendEmailVerificationEmail).toHaveBeenCalled();
   });
 });

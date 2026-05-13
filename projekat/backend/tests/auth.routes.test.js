@@ -485,3 +485,56 @@ describe('POST /api/auth/reset-password', () => {
     expect(res.status).toBe(500);
   });
 });
+
+// ── POST /api/auth/login — EMAIL_NOT_VERIFIED ─────────────────────────────────
+
+describe('POST /api/auth/login — EMAIL_NOT_VERIFIED', () => {
+  test('403 — email nije verifikovan', async () => {
+    authService.loginService.mockRejectedValue(new Error('EMAIL_NOT_VERIFIED'));
+    const res = await request(app).post('/api/auth/login').send({ identifier: 'user@test.com', password: 'pass1234' });
+    expect(res.status).toBe(403);
+    expect(res.body.message).toBe('EMAIL_NOT_VERIFIED');
+  });
+});
+
+// ── GET /api/auth/verify-email ────────────────────────────────────────────────
+
+describe('GET /api/auth/verify-email', () => {
+  test('400 — nedostaje token', async () => {
+    const res = await request(app).get('/api/auth/verify-email');
+    expect(res.status).toBe(400);
+  });
+
+  test('200 — uspješna verifikacija emaila', async () => {
+    authService.verifyEmailService.mockResolvedValue(undefined);
+    const res = await request(app).get('/api/auth/verify-email?token=validtoken');
+    expect(res.status).toBe(200);
+    expect(res.body.message).toContain('verifikovan');
+  });
+
+  test('400 — neispravan token', async () => {
+    const err = Object.assign(new Error('Neispravan verifikacioni token.'), { status: 400 });
+    authService.verifyEmailService.mockRejectedValue(err);
+    const res = await request(app).get('/api/auth/verify-email?token=bad');
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe('Neispravan verifikacioni token.');
+  });
+});
+
+// ── POST /api/auth/resend-verification-email ──────────────────────────────────
+
+describe('POST /api/auth/resend-verification-email', () => {
+  test('400 — nedostaje email u body', async () => {
+    const res = await request(app).post('/api/auth/resend-verification-email').send({});
+    expect(res.status).toBe(400);
+  });
+
+  test('200 — email uspješno poslan', async () => {
+    authService.resendVerificationEmailService.mockResolvedValue(undefined);
+    const res = await request(app)
+      .post('/api/auth/resend-verification-email')
+      .send({ email: 'user@test.com' });
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('message');
+  });
+});
