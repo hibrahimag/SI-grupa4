@@ -30,9 +30,20 @@ jest.mock('../src/infrastructure/database/models', () => ({
   },
   Koordinator: {
     count: jest.fn(),
+    findOne: jest.fn(),
   },
   Student: {
     count: jest.fn(),
+    findOne: jest.fn(),
+  },
+  Kompanija: {
+    findOne: jest.fn(),
+  },
+  Oglas: {
+    update: jest.fn(),
+  },
+  PrijavaNaPraksu: {
+    update: jest.fn(),
   },
 }));
 
