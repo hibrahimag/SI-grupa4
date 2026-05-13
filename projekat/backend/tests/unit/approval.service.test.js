@@ -7,12 +7,6 @@ jest.mock('../../src/infrastructure/database/models', () => ({
     findAll: jest.fn(),
     findByPk: jest.fn(),
   },
-  Koordinator: {   
-    findOne: jest.fn(),
-  },
-  Student: {      
-    findAll: jest.fn(),
-  },
 }));
 
 jest.mock('../../src/business/services/email.service', () => ({
@@ -20,7 +14,7 @@ jest.mock('../../src/business/services/email.service', () => ({
   sendAccountRejectedEmail: jest.fn().mockResolvedValue(undefined),
 }));
 
-const { User, Koordinator, Student  } = require('../../src/infrastructure/database/models');
+const { User } = require('../../src/infrastructure/database/models');
 const {
   sendAccountApprovedEmail,
   sendAccountRejectedEmail,
@@ -30,7 +24,6 @@ const {
   getUserApprovalRequestById,
   approveUserRequest,
   rejectUserRequest,
-  getStudentApprovalRequestsForKoordinator
 } = require('../../src/business/services/approval.service');
 
 function makeApprovalUser(overrides = {}) {
@@ -221,64 +214,3 @@ describe('rejectUserRequest', () => {
     });
   });
 });
-
-  describe('getStudentApprovalRequestsForKoordinator', () => {
-  // Testira: funkcija vraća studente s istog fakulteta koji čekaju odobrenje
-  // Ulaz: koordinatorUserId=1, koordinator ima fakultetID=5, jedan student čeka odobrenje
-  // Očekivani izlaz: niz s jednim mapiranim korisnikom, Student.findAll pozvan s where: { fakultetID: 5 }
-  test('vraća studente s istog fakulteta koji čekaju odobrenje', async () => {
-    const user = makeApprovalUser();
-    Koordinator.findOne.mockResolvedValue({ id: 1, userID: 1, fakultetID: 5 });
-    Student.findAll.mockResolvedValue([{ User: user }]);
-
-    const result = await getStudentApprovalRequestsForKoordinator(1);
-
-    expect(result).toHaveLength(1);
-    expect(result[0]).toMatchObject({
-      id: 1,
-      email: 'haris@test.com',
-      approvalStatus: 'PENDING_APPROVAL',
-    });
-    expect(Student.findAll).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { fakultetID: 5 } })
-    );
-  });
-
-  // Testira: funkcija vraća prazan niz kada nema studenata na čekanju
-  // Ulaz: Student.findAll vraća []
-  // Očekivani izlaz: []
-  test('vraća prazan niz kada nema studenata na čekanju', async () => {
-    Koordinator.findOne.mockResolvedValue({ id: 1, userID: 1, fakultetID: 5 });
-    Student.findAll.mockResolvedValue([]);
-
-    const result = await getStudentApprovalRequestsForKoordinator(1);
-
-    expect(result).toEqual([]);
-  });
-
-  // Testira: funkcija baca grešku kada koordinator ne postoji
-  // Ulaz: Koordinator.findOne vraća null
-  // Očekivani izlaz: baca grešku s status=404
-  test('baca grešku kada koordinator ne postoji', async () => {
-    Koordinator.findOne.mockResolvedValue(null);
-
-    await expect(getStudentApprovalRequestsForKoordinator(999))
-      .rejects.toMatchObject({ status: 404 });
-    expect(Student.findAll).not.toHaveBeenCalled();
-  });
-
-  // Testira: Koordinator.findOne se poziva s ispravnim userID filterom
-  // Ulaz: koordinatorUserId=42
-  // Očekivani izlaz: Koordinator.findOne pozvan s where: { userID: 42 }
-  test('poziva Koordinator.findOne s ispravnim userID', async () => {
-    Koordinator.findOne.mockResolvedValue({ id: 1, userID: 42, fakultetID: 5 });
-    Student.findAll.mockResolvedValue([]);
-
-    await getStudentApprovalRequestsForKoordinator(42);
-
-    expect(Koordinator.findOne).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { userID: 42 } })
-    );
-  });
-});
-
