@@ -1,6 +1,7 @@
 'use strict';
 
-const { User, Fakultet, Koordinator, Student, Odsjek } = require('../../infrastructure/database/models');
+const { Op } = require('sequelize');
+const { User, Fakultet, Koordinator, Student, Kompanija, Oglas, PrijavaNaPraksu, Odsjek } = require('../../infrastructure/database/models');
 
 const ALLOWED_ROLES = ['STUDENT', 'COMPANY', 'COORDINATOR', 'ADMIN'];
 
@@ -45,6 +46,44 @@ async function updateUserRole(id, role) {
 
 const ALLOWED_STATUSES = ['PENDING', 'ACTIVE', 'DEACTIVATED'];
 
+async function runDeactivationCleanup(user) {
+  if (user.role === 'STUDENT') {
+    const student = await Student.findOne({ where: { userID: user.id } });
+    if (student) {
+      await PrijavaNaPraksu.update(
+        { status: 'ODUSTAO', datumOdustajanja: new Date() },
+        {
+          where: {
+            studentID: student.id,
+            status: { [Op.in]: ['PODNESENA', 'U_RAZMATRANJU', 'ODOBRENA'] },
+          },
+        }
+      );
+    }
+  } else if (user.role === 'COMPANY') {
+    const kompanija = await Kompanija.findOne({ where: { userID: user.id } });
+    if (kompanija) {
+      await Oglas.update(
+        { status: 'ZATVOREN' },
+        { where: { kompanijaID: kompanija.id, status: 'AKTIVAN' } }
+      );
+    }
+  } else if (user.role === 'COORDINATOR') {
+    const koordinator = await Koordinator.findOne({ where: { userID: user.id } });
+    if (koordinator) {
+      await PrijavaNaPraksu.update(
+        { koordinatorID: null },
+        {
+          where: {
+            koordinatorID: koordinator.id,
+            status: { [Op.in]: ['PODNESENA', 'U_RAZMATRANJU', 'ODOBRENA'] },
+          },
+        }
+      );
+    }
+  }
+}
+
 async function updateUserStatus(id, status) {
   if (!ALLOWED_STATUSES.includes(status)) {
     const err = new Error(`Invalid status: ${status}. Allowed: ${ALLOWED_STATUSES.join(', ')}`);
@@ -72,6 +111,7 @@ async function updateUserStatus(id, status) {
   } else if (status === 'DEACTIVATED') {
     user.approvalStatus = 'REJECTED';
     user.rejectedAt = new Date();
+    await runDeactivationCleanup(user);
   } else if (status === 'PENDING') {
     user.approvalStatus = 'PENDING_APPROVAL';
     user.approvalRequestedAt = new Date();

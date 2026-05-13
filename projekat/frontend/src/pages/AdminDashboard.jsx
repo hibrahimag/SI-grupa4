@@ -126,6 +126,7 @@ export default function AdminDashboard() {
   } = state;
   const { darkMode } = useTheme();
   const [sidebarOpen] = useState(false);
+  const [confirmDeactivateId, setConfirmDeactivateId] = useState(null);
 
   function showToast(message, type = 'success') {
     dispatch({ type: 'SHOW_TOAST', payload: { message, type } });
@@ -196,6 +197,22 @@ export default function AdminDashboard() {
       showToast('Nalog uspješno aktiviran.');
     } catch (err) {
       showToast(err.message || 'Greška pri aktivaciji naloga.', 'error');
+    }
+  }
+
+  function handleDeactivateUser(userId) {
+    setConfirmDeactivateId(userId);
+  }
+
+  async function confirmDeactivate() {
+    try {
+      await updateUserStatus(confirmDeactivateId, 'DEACTIVATED');
+      dispatch({ type: 'SYNC_UPDATED_USER_STATUS', payload: { id: confirmDeactivateId, status: 'DEACTIVATED' } });
+      showToast('Nalog uspješno deaktiviran.');
+    } catch (err) {
+      showToast(err.message || 'Greška pri deaktivaciji naloga.', 'error');
+    } finally {
+      setConfirmDeactivateId(null);
     }
   }
 
@@ -371,7 +388,7 @@ export default function AdminDashboard() {
         )}
 
         {view === 'users' && (
-          <UsersView users={visibleUsers} loading={usersLoading} statusFilter={statusFilter} roleFilter={roleFilter} dispatch={dispatch} onActivate={handleActivateUser} />
+          <UsersView users={visibleUsers} loading={usersLoading} statusFilter={statusFilter} roleFilter={roleFilter} dispatch={dispatch} onActivate={handleActivateUser} onDeactivate={handleDeactivateUser} />
         )}
 
         {view === 'roles' && (
@@ -389,6 +406,25 @@ export default function AdminDashboard() {
       </main>
 
       {toast && <div className={`ad-toast ad-toast--${toast.type}`}>{toast.message}</div>}
+
+      {confirmDeactivateId && (
+        <div className="ad-modal-backdrop" onClick={() => setConfirmDeactivateId(null)}>
+          <div className="ad-confirm-modal" onClick={e => e.stopPropagation()}>
+            <div className="ad-confirm-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+            </div>
+            <h3 className="ad-confirm-title">Potvrdi deaktivaciju naloga</h3>
+            <p className="ad-confirm-text">Da li ste sigurni da želite deaktivirati ovaj račun?</p>
+            <div className="ad-confirm-actions">
+              <button className="ad-btn ad-btn--neutral" onClick={() => setConfirmDeactivateId(null)}>Odustani</button>
+              <button className="ad-deactivate-btn" onClick={confirmDeactivate}>Deaktiviraj nalog</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -768,8 +804,10 @@ function FacultiesView({ faculties, onCreate, onUpdate, onDelete }) {
   );
 }
 
-function UsersView({ users, loading, statusFilter, roleFilter, dispatch, onActivate }) {
+function UsersView({ users, loading, statusFilter, roleFilter, dispatch, onActivate, onDeactivate }) {
   const hasDeactivated = users.some((u) => u.status === 'DEACTIVATED');
+  const hasActive = users.some((u) => u.status === 'ACTIVE');
+  const showActions = hasDeactivated || hasActive;
 
   return (
     <div className="ad-content">
@@ -813,7 +851,7 @@ function UsersView({ users, loading, statusFilter, roleFilter, dispatch, onActiv
                 <th>Status</th>
                 <th className="ad-col-institution">Institucija</th>
                 <th className="ad-col-date">Registrovan</th>
-                {hasDeactivated && <th>Akcije</th>}
+                {showActions && <th>Akcije</th>}
               </tr>
             </thead>
             <tbody>
@@ -834,18 +872,23 @@ function UsersView({ users, loading, statusFilter, roleFilter, dispatch, onActiv
                   <td className="ad-col-date" style={{ color: '#9aabbc', fontSize: '0.82rem' }}>
                     {u.created_at ? u.created_at.slice(0, 10) : '—'}
                   </td>
-                  {hasDeactivated && (
+                  {showActions && (
                     <td>
                       {u.status === 'DEACTIVATED' && (
                         <button className="ad-activate-btn" onClick={() => onActivate(u.id)}>
                           Aktiviraj
                         </button>
                       )}
+                      {u.status === 'ACTIVE' && (
+                        <button className="ad-deactivate-btn" onClick={() => onDeactivate(u.id)}>
+                          Deaktiviraj
+                        </button>
+                      )}
                     </td>
                   )}
                 </tr>
               ))}
-              {users.length === 0 && <tr><td colSpan={hasDeactivated ? 6 : 5} className="ad-empty">Nema korisnika za odabrani filter.</td></tr>}
+              {users.length === 0 && <tr><td colSpan={showActions ? 6 : 5} className="ad-empty">Nema korisnika za odabrani filter.</td></tr>}
             </tbody>
           </table>
         </div>
