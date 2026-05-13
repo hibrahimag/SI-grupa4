@@ -1,8 +1,9 @@
 'use strict';
 
 const { Op } = require('sequelize');
-const { sequelize, User, Student, Kompanija, Oglas, PrijavaNaPraksu, Koordinator } = require('../../infrastructure/database/models');
+const { sequelize, User, Student, Kompanija, Oglas, PrijavaNaPraksu, Koordinator, Fakultet } = require('../../infrastructure/database/models');
 const { sendStudentDeactivationToCompany, sendStudentDeactivationToKoordinator } = require('./email.service');
+const bcrypt = require('bcrypt');
 
 const PROFILE_FIELDS = ['naziv', 'opisPoslovanja', 'djelatnost', 'adresa', 'telefon', 'kontaktOsoba'];
 const OPTIONAL_FIELDS = ['opisPoslovanja', 'djelatnost', 'telefon', 'kontaktOsoba'];
@@ -429,6 +430,88 @@ async function deactivateCoordinatorAccount(userId) {
   await user.save();
 }
 
+async function getMyProfile(userId) {
+  const user = await User.findByPk(userId, {
+    attributes: { exclude: ['passwordHash'] },
+    include: [
+      {
+        model: Student,
+        required: false,
+        include: [
+          { model: Fakultet, attributes: ['naziv'], required: false },
+        ],
+      },
+    ],
+  });
+ 
+  if (!user) {
+    const err = new Error('Korisnik nije pronađen.');
+    err.status = 404;
+    throw err;
+  }
+ 
+  return user;
+}
+ 
+async function updateStudentProfile(userId, data) {
+  const user = await User.findByPk(userId);
+  if (!user) {
+    const err = new Error('Korisnik nije pronađen.');
+    err.status = 404;
+    throw err;
+  }
+ 
+  if (user.role !== 'STUDENT') {
+    const err = new Error('Samo studenti mogu mijenjati profil na ovaj način.');
+    err.status = 403;
+    throw err;
+  }
+ 
+  const { ime, prezime, email, currentPassword, newPassword } = data;
+ 
+  // Email uniqueness check (only if changing)
+  if (email && email !== user.email) {
+    const existing = await User.findOne({ where: { email } });
+    if (existing) {
+      const err = new Error('E-mail adresa je već u upotrebi.');
+      err.status = 400;
+      throw err;
+    }
+  }
+ 
+  // Password change — requires current password verification
+  if (newPassword) {
+    if (!currentPassword) {
+      const err = new Error('Unesite trenutnu lozinku da biste postavili novu.');
+      err.status = 400;
+      throw err;
+    }
+    const match = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!match) {
+      const err = new Error('Trenutna lozinka nije ispravna.');
+      err.status = 400;
+      throw err;
+    }
+    if (newPassword.length < 8) {
+      const err = new Error('Nova lozinka mora imati najmanje 8 karaktera.');
+      err.status = 400;
+      throw err;
+    }
+    user.passwordHash = await bcrypt.hash(newPassword, 10);
+  }
+ 
+  if (ime && ime.trim())     user.ime     = ime.trim();
+  if (prezime && prezime.trim()) user.prezime = prezime.trim();
+  if (email && email.trim()) user.email   = email.trim();
+ 
+  await user.save();
+ 
+  // Never return the password hash
+  const userJson = user.toJSON();
+  delete userJson.passwordHash;
+  return userJson;
+}
+
 module.exports = {
   getCompanyProfile,
   updateCompanyProfile,
@@ -438,4 +521,9 @@ module.exports = {
   deactivateCompanyAccount,
   checkCoordinatorDeactivation,
   deactivateCoordinatorAccount,
+<<<<<<< feature/company-phone-validation
+=======
+  getMyProfile,
+  updateStudentProfile,
+>>>>>>> develop
 };

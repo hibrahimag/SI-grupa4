@@ -868,3 +868,101 @@
 .dark .ad-deactivate-btn:hover {
   background: #b91c1c;
 }
+
+
+.ad-sidebar-footer {
+  margin-top: auto;
+  padding: 12px 10px;
+  border-top: 1px solid var(--color-border);
+  position: relative;
+}
+
+.ad-sidebar-footer-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+  text-align: left;
+}
+
+.ad-sidebar-footer-btn:hover { background: #f0f5fb; }
+
+.ad-sidebar-footer-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #ddeeff;
+  color: #1a6fd4;
+  font-size: 0.8rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ad-sidebar-footer-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ad-sidebar-footer-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #0d1f3c;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ad-sidebar-footer-role {
+  font-size: 0.7rem;
+  color: #9aabbc;
+}
+
+.ad-profile-menu {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 10px;
+  right: 10px;
+  background: #ffffff;
+  border: 1px solid #e0edf9;
+  border-radius: 10px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+  overflow: hidden;
+  z-index: 50;
+}
+
+.ad-profile-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 10px 14px;
+  background: none;
+  border: none;
+  font-size: 0.85rem;
+  font-family: inherit;
+  color: #0d1f3c;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.ad-profile-menu-item:hover { background: #f0f5fb; }
+
+/* Dark mode */
+.dark .ad-sidebar-footer     { border-color: #1e2d40; }
+.dark .ad-sidebar-footer-btn:hover { background: #1e2d40; }
+.dark .ad-sidebar-footer-name { color: #e2e8f0; }
+.dark .ad-profile-menu       { background: #111827; border-color: #1e2d40; box-shadow: 0 6px 20px rgba(0,0,0,0.35); }
+.dark .ad-profile-menu-item  { color: #e2e8f0; }
+.dark .ad-profile-menu-item:hover { background: #1e2d40; }
