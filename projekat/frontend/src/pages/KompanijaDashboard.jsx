@@ -27,6 +27,8 @@ const EMPTY_PROFILE = {
 };
 
 const PROFILE_FIELDS = ['naziv', 'opisPoslovanja', 'djelatnost', 'adresa', 'telefon', 'kontaktOsoba'];
+const PHONE_RE = /^(?:\d{9,10}|\+387[1-9]\d{7,8})$/;
+const PHONE_VALIDATION_MESSAGE = 'Broj telefona mora sadržavati 9 ili 10 cifara ili biti u formatu +387.';
 
 export default function KompanijaDashboard() {
   const [view, setView] = useState(VIEWS.DASHBOARD);
@@ -487,10 +489,18 @@ function EditProfileShell({ profile, loading, error, onSave, onCancel }) {
     const nextErrors = {};
     if (!formData.naziv.trim()) nextErrors.naziv = true;
     if (!formData.adresa.trim()) nextErrors.adresa = true;
+    if (isProvidedPhone(formData.telefon) && !PHONE_RE.test(String(formData.telefon))) {
+      nextErrors.telefon = true;
+    }
     setFieldErrors(nextErrors);
 
-    if (Object.keys(nextErrors).length > 0) {
+    if (nextErrors.naziv || nextErrors.adresa) {
       setSaveError('Naziv kompanije i adresa su obavezni.');
+      return false;
+    }
+
+    if (nextErrors.telefon) {
+      setSaveError(PHONE_VALIDATION_MESSAGE);
       return false;
     }
 
@@ -563,6 +573,7 @@ function EditProfileShell({ profile, loading, error, onSave, onCancel }) {
                 label="Telefon"
                 field="telefon"
                 value={formData.telefon}
+                error={fieldErrors.telefon}
                 onChange={handleChange}
               />
             </div>
@@ -634,7 +645,7 @@ function normalizeCompanyProfilePayload(data) {
     opisPoslovanja: normalizeOptionalProfileString(data?.opisPoslovanja),
     djelatnost: normalizeOptionalProfileString(data?.djelatnost),
     adresa: normalizeProfileString(data?.adresa),
-    telefon: normalizeOptionalProfileString(data?.telefon),
+    telefon: normalizeOptionalPhoneString(data?.telefon),
     kontaktOsoba: normalizeOptionalProfileString(data?.kontaktOsoba),
   };
 }
@@ -646,6 +657,15 @@ function normalizeProfileString(value) {
 function normalizeOptionalProfileString(value) {
   const normalized = normalizeProfileString(value);
   return normalized || null;
+}
+
+function normalizeOptionalPhoneString(value) {
+  if (value === null || value === undefined || value === '') return null;
+  return String(value);
+}
+
+function isProvidedPhone(value) {
+  return value !== undefined && value !== null && value !== '';
 }
 
 function getUpdatedCompanyProfile(result, submittedData, currentProfile) {
