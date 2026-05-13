@@ -1,6 +1,35 @@
 const router = require('express').Router();
-const { usersPlaceholderController } = require('../../business/controllers/users.controller');
+const { authenticate } = require('../../middleware/auth.middleware');
 
-router.get('/', usersPlaceholderController);
+const { getCompanyProfile, updateCompanyProfile } = require('../../business/controllers/users.controller');
+
+router.get(
+  '/company-profile',
+  authenticate,
+  getCompanyProfile
+);
+
+router.patch(
+  '/company-profile',
+  authenticate,
+  updateCompanyProfile
+);
+
+const {
+  deactivationCheckController,
+  deactivateAccountController,
+  companyDeactivationCheckController,
+  companyDeactivateAccountController,
+  coordinatorDeactivationCheckController,
+  coordinatorDeactivateAccountController,
+} = require('../../business/controllers/users.controller');
+
+router.get('/deactivation-check', authenticate, deactivationCheckController);
+router.post('/deactivate', authenticate, deactivateAccountController);
+router.get('/company-deactivation-check', authenticate, companyDeactivationCheckController);
+router.post('/company-deactivate', authenticate, companyDeactivateAccountController);
+router.get('/coordinator-deactivation-check', authenticate, coordinatorDeactivationCheckController);
+router.post('/coordinator-deactivate', authenticate, coordinatorDeactivateAccountController);
+
 
 module.exports = router;

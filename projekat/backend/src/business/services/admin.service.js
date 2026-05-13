@@ -57,6 +57,11 @@ async function updateUserStatus(id, status) {
     err.status = 404;
     throw err;
   }
+  if (status === 'ACTIVE' && !user.emailVerifikovan) {
+    const err = new Error('Korisnik ne može biti aktiviran dok email adresa nije verifikovana.');
+    err.status = 400;
+    throw err;
+  }
   user.status = status;
   if (status === 'ACTIVE') {
     user.approvalStatus = 'APPROVED';
