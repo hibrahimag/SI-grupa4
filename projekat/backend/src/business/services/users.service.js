@@ -7,6 +7,8 @@ const bcrypt = require('bcrypt');
 
 const PROFILE_FIELDS = ['naziv', 'opisPoslovanja', 'djelatnost', 'adresa', 'telefon', 'kontaktOsoba'];
 const OPTIONAL_FIELDS = ['opisPoslovanja', 'djelatnost', 'telefon', 'kontaktOsoba'];
+const PHONE_RE = /^(?:\d{9,10}|\+387[1-9]\d{7,8})$/;
+const PHONE_VALIDATION_MESSAGE = 'Broj telefona mora sadržavati 9 ili 10 cifara ili biti u formatu +387.';
 
 function makeError(message, status) {
   const err = new Error(message);
@@ -34,6 +36,23 @@ function normalizeRequired(value, message) {
 function normalizeOptional(value) {
   const normalized = normalizeString(value);
   return normalized || null;
+}
+
+function normalizePhone(value) {
+  if (value === undefined || value === null || value === '') {
+    return null;
+  }
+
+  const normalized = String(value);
+  if (!PHONE_RE.test(normalized)) {
+    throw makeError(PHONE_VALIDATION_MESSAGE, 400);
+  }
+
+  return normalized;
+}
+
+function normalizeOptionalProfileField(field, value) {
+  return field === 'telefon' ? normalizePhone(value) : normalizeOptional(value);
 }
 
 function mapCompanyProfile(company) {
@@ -104,7 +123,7 @@ async function updateCompanyProfile(userId, data) {
       };
 
       for (const field of OPTIONAL_FIELDS) {
-        createPayload[field] = hasOwn(data, field) ? normalizeOptional(data[field]) : null;
+        createPayload[field] = hasOwn(data, field) ? normalizeOptionalProfileField(field, data[field]) : null;
       }
 
       company = await Kompanija.create(createPayload, { transaction });
@@ -115,8 +134,8 @@ async function updateCompanyProfile(userId, data) {
       company.adresa = nextAdresa;
 
       for (const field of OPTIONAL_FIELDS) {
-        if (hasOwn(data, field)) {
-          company[field] = normalizeOptional(data[field]);
+        if (field === 'telefon' || hasOwn(data, field)) {
+          company[field] = normalizeOptionalProfileField(field, hasOwn(data, field) ? data[field] : undefined);
           fieldsToSave.push(field);
         }
       }
@@ -502,6 +521,9 @@ module.exports = {
   deactivateCompanyAccount,
   checkCoordinatorDeactivation,
   deactivateCoordinatorAccount,
+<<<<<<< feature/company-phone-validation
+=======
   getMyProfile,
   updateStudentProfile,
+>>>>>>> develop
 };
