@@ -1,6 +1,6 @@
 'use strict';
 
-const { User, Koordinator, Student  } = require('../../infrastructure/database/models');
+const { User } = require('../../infrastructure/database/models');
 const { sendAccountApprovedEmail, sendAccountRejectedEmail } = require('./email.service');
 
 const ALLOWED_ASSIGN_ROLES = ['STUDENT', 'COMPANY', 'COORDINATOR'];
@@ -132,34 +132,9 @@ async function rejectUserRequest(id, rejectionReason, actorId) {
   return mapApprovalRequest(user);
 }
 
-async function getStudentApprovalRequestsForKoordinator(koordinatorUserId) {
-  const koordinator = await Koordinator.findOne({
-    where: { userID: koordinatorUserId },
-    attributes: ['fakultetID'],
-  });
-  if (!koordinator) {
-    const err = new Error('Koordinatorski profil nije pronađen.');
-    err.status = 404;
-    throw err;
-  }
-
-  // Dohvati studente sa istog fakulteta koji čekaju odobrenje i verifikovali su email
-  const studenti = await Student.findAll({
-    where: { fakultetID: koordinator.fakultetID },
-    include: [{
-      model: User,
-      where: { approvalStatus: 'PENDING_APPROVAL', emailVerifikovan: true, role: 'STUDENT' },
-      attributes: ['id', 'ime', 'prezime', 'email', 'role', 'status', 'approvalStatus', 'approvalRequestedAt', 'approvedBy', 'approvedAt', 'rejectedBy', 'rejectedAt', 'rejectionReason', 'created_at'],
-    }],
-  });
-
-  return studenti.map(s => mapApprovalRequest(s.User));
-}
-
 module.exports = {
   getUserApprovalRequests,
   getUserApprovalRequestById,
   approveUserRequest,
   rejectUserRequest,
-  getStudentApprovalRequestsForKoordinator
 };

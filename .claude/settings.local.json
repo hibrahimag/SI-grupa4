@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\Korisnik\\\\SI-grupa4\\\\projekat\\\\frontend\\\\src\" -Recurse -File)",
-      "Bash(Select-Object FullName)"
-    ]
-  }
-}

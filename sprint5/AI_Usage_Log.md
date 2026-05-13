@@ -1,4 +1,4 @@
-# AI Usage Log — Sprint 5
+# AI Usage Log — Sprint 4
 
 ## Unos 1 — Inicijalna implementacija Admin Dashboard (US-9)
 
