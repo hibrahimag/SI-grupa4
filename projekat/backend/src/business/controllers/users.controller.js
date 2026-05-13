@@ -9,6 +9,8 @@ const {
   deactivateCompanyAccount,
   checkCoordinatorDeactivation,
   deactivateCoordinatorAccount,
+  getMyProfile,
+  updateStudentProfile,
 } = require('../services/users.service');
 
 async function getCompanyProfileController(req, res) {
@@ -83,6 +85,24 @@ async function coordinatorDeactivateAccountController(req, res) {
   }
 }
 
+async function getMyProfileController(req, res) {
+  try {
+    const profile = await getMyProfile(req.user.id);
+    res.json(profile);
+  } catch (err) {
+    res.status(err.status || 500).json({ message: err.message });
+  }
+}
+ 
+async function updateStudentProfileController(req, res) {
+  try {
+    const updated = await updateStudentProfile(req.user.id, req.body);
+    res.json({ message: 'Profil je uspješno ažuriran.', user: updated });
+  } catch (err) {
+    res.status(err.status || 500).json({ message: err.message });
+  }
+}
+
 module.exports = {
   getCompanyProfileController,
   updateCompanyProfileController,
@@ -92,4 +112,6 @@ module.exports = {
   companyDeactivateAccountController,
   coordinatorDeactivationCheckController,
   coordinatorDeactivateAccountController,
+  getMyProfileController,
+  updateStudentProfileController
 };
