@@ -7,7 +7,7 @@
   background: var(--color-bg);
   font-family: var(--font-sans);
   color: var(--color-dark);
-  padding-top: 80px; /* navbar height */
+  padding-top: 60px; /* navbar height */
 }
 
 /* ── Dark mode overrides ─────────────────────────────────── */
@@ -45,7 +45,7 @@
   background: rgba(255,255,255,0.95);
   backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--color-border);
-  height: 80px;
+  height: 70px;
 }
 .kd-navbar-inner {
   max-width: 1280px;
@@ -81,14 +81,14 @@
   min-width: 0;
 }
 .kd-navbar-title {
-  font-size: var(--font-size-lg);
+  font-size: 1rem;
   font-weight: 700;
   color: var(--color-dark);
   white-space: nowrap;
   letter-spacing: -0.01em;
 }
 .kd-navbar-subtitle {
-  font-size: var(--font-size-sm);
+  font-size: 0.75rem;
   color: var(--color-muted);
   white-space: nowrap;
   overflow: hidden;
@@ -442,10 +442,10 @@
 
 /* Manji tablet / veliki mobitel (do 768px) */
 @media (max-width: 768px) {
-  .kd-root { padding-top: 64px; }
+  .kd-root { padding-top: 56px; }
 
   /* Navbar */
-  .kd-navbar { height: 64px; }
+  .kd-navbar { height: 56px; }
   .kd-navbar-inner { padding: 0 var(--space-4); }
   .kd-navbar-divider { display: none; }
   .kd-navbar-title-block { display: none; }

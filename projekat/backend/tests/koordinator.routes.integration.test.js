@@ -230,7 +230,7 @@ describe('GET /api/koordinator/studenti', () => {
     expect(res.body.success).toBe(true);
 
     const emails = res.body.data.map(s => s.User?.email);
-    expect(emails).toContain(studentUser.email);
+    expect(emails).toContain(odobrenStudent.email);
     expect(emails).not.toContain(studentDrugiFakultet.email);
   });
 
@@ -239,11 +239,11 @@ describe('GET /api/koordinator/studenti', () => {
   // Očekivani izlaz: HTTP 200, lista sadrži studentUser s prezimenom 'Isti'
   test('200 — pretraga po imenu vraća odgovarajuće studente', async () => {
     const res = await request(app)
-      .get('/api/koordinator/studenti?pretraga=Isti')
+      .get('/api/koordinator/studenti?pretraga=Odobren')
       .set('Authorization', `Bearer ${koordinatorToken}`);
 
     expect(res.status).toBe(200);
-    const pronadjen = res.body.data.find(s => s.User?.email === studentUser.email);
+    const pronadjen = res.body.data.find(s => s.User?.email === odobrenStudent.email);
     expect(pronadjen).toBeDefined();
   });
 

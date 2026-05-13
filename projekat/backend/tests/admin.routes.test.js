@@ -117,15 +117,15 @@ describe('GET /api/admin/users', () => {
   // Ulaz: GET /api/admin/users?status=PENDING
   // Očekivani izlaz: HTTP 200, User.findAll pozvan s where: { status: 'PENDING' }
   test('200 — filtrira po statusu kad je proslijeđen ?status=PENDING', async () => {
-    User.findAll.mockResolvedValue([makeMockUser({ status: 'PENDING' })]);
+  User.findAll.mockResolvedValue([makeMockUser({ status: 'PENDING' })]);
 
-    const res = await request(app).get('/api/admin/users?status=PENDING');
+  const res = await request(app).get('/api/admin/users?status=PENDING');
 
-    expect(res.status).toBe(200);
-    expect(User.findAll).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { status: 'PENDING' } })
-    );
-  });
+  expect(res.status).toBe(200);
+  expect(User.findAll).toHaveBeenCalledWith(
+    expect.objectContaining({ where: { status: 'PENDING', approvalStatus: 'APPROVED' } })
+  );
+});
 
   // Testira: endpoint vraća prazan niz kada nema korisnika u bazi
   // Ulaz: GET /api/admin/users, User.findAll vraća []

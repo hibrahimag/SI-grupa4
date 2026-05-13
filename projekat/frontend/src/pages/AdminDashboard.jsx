@@ -1,4 +1,6 @@
 import { Fragment, useEffect, useMemo, useReducer, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import {
   getUsers,
   updateUserRole,
@@ -108,7 +110,24 @@ const initialState = {
   userApprovalRequests: [],
   selectedApprovalRequest: null,
 };
-
+const IconMoon = ({ size = 18, color = "currentColor" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+  </svg>
+);
+const IconSun = ({ size = 18, color = "currentColor" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="5" />
+    <line x1="12" y1="1" x2="12" y2="3" />
+    <line x1="12" y1="21" x2="12" y2="23" />
+    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+    <line x1="1" y1="12" x2="3" y2="12" />
+    <line x1="21" y1="12" x2="23" y2="12" />
+    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+  </svg>
+);
 export default function AdminDashboard() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const {
@@ -124,7 +143,13 @@ export default function AdminDashboard() {
     userApprovalRequests,
     selectedApprovalRequest,
   } = state;
-  const { darkMode } = useTheme();
+  
+  const { user, logout } = useAuth();
+  const { darkMode, setDarkMode } = useTheme();
+  const navigate = useNavigate();
+
+function handleLogout() { logout(); navigate('/'); }
+
   const [sidebarOpen] = useState(false);
   const [confirmDeactivateId, setConfirmDeactivateId] = useState(null);
 
@@ -328,44 +353,86 @@ export default function AdminDashboard() {
 
   return (
     <div className={`ad-layout${darkMode ? ' dark' : ''}`}>
-      <aside className={`ad-sidebar${sidebarOpen ? ' open' : ''}`}>
-        <div className="ad-logo">
-          <img src="/logo2.png" alt="PraksaHub" style={{ height: 40 }} />
-          <div className="ad-logo-sub">Admin panel</div>
-        </div>
 
-        <button className="ad-sidebar-toggle" style={{ display: 'none' }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
-            <line x1="3" y1="6" x2="21" y2="6" />
-            <line x1="3" y1="12" x2="21" y2="12" />
-            <line x1="3" y1="18" x2="21" y2="18" />
-          </svg>
+      {/* ── Navbar ── */}
+      <nav className="ad-navbar">
+        <div className="ad-navbar-inner">
+          <div className="ad-navbar-left">
+            <Link to="/">
+              <img src="/logo2.png" alt="PraksaHub" style={{ height: 48 }} />
+            </Link>
+            <div className="ad-navbar-divider" />
+            <div>
+              <div className="ad-navbar-title">Admin panel</div>
+              <div className="ad-navbar-subtitle">Upravljanje korisnicima, rolama i fakultetima</div>
+            </div>
+          </div>
+          <div className="ad-navbar-right">
+            <div className="ad-navbar-user">
+              {user?.ime} {user?.prezime}
+              <span className="ad-navbar-role-chip">Administrator</span>
+            </div>
+            <button
+              className="ad-navbar-theme-btn"
+              onClick={() => setDarkMode(!darkMode)}
+              title="Promijeni temu"
+            >
+              {darkMode ? <IconSun size={17} /> : <IconMoon size={17} />}
+            </button>
+            <button className="ad-btn ad-btn--logout" onClick={handleLogout}>
+              Odjavi se
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      {/* ── Body (sidebar + main) ── */}
+      <div className="ad-body">
+  <aside className="ad-sidebar">
+    <div className="ad-nav-group">
+      <div className="ad-nav-label">Navigacija</div>
+      <nav className="ad-nav">
+        <button className={`ad-nav-item ${view === 'overview' ? 'active' : ''}`} onClick={() => dispatch({ type: 'SET_VIEW', payload: 'overview' })}>
+          Pregled
         </button>
+        <button className={`ad-nav-item ${view === 'approvals' ? 'active' : ''}`} onClick={() => dispatch({ type: 'SET_VIEW', payload: 'approvals' })}>
+          Odobravanje naloga
+          {userApprovalRequests.length > 0 && <span className="ad-badge">{userApprovalRequests.length}</span>}
+        </button>
+        <button className={`ad-nav-item ${view === 'users' ? 'active' : ''}`} onClick={() => dispatch({ type: 'SET_VIEW', payload: 'users' })}>
+          Korisnici
+        </button>
+        <button className={`ad-nav-item ${view === 'roles' ? 'active' : ''}`} onClick={() => dispatch({ type: 'SET_VIEW', payload: 'roles' })}>
+          Role i dozvole
+        </button>
+        <button className={`ad-nav-item ${view === 'faculties' ? 'active' : ''}`} onClick={() => dispatch({ type: 'SET_VIEW', payload: 'faculties' })}>
+          Fakulteti i odsjeci
+        </button>
+      </nav>
+    </div>
+  </aside>
 
-        <div className="ad-nav-group">
-          <div className="ad-nav-label">Navigacija</div>
-          <nav className="ad-nav">
-            <button className={`ad-nav-item ${view === 'overview' ? 'active' : ''}`} onClick={() => dispatch({ type: 'SET_VIEW', payload: 'overview' })}>
-              Pregled
-            </button>
-            <button className={`ad-nav-item ${view === 'approvals' ? 'active' : ''}`} onClick={() => dispatch({ type: 'SET_VIEW', payload: 'approvals' })}>
-              Odobravanje naloga
-              {userApprovalRequests.length > 0 && <span className="ad-badge">{userApprovalRequests.length}</span>}
-            </button>
-            <button className={`ad-nav-item ${view === 'users' ? 'active' : ''}`} onClick={() => dispatch({ type: 'SET_VIEW', payload: 'users' })}>
-              Korisnici
-            </button>
-            <button className={`ad-nav-item ${view === 'roles' ? 'active' : ''}`} onClick={() => dispatch({ type: 'SET_VIEW', payload: 'roles' })}>
-              Role i dozvole
-            </button>
-            <button className={`ad-nav-item ${view === 'faculties' ? 'active' : ''}`} onClick={() => dispatch({ type: 'SET_VIEW', payload: 'faculties' })}>
-              Fakulteti i odsjeci
-            </button>
-          </nav>
-        </div>
-      </aside>
+  {/* Tab nav — vidljiv samo na mobilnom */}
+  <nav className="ad-tab-nav">
+    <button className={`ad-tab-item ${view === 'overview' ? 'active' : ''}`} onClick={() => dispatch({ type: 'SET_VIEW', payload: 'overview' })}>
+      Pregled
+    </button>
+    <button className={`ad-tab-item ${view === 'approvals' ? 'active' : ''}`} onClick={() => dispatch({ type: 'SET_VIEW', payload: 'approvals' })}>
+      Odobravanje
+      {userApprovalRequests.length > 0 && <span className="ad-badge">{userApprovalRequests.length}</span>}
+    </button>
+    <button className={`ad-tab-item ${view === 'users' ? 'active' : ''}`} onClick={() => dispatch({ type: 'SET_VIEW', payload: 'users' })}>
+      Korisnici
+    </button>
+    <button className={`ad-tab-item ${view === 'roles' ? 'active' : ''}`} onClick={() => dispatch({ type: 'SET_VIEW', payload: 'roles' })}>
+      Role
+    </button>
+    <button className={`ad-tab-item ${view === 'faculties' ? 'active' : ''}`} onClick={() => dispatch({ type: 'SET_VIEW', payload: 'faculties' })}>
+      Fakulteti
+    </button>
+  </nav>
 
-      <main className="ad-main">
+  <main className="ad-main">
         {view === 'overview' && (
           <OverviewView
             stats={overviewStats}
@@ -404,6 +471,7 @@ export default function AdminDashboard() {
           <FacultiesView faculties={faculties} onCreate={handleCreateFaculty} onUpdate={handleUpdateFaculty} onDelete={handleDeleteFaculty} />
         )}
       </main>
+</div>
 
       {toast && <div className={`ad-toast ad-toast--${toast.type}`}>{toast.message}</div>}
 
@@ -460,29 +528,45 @@ function OverviewView({ stats, approvalRequests, onGoToApprovals, onGoToUsers, o
           <h2 className="ad-section-title">Zahtjevi za odobravanje - kratki pregled</h2>
           <span className="ad-section-count">{approvalRequests.length} na cekanju</span>
         </div>
-        <table className="ad-table">
-          <thead>
-            <tr>
-              <th>Korisnik</th>
-              <th>Email</th>
-              <th>Rola</th>
-              <th>Datum zahtjeva</th>
-            </tr>
-          </thead>
-          <tbody>
-            {preview.map((u) => (
-              <tr key={u.id}>
-                <td>{`${u.ime} ${u.prezime}`.trim()}</td>
-                <td>{u.email}</td>
-                <td><span className={`ad-role-badge ad-role--${String(u.role || 'student').toLowerCase()}`}>{u.role}</span></td>
-                <td>{u.approvalRequestedAt ? String(u.approvalRequestedAt).slice(0, 10) : '—'}</td>
-              </tr>
-            ))}
-            {preview.length === 0 && (
-              <tr><td colSpan={4} className="ad-empty">Trenutno nema zahtjeva za odobravanje.</td></tr>
-            )}
-          </tbody>
-        </table>
+        <div className="ad-table-desktop" style={{ overflowX: 'auto' }}>
+  <table className="ad-table">
+    <thead>
+      <tr>
+        <th>Korisnik</th>
+        <th>Email</th>
+        <th>Rola</th>
+        <th>Datum zahtjeva</th>
+      </tr>
+    </thead>
+    <tbody>
+      {preview.map((u) => (
+        <tr key={u.id}>
+          <td>{`${u.ime} ${u.prezime}`.trim()}</td>
+          <td>{u.email}</td>
+          <td><span className={`ad-role-badge ad-role--${String(u.role || 'student').toLowerCase()}`}>{u.role}</span></td>
+          <td>{u.approvalRequestedAt ? String(u.approvalRequestedAt).slice(0, 10) : '—'}</td>
+        </tr>
+      ))}
+      {preview.length === 0 && (
+        <tr><td colSpan={4} className="ad-empty">Trenutno nema zahtjeva za odobravanje.</td></tr>
+      )}
+    </tbody>
+  </table>
+</div>
+
+<div className="ad-mobile-cards">
+  {preview.map((u) => (
+    <div key={u.id} className="ad-mobile-card">
+      <div className="ad-mobile-card-name">{`${u.ime} ${u.prezime}`.trim()}</div>
+      <div className="ad-mobile-card-email">{u.email}</div>
+      <div className="ad-mobile-card-meta">
+        <span className={`ad-role-badge ad-role--${String(u.role || 'student').toLowerCase()}`}>{u.role}</span>
+        <span className="ad-mobile-card-date">{u.approvalRequestedAt ? String(u.approvalRequestedAt).slice(0, 10) : '—'}</span>
+      </div>
+    </div>
+  ))}
+  {preview.length === 0 && <p className="ad-empty">Trenutno nema zahtjeva.</p>}
+</div>
         <div className="ad-overview-actions">
           <button className="ad-btn ad-btn--primary" onClick={onGoToApprovals}>Pogledaj zahtjeve</button>
           <button className="ad-btn ad-btn--neutral" onClick={onGoToUsers}>Otvori korisnike</button>
@@ -533,29 +617,69 @@ function RoleManagementView({ users, loading, onRoleChange, onAssignAdmin }) {
         {loading ? (
           <p className="ad-loading">Ucitavanje...</p>
         ) : (
-          <table className="ad-table">
-            <thead>
-              <tr>
-                <th>Korisnik</th>
-                <th>Trenutna rola</th>
-                <th>Nova rola</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
+          <>
+            <div className="ad-table-desktop" style={{ overflowX: 'auto' }}>
+              <table className="ad-table">
+                <thead>
+                  <tr>
+                    <th>Korisnik</th>
+                    <th>Trenutna rola</th>
+                    <th>Nova rola</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredUsers.map((u) => (
+                    <tr key={u.id}>
+                      <td>
+                        <div className="ad-user-cell">
+                          <div className="ad-avatar">{initials(u.name)}</div>
+                          <div>
+                            <div className="ad-user-name">{u.name}</div>
+                            <div className="ad-user-email">{u.email}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td><span className={`ad-role-badge ad-role--${u.role.toLowerCase()}`}>{u.role}</span></td>
+                      <td>
+                        <select
+                          className="ad-select"
+                          value={draftRoles[u.id] || u.role}
+                          onChange={(e) => setDraftRoles((prev) => ({ ...prev, [u.id]: e.target.value }))}
+                        >
+                          {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
+                        </select>
+                      </td>
+                      <td>
+                        <button
+                          className="ad-btn ad-btn--approve"
+                          disabled={!draftRoles[u.id] || draftRoles[u.id] === u.role}
+                          onClick={() => saveRole(u)}
+                        >
+                          Sacuvaj
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {filteredUsers.length === 0 && (
+                    <tr><td colSpan={4} className="ad-empty">Nema korisnika za prikaz.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="ad-mobile-cards">
               {filteredUsers.map((u) => (
-                <tr key={u.id}>
-                  <td>
-                    <div className="ad-user-cell">
-                      <div className="ad-avatar">{initials(u.name)}</div>
-                      <div>
-                        <div className="ad-user-name">{u.name}</div>
-                        <div className="ad-user-email">{u.email}</div>
-                      </div>
+                <div key={u.id} className="ad-mobile-card">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                    <div className="ad-avatar">{initials(u.name)}</div>
+                    <div>
+                      <div className="ad-mobile-card-name">{u.name}</div>
+                      <div className="ad-mobile-card-email">{u.email}</div>
                     </div>
-                  </td>
-                  <td><span className={`ad-role-badge ad-role--${u.role.toLowerCase()}`}>{u.role}</span></td>
-                  <td>
+                  </div>
+                  <div className="ad-mobile-card-meta">
+                    <span className={`ad-role-badge ad-role--${u.role.toLowerCase()}`}>{u.role}</span>
                     <select
                       className="ad-select"
                       value={draftRoles[u.id] || u.role}
@@ -563,8 +687,6 @@ function RoleManagementView({ users, loading, onRoleChange, onAssignAdmin }) {
                     >
                       {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
                     </select>
-                  </td>
-                  <td>
                     <button
                       className="ad-btn ad-btn--approve"
                       disabled={!draftRoles[u.id] || draftRoles[u.id] === u.role}
@@ -572,12 +694,14 @@ function RoleManagementView({ users, loading, onRoleChange, onAssignAdmin }) {
                     >
                       Sacuvaj
                     </button>
-                  </td>
-                </tr>
+                  </div>
+                </div>
               ))}
-              {filteredUsers.length === 0 && <tr><td colSpan={4} className="ad-empty">Nema korisnika za prikaz.</td></tr>}
-            </tbody>
-          </table>
+              {filteredUsers.length === 0 && (
+                <p className="ad-empty">Nema korisnika za prikaz.</p>
+              )}
+            </div>
+          </>
         )}
       </div>
 
@@ -741,65 +865,109 @@ function FacultiesView({ faculties, onCreate, onUpdate, onDelete }) {
       </div>
 
       <div className="ad-section">
-        <div className="ad-section-header">
-          <h2 className="ad-section-title">Lista fakulteta</h2>
-          <span className="ad-section-count">{faculties.length} fakulteta</span>
-        </div>
-        <table className="ad-table">
-          <thead>
+  <div className="ad-section-header">
+    <h2 className="ad-section-title">Lista fakulteta</h2>
+    <span className="ad-section-count">{faculties.length} fakulteta</span>
+  </div>
+
+  {/* Desktop */}
+  <div className="ad-table-desktop" style={{ overflowX: 'auto' }}>
+    <table className="ad-table">
+      <thead>
+        <tr>
+          <th>Naziv</th>
+          <th>Email</th>
+          <th>Adresa</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {faculties.map((f) => (
+          <Fragment key={f.id}>
             <tr>
-              <th>Naziv</th>
-              <th>Email</th>
-              <th>Adresa</th>
-              <th></th>
+              {editingId === f.id ? (
+                <>
+                  <td><input className="ad-input" value={editForm.naziv} onChange={(e) => setEditForm({ ...editForm, naziv: e.target.value })} /></td>
+                  <td><input className="ad-input" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} /></td>
+                  <td><input className="ad-input" value={editForm.adresa} onChange={(e) => setEditForm({ ...editForm, adresa: e.target.value })} /></td>
+                  <td>
+                    <div className="ad-actions">
+                      <button className="ad-btn ad-btn--approve" onClick={() => saveEdit(f.id)}>Sacuvaj</button>
+                      <button className="ad-btn ad-btn--reject" onClick={cancelEdit}>Odustani</button>
+                    </div>
+                  </td>
+                </>
+              ) : (
+                <>
+                  <td>{f.naziv}</td>
+                  <td style={{ color: '#5a7a9a', fontSize: '0.85rem' }}>{f.email || '—'}</td>
+                  <td style={{ color: '#5a7a9a', fontSize: '0.85rem' }}>{f.adresa || '—'}</td>
+                  <td>
+                    <div className="ad-actions">
+                      <button className="ad-btn ad-btn--approve" onClick={() => startEdit(f)}>Uredi</button>
+                      <button className="ad-btn ad-btn--neutral" onClick={() => toggleOdsjeci(f.id)}>
+                        {expandedId === f.id ? 'Zatvori' : 'Odsjeci'}
+                      </button>
+                      <button className="ad-btn ad-btn--reject" onClick={() => onDelete(f.id)}>Obrisi</button>
+                    </div>
+                  </td>
+                </>
+              )}
             </tr>
-          </thead>
-          <tbody>
-            {faculties.map((f) => (
-              <Fragment key={f.id}>
-                <tr>
-                  {editingId === f.id ? (
-                    <>
-                      <td><input className="ad-input" value={editForm.naziv} onChange={(e) => setEditForm({ ...editForm, naziv: e.target.value })} /></td>
-                      <td><input className="ad-input" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} /></td>
-                      <td><input className="ad-input" value={editForm.adresa} onChange={(e) => setEditForm({ ...editForm, adresa: e.target.value })} /></td>
-                      <td>
-                        <div className="ad-actions">
-                          <button className="ad-btn ad-btn--approve" onClick={() => saveEdit(f.id)}>Sacuvaj</button>
-                          <button className="ad-btn ad-btn--reject" onClick={cancelEdit}>Odustani</button>
-                        </div>
-                      </td>
-                    </>
-                  ) : (
-                    <>
-                      <td>{f.naziv}</td>
-                      <td style={{ color: '#5a7a9a', fontSize: '0.85rem' }}>{f.email || '—'}</td>
-                      <td style={{ color: '#5a7a9a', fontSize: '0.85rem' }}>{f.adresa || '—'}</td>
-                      <td>
-                        <div className="ad-actions">
-                          <button className="ad-btn ad-btn--approve" onClick={() => startEdit(f)}>Uredi</button>
-                          <button className="ad-btn ad-btn--neutral" onClick={() => toggleOdsjeci(f.id)}>
-                            {expandedId === f.id ? 'Zatvori' : 'Odsjeci'}
-                          </button>
-                          <button className="ad-btn ad-btn--reject" onClick={() => onDelete(f.id)}>Obrisi</button>
-                        </div>
-                      </td>
-                    </>
-                  )}
-                </tr>
-                {expandedId === f.id && (
-                  <tr>
-                    <td colSpan={4} style={{ background: '#f7fafd', padding: '0 16px 8px' }}>
-                      <OdsjekPanel fakultetID={f.id} onClose={() => setExpandedId(null)} />
-                    </td>
-                  </tr>
-                )}
-              </Fragment>
-            ))}
-            {faculties.length === 0 && <tr><td colSpan={4} className="ad-empty">Nema dodanih fakulteta.</td></tr>}
-          </tbody>
-        </table>
+            {expandedId === f.id && (
+              <tr>
+                <td colSpan={4} style={{ background: '#f7fafd', padding: '0 16px 8px' }}>
+                  <OdsjekPanel fakultetID={f.id} onClose={() => setExpandedId(null)} />
+                </td>
+              </tr>
+            )}
+          </Fragment>
+        ))}
+        {faculties.length === 0 && <tr><td colSpan={4} className="ad-empty">Nema dodanih fakulteta.</td></tr>}
+      </tbody>
+    </table>
+  </div>
+
+  {/* Mobilni prikaz */}
+  <div className="ad-mobile-cards">
+    {faculties.map((f) => (
+      <div key={f.id} className="ad-mobile-card">
+        {editingId === f.id ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <input className="ad-input" value={editForm.naziv} onChange={(e) => setEditForm({ ...editForm, naziv: e.target.value })} placeholder="Naziv" />
+            <input className="ad-input" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} placeholder="Email" />
+            <input className="ad-input" value={editForm.adresa} onChange={(e) => setEditForm({ ...editForm, adresa: e.target.value })} placeholder="Adresa" />
+            <div className="ad-mobile-card-actions">
+              <button className="ad-btn ad-btn--approve" onClick={() => saveEdit(f.id)}>Sacuvaj</button>
+              <button className="ad-btn ad-btn--reject" onClick={cancelEdit}>Odustani</button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="ad-mobile-card-name">{f.naziv}</div>
+            <div className="ad-mobile-card-email">{f.email || '—'}</div>
+            <div className="ad-mobile-card-meta" style={{ marginTop: 4, marginBottom: 10 }}>
+              <span style={{ fontSize: '0.78rem', color: '#9aabbc' }}>{f.adresa || '—'}</span>
+            </div>
+            <div className="ad-mobile-card-actions">
+              <button className="ad-btn ad-btn--approve" onClick={() => startEdit(f)}>Uredi</button>
+              <button className="ad-btn ad-btn--neutral" onClick={() => toggleOdsjeci(f.id)}>
+                {expandedId === f.id ? 'Zatvori' : 'Odsjeci'}
+              </button>
+              <button className="ad-btn ad-btn--reject" onClick={() => onDelete(f.id)}>Obrisi</button>
+            </div>
+            {expandedId === f.id && (
+              <div style={{ marginTop: 10 }}>
+                <OdsjekPanel fakultetID={f.id} onClose={() => setExpandedId(null)} />
+              </div>
+            )}
+          </>
+        )}
       </div>
+    ))}
+    {faculties.length === 0 && <p className="ad-empty">Nema dodanih fakulteta.</p>}
+  </div>
+</div>
     </div>
   );
 }
@@ -843,54 +1011,74 @@ function UsersView({ users, loading, statusFilter, roleFilter, dispatch, onActiv
         <p className="ad-loading">Ucitavanje...</p>
       ) : (
         <div className="ad-section">
-          <table className="ad-table">
-            <thead>
-              <tr>
-                <th>Korisnik</th>
-                <th>Rola</th>
-                <th>Status</th>
-                <th className="ad-col-institution">Institucija</th>
-                <th className="ad-col-date">Registrovan</th>
-                {showActions && <th>Akcije</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((u) => (
-                <tr key={u.id}>
-                  <td>
-                    <div className="ad-user-cell">
-                      <div className="ad-avatar">{initials(u.name)}</div>
-                      <div>
-                        <div className="ad-user-name">{u.name}</div>
-                        <div className="ad-user-email">{u.email}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td><span className={`ad-role-badge ad-role--${u.role.toLowerCase()}`}>{u.role}</span></td>
-                  <td><span className={`ad-status-badge ad-status--${u.status.toLowerCase()}`}>{u.status}</span></td>
-                  <td className="ad-col-institution" style={{ color: '#5a7a9a', fontSize: '0.85rem' }}>{u.institution || '—'}</td>
-                  <td className="ad-col-date" style={{ color: '#9aabbc', fontSize: '0.82rem' }}>
-                    {u.created_at ? u.created_at.slice(0, 10) : '—'}
-                  </td>
-                  {showActions && (
-                    <td>
-                      {u.status === 'DEACTIVATED' && (
-                        <button className="ad-activate-btn" onClick={() => onActivate(u.id)}>
-                          Aktiviraj
-                        </button>
-                      )}
-                      {u.status === 'ACTIVE' && (
-                        <button className="ad-deactivate-btn" onClick={() => onDeactivate(u.id)}>
-                          Deaktiviraj
-                        </button>
-                      )}
-                    </td>
-                  )}
-                </tr>
-              ))}
-              {users.length === 0 && <tr><td colSpan={showActions ? 6 : 5} className="ad-empty">Nema korisnika za odabrani filter.</td></tr>}
-            </tbody>
-          </table>
+          <div className="ad-table-desktop" style={{ overflowX: 'auto' }}>
+  <table className="ad-table">
+    <thead>
+      <tr>
+        <th>Korisnik</th>
+        <th>Rola</th>
+        <th>Status</th>
+        <th className="ad-col-institution">Institucija</th>
+        <th className="ad-col-date">Registrovan</th>
+        {showActions && <th>Akcije</th>}
+      </tr>
+    </thead>
+    <tbody>
+      {users.map((u) => (
+        <tr key={u.id}>
+          <td>
+            <div className="ad-user-cell">
+              <div className="ad-avatar">{initials(u.name)}</div>
+              <div>
+                <div className="ad-user-name">{u.name}</div>
+                <div className="ad-user-email">{u.email}</div>
+              </div>
+            </div>
+          </td>
+          <td><span className={`ad-role-badge ad-role--${u.role.toLowerCase()}`}>{u.role}</span></td>
+          <td><span className={`ad-status-badge ad-status--${u.status.toLowerCase()}`}>{u.status}</span></td>
+          <td style={{ color: '#5a7a9a', fontSize: '0.85rem' }}>{u.institution || '—'}</td>
+          <td style={{ color: '#9aabbc', fontSize: '0.82rem' }}>{u.created_at ? u.created_at.slice(0, 10) : '—'}</td>
+          {showActions && (
+            <td>
+              {u.status === 'DEACTIVATED' && <button className="ad-activate-btn" onClick={() => onActivate(u.id)}>Aktiviraj</button>}
+              {u.status === 'ACTIVE' && <button className="ad-deactivate-btn" onClick={() => onDeactivate(u.id)}>Deaktiviraj</button>}
+            </td>
+          )}
+        </tr>
+      ))}
+      {users.length === 0 && <tr><td colSpan={showActions ? 6 : 5} className="ad-empty">Nema korisnika.</td></tr>}
+    </tbody>
+  </table>
+</div>
+
+<div className="ad-mobile-cards">
+  {users.map((u) => (
+    <div key={u.id} className="ad-mobile-card">
+      <div className="ad-mobile-card-row">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div className="ad-avatar">{initials(u.name)}</div>
+          <div>
+            <div className="ad-mobile-card-name">{u.name}</div>
+            <div className="ad-mobile-card-email">{u.email}</div>
+          </div>
+        </div>
+        {showActions && (
+          <div>
+            {u.status === 'DEACTIVATED' && <button className="ad-activate-btn" onClick={() => onActivate(u.id)}>Aktiviraj</button>}
+            {u.status === 'ACTIVE' && <button className="ad-deactivate-btn" onClick={() => onDeactivate(u.id)}>Deaktiviraj</button>}
+          </div>
+        )}
+      </div>
+      <div className="ad-mobile-card-meta" style={{ marginTop: 8 }}>
+        <span className={`ad-role-badge ad-role--${u.role.toLowerCase()}`}>{u.role}</span>
+        <span className={`ad-status-badge ad-status--${u.status.toLowerCase()}`}>{u.status}</span>
+        <span className="ad-mobile-card-date">{u.created_at ? u.created_at.slice(0, 10) : '—'}</span>
+      </div>
+    </div>
+  ))}
+  {users.length === 0 && <p className="ad-empty">Nema korisnika.</p>}
+</div>
         </div>
       )}
     </div>
@@ -970,35 +1158,51 @@ function UserApprovalsView({ requests, selected, onOpenDetails, onApprove, onRej
           <h2 className="ad-section-title">Lista zahtjeva</h2>
           <span className="ad-section-count">{filteredRequests.length} na cekanju</span>
         </div>
-        <table className="ad-table">
-          <thead>
-            <tr>
-              <th>Korisnik</th>
-              <th>Email</th>
-              <th>Rola</th>
-              <th>Datum verifikacije</th>
-              <th>Status</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredRequests.map((u) => (
-              <tr key={u.id}>
-                <td>{`${u.ime} ${u.prezime}`.trim()}</td>
-                <td>{u.email}</td>
-                <td><span className={`ad-role-badge ad-role--${String(u.role || 'student').toLowerCase()}`}>{u.role}</span></td>
-                <td>{u.approvalRequestedAt ? String(u.approvalRequestedAt).slice(0, 10) : '—'}</td>
-                <td><span className="ad-status-badge ad-status--pending">PENDING_APPROVAL</span></td>
-                <td>
-                  <button className="ad-btn ad-btn--approve" onClick={() => onOpenDetails(u.id)}>
-                    Detalji
-                  </button>
-                </td>
-              </tr>
-            ))}
-            {filteredRequests.length === 0 && <tr><td colSpan={6} className="ad-empty">Nema zahtjeva na cekanju.</td></tr>}
-          </tbody>
-        </table>
+        <div className="ad-table-desktop" style={{ overflowX: 'auto' }}>
+  <table className="ad-table">
+    <thead>
+      <tr>
+        <th>Korisnik</th>
+        <th>Email</th>
+        <th>Rola</th>
+        <th>Datum verifikacije</th>
+        <th>Status</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {filteredRequests.map((u) => (
+        <tr key={u.id}>
+          <td>{`${u.ime} ${u.prezime}`.trim()}</td>
+          <td>{u.email}</td>
+          <td><span className={`ad-role-badge ad-role--${String(u.role || 'student').toLowerCase()}`}>{u.role}</span></td>
+          <td>{u.approvalRequestedAt ? String(u.approvalRequestedAt).slice(0, 10) : '—'}</td>
+          <td><span className="ad-status-badge ad-status--pending">PENDING</span></td>
+          <td><button className="ad-btn ad-btn--approve" onClick={() => onOpenDetails(u.id)}>Detalji</button></td>
+        </tr>
+      ))}
+      {filteredRequests.length === 0 && <tr><td colSpan={6} className="ad-empty">Nema zahtjeva na cekanju.</td></tr>}
+    </tbody>
+  </table>
+</div>
+
+<div className="ad-mobile-cards">
+  {filteredRequests.map((u) => (
+    <div key={u.id} className="ad-mobile-card">
+      <div className="ad-mobile-card-row">
+        <div className="ad-mobile-card-name">{`${u.ime} ${u.prezime}`.trim()}</div>
+        <button className="ad-btn ad-btn--approve" onClick={() => onOpenDetails(u.id)}>Detalji</button>
+      </div>
+      <div className="ad-mobile-card-email">{u.email}</div>
+      <div className="ad-mobile-card-meta">
+        <span className={`ad-role-badge ad-role--${String(u.role || 'student').toLowerCase()}`}>{u.role}</span>
+        <span className="ad-status-badge ad-status--pending">PENDING</span>
+        <span className="ad-mobile-card-date">{u.approvalRequestedAt ? String(u.approvalRequestedAt).slice(0, 10) : '—'}</span>
+      </div>
+    </div>
+  ))}
+  {filteredRequests.length === 0 && <p className="ad-empty">Nema zahtjeva na cekanju.</p>}
+</div>
       </div>
 
       {selected && (
