@@ -48,9 +48,14 @@ async function createListing(data, userId) {
     opis: data.opis,
     brojMjesta: data.brojMjesta,
     rokPrijave: data.rokPrijave,
-    trajanje: data.trajanje || null,
+    trajanje: data.trajanje ? String(data.trajanje) : null,
     oblast: data.oblast || null,
     placenaPraksa: data.placenaPraksa || false,
+    lokacija: data.lokacija?.trim() || null,
+    tip: data.tip || 'Onsite',
+    datumPocetka: data.datumPocetka || null,
+    tehnologije: Array.isArray(data.tehnologije) ? data.tehnologije.filter(Boolean) : [],
+    uslovi: Array.isArray(data.uslovi) ? data.uslovi.filter(Boolean) : [],
     status: 'AKTIVAN',
     kompanijaID: kompanija.id,
   });
@@ -78,12 +83,11 @@ async function getListingsByCompany(userId) {
 async function getActiveListings() {
   return Oglas.findAll({
     where: { status: 'AKTIVAN' },
-    include: [
-      {
-        model: Kompanija,
-        attributes: ['id', 'naziv', 'adresa'],
-      },
-    ],
+    include: [{
+      model: Kompanija,
+      attributes: ['id', 'naziv', 'kontaktOsoba'],
+      include: [{ model: User, attributes: ['email'] }],
+    }],
     order: [['datumObjave', 'DESC']],
   });
 }
@@ -91,5 +95,5 @@ async function getActiveListings() {
 module.exports = {
   createListing,
   getListingsByCompany,
-  getActiveListings
+  getActiveListings,
 };

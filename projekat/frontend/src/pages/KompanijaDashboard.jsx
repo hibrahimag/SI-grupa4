@@ -690,16 +690,14 @@ function displayValue(value) {
   return value && String(value).trim() ? value : 'Nije uneseno';
 }
 
+const EMPTY_LISTING = {
+  naziv: '', opis: '', brojMjesta: '', rokPrijave: '', datumPocetka: '',
+  trajanje: '', oblast: '', lokacija: '', tip: 'Onsite',
+  tehnologije: '', uslovi: '', placenaPraksa: false,
+};
+
 function CreateListingShell({ onCancel, onCreated }) {
-  const [formData, setFormData] = useState({
-    naziv: '',
-    opis: '',
-    brojMjesta: '',
-    rokPrijave: '',
-    trajanje: '',
-    oblast: '',
-    placenaPraksa: false,
-  });
+  const [formData, setFormData] = useState(EMPTY_LISTING);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [saving, setSaving] = useState(false);
@@ -720,9 +718,22 @@ function CreateListingShell({ onCancel, onCreated }) {
     setError('');
     setSuccess('');
     try {
-      const result = await createListing({ ...formData, brojMjesta: Number(formData.brojMjesta) });
+      const result = await createListing({
+        naziv: formData.naziv,
+        opis: formData.opis,
+        brojMjesta: Number(formData.brojMjesta),
+        rokPrijave: formData.rokPrijave,
+        datumPocetka: formData.datumPocetka || null,
+        trajanje: formData.trajanje || null,
+        oblast: formData.oblast || null,
+        lokacija: formData.lokacija || null,
+        tip: formData.tip,
+        placenaPraksa: formData.placenaPraksa,
+        tehnologije: formData.tehnologije.split(',').map(t => t.trim()).filter(Boolean),
+        uslovi: formData.uslovi.split('\n').map(u => u.trim()).filter(Boolean),
+      });
       setSuccess('Oglas je uspješno kreiran.');
-      setFormData({ naziv: '', opis: '', brojMjesta: '', rokPrijave: '', trajanje: '', oblast: '', placenaPraksa: false });
+      setFormData(EMPTY_LISTING);
       onCreated(result?.oglas || result);
     } catch (err) {
       setError(err.message || 'Greška pri kreiranju oglasa.');
@@ -741,40 +752,75 @@ function CreateListingShell({ onCancel, onCreated }) {
         <form className="cd-profile-form" onSubmit={handleSubmit}>
           {error && <div className="cd-inline-message cd-inline-message--error">{error}</div>}
           {success && <div className="cd-inline-message cd-inline-message--success">{success}</div>}
+
           <div className="cd-form-row">
             <div className="cd-form-field">
-              <label className="cd-form-label">Naziv oglasa</label>
+              <label className="cd-form-label">Naziv oglasa *</label>
               <input className="cd-input" type="text" value={formData.naziv} onChange={(e) => handleChange('naziv', e.target.value)} />
             </div>
             <div className="cd-form-field">
-              <label className="cd-form-label">Broj mjesta</label>
-              <input className="cd-input" type="number" value={formData.brojMjesta} onChange={(e) => handleChange('brojMjesta', e.target.value)} />
+              <label className="cd-form-label">Broj mjesta *</label>
+              <input className="cd-input" type="number" min="1" value={formData.brojMjesta} onChange={(e) => handleChange('brojMjesta', e.target.value)} />
             </div>
           </div>
+
           <div className="cd-form-field">
-            <label className="cd-form-label">Opis</label>
+            <label className="cd-form-label">Opis *</label>
             <textarea className="cd-textarea" rows={4} value={formData.opis} onChange={(e) => handleChange('opis', e.target.value)} />
           </div>
+
           <div className="cd-form-row">
             <div className="cd-form-field">
-              <label className="cd-form-label">Rok prijave</label>
+              <label className="cd-form-label">Rok prijave *</label>
               <input className="cd-input" type="date" value={formData.rokPrijave} onChange={(e) => handleChange('rokPrijave', e.target.value)} />
             </div>
             <div className="cd-form-field">
-              <label className="cd-form-label">Trajanje</label>
-              <input className="cd-input" type="text" value={formData.trajanje} onChange={(e) => handleChange('trajanje', e.target.value)} />
+              <label className="cd-form-label">Datum početka prakse</label>
+              <input className="cd-input" type="date" value={formData.datumPocetka} onChange={(e) => handleChange('datumPocetka', e.target.value)} />
             </div>
           </div>
+
           <div className="cd-form-row">
             <div className="cd-form-field">
-              <label className="cd-form-label">Oblast</label>
-              <input className="cd-input" type="text" value={formData.oblast} onChange={(e) => handleChange('oblast', e.target.value)} />
+              <label className="cd-form-label">Lokacija</label>
+              <input className="cd-input" type="text" placeholder="npr. Sarajevo" value={formData.lokacija} onChange={(e) => handleChange('lokacija', e.target.value)} />
             </div>
-            <div className="cd-form-field" style={{ justifyContent: 'flex-end' }}>
-              <label className="cd-form-label">Plaćena praksa</label>
-              <input type="checkbox" checked={formData.placenaPraksa} onChange={(e) => handleChange('placenaPraksa', e.target.checked)} />
+            <div className="cd-form-field">
+              <label className="cd-form-label">Tip prakse</label>
+              <select className="cd-input" value={formData.tip} onChange={(e) => handleChange('tip', e.target.value)}>
+                <option value="Onsite">Onsite</option>
+                <option value="Hybrid">Hybrid</option>
+                <option value="Remote">Remote</option>
+              </select>
             </div>
           </div>
+
+          <div className="cd-form-row">
+            <div className="cd-form-field">
+              <label className="cd-form-label">Trajanje (u mjesecima)</label>
+              <input className="cd-input" type="number" min="1" placeholder="npr. 3" value={formData.trajanje} onChange={(e) => handleChange('trajanje', e.target.value)} />
+            </div>
+            <div className="cd-form-field">
+              <label className="cd-form-label">Oblast</label>
+              <input className="cd-input" type="text" placeholder="npr. Web razvoj" value={formData.oblast} onChange={(e) => handleChange('oblast', e.target.value)} />
+            </div>
+          </div>
+
+          <div className="cd-form-field">
+            <label className="cd-form-label">Tehnologije / vještine (odvojene zarezom)</label>
+            <input className="cd-input" type="text" placeholder="npr. React, Node.js, PostgreSQL" value={formData.tehnologije} onChange={(e) => handleChange('tehnologije', e.target.value)} />
+          </div>
+
+          <div className="cd-form-field">
+            <label className="cd-form-label">Uslovi / zahtjevi (svaki u novom redu)</label>
+            <textarea className="cd-textarea" rows={4} placeholder={"Osnove JavaScript-a\nPoznavanje Gita\nStudent 3. ili 4. godine"} value={formData.uslovi} onChange={(e) => handleChange('uslovi', e.target.value)} />
+          </div>
+
+          <div className="cd-form-field" style={{ flexDirection: 'row', alignItems: 'center', gap: '10px' }}>
+            <input type="checkbox" id="placena-praksa" checked={formData.placenaPraksa} onChange={(e) => handleChange('placenaPraksa', e.target.checked)} />
+            <label className="cd-form-label" htmlFor="placena-praksa" style={{ margin: 0 }}>Plaćena praksa (stipendija)</label>
+          </div>
+
           <div className="cd-form-actions">
             <button type="submit" className="cd-btn cd-btn--primary" disabled={saving}>
               {saving ? 'Kreiranje...' : 'Objavi oglas'}

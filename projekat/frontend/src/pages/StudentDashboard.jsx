@@ -3,11 +3,49 @@ import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { checkDeactivation, deactivateAccount } from '../services/userService';
+import { getActiveListings } from '../services/listingsService';
 import {
-  MOCK_PRAKSE, SVE_TEHNOLOGIJE,
   formatDate, relativeDate, trajanjeLabel, mjestLabel, deadlineInfo,
 } from '../data/mockPrakse';
 import './StudentDashboard.css';
+
+const LOGO_COLORS = ['#1a6fd4', '#0e9e6e', '#6d4ce1', '#e07b1a', '#0891b2', '#be185d', '#7c3aed', '#c0392b'];
+function deriveLogoColor(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = (h << 5) - h + str.charCodeAt(i);
+  return LOGO_COLORS[Math.abs(h) % LOGO_COLORS.length];
+}
+function deriveLogo(naziv) {
+  const parts = (naziv || '').split(/\s+/).filter(w => w.length > 2);
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  return (naziv || '??').slice(0, 2).toUpperCase();
+}
+function mapOglas(oglas) {
+  const kompNaziv = oglas.Kompanija?.naziv || 'Kompanija';
+  return {
+    id: oglas.id,
+    naziv: oglas.naziv,
+    kompanija: kompNaziv,
+    logo: deriveLogo(kompNaziv),
+    logoColor: deriveLogoColor(kompNaziv),
+    opis: oglas.opis || '',
+    tehnologije: oglas.tehnologije || [],
+    trajanje: oglas.trajanje ? Number(oglas.trajanje) : null,
+    brojMjesta: oglas.brojMjesta,
+    lokacija: oglas.lokacija || '',
+    tip: oglas.tip || 'Onsite',
+    datumObjave: oglas.datumObjave ? oglas.datumObjave.slice(0, 10) : null,
+    datumPocetka: oglas.datumPocetka ? oglas.datumPocetka.slice(0, 10) : null,
+    stipendija: oglas.placenaPraksa,
+    rokPrijave: oglas.rokPrijave ? oglas.rokPrijave.slice(0, 10) : null,
+    aktivan: oglas.status === 'AKTIVAN',
+    uslovi: oglas.uslovi || [],
+    kontakt: {
+      osoba: oglas.Kompanija?.kontaktOsoba || '',
+      email: oglas.Kompanija?.User?.email || '',
+    },
+  };
+}
 
 // ── PraksaCard ─────────────────────────────────────────────────────────────
 function PraksaCard({ praksa, onSelect }) {
@@ -254,6 +292,10 @@ export default function StudentDashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
+  const [prakse, setPrakse] = useState([]);
+  const [praksaLoading, setPraksaLoading] = useState(true);
+  const [praksaError, setPraksaError] = useState('');
+
   const [selectedPraksa, setSelectedPraksa] = useState(null);
   const [search, setSearch] = useState('');
   const [filterTehs, setFilterTehs] = useState([]);
@@ -270,6 +312,16 @@ export default function StudentDashboard() {
   const [deactivating, setDeactivating] = useState(false);
   const [deactivateError, setDeactivateError] = useState('');
   const profileMenuRef = useRef(null);
+
+  useEffect(() => {
+    let active = true;
+    setPraksaLoading(true);
+    getActiveListings()
+      .then(data => { if (active) setPrakse((data || []).map(mapOglas)); })
+      .catch(err => { if (active) setPraksaError(err.message || 'Greška pri učitavanju oglasa.'); })
+      .finally(() => { if (active) setPraksaLoading(false); });
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     if (!profileMenuOpen) return;
@@ -311,8 +363,13 @@ export default function StudentDashboard() {
     }
   }
 
+  const sveTehnologije = useMemo(
+    () => [...new Set(prakse.flatMap(p => p.tehnologije || []))].sort(),
+    [prakse]
+  );
+
   const filteredPrakse = useMemo(() => {
-    let r = [...MOCK_PRAKSE];
+    let r = [...prakse];
     if (search.trim()) {
       const s = search.trim().toLowerCase();
       r = r.filter(p =>
@@ -471,7 +528,7 @@ export default function StudentDashboard() {
               </button>
               {sectionsOpen.tech && (
                 <div className="sd-sb-section-body">
-                  {SVE_TEHNOLOGIJE.map(t => (
+                  {sveTehnologije.map(t => (
                     <label key={t} className="sd-sb-checkbox-row">
                       <input type="checkbox" checked={filterTehs.includes(t)} onChange={() => toggleArr(setFilterTehs, t)} />
                       <span>{t}</span>
@@ -648,30 +705,37 @@ export default function StudentDashboard() {
         </div>
       ) : (
         <div className="sd-container">
-          <p className="sd-results-info">
-            {filteredPrakse.length === 0
-              ? 'Nema rezultata'
-              : <><strong>{filteredPrakse.length}</strong> {filteredPrakse.length === 1 ? 'oglas' : 'oglasa'} pronađeno{hasFilters && ' · filtrirano'}</>
-            }
-          </p>
+          {praksaLoading ? (
+            <p className="sd-results-info">Učitavanje oglasa...</p>
+          ) : praksaError ? (
+            <p className="sd-results-info" style={{ color: 'var(--color-danger, #c0392b)' }}>{praksaError}</p>
+          ) : (
+            <>
+              <p className="sd-results-info">
+                {filteredPrakse.length === 0
+                  ? 'Nema rezultata'
+                  : <><strong>{filteredPrakse.length}</strong> {filteredPrakse.length === 1 ? 'oglas' : 'oglasa'} pronađeno{hasFilters && ' · filtrirano'}</>
+                }
+              </p>
 
-          {/* List */}
-          <div className="sd-list">
-            {filteredPrakse.length === 0 ? (
-              <div className="sd-empty">
-                <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                </svg>
-                <p className="sd-empty-title">Nema pronađenih oglasa</p>
-                <p className="sd-empty-sub">
-                  Pokušaj sa drugačijim filterima ili{' '}
-                  <button className="sd-empty-link" onClick={resetFilters}>resetuj pretragu</button>.
-                </p>
+              <div className="sd-list">
+                {filteredPrakse.length === 0 ? (
+                  <div className="sd-empty">
+                    <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                    <p className="sd-empty-title">Nema pronađenih oglasa</p>
+                    <p className="sd-empty-sub">
+                      Pokušaj sa drugačijim filterima ili{' '}
+                      <button className="sd-empty-link" onClick={resetFilters}>resetuj pretragu</button>.
+                    </p>
+                  </div>
+                ) : (
+                  filteredPrakse.map(p => <PraksaCard key={p.id} praksa={p} onSelect={sel => setSelectedPraksa(sel)} />)
+                )}
               </div>
-            ) : (
-              filteredPrakse.map(p => <PraksaCard key={p.id} praksa={p} onSelect={sel => setSelectedPraksa(sel)} />)
-            )}
-          </div>
+            </>
+          )}
         </div>
       )}
 
