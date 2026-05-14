@@ -5,7 +5,6 @@
   background: var(--color-bg);
   font-family: 'Sora', 'Segoe UI', sans-serif;
   color: var(--color-dark);
-  padding-left: 220px;
   padding-top: 60px;
 }
 
@@ -111,6 +110,12 @@
   gap: var(--space-2);
 }
 
+.cd-navbar-divider,
+.cd-navbar-title,
+.cd-navbar-user-area {
+  display: none;
+}
+
 .cd-navbar-user {
   display: inline-block;
   color: var(--color-dark);
@@ -137,15 +142,81 @@
   left: 0;
   top: 60px;
   height: calc(100vh - 60px);
-  width: 220px;
+  width: 52px;
   overflow: hidden;
   background: var(--color-surface);
   border-right: 1px solid var(--color-border);
   z-index: 90;
+  transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s ease;
 }
 
+.cd-sidebar:hover {
+  width: 280px;
+  box-shadow: 4px 0 24px rgba(0,0,0,0.08);
+}
+
+/* Collapsed icon strip */
+.cd-sidebar-tab {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 52px;
+  height: 100%;
+  background: var(--color-surface);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 0;
+  gap: 2px;
+  z-index: 2;
+  transition: opacity 0.15s ease;
+}
+
+.cd-sidebar:hover .cd-sidebar-tab {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.cd-sb-tab-icon {
+  position: relative;
+  width: 36px;
+  height: 34px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-muted);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.cd-sb-tab-icon:hover {
+  background: var(--color-faint);
+  color: var(--color-dark);
+}
+
+.cd-sb-tab-footer {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding-bottom: 4px;
+}
+
+.cd-sb-tab-avatar {
+  width: 28px !important;
+  height: 28px !important;
+  font-size: 0.72rem !important;
+}
+
+/* Expanded inner */
 .cd-sidebar-inner {
-  width: 220px;
+  width: 280px;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -157,6 +228,14 @@
   overflow-y: auto;
   overflow-x: hidden;
   padding: 14px 10px 8px;
+  opacity: 0;
+  transform: translateX(-6px);
+  transition: opacity 0.2s ease 0.13s, transform 0.3s cubic-bezier(0.22, 1, 0.36, 1) 0.13s;
+}
+
+.cd-sidebar:hover .cd-sidebar-scroll {
+  opacity: 1;
+  transform: translateX(0);
 }
 
 .cd-nav-group {
@@ -215,6 +294,12 @@
 
 .cd-main {
   min-height: 100vh;
+  margin-left: 52px;
+  transition: margin-left 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.cd-sidebar:hover ~ .cd-main {
+  margin-left: 280px;
 }
 
 .cd-content {
@@ -330,6 +415,13 @@
   font-size: 0.8rem;
   font-weight: 600;
   color: #6d4ce1;
+  white-space: nowrap;
+}
+
+.cd-section-action {
+  padding: 7px 12px;
+  font-size: 0.78rem;
+  box-shadow: none;
   white-space: nowrap;
 }
 
@@ -785,7 +877,7 @@
 
 @media (max-width: 1024px) {
   .cd-sidebar {
-    width: 220px;
+    width: 52px;
   }
 
   .cd-content {
@@ -832,6 +924,10 @@
     z-index: 50;
   }
 
+  .cd-sidebar-tab {
+    display: none;
+  }
+
   .cd-sidebar-inner {
     width: 100%;
     height: auto;
@@ -839,6 +935,8 @@
 
   .cd-sidebar-scroll {
     padding: 10px 16px 8px;
+    opacity: 1;
+    transform: translateX(0);
   }
 
   .cd-nav-group {
@@ -859,6 +957,8 @@
 
   .cd-sidebar-footer {
     padding: 8px 16px 10px;
+    opacity: 1;
+    transform: translateX(0);
   }
 
   .cd-sb-footer-row {
@@ -922,6 +1022,12 @@
   flex-direction: column;
   gap: 2px;
   position: relative;
+  opacity: 0;
+  transform: translateX(-6px);
+  transition: opacity 0.2s ease 0.18s, transform 0.3s cubic-bezier(0.22, 1, 0.36, 1) 0.18s;
+}
+
+.cd-sidebar:hover .cd-sidebar-footer {
   opacity: 1;
   transform: translateX(0);
 }
@@ -993,6 +1099,23 @@
 .cd-sb-logout-row:hover .cd-sb-footer-icon {
   color: var(--color-danger);
   animation: cd-icon-pulse 0.8s ease-in-out infinite;
+}
+
+@media (max-width: 768px) {
+  .cd-sidebar:hover {
+    width: 100%;
+    box-shadow: none;
+  }
+
+  .cd-sidebar:hover ~ .cd-main,
+  .cd-main {
+    margin-left: 0;
+  }
+
+  .cd-sidebar-footer {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 /* Settings view */

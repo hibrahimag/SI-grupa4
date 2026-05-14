@@ -86,3 +86,37 @@
 
 **Rizici, problemi ili greške:**
 - Unit test za pretragu studenata jednom riječju (`Op.or` filter) koristio `expect.any(Symbol)` s `toHaveProperty` što nije podržano - riješeno s `Object.getOwnPropertySymbols()`
+
+## Unos 3 — Implementacija pregleda praksi za studente (US-11,12,32,36)
+
+| Polje | Sadržaj |
+|---|---|
+| **Datum** | 14.05.2026 |
+| **Sprint broj** | 7 |
+| **Alat** | Claude (claude-sonnet-4-6, claude.ai) |
+| **Ko je koristio** | Haris Husić |
+| **Svrha korištenja** | Implementacija stranice za pregled dostupnih praksi za studente |
+
+**Kratak opis upita:**
+
+> Implementirati stranicu za pregled praksi za studente na ruti `student/dashboard`. Stranica treba prikazivati objavljene oglase za prakse u obliku kartica sa mock podacima (8-10 oglasa), filterima po datumu, tehnologiji i trajanju, dark mode podrškom i auth guardom. Kartice trebaju imati hover efekat s blagim podizanjem i animiranom svjetlećom ivicom koja putuje u smjeru kazaljke na satu od gornjeg lijevog ugla, collapsing sidebar sa search opcijom koja ce takodje imati animaciju kao kartice, filterima sa svg dziajnom tokom collapsanog izgleda, plus opisom kada je sidebar otvoren koji ce pulsirati tokom hovera.
+
+**Šta je AI predložio ili generisao:**
+
+- `StudentDashboard.jsx` - glavna komponenta s prikazom kartica, filter barom, dark mode toggleom i auth guardom
+- `StudentDashboard.css` - kompletni stilovi uključujući animaciju svjetleće ivice (`conic-gradient`), hover efekte, CSS varijable za light/dark mode, grid layout i responsive pravila
+- Mock podaci — 8-10 realističnih oglasa za prakse s poljima: naziv pozicije, kompanija, tehnološki stack (tagovi), trajanje, broj mjesta, lokacija, datum objave, rok prijave i kratak opis
+- Logika filtriranja na klijentskoj strani po datumu objave, tehnologiji i trajanju
+- Auth guard koji provjerava prijavu korisnika i preusmjerava na login stranicu ako sesija nije aktivna
+
+**Šta je tim prihvatio:**
+- Raspored i i dizajn
+
+**Šta je tim izmijenio:**
+- Odabran novi izgled za sidebar koji je collapsing uz dodatne promjene za interaktivniji UI
+
+**Šta je tim odbacio:**
+- Pocetnu poziciju serach i filtera
+
+**Rizici, problemi ili greške:**
+- Pocetni dizajn kartice imao previse upadljivu animaciju koja je naknadno korigovana
