@@ -12,9 +12,30 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN ?? '8h';
 const SALT_ROUNDS = 10;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PHONE_RE = /^(?:\d{9,10}|\+387[1-9]\d{7,8})$/;
+const PHONE_VALIDATION_MESSAGE = 'Broj telefona mora sadržavati 9 ili 10 cifara ili biti u formatu +387.';
 
 if (!JWT_SECRET) {
   throw new Error('JWT_SECRET environment variable is not set.');
+}
+
+function makeError(message, status) {
+  const err = new Error(message);
+  err.status = status;
+  return err;
+}
+
+function normalizePhone(telefon) {
+  if (telefon === undefined || telefon === null || telefon === '') {
+    return null;
+  }
+
+  const normalized = String(telefon);
+  if (!PHONE_RE.test(normalized)) {
+    throw makeError(PHONE_VALIDATION_MESSAGE, 400);
+  }
+
+  return normalized;
 }
 
 async function checkAvailability(type, value) {
@@ -132,13 +153,14 @@ async function register(data) {
 
     if (role === 'COMPANY') {
       const { naziv, adresa, telefon, opisPoslovanja, kontaktOsoba } = data;
+      const normalizedTelefon = normalizePhone(telefon);
       const user = await sequelize.transaction(async (t) => {
         const createdUser = await User.create(
           { ime: naziv, prezime: '', username, email, passwordHash, role: 'COMPANY', status: 'ACTIVE', approvalStatus: 'PENDING_APPROVAL', approvalRequestedAt: new Date(), institution: naziv },
           { transaction: t }
         );
         await Kompanija.create(
-          { userID: createdUser.id, naziv, adresa: adresa || null, telefon: telefon || null, opisPoslovanja: opisPoslovanja || null, kontaktOsoba: kontaktOsoba || null },
+          { userID: createdUser.id, naziv, adresa: adresa || null, telefon: normalizedTelefon, opisPoslovanja: opisPoslovanja || null, kontaktOsoba: kontaktOsoba || null },
           { transaction: t }
         );
         return createdUser;

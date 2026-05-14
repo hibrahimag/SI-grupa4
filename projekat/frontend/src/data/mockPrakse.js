@@ -92,13 +92,16 @@ export const MOCK_PRAKSE = [
 export const SVE_TEHNOLOGIJE = [...new Set(MOCK_PRAKSE.flatMap(p => p.tehnologije))].sort();
 
 export function formatDate(dateStr) {
+  if (!dateStr) return 'Nije uneseno';
   const d = new Date(dateStr);
-  const day   = String(d.getDate()).padStart(2, '0');
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  return `${day}/${month}/${d.getFullYear()}`;
+  if (isNaN(d.getTime())) return 'Nije uneseno';
+  const day   = String(d.getUTCDate()).padStart(2, '0');
+  const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+  return `${day}/${month}/${d.getUTCFullYear()}`;
 }
 
 export function relativeDate(dateStr) {
+  if (!dateStr) return '';
   const diff = Math.floor((Date.now() - new Date(dateStr)) / 86400000);
   if (diff === 0) return 'Danas';
   if (diff === 1) return 'Juče';
@@ -108,9 +111,11 @@ export function relativeDate(dateStr) {
 }
 
 export function trajanjeLabel(mj) {
-  if (mj === 1) return '1 mjesec';
-  if (mj < 5)   return `${mj} mjeseca`;
-  return `${mj} mjeseci`;
+  const n = Number(mj);
+  if (mj === null || mj === undefined || isNaN(n)) return 'Trajanje nepoznato';
+  if (n === 1) return '1 mjesec';
+  if (n < 5)   return `${n} mjeseca`;
+  return `${n} mjeseci`;
 }
 
 export function mjestLabel(n) {

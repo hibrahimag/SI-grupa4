@@ -19,6 +19,7 @@ function mapUser(u) {
 
 async function getUsers(status) {
   const where = status ? { status: status.toUpperCase() } : {};
+  where.approvalStatus = 'APPROVED';
   const users = await User.findAll({
     where,
     attributes: ['id', 'ime', 'prezime', 'email', 'role', 'status', 'institution', 'created_at'],

@@ -13,13 +13,11 @@ const app = require('../src/app');
 
 describe('placeholder routes', () => {
   test.each([
-    ['/api/listings', 'Listings module placeholder.'],
-    ['/api/applications', 'Applications module placeholder.'],
-    ['/api/notifications', 'Notifications module placeholder.'],
-  ])('GET %s returns 501 placeholder response', async (path, message) => {
-    const res = await request(app).get(path);
-
-    expect(res.status).toBe(501);
-    expect(res.body).toEqual({ message });
-  });
+  ['/api/applications', 'Applications module placeholder.'],
+  ['/api/notifications', 'Notifications module placeholder.'],
+])('GET %s returns 501 placeholder response', async (path, message) => {
+  const res = await request(app).get(path);
+  expect(res.status).toBe(501);
+  expect(res.body).toEqual({ message });
+});
 });

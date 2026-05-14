@@ -45,6 +45,7 @@ beforeAll(async () => {
     passwordHash,
     role: 'STUDENT',
     status: 'PENDING',
+    approvalStatus: 'APPROVED',
     emailVerifikovan: true,
     created_at: new Date(),
   });
@@ -58,6 +59,7 @@ afterAll(async () => {
 beforeEach(async () => {
   targetUser.role = 'STUDENT';
   targetUser.status = 'PENDING';
+  targetUser.approvalStatus = 'APPROVED';
   await targetUser.save();
 });
 

@@ -63,17 +63,26 @@ function PraksaCard({ praksa, onSelect }) {
           </div>
           <div className="sd-company-info">
             <span className="sd-company-name">{praksa.kompanija}</span>
-            <span className="sd-location">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-                <circle cx="12" cy="10" r="3"/>
-              </svg>
-              {praksa.lokacija}
-            </span>
+            {praksa.lokacija && (
+              <span className="sd-location">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                  <circle cx="12" cy="10" r="3"/>
+                </svg>
+                {praksa.lokacija}
+              </span>
+            )}
           </div>
           <div className="sd-head-badges">
             {inactive && <span className="sd-inactive-badge">Istekao</span>}
-            <span className={`sd-tip-badge sd-tip--${praksa.tip.toLowerCase()}`}>{praksa.tip}</span>
+            <span className={`sd-tip-badge sd-tip--${praksa.tip.toLowerCase()}`}>
+              {!praksa.lokacija && (
+                <svg style={{marginRight:'4px'}} width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                </svg>
+              )}
+              {praksa.tip}
+            </span>
             {praksa.stipendija && <span className="sd-stip-badge">Stipendija</span>}
           </div>
         </div>
@@ -103,15 +112,17 @@ function PraksaCard({ praksa, onSelect }) {
             </svg>
             {mjestLabel(praksa.brojMjesta)}
           </span>
-          <span className="sd-meta-dot"/>
-          <span className="sd-meta-item">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-              <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
-              <line x1="3" y1="10" x2="21" y2="10"/>
-            </svg>
-            Počinje {formatDate(praksa.datumPocetka)}
-          </span>
+          {praksa.datumPocetka && <>
+            <span className="sd-meta-dot"/>
+            <span className="sd-meta-item">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+              Počinje {formatDate(praksa.datumPocetka)}
+            </span>
+          </>}
         </div>
         <div className="sd-foot-right">
           <span className="sd-published">{relativeDate(praksa.datumObjave)}</span>
@@ -155,14 +166,23 @@ function PraksaModal({ praksa, onClose, darkMode }) {
             <div className="sd-logo" style={{ background: praksa.logoColor }}>{praksa.logo}</div>
             <div className="sd-company-info">
               <span className="sd-company-name">{praksa.kompanija}</span>
-              <span className="sd-location">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
-                </svg>
-                {praksa.lokacija}
-              </span>
+              {praksa.lokacija && (
+                <span className="sd-location">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                  </svg>
+                  {praksa.lokacija}
+                </span>
+              )}
               <div className="sd-head-badges">
-                <span className={`sd-tip-badge sd-tip--${praksa.tip.toLowerCase()}`}>{praksa.tip}</span>
+                <span className={`sd-tip-badge sd-tip--${praksa.tip.toLowerCase()}`}>
+                  {!praksa.lokacija && (
+                    <svg style={{marginRight:'4px'}} width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                    </svg>
+                  )}
+                  {praksa.tip}
+                </span>
                 {praksa.stipendija && <span className="sd-stip-badge">Stipendija</span>}
               </div>
             </div>
@@ -194,6 +214,7 @@ function PraksaModal({ praksa, onClose, darkMode }) {
               </svg>
               {mjestLabel(praksa.brojMjesta)}
             </span>
+          {praksa.datumPocetka && <>
             <span className="sd-meta-dot"/>
             <span className="sd-meta-item">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -203,6 +224,7 @@ function PraksaModal({ praksa, onClose, darkMode }) {
               </svg>
               Počinje {formatDate(praksa.datumPocetka)}
             </span>
+          </>}
           </div>
 
           {/* Deadline */}
@@ -422,9 +444,9 @@ export default function StudentDashboard() {
     else if (sortBy === 'trajanje-asc') r.sort((a, b) => a.trajanje - b.trajanje);
     else if (sortBy === 'trajanje-desc') r.sort((a, b) => b.trajanje - a.trajanje);
     return r;
-  }, [search, filterTehs, filterTips, filterTrajanja, sortBy]);
+  }, [prakse, search, filterTehs, filterTips, filterTrajanja, sortBy]);
 
-  const hasFilters = search || filterTehs.length || filterTips.length || filterTrajanja.length;
+  const hasFilters = !!(search || filterTehs.length || filterTips.length || filterTrajanja.length);
 
   function toggleSection(key) {
     setSectionsOpen(prev => ({ ...prev, [key]: !prev[key] }));
@@ -762,10 +784,32 @@ export default function StudentDashboard() {
             <p className="sd-results-info" style={{ color: 'var(--color-danger, #c0392b)' }}>{praksaError}</p>
           ) : (
             <>
+              <div className="sd-main-search-wrap">
+                <div className="sd-main-search-inner">
+                  <svg className="sd-main-search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                  </svg>
+                  <input
+                    className="sd-main-search-input"
+                    type="text"
+                    placeholder="Pretraži prakse, kompanije, tehnologije..."
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                  />
+                  {search && (
+                    <button className="sd-main-search-clear" onClick={() => setSearch('')}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              </div>
+
               <p className="sd-results-info">
                 {filteredPrakse.length === 0
                   ? 'Nema rezultata'
-                  : <><strong>{filteredPrakse.length}</strong> {filteredPrakse.length === 1 ? 'oglas' : 'oglasa'} pronađeno{hasFilters && ' · filtrirano'}</>
+                  : <><strong>{filteredPrakse.length}</strong> {filteredPrakse.length === 1 ? 'oglas' : 'oglasa'} pronađeno{hasFilters ? ' · filtrirano' : ''}</>
                 }
               </p>
 

@@ -1,6 +1,6 @@
 // KoordinatorDashboard.jsx
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { koordinatorService } from '../services/koordinatorService';
@@ -11,12 +11,12 @@ import StudentListaPregled from '../modules/koordinator/StudentListaPregled';
 import OdobravanjePregled from '../modules/koordinator/OdobravanjePregled';
 import './KoordinatorDashboard.css';
 
-const IconMoon = ({ size = 18, color = "currentColor" }) => (
+const IconMoon = ({ size = 18, color = 'currentColor' }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
   </svg>
 );
-const IconSun = ({ size = 18, color = "currentColor" }) => (
+const IconSun = ({ size = 18, color = 'currentColor' }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="12" r="5" />
     <line x1="12" y1="1" x2="12" y2="3" />
@@ -30,20 +30,47 @@ const IconSun = ({ size = 18, color = "currentColor" }) => (
   </svg>
 );
 
-const TABS = [
-  { id: 'prijave',      label: 'Prijave na čekanju' },
-  { id: 'sve',          label: 'Sve prijave'         },
-  { id: 'prakse',       label: 'Aktivne prakse'      },
-  { id: 'studenti',     label: 'Studenti'             },
-  { id: 'odobravanje',  label: 'Odobravanje naloga'  },
-];
+/* ── Nav SVGs ──────────────────────────────────────────────── */
+const SvgClock = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+  </svg>
+);
+const SvgList = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+    <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+  </svg>
+);
+const SvgBriefcase = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+  </svg>
+);
+const SvgUsers = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+  </svg>
+);
+const SvgShield = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+  </svg>
+);
+const SvgLogout = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/>
+    <line x1="21" y1="12" x2="9" y2="12"/>
+  </svg>
+);
 
 export default function KoordinatorDashboard() {
-  const { user, logout }          = useAuth();
-  const { darkMode, setDarkMode } = useTheme();
-  const navigate                  = useNavigate();
-  const [aktivan, setAktivan]         = useState('prijave');
-  const [stats, setStats]             = useState(null);
+  const { user, logout }            = useAuth();
+  const { darkMode, setDarkMode }   = useTheme();
+  const navigate                    = useNavigate();
+  const [aktivan, setAktivan]           = useState('prijave');
+  const [stats, setStats]               = useState(null);
   const [loadingStats, setLoadingStats] = useState(true);
   const [settingsOpen, setSettingsOpen]         = useState(false);
   const [settingsTab, setSettingsTab]           = useState('account');
@@ -140,93 +167,118 @@ export default function KoordinatorDashboard() {
 
       {/* ── Navbar ─────────────────────────────────────────── */}
       <nav className="kd-navbar">
-  <div className="kd-navbar-inner">
-    <div className="kd-navbar-left">
-      <Link to="/" className="kd-navbar-logo">
-        <img src="/logo2.png" alt="PraksaHub" style={{ height: 48 }} />
-      </Link>
-      <div className="kd-navbar-divider" />
-      <div className="kd-navbar-title-block">
-        <span className="kd-navbar-title">Koordinatorski panel</span>
-        <span className="kd-navbar-subtitle">Upravljanje prijavama i praćenje toka studentskih praksi</span>
-      </div>
-    </div>
-    <div className="kd-navbar-right">
-      <button
-        className="kd-navbar-theme-btn"
-        onClick={() => setDarkMode(!darkMode)}
-        title="Promijeni temu"
-      >
-        {darkMode
-          ? <IconSun  size={17} color={darkMode ? '#f9fafb' : '#3a5a8a'} />
-          : <IconMoon size={17} color={darkMode ? '#f9fafb' : '#3a5a8a'} />
-        }
-      </button>
-      <div className="kd-navbar-user-area" ref={profileMenuRef}>
-        {profileMenuOpen && (
-          <div className="kd-profile-menu">
-            <button className="kd-profile-menu-item" onClick={() => { setProfileMenuOpen(false); navigate('/profile'); }}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                <circle cx="12" cy="7" r="4"/>
-              </svg>
-              <span>Profil</span>
-            </button>
-            <button className="kd-profile-menu-item" onClick={() => { setProfileMenuOpen(false); setSettingsOpen(true); }}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="3"/>
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-              </svg>
-              <span>Postavke</span>
-            </button>
-          </div>
-        )}
-        <button className="kd-navbar-user" onClick={() => setProfileMenuOpen(v => !v)}>
-          {user?.ime} {user?.prezime}
+        <span className="kd-navbar-brand">PraksaHub</span>
+        <button className="kd-theme-btn" onClick={() => setDarkMode(!darkMode)} title="Promijeni temu">
+          {darkMode ? <IconSun size={15} /> : <IconMoon size={15} />}
         </button>
-        <span className="kd-navbar-role-chip">Koordinator</span>
-      </div>
-      <button className="kd-btn kd-btn--ghost kd-btn--sm" onClick={handleLogout}>
-        Odjavi se
-      </button>
-    </div>
-  </div>
-</nav>
-
-      {/* ── Stats strip ────────────────────────────────────── */}
-      <section className="kd-stats-strip">
-        <StatCard label="Na čekanju"     value={stats?.podnesene}     color="warning" loading={loadingStats} onClick={() => setAktivan('prijave')} clickable />
-        <StatCard label="Odobreno"       value={stats?.odobrene}      color="success" loading={loadingStats} />
-        <StatCard label="Odbijeno"       value={stats?.odbijene}      color="danger"  loading={loadingStats} />
-        <StatCard label="Aktivne prakse" value={stats?.aktivnePrakse} color="primary" loading={loadingStats} onClick={() => setAktivan('prakse')} clickable />
-        <StatCard label="Završene"       value={stats?.zavrsene}      color="purple"  loading={loadingStats} />
-      </section>
-
-      {/* ── Tab nav ────────────────────────────────────────── */}
-      <nav className="kd-tab-nav">
-        {TABS.map(t => (
-          <button
-            key={t.id}
-            className={`kd-tab-btn${aktivan === t.id ? ' kd-tab-btn--active' : ''}`}
-            onClick={() => setAktivan(t.id)}
-          >
-            {t.label}
-            {t.id === 'prijave' && stats?.podnesene > 0 && (
-              <span className="kd-badge">{stats.podnesene}</span>
-            )}
-          </button>
-        ))}
       </nav>
 
-      {/* ── Content ────────────────────────────────────────── */}
-      <main className="kd-content">
-        {aktivan === 'prijave'     && <PrijavePregled filterStatus="PODNESENA" onOdluka={ucitajStats} />}
-        {aktivan === 'sve'         && <PrijavePregled filterStatus="" onOdluka={ucitajStats} />}
-        {aktivan === 'prakse'      && <PraksePregled />}
-        {aktivan === 'studenti'    && <StudentListaPregled />}
-        {aktivan === 'odobravanje' && <OdobravanjePregled />}
+      {/* ── Sidebar ────────────────────────────────────────── */}
+      <aside className="kd-sidebar">
+
+        {/* Collapsed icon strip */}
+        <div className="kd-sidebar-tab">
+          <div className="kd-sb-tab-icon" title="Prijave na čekanju" style={{ position: 'relative' }}>
+            <SvgClock />
+            {stats?.podnesene > 0 && <span className="kd-sb-badge">{stats.podnesene}</span>}
+          </div>
+          <div className="kd-sb-tab-icon" title="Sve prijave"><SvgList /></div>
+          <div className="kd-sb-tab-icon" title="Aktivne prakse"><SvgBriefcase /></div>
+          <div className="kd-sb-tab-icon" title="Studenti"><SvgUsers /></div>
+          <div className="kd-sb-tab-icon" title="Odobravanje naloga"><SvgShield /></div>
+          <div className="kd-sb-tab-footer">
+            <div className="kd-sb-tab-icon">
+              <div className="kd-nav-avatar">{user?.ime?.[0]?.toUpperCase() || 'K'}</div>
+            </div>
+            <div className="kd-sb-tab-icon" onClick={handleLogout} style={{ cursor: 'pointer' }}>
+              <SvgLogout />
+            </div>
+          </div>
+        </div>
+
+        {/* Expanded inner */}
+        <div className="kd-sidebar-inner">
+          <div className="kd-sidebar-scroll">
+            <div className="kd-nav-group">
+              <div className="kd-nav-label">Upravljanje</div>
+              <nav className="kd-nav">
+                <button
+                  className={`kd-nav-item${aktivan === 'prijave' ? ' active' : ''}`}
+                  onClick={() => setAktivan('prijave')}
+                >
+                  <SvgClock />
+                  Prijave na čekanju
+                  {stats?.podnesene > 0 && <span className="kd-badge">{stats.podnesene}</span>}
+                </button>
+                <button
+                  className={`kd-nav-item${aktivan === 'sve' ? ' active' : ''}`}
+                  onClick={() => setAktivan('sve')}
+                >
+                  <SvgList />
+                  Sve prijave
+                </button>
+                <button
+                  className={`kd-nav-item${aktivan === 'prakse' ? ' active' : ''}`}
+                  onClick={() => setAktivan('prakse')}
+                >
+                  <SvgBriefcase />
+                  Aktivne prakse
+                </button>
+                <button
+                  className={`kd-nav-item${aktivan === 'studenti' ? ' active' : ''}`}
+                  onClick={() => setAktivan('studenti')}
+                >
+                  <SvgUsers />
+                  Studenti
+                </button>
+                <button
+                  className={`kd-nav-item${aktivan === 'odobravanje' ? ' active' : ''}`}
+                  onClick={() => setAktivan('odobravanje')}
+                >
+                  <SvgShield />
+                  Odobravanje naloga
+                </button>
+              </nav>
+            </div>
+          </div>
+
+          <div className="kd-sidebar-footer">
+            <button
+              className="kd-sb-footer-row"
+              ref={profileMenuRef}
+              onClick={() => setSettingsOpen(true)}
+            >
+              <div className="kd-nav-avatar">{user?.ime?.[0]?.toUpperCase() || 'K'}</div>
+              <span className="kd-sb-footer-text">{user?.ime} {user?.prezime}</span>
+            </button>
+            <button className="kd-sb-footer-row kd-sb-logout-row" onClick={handleLogout}>
+              <SvgLogout />
+              <span className="kd-sb-footer-text">Odjava</span>
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      {/* ── Main ───────────────────────────────────────────── */}
+      <main className="kd-main">
+        <section className="kd-stats-strip">
+          <StatCard label="Na čekanju"     value={stats?.podnesene}     color="warning" loading={loadingStats} onClick={() => setAktivan('prijave')} clickable />
+          <StatCard label="Odobreno"       value={stats?.odobrene}      color="success" loading={loadingStats} />
+          <StatCard label="Odbijeno"       value={stats?.odbijene}      color="danger"  loading={loadingStats} />
+          <StatCard label="Aktivne prakse" value={stats?.aktivnePrakse} color="primary" loading={loadingStats} onClick={() => setAktivan('prakse')} clickable />
+          <StatCard label="Završene"       value={stats?.zavrsene}      color="purple"  loading={loadingStats} />
+        </section>
+
+        <div className="kd-content">
+          {aktivan === 'prijave'     && <PrijavePregled filterStatus="PODNESENA" onOdluka={ucitajStats} />}
+          {aktivan === 'sve'         && <PrijavePregled filterStatus="" onOdluka={ucitajStats} />}
+          {aktivan === 'prakse'      && <PraksePregled />}
+          {aktivan === 'studenti'    && <StudentListaPregled />}
+          {aktivan === 'odobravanje' && <OdobravanjePregled />}
+        </div>
       </main>
 
+      {/* ── Settings overlay ───────────────────────────────── */}
       {settingsOpen && (
         <div className="kd-settings-page">
           <aside className="kd-settings-sidebar">
@@ -303,6 +355,7 @@ export default function KoordinatorDashboard() {
         </div>
       )}
 
+      {/* ── Deactivate confirm modal ────────────────────────── */}
       {showDeactivateConfirm && (
         <div className="kd-modal-overlay" role="dialog" aria-modal="true">
           <div className="kd-confirm-modal">

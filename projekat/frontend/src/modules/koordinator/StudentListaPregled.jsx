@@ -62,7 +62,6 @@ export default function StudentListaPregled() {
   useEffect(() => { ucitaj(pretraga); }, [ucitaj, pretraga]);
 
   const odabrani = studenti.find(s => s.id === odabraniId);
-  const handleSearch = e => { e.preventDefault(); setPretraga(inputVal); };
 
   // Helper: get name from nested User object
   const ime = (s) => s?.User?.ime || s?.user?.ime || '';
@@ -74,25 +73,32 @@ export default function StudentListaPregled() {
   return (
     <div>
       <div className="kd-module-header">
-        <h2 className="kd-module-title">Studenti ({studenti.length})</h2>
-        <form onSubmit={handleSearch} style={{ display: 'flex', gap: 'var(--space-2)' }}>
-          <input
-            className="kd-input"
-            placeholder="Pretraži studente"
-            value={inputVal}
-            onChange={e => setInputVal(e.target.value)}
-            style={{ minWidth: 220 }}
-          />
-          <button type="submit" className="kd-btn kd-btn--primary kd-btn--sm">
-            <IconSearch /> Pretraži
-          </button>
-          {pretraga && (
-            <button type="button" className="kd-btn kd-btn--ghost kd-btn--sm"
-              onClick={() => { setPretraga(''); setInputVal(''); }}>
-              Resetuj
-            </button>
-          )}
-        </form>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+          <h2 className="kd-module-title">Studenti ({studenti.length})</h2>
+          <div className="kd-stu-search-wrap">
+            <div className="kd-stu-search-inner">
+              <span className="kd-stu-search-icon"><IconSearch /></span>
+              <input
+                className="kd-stu-search-input"
+                placeholder="Pretraži studente..."
+                value={inputVal}
+                onChange={e => setInputVal(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') setPretraga(inputVal); }}
+              />
+              {(inputVal || pretraga) && (
+                <button
+                  type="button"
+                  className="kd-stu-search-clear"
+                  onClick={() => { setPretraga(''); setInputVal(''); }}
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
       {loading && <div className="kd-loading">Učitavanje studenata…</div>}

@@ -18,14 +18,17 @@
 
 ### DL-S7-02
 - **Datum:** 12.05.2026
-- **Naziv odluke:** Preuzimanje stavke SB-12 iz Sprinta 8 u Sprint 7
-- **Opis problema:** Prilikom pripreme za prvi release, uočeno je da student, iako vidi listu oglasa (SB-11), nema mogućnost pregleda detaljnih informacija o pojedinačnom oglasu. Ovo čini sistem nefunkcionalnim za krajnjeg korisnika jer ne može donijeti informisanu odluku o prijavi.
+- **Naziv odluke:** Preuzimanje stavki SB-12, SB-36 i SB-39 iz Sprinta 8 u Sprint 7
+- **Opis problema:** Prilikom pripreme za prvi release, uočeno je da student, iako vidi listu oglasa (SB-11), nema mogućnost: (a) pregleda detaljnih informacija o pojedinačnom oglasu (SB-12), (b) filtriranja oglasa po kriterijima (SB-36) niti (c) pretraživanja oglasa po ključnoj riječi (SB-39). Bez ove tri funkcionalnosti sistem ne pruža upotrebljiv korisnički tok — student ne može pronaći relevantnu praksu niti donijeti informisanu odluku o prijavi.
 - **Razmatrane opcije:**
-  - **Opcija A:** Zadržati SB-12 u Sprintu 8 (originalni plan).
-  - **Opcija B:** Implementirati SB-12 u okviru Sprinta 7 kako bi prvi release bio zaokružen.
+  - **Opcija A:** Zadržati SB-12, SB-36 i SB-39 u Sprintu 8 (originalni plan).
+  - **Opcija B:** Implementirati sve tri stavke u okviru Sprinta 7 kako bi tok pronalaska i pregleda oglasa bio funkcionalan u prvom release-u.
 - **Odabrana opcija:** Opcija B
-- **Razlog izbora:** Stavka SB-12 je kritična za upotrebljivost sistema u prvom release-u. Njenim prebacivanjem u Sprint 7 osigurava se kompletan korisnički tok.
-- **Posljedice odluke:** Implementirana je kompletna logika za dohvaćanje i prikaz pojedinačnog oglasa. Uveden je novi API endpoint `GET /api/oglasi/:id` i odgovarajuća React ruta `/oglasi/:id`. Sistem se sada ponaša tako da klik na bilo koji oglas iz liste vodi korisnika na zasebnu stranicu koja renderuje sve informacije o praksi, čime je korisnički tok (flow) zaokružen.
+- **Razlog izbora:** Stavke SB-12, SB-36 i SB-39 zajedno čine jedinstven korisnički tok — pretraga → filtriranje → detalji oglasa. Implementacija samo jednog dijela (SB-11 lista bez detalja, pretrage i filtera) ne osigurava upotrebljiv sistem u release-u. Sve tri stavke su funkcionalno međusobno zavisne (SB-39 zavisi od SB-36, obje zavise od SB-11, a SB-12 dopunjuje cjelinu), pa ih je tehnički i vremenski opravdano isporučiti zajedno u jednom sprintu.
+- **Posljedice odluke:**
+  - **SB-12 (Detalji oglasa):** Implementirana je kompletna logika za dohvaćanje i prikaz pojedinačnog oglasa. Uveden je novi API endpoint `GET /api/oglasi/:id` i odgovarajuća React ruta `/oglasi/:id`. Klik na oglas iz liste vodi korisnika na zasebnu stranicu sa svim informacijama o praksi.
+  - **SB-36 (Filtriranje oglasa):** Implementirano je filtriranje na strani klijenta po tehnologijama, tipu prakse i trajanju, s mogućnošću resetovanja svih aktivnih filtera. Lista oglasa se ažurira u realnom vremenu pri primjeni filtera.
+  - **SB-39 (Pretraživanje oglasa):** Implementiran je kolapsibilni search bar koji pretražuje oglase po ključnoj riječi u nazivu i opisu. Prikazuje se poruka kada nema rezultata za datu pretragu.
 - **Status:** Aktivna
 
 ---

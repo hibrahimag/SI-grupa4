@@ -75,20 +75,23 @@ describe('getUsers', () => {
   // Testira: servis prosljeđuje prazan where objekat kada status filter nije proslijeđen
   // Ulaz: poziv bez argumenata
   // Očekivani izlaz: User.findAll pozvan s where: {}
-  test('bez filtera prosljeđuje prazan where objekat', async () => {
-    User.findAll.mockResolvedValue([]);
-    await getUsers();
-    expect(User.findAll).toHaveBeenCalledWith(expect.objectContaining({ where: {} }));
-  });
-
+ test('bez filtera prosljeđuje prazan where objekat', async () => {
+  User.findAll.mockResolvedValue([]);
+  await getUsers();
+  expect(User.findAll).toHaveBeenCalledWith(
+    expect.objectContaining({ where: { approvalStatus: 'APPROVED' } })
+  );
+});
   // Testira: servis konvertuje status filter u uppercase prije slanja u bazu
   // Ulaz: status = 'pending' (lowercase)
   // Očekivani izlaz: User.findAll pozvan s where: { status: 'PENDING' }
   test('status filter se konvertuje u uppercase', async () => {
-    User.findAll.mockResolvedValue([]);
-    await getUsers('pending');
-    expect(User.findAll).toHaveBeenCalledWith(expect.objectContaining({ where: { status: 'PENDING' } }));
-  });
+  User.findAll.mockResolvedValue([]);
+  await getUsers('pending');
+  expect(User.findAll).toHaveBeenCalledWith(
+    expect.objectContaining({ where: { status: 'PENDING', approvalStatus: 'APPROVED' } })
+  );
+});
 });
 
 // ── updateUserRole ────────────────────────────────────────────────────────────
