@@ -1,7 +1,7 @@
 'use strict';
 
 const { Op } = require('sequelize');
-const { sequelize, User, Student, Kompanija, Oglas, PrijavaNaPraksu, Koordinator, Fakultet } = require('../../infrastructure/database/models');
+const { sequelize, User, Student, Kompanija, Oglas, PrijavaNaPraksu, Koordinator, Fakultet, Praksa, Aktivnost, Prisustvo, Evaluacija, Ugovor, Izvjestaj } = require('../../infrastructure/database/models');
 const { sendStudentDeactivationToCompany, sendStudentDeactivationToKoordinator } = require('./email.service');
 const bcrypt = require('bcrypt');
 
@@ -512,6 +512,142 @@ async function updateStudentProfile(userId, data) {
   return userJson;
 }
 
+async function deleteMyAccount(userId) {
+  const user = await User.findByPk(userId);
+  if (!user) throw makeError('Korisnik nije pronađen.', 404);
+
+  const student = await Student.findOne({ where: { userID: userId } });
+
+  if (student) {
+    const odobrena = await PrijavaNaPraksu.findOne({
+      where: { studentID: student.id, status: 'ODOBRENA' },
+    });
+    if (odobrena) {
+      const err = makeError('Imate odobrenu praksu. Morate se najprije odjaviti s prakse prije brisanja naloga.', 409);
+      err.code = 'ODOBRENA_EXISTS';
+      throw err;
+    }
+
+    const pending = await PrijavaNaPraksu.findAll({
+      where: { studentID: student.id, status: { [Op.in]: ['PODNESENA', 'U_RAZMATRANJU'] } },
+      include: [
+        { model: Oglas, attributes: ['naziv'], include: [{ model: Kompanija, include: [{ model: User, attributes: ['email'] }] }] },
+        { model: Koordinator, include: [{ model: User, attributes: ['email'] }] },
+      ],
+    });
+
+    if (pending.length > 0) {
+      await PrijavaNaPraksu.update(
+        { status: 'ODUSTAO', datumOdustajanja: new Date() },
+        { where: { studentID: student.id, status: { [Op.in]: ['PODNESENA', 'U_RAZMATRANJU'] } } }
+      );
+      const studentName = `${user.ime} ${user.prezime}`;
+      const notifPromises = [];
+      for (const prijava of pending) {
+        const oglasNaziv = prijava.Oglas?.naziv || 'N/A';
+        const companyEmail = prijava.Oglas?.Kompanija?.User?.email;
+        const koordinatorEmail = prijava.Koordinator?.User?.email;
+        if (companyEmail) notifPromises.push(sendStudentDeactivationToCompany(companyEmail, studentName, oglasNaziv).catch(() => {}));
+        if (koordinatorEmail) notifPromises.push(sendStudentDeactivationToKoordinator(koordinatorEmail, studentName, oglasNaziv).catch(() => {}));
+      }
+      await Promise.all(notifPromises);
+    }
+  }
+
+  await sequelize.transaction(async (t) => {
+    if (student) {
+      const prijave = await PrijavaNaPraksu.findAll({ where: { studentID: student.id }, transaction: t });
+      for (const prijava of prijave) {
+        const praksa = await Praksa.findOne({ where: { prijavaID: prijava.id }, transaction: t });
+        if (praksa) {
+          await Aktivnost.destroy({ where: { praksaID: praksa.id }, transaction: t });
+          await Prisustvo.destroy({ where: { praksaID: praksa.id }, transaction: t });
+          await Evaluacija.destroy({ where: { praksaID: praksa.id }, transaction: t });
+          await Ugovor.destroy({ where: { praksaID: praksa.id }, transaction: t });
+          await Izvjestaj.destroy({ where: { praksaID: praksa.id }, transaction: t });
+          await praksa.destroy({ transaction: t });
+        }
+      }
+      await PrijavaNaPraksu.destroy({ where: { studentID: student.id }, transaction: t });
+      await student.destroy({ transaction: t });
+    }
+    await user.destroy({ transaction: t });
+  });
+}
+
+async function deleteCompanyAccount(userId) {
+  const user = await User.findByPk(userId);
+  if (!user) throw makeError('Korisnik nije pronađen.', 404);
+
+  const kompanija = await Kompanija.findOne({ where: { userID: userId } });
+
+  if (kompanija) {
+    const blocked = await Oglas.findOne({
+      where: { kompanijaID: kompanija.id, status: 'AKTIVAN' },
+      include: [{ model: PrijavaNaPraksu, where: { status: { [Op.in]: ['PODNESENA', 'U_RAZMATRANJU'] } }, required: true }],
+    });
+    if (blocked) {
+      const err = makeError('Imate aktivne oglase sa prijavama. Zatvorite oglase prije brisanja naloga.', 409);
+      err.code = 'AKTIVAN_SA_PRIJAVAMA';
+      throw err;
+    }
+  }
+
+  await sequelize.transaction(async (t) => {
+    if (kompanija) {
+      const oglasi = await Oglas.findAll({ where: { kompanijaID: kompanija.id }, transaction: t });
+      for (const oglas of oglasi) {
+        const prijave = await PrijavaNaPraksu.findAll({ where: { oglasID: oglas.id }, transaction: t });
+        for (const prijava of prijave) {
+          const praksa = await Praksa.findOne({ where: { prijavaID: prijava.id }, transaction: t });
+          if (praksa) {
+            await Aktivnost.destroy({ where: { praksaID: praksa.id }, transaction: t });
+            await Prisustvo.destroy({ where: { praksaID: praksa.id }, transaction: t });
+            await Evaluacija.destroy({ where: { praksaID: praksa.id }, transaction: t });
+            await Ugovor.destroy({ where: { praksaID: praksa.id }, transaction: t });
+            await Izvjestaj.destroy({ where: { praksaID: praksa.id }, transaction: t });
+            await praksa.destroy({ transaction: t });
+          }
+        }
+        await PrijavaNaPraksu.destroy({ where: { oglasID: oglas.id }, transaction: t });
+      }
+      await Oglas.destroy({ where: { kompanijaID: kompanija.id }, transaction: t });
+      await kompanija.destroy({ transaction: t });
+    }
+    await user.destroy({ transaction: t });
+  });
+}
+
+async function deleteCoordinatorAccount(userId) {
+  const user = await User.findByPk(userId);
+  if (!user) throw makeError('Korisnik nije pronađen.', 404);
+
+  const koordinator = await Koordinator.findOne({ where: { userID: userId } });
+
+  if (koordinator) {
+    const blocked = await PrijavaNaPraksu.findOne({
+      where: { koordinatorID: koordinator.id, status: 'ODOBRENA' },
+    });
+    if (blocked) {
+      const err = makeError('Imate aktivne prakse u toku. Riješite ih prije brisanja naloga.', 409);
+      err.code = 'ODOBRENA_EXISTS';
+      throw err;
+    }
+  }
+
+  await sequelize.transaction(async (t) => {
+    if (koordinator) {
+      await Izvjestaj.destroy({ where: { koordinatorID: koordinator.id }, transaction: t });
+      await PrijavaNaPraksu.update(
+        { koordinatorID: null },
+        { where: { koordinatorID: koordinator.id }, transaction: t }
+      );
+      await koordinator.destroy({ transaction: t });
+    }
+    await user.destroy({ transaction: t });
+  });
+}
+
 module.exports = {
   getCompanyProfile,
   updateCompanyProfile,
@@ -521,6 +657,9 @@ module.exports = {
   deactivateCompanyAccount,
   checkCoordinatorDeactivation,
   deactivateCoordinatorAccount,
+  deleteMyAccount,
+  deleteCompanyAccount,
+  deleteCoordinatorAccount,
   getMyProfile,
   updateStudentProfile,
 };

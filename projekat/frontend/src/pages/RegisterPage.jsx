@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { getPublicFaculties, getPublicOdsjeci, register, checkAvailability } from '../services/auth.service';
 import { useTheme } from '../context/ThemeContext';
 import './RegisterPage.css';
+import { Moon, Sun } from 'lucide-react';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_RE = /^(?:\d{9,10}|\+387[1-9]\d{7,8})$/;
@@ -17,7 +18,7 @@ const REQUIRED = {
 export default function RegisterPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { darkMode } = useTheme();
+  const { darkMode, setDarkMode } = useTheme();
 
   const urlRole = searchParams.get('role');
   const initialRole = ['student', 'koordinator', 'kompanija'].includes(urlRole) ? urlRole : null;
@@ -199,9 +200,18 @@ export default function RegisterPage() {
           </div>
         </main>
 
-        <aside className="reg-panel reg-panel--brand">
-          <BrandPanel role={role} step={step} />
-        </aside>
+              <aside className="reg-panel reg-panel--brand">
+      <button
+        type="button"
+        className="reg-theme-toggle"
+        onClick={() => setDarkMode(!darkMode)}
+        aria-label="Toggle dark mode"
+      >
+        {darkMode ? <Sun size={18} /> : <Moon size={18} />}
+      </button>
+
+      <BrandPanel role={role} step={step} />
+    </aside>
       </div>
     </div>
   );

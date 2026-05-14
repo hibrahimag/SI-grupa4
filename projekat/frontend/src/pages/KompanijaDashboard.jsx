@@ -1,10 +1,10 @@
 // frontend/src/pages/KompanijaDashboard.jsx
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { getCompanyProfile } from '../services/companyProfile.service';
-import { checkCompanyDeactivation, deactivateCompanyAccount } from '../services/userService';
+import { getCompanyProfile, updateCompanyProfile } from '../services/companyProfile.service';
+import { checkCompanyDeactivation, deactivateCompanyAccount, deleteMyCompanyAccount } from '../services/userService';
 import './KompanijaDashboard.css';
 import { createListing, getCompanyListings } from '../services/listingsService';
 
@@ -12,7 +12,6 @@ const VIEWS = {
   DASHBOARD: 'dashboard',
   LISTINGS: 'oglasi',
   CREATE_LISTING: 'create-oglas',
-  SETTINGS: 'postavke',
 };
 
 const COMPANY_PROFILE_UPDATED_EVENT = 'company-profile-updated';
@@ -47,6 +46,14 @@ export default function KompanijaDashboard() {
   const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
   const [deactivating, setDeactivating] = useState(false);
   const [deactivateError, setDeactivateError] = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteCheck, setDeleteCheck] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsTab, setSettingsTab] = useState('account');
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const profileMenuRef = useRef(null);
   const { user, logout } = useAuth();
 
   const { darkMode, setDarkMode } = useTheme();
@@ -167,6 +174,38 @@ export default function KompanijaDashboard() {
     setDeactivateError('');
   }
 
+  async function handleOpenDelete() {
+    setDeleteError('');
+    try {
+      const result = await checkCompanyDeactivation();
+      setDeleteCheck(result);
+      setShowDeleteConfirm(true);
+    } catch (err) {
+      setDeleteError(err.message || 'Greška pri provjeri statusa naloga.');
+    }
+  }
+
+  async function handleConfirmDelete() {
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      await deleteMyCompanyAccount();
+      logout();
+      navigate('/');
+    } catch (err) {
+      setDeleting(false);
+      setDeleteError(err.message || 'Greška pri brisanju naloga.');
+    }
+  }
+
+  async function handleSaveCompanyProfile(data) {
+    const result = await updateCompanyProfile(data);
+    const updatedProfile = getUpdatedCompanyProfile(result, data, companyProfile);
+    setCompanyProfile(updatedProfile);
+    return updatedProfile;
+  }
+
+
   return (
     <div className={`cd-layout${darkMode ? ' dark' : ''}`}>
 
@@ -280,8 +319,19 @@ export default function KompanijaDashboard() {
             </div>
           </div>
 
-          <div className="cd-sidebar-footer">
-            <button type="button" className="cd-sb-footer-row" onClick={openProfilePage}>
+          <div className="cd-sidebar-footer" ref={profileMenuRef}>
+            {profileMenuOpen && (
+              <div className="cd-profile-menu">
+                <button className="cd-profile-menu-item" onClick={() => { setProfileMenuOpen(false); setSettingsOpen(true); }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                  </svg>
+                  <span>Postavke</span>
+                </button>
+              </div>
+            )}
+            <button className="cd-sb-footer-row" onClick={() => setProfileMenuOpen(v => !v)}>
               <div className="cd-nav-avatar">{(companyName?.[0] || 'K').toUpperCase()}</div>
               <span className="cd-sb-footer-text">{companyName}</span>
             </button>
@@ -331,14 +381,86 @@ export default function KompanijaDashboard() {
             }}
           />
         )}
-        {view === VIEWS.SETTINGS && (
-          <SettingsShell
-            user={user}
-            onDeactivate={handleOpenDeactivate}
-            deactivateError={deactivateError}
-          />
-        )}
       </main>
+
+      {settingsOpen && (
+        <div className="cd-settings-page">
+          <aside className="cd-settings-sidebar">
+            <div className="cd-settings-sidebar-top">
+              <button className="cd-settings-back" onClick={() => setSettingsOpen(false)}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="15 18 9 12 15 6"/>
+                </svg>
+                Nazad
+              </button>
+              <span className="cd-settings-sidebar-title">Postavke</span>
+            </div>
+            <nav className="cd-settings-nav">
+              <div className="cd-settings-nav-label">Opšte</div>
+              <button
+                className={`cd-settings-nav-item${settingsTab === 'account' ? ' active' : ''}`}
+                onClick={() => setSettingsTab('account')}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+                <span>Račun</span>
+              </button>
+            </nav>
+          </aside>
+          <div className="cd-settings-main">
+            <div className="cd-settings-content">
+              {settingsTab === 'account' && (
+                <div className="cd-settings-account">
+                  <h3 className="cd-settings-section-title">Račun</h3>
+                  <div className="cd-settings-user-info">
+                    <div className="cd-settings-avatar">
+                      {(companyName?.[0] || 'K').toUpperCase()}
+                    </div>
+                    <div>
+                      <div className="cd-settings-username">{companyName}</div>
+                      <div className="cd-settings-email">{user?.email || ''}</div>
+                    </div>
+                  </div>
+                  <div className="cd-danger-section">
+                    <h4 className="cd-danger-section-title">Deaktivacija naloga</h4>
+                    <div className="cd-settings-danger-zone">
+                      <div className="cd-settings-danger-content">
+                        <div className="cd-settings-danger-desc">
+                          Deaktivacijom naloga gubi se pristup platformi. Aktivni oglasi bez prijava biće automatski zatvoreni. Administrator može ponovo aktivirati nalog.
+                        </div>
+                        {deactivateError && (
+                          <div className="cd-inline-message cd-inline-message--error" role="alert">{deactivateError}</div>
+                        )}
+                        <button type="button" className="cd-btn cd-btn--danger" onClick={handleOpenDeactivate}>
+                          Deaktiviraj nalog
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="cd-danger-section">
+                    <h4 className="cd-danger-section-title">Brisanje naloga</h4>
+                    <div className="cd-settings-danger-zone">
+                      <div className="cd-settings-danger-content">
+                        <div className="cd-settings-danger-desc">
+                          Brisanjem naloga trajno se uklanjaju svi vaši podaci, oglasi i prijave sa platforme. Ova akcija je nepovratna.
+                        </div>
+                        {deleteError && (
+                          <div className="cd-inline-message cd-inline-message--error" role="alert">{deleteError}</div>
+                        )}
+                        <button type="button" className="cd-btn cd-btn--danger" onClick={handleOpenDelete}>
+                          Obriši nalog
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {showDeactivateConfirm && (
         <DeactivateModal
@@ -346,6 +468,16 @@ export default function KompanijaDashboard() {
           deactivating={deactivating}
           onConfirm={handleConfirmDeactivate}
           onCancel={handleCancelDeactivate}
+        />
+      )}
+
+      {showDeleteConfirm && (
+        <DeleteModal
+          check={deleteCheck}
+          deleting={deleting}
+          deleteError={deleteError}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => { setShowDeleteConfirm(false); setDeleteCheck(null); setDeleteError(''); }}
         />
       )}
     </div>
@@ -588,42 +720,6 @@ function formatListingDate(value) {
   return date.toLocaleDateString('bs-BA');
 }
 
-function SettingsShell({ user, onDeactivate, deactivateError }) {
-  return (
-    <div className="cd-content">
-      <header className="cd-header">
-        <h1 className="cd-title">Postavke</h1>
-        <p className="cd-subtitle">Upravljajte podešavanjima vašeg naloga.</p>
-      </header>
-
-      <section className="cd-section">
-        <div className="cd-section-header">
-          <h2 className="cd-section-title">Račun</h2>
-        </div>
-        <div className="cd-settings-user-info">
-          <div className="cd-settings-user-name">{user?.ime} {user?.prezime}</div>
-          <div className="cd-settings-user-email">{user?.email}</div>
-        </div>
-        <div className="cd-settings-danger-zone">
-          <div className="cd-settings-danger-content">
-            <div className="cd-settings-danger-title">Deaktiviraj nalog</div>
-            <div className="cd-settings-danger-desc">
-              Deaktivacijom naloga gubi se pristup platformi. Aktivni oglasi bez prijava biće automatski zatvoreni. Administrator može ponovo aktivirati nalog.
-            </div>
-            {deactivateError && (
-              <div className="cd-inline-message cd-inline-message--error" role="alert">
-                {deactivateError}
-              </div>
-            )}
-            <button type="button" className="cd-btn cd-btn--danger" onClick={onDeactivate}>
-              Deaktiviraj nalog
-            </button>
-          </div>
-        </div>
-      </section>
-    </div>
-  );
-}
 
 function DeactivateModal({ check, deactivating, onConfirm, onCancel }) {
   const isBlocked = check && !check.canDeactivate;
@@ -676,6 +772,61 @@ function DeactivateModal({ check, deactivating, onConfirm, onCancel }) {
               <button type="button" className="cd-btn cd-btn--secondary" onClick={onCancel} disabled={deactivating}>Odustani</button>
               <button type="button" className="cd-btn cd-btn--danger" onClick={onConfirm} disabled={deactivating}>
                 {deactivating ? 'Deaktivacija...' : 'Deaktiviraj nalog'}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function DeleteModal({ check, deleting, deleteError, onConfirm, onCancel }) {
+  const isBlocked = check && !check.canDeactivate;
+
+  return (
+    <div className="cd-modal-overlay" role="dialog" aria-modal="true">
+      <div className="cd-confirm-modal">
+        {isBlocked ? (
+          <>
+            <div className="cd-confirm-icon cd-confirm-icon--warn">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+            </div>
+            <h3 className="cd-confirm-title">Brisanje nije moguće</h3>
+            <p className="cd-confirm-text">
+              Vaši oglasi imaju aktivne prijave. Zatvorite sve oglase sa prijavama prije brisanja naloga.
+            </p>
+            <ul className="cd-confirm-app-list">
+              {(check.oglasi || []).map((naziv, i) => <li key={i}>{naziv}</li>)}
+            </ul>
+            <div className="cd-confirm-actions">
+              <button type="button" className="cd-btn cd-btn--secondary" onClick={onCancel}>Zatvori</button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="cd-confirm-icon cd-confirm-icon--danger">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                <path d="M10 11v6"/><path d="M14 11v6"/>
+                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+              </svg>
+            </div>
+            <h3 className="cd-confirm-title">Obriši nalog</h3>
+            <p className="cd-confirm-text">
+              Ova akcija je <strong>trajna i nepovratna</strong>. Svi vaši podaci bit će trajno obrisani sa platforme.
+            </p>
+            {deleteError && (
+              <div className="cd-inline-message cd-inline-message--error" role="alert">{deleteError}</div>
+            )}
+            <div className="cd-confirm-actions">
+              <button type="button" className="cd-btn cd-btn--secondary" onClick={onCancel} disabled={deleting}>Odustani</button>
+              <button type="button" className="cd-btn cd-btn--danger" onClick={onConfirm} disabled={deleting}>
+                {deleting ? 'Brisanje...' : 'Obriši nalog'}
               </button>
             </div>
           </>

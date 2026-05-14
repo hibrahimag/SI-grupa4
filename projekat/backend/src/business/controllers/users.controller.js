@@ -9,6 +9,9 @@ const {
   deactivateCompanyAccount,
   checkCoordinatorDeactivation,
   deactivateCoordinatorAccount,
+  deleteMyAccount,
+  deleteCompanyAccount,
+  deleteCoordinatorAccount,
   getMyProfile,
   updateStudentProfile,
 } = require('../services/users.service');
@@ -85,6 +88,33 @@ async function coordinatorDeactivateAccountController(req, res) {
   }
 }
 
+async function deleteMyAccountController(req, res) {
+  try {
+    await deleteMyAccount(req.user.id);
+    res.json({ message: 'Nalog je uspješno obrisan.' });
+  } catch (err) {
+    res.status(err.status || 500).json({ message: err.message, code: err.code });
+  }
+}
+
+async function deleteCompanyAccountController(req, res) {
+  try {
+    await deleteCompanyAccount(req.user.id);
+    res.json({ message: 'Nalog je uspješno obrisan.' });
+  } catch (err) {
+    res.status(err.status || 500).json({ message: err.message, code: err.code });
+  }
+}
+
+async function deleteCoordinatorAccountController(req, res) {
+  try {
+    await deleteCoordinatorAccount(req.user.id);
+    res.json({ message: 'Nalog je uspješno obrisan.' });
+  } catch (err) {
+    res.status(err.status || 500).json({ message: err.message, code: err.code });
+  }
+}
+
 async function getMyProfileController(req, res) {
   try {
     const profile = await getMyProfile(req.user.id);
@@ -112,6 +142,9 @@ module.exports = {
   companyDeactivateAccountController,
   coordinatorDeactivationCheckController,
   coordinatorDeactivateAccountController,
+  deleteMyAccountController,
+  deleteCompanyAccountController,
+  deleteCoordinatorAccountController,
   getMyProfileController,
   updateStudentProfileController
 };

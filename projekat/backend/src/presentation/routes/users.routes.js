@@ -10,7 +10,10 @@ const {
   companyDeactivateAccountController,
   coordinatorDeactivationCheckController,
   coordinatorDeactivateAccountController,
-  getMyProfileController, 
+  deleteMyAccountController,
+  deleteCompanyAccountController,
+  deleteCoordinatorAccountController,
+  getMyProfileController,
   updateStudentProfileController
 } = require('../../business/controllers/users.controller');
 
@@ -23,6 +26,9 @@ router.get('/company-deactivation-check', authenticate, companyDeactivationCheck
 router.post('/company-deactivate', authenticate, companyDeactivateAccountController);
 router.get('/coordinator-deactivation-check', authenticate, coordinatorDeactivationCheckController);
 router.post('/coordinator-deactivate', authenticate, coordinatorDeactivateAccountController);
+router.delete('/delete', authenticate, deleteMyAccountController);
+router.delete('/company-delete', authenticate, deleteCompanyAccountController);
+router.delete('/coordinator-delete', authenticate, deleteCoordinatorAccountController);
 router.get('/me',             authenticate, getMyProfileController);
 router.put('/student/update', authenticate, updateStudentProfileController);
 

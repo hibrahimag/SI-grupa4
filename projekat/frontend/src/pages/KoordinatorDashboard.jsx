@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { koordinatorService } from '../services/koordinatorService';
-import { checkCoordinatorDeactivation, deactivateCoordinatorAccount } from '../services/userService';
+import { checkCoordinatorDeactivation, deactivateCoordinatorAccount, deleteMyCoordinatorAccount } from '../services/userService';
 import PrijavePregled from '../modules/koordinator/PrijavePregled';
 import PraksePregled from '../modules/koordinator/PraksePregled';
 import StudentListaPregled from '../modules/koordinator/StudentListaPregled';
@@ -72,12 +72,17 @@ export default function KoordinatorDashboard() {
   const [aktivan, setAktivan]           = useState('prijave');
   const [stats, setStats]               = useState(null);
   const [loadingStats, setLoadingStats] = useState(true);
-  const [settingsOpen, setSettingsOpen]       = useState(false);
-  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [deactivateCheck, setDeactivateCheck] = useState(null);
+  const [settingsOpen, setSettingsOpen]         = useState(false);
+  const [settingsTab, setSettingsTab]           = useState('account');
+  const [profileMenuOpen, setProfileMenuOpen]   = useState(false);
+  const [deactivateCheck, setDeactivateCheck]   = useState(null);
   const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
-  const [deactivating, setDeactivating]       = useState(false);
-  const [deactivateError, setDeactivateError] = useState('');
+  const [deactivating, setDeactivating]         = useState(false);
+  const [deactivateError, setDeactivateError]   = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteCheck, setDeleteCheck]           = useState(null);
+  const [deleting, setDeleting]                 = useState(false);
+  const [deleteError, setDeleteError]           = useState('');
   const profileMenuRef = useRef(null);
 
   useEffect(() => {
@@ -131,6 +136,30 @@ export default function KoordinatorDashboard() {
     setShowDeactivateConfirm(false);
     setDeactivateCheck(null);
     setDeactivateError('');
+  }
+
+  async function handleOpenDelete() {
+    setDeleteError('');
+    try {
+      const result = await checkCoordinatorDeactivation();
+      setDeleteCheck(result);
+      setShowDeleteConfirm(true);
+    } catch (err) {
+      setDeleteError(err.message || 'Greška pri provjeri statusa naloga.');
+    }
+  }
+
+  async function handleConfirmDelete() {
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      await deleteMyCoordinatorAccount();
+      logout();
+      navigate('/');
+    } catch (err) {
+      setDeleting(false);
+      setDeleteError(err.message || 'Greška pri brisanju naloga.');
+    }
   }
 
   return (
@@ -264,7 +293,10 @@ export default function KoordinatorDashboard() {
             </div>
             <nav className="kd-settings-nav">
               <div className="kd-settings-nav-label">Opšte</div>
-              <button className="kd-settings-nav-item active">
+              <button
+                className={`kd-settings-nav-item${settingsTab === 'account' ? ' active' : ''}`}
+                onClick={() => setSettingsTab('account')}
+              >
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                   <circle cx="12" cy="7" r="4"/>
@@ -276,23 +308,48 @@ export default function KoordinatorDashboard() {
 
           <div className="kd-settings-main">
             <div className="kd-settings-content">
-              <h2 className="kd-settings-heading">Račun</h2>
-              <div className="kd-settings-user-info">
-                <div className="kd-settings-user-name">{user?.ime} {user?.prezime}</div>
-                <div className="kd-settings-user-email">{user?.email}</div>
-              </div>
-              <div className="kd-settings-danger-zone">
-                <div className="kd-settings-danger-title">Deaktiviraj nalog</div>
-                <div className="kd-settings-danger-desc">
-                  Deaktivacijom naloga gubi se pristup platformi. Prijave koje su vam dodijeljene ostaće trenutno bez koordinatora. Administrator može ponovo aktivirati nalog.
+              {settingsTab === 'account' && (
+                <div className="kd-settings-account">
+                  <h3 className="kd-settings-section-title">Račun</h3>
+                  <div className="kd-settings-user-info">
+                    <div className="kd-settings-avatar">
+                      {(user?.ime?.[0] || 'K').toUpperCase()}
+                    </div>
+                    <div>
+                      <div className="kd-settings-username">{user?.ime} {user?.prezime}</div>
+                      <div className="kd-settings-email">{user?.email}</div>
+                    </div>
+                  </div>
+                  <div className="kd-danger-section">
+                    <h4 className="kd-danger-section-title">Deaktivacija naloga</h4>
+                    <div className="kd-settings-danger-zone">
+                      <div className="kd-settings-danger-desc">
+                        Deaktivacijom naloga gubi se pristup platformi. Prijave koje su vam dodijeljene ostaće trenutno bez koordinatora. Administrator može ponovo aktivirati nalog.
+                      </div>
+                      {deactivateError && (
+                        <div className="kd-settings-error" role="alert">{deactivateError}</div>
+                      )}
+                      <button className="kd-settings-danger-btn" onClick={handleOpenDeactivate}>
+                        Deaktiviraj nalog
+                      </button>
+                    </div>
+                  </div>
+                  <div className="kd-danger-section">
+                    <h4 className="kd-danger-section-title">Brisanje naloga</h4>
+                    <div className="kd-settings-danger-zone">
+                      <div className="kd-settings-danger-desc">
+                        Brisanjem naloga trajno se uklanjaju svi vaši podaci i dodjele sa platforme. Ova akcija je nepovratna.
+                      </div>
+                      {deleteError && (
+                        <div className="kd-settings-error" role="alert">{deleteError}</div>
+                      )}
+                      <button className="kd-settings-danger-btn" onClick={handleOpenDelete}>
+                        Obriši nalog
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                {deactivateError && (
-                  <div className="kd-settings-error" role="alert">{deactivateError}</div>
-                )}
-                <button className="kd-settings-danger-btn" onClick={handleOpenDeactivate}>
-                  Deaktiviraj nalog
-                </button>
-              </div>
+              )}
             </div>
           </div>
         </div>
@@ -346,6 +403,62 @@ export default function KoordinatorDashboard() {
                   <button className="kd-confirm-btn kd-confirm-btn--secondary" onClick={handleCancelDeactivate} disabled={deactivating}>Odustani</button>
                   <button className="kd-confirm-btn kd-confirm-btn--danger" onClick={handleConfirmDeactivate} disabled={deactivating}>
                     {deactivating ? 'Deaktivacija...' : 'Deaktiviraj nalog'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {showDeleteConfirm && (
+        <div className="kd-modal-overlay" role="dialog" aria-modal="true">
+          <div className="kd-confirm-modal">
+            {deleteCheck?.canDeactivate === false ? (
+              <>
+                <div className="kd-confirm-icon kd-confirm-icon--warn">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                    <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                  </svg>
+                </div>
+                <h3 className="kd-confirm-title">Brisanje nije moguće</h3>
+                <p className="kd-confirm-text">
+                  Imate aktivne prakse u toku. Morate ih riješiti prije brisanja naloga.
+                </p>
+                <ul className="kd-confirm-app-list">
+                  {(deleteCheck.studenti || []).map((ime, i) => <li key={i}>{ime}</li>)}
+                </ul>
+                <div className="kd-confirm-actions">
+                  <button className="kd-confirm-btn kd-confirm-btn--secondary" onClick={() => { setShowDeleteConfirm(false); setDeleteCheck(null); setDeleteError(''); }}>Zatvori</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="kd-confirm-icon kd-confirm-icon--danger">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                    <path d="M10 11v6"/><path d="M14 11v6"/>
+                    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                  </svg>
+                </div>
+                <h3 className="kd-confirm-title">Obriši nalog</h3>
+                <p className="kd-confirm-text">
+                  Ova akcija je <strong>trajna i nepovratna</strong>. Svi vaši podaci bit će trajno obrisani sa platforme.
+                </p>
+                {deleteCheck?.pendingCount > 0 && (
+                  <div className="kd-confirm-warn-box">
+                    <p className="kd-confirm-warn-label">
+                      {deleteCheck.pendingCount} {deleteCheck.pendingCount === 1 ? 'prijava' : 'prijave'} ostaće bez koordinatora nakon brisanja.
+                    </p>
+                  </div>
+                )}
+                {deleteError && <p className="kd-settings-error" role="alert">{deleteError}</p>}
+                <div className="kd-confirm-actions">
+                  <button className="kd-confirm-btn kd-confirm-btn--secondary" onClick={() => { setShowDeleteConfirm(false); setDeleteCheck(null); setDeleteError(''); }} disabled={deleting}>Odustani</button>
+                  <button className="kd-confirm-btn kd-confirm-btn--danger" onClick={handleConfirmDelete} disabled={deleting}>
+                    {deleting ? 'Brisanje...' : 'Obriši nalog'}
                   </button>
                 </div>
               </>

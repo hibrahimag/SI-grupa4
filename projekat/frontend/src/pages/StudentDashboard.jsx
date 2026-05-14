@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
-import { checkDeactivation, deactivateAccount } from '../services/userService';
+import { checkDeactivation, deactivateAccount, deleteMyAccount } from '../services/userService';
 import { getActiveListings } from '../services/listingsService';
 import {
   formatDate, relativeDate, trajanjeLabel, mjestLabel, deadlineInfo,
@@ -333,6 +333,10 @@ export default function StudentDashboard() {
   const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
   const [deactivating, setDeactivating] = useState(false);
   const [deactivateError, setDeactivateError] = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteCheck, setDeleteCheck] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
   const profileMenuRef = useRef(null);
 
   useEffect(() => {
@@ -382,6 +386,30 @@ export default function StudentDashboard() {
     } catch (err) {
       setDeactivateError(err.message || 'Greška pri deaktivaciji naloga.');
       setDeactivating(false);
+    }
+  }
+
+  async function handleOpenDelete() {
+    setDeleteError('');
+    try {
+      const result = await checkDeactivation();
+      setDeleteCheck(result);
+      setShowDeleteConfirm(true);
+    } catch {
+      setDeleteError('Greška pri provjeri statusa prijava. Pokušajte ponovo.');
+    }
+  }
+
+  async function handleConfirmDelete() {
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      await deleteMyAccount();
+      logout();
+      navigate('/');
+    } catch (err) {
+      setDeleteError(err.message || 'Greška pri brisanju naloga.');
+      setDeleting(false);
     }
   }
 
@@ -719,14 +747,29 @@ export default function StudentDashboard() {
                       <div className="sd-settings-email">{user?.email || ''}</div>
                     </div>
                   </div>
-                  <div className="sd-settings-danger-zone">
-                    <p className="sd-settings-danger-desc">
-                      Deaktivacijom naloga više nećete moći pristupiti platformi. Vaše prijave na prakse bit će automatski povučene.
-                    </p>
-                    {deactivateError && <p className="sd-settings-error">{deactivateError}</p>}
-                    <button className="sd-btn-deactivate" onClick={handleOpenDeactivate}>
-                      Deaktiviraj račun
-                    </button>
+                  <div className="sd-danger-section">
+                    <h4 className="sd-danger-section-title">Deaktivacija računa</h4>
+                    <div className="sd-settings-danger-zone">
+                      <p className="sd-settings-danger-desc">
+                        Deaktivacijom naloga više nećete moći pristupiti platformi. Vaše prijave na prakse bit će automatski povučene.
+                      </p>
+                      {deactivateError && <p className="sd-settings-error">{deactivateError}</p>}
+                      <button className="sd-btn-deactivate" onClick={handleOpenDeactivate}>
+                        Deaktiviraj račun
+                      </button>
+                    </div>
+                  </div>
+                  <div className="sd-danger-section">
+                    <h4 className="sd-danger-section-title">Brisanje računa</h4>
+                    <div className="sd-settings-danger-zone">
+                      <p className="sd-settings-danger-desc">
+                        Brisanjem naloga trajno se uklanjaju svi vaši podaci iz sistema. Ova akcija je nepovratna.
+                      </p>
+                      {deleteError && <p className="sd-settings-error">{deleteError}</p>}
+                      <button className="sd-btn-deactivate" onClick={handleOpenDelete}>
+                        Obriši račun
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -849,6 +892,62 @@ export default function StudentDashboard() {
                   </button>
                   <button className="sd-btn-danger" onClick={handleConfirmDeactivate} disabled={deactivating}>
                     {deactivating ? 'Deaktivacija...' : 'Potvrdi deaktivaciju'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {showDeleteConfirm && (
+        <div className="sd-modal-overlay sd-modal-overlay--top">
+          <div className="sd-confirm-modal">
+            {deleteCheck?.canDeactivate === false ? (
+              <>
+                <div className="sd-confirm-icon sd-confirm-icon--warn">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                    <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                  </svg>
+                </div>
+                <h3 className="sd-confirm-title">Brisanje nije moguće</h3>
+                <p className="sd-confirm-text">
+                  Imate odobrenu praksu kod: <strong>{deleteCheck.companies.join(', ')}</strong>.
+                  Morate se najprije odjaviti s prakse prije brisanja naloga.
+                </p>
+                <div className="sd-confirm-actions">
+                  <button className="sd-btn-secondary" onClick={() => setShowDeleteConfirm(false)}>Zatvori</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="sd-confirm-icon sd-confirm-icon--danger">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                  </svg>
+                </div>
+                <h3 className="sd-confirm-title">Obriši nalog</h3>
+                <p className="sd-confirm-text">
+                  Ova akcija je <strong>trajna i nepovratna</strong>. Svi vaši podaci bit će trajno obrisani sa platforme.
+                </p>
+                {deleteCheck?.pendingApplications?.length > 0 && (
+                  <div className="sd-confirm-warn-box">
+                    <p className="sd-confirm-warn-label">Sljedeće prijave će biti automatski povučene:</p>
+                    <ul className="sd-confirm-app-list">
+                      {deleteCheck.pendingApplications.map((a, i) => (
+                        <li key={i}><strong>{a.oglasNaziv}</strong> — {a.kompanijaNaziv}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {deleteError && <p className="sd-settings-error">{deleteError}</p>}
+                <div className="sd-confirm-actions">
+                  <button className="sd-btn-secondary" onClick={() => { setShowDeleteConfirm(false); setDeleteError(''); }} disabled={deleting}>
+                    Odustani
+                  </button>
+                  <button className="sd-btn-danger" onClick={handleConfirmDelete} disabled={deleting}>
+                    {deleting ? 'Brisanje...' : 'Obriši nalog'}
                   </button>
                 </div>
               </>

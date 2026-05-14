@@ -23,3 +23,15 @@ export function checkCoordinatorDeactivation() {
 export function deactivateCoordinatorAccount() {
   return apiRequest('/users/coordinator-deactivate', { method: 'POST' });
 }
+
+export function deleteMyAccount() {
+  return apiRequest('/users/delete', { method: 'DELETE' });
+}
+
+export function deleteMyCompanyAccount() {
+  return apiRequest('/users/company-delete', { method: 'DELETE' });
+}
+
+export function deleteMyCoordinatorAccount() {
+  return apiRequest('/users/coordinator-delete', { method: 'DELETE' });
+}

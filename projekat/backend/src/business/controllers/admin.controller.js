@@ -139,4 +139,17 @@ async function deleteOdsjek(req, res) {
   }
 }
 
-module.exports = { getUsers, updateUserRole, updateUserStatus, getFaculties, createFaculty, updateFaculty, deleteFaculty, getOdsjeci, createOdsjek, deleteOdsjek };
+async function deleteUser(req, res) {
+  try {
+    const numericId = Number(req.params.id);
+    if (!Number.isInteger(numericId) || numericId <= 0) {
+      return res.status(400).json({ message: 'Valid user id is required.' });
+    }
+    await adminService.deleteUser(numericId);
+    res.json({ message: 'User deleted successfully.' });
+  } catch (err) {
+    res.status(err.status || 500).json({ message: err.message });
+  }
+}
+
+module.exports = { getUsers, updateUserRole, updateUserStatus, deleteUser, getFaculties, createFaculty, updateFaculty, deleteFaculty, getOdsjeci, createOdsjek, deleteOdsjek };
