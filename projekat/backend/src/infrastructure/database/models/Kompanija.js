@@ -23,6 +23,10 @@ module.exports = (sequelize) => {
         type: DataTypes.TEXT,
         allowNull: true,
       },
+      djelatnost: {
+        type: DataTypes.STRING(150),
+        allowNull: true,
+      },
       adresa: {
         type: DataTypes.STRING(200),
         allowNull: true,

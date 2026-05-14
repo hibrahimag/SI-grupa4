@@ -4,6 +4,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { loginUser, resendVerificationEmail } from '../services/auth.service';
 import './AuthPage.css';
+import { useTheme } from '../context/ThemeContext';
+import { Moon, Sun } from 'lucide-react';
 
 const ROLE_ROUTES = {
   STUDENT: '/dashboard/student',
@@ -15,6 +17,8 @@ const ROLE_ROUTES = {
 export default function AuthPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const { darkMode, setDarkMode } = useTheme();
+
 
   const [identifier, setIdentifier] = useState('');
   const [password,   setPassword]   = useState('');
@@ -63,9 +67,16 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="auth-page">
+    <div className={`auth-page ${darkMode ? 'dark' : ''}`}>
       {/* ── Left panel – branding ── */}
       <aside className="auth-panel auth-panel--brand">
+        <button
+  className="auth-theme-toggle"
+  onClick={() => setDarkMode(!darkMode)}
+  aria-label="Toggle dark mode"
+>
+  {darkMode ? <Sun size={18} /> : <Moon size={18} />}
+</button>
         <div className="auth-brand">
           <div className="auth-brand__wordmark">PraksaHub</div>
           <h1 className="auth-brand__title">
@@ -153,6 +164,9 @@ export default function AuthPage() {
               {loading && <span className="auth-btn__spinner" aria-hidden="true" />}
               {loading ? 'Prijavljivanje…' : 'Prijavite se'}
             </button>
+            <Link to="/" className="auth-back-home">
+              Nazad na početnu stranicu
+            </Link>
             {canResendVerification && (
               <button
                 type="button"

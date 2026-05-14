@@ -5,7 +5,7 @@
 - Tip: Feature  
 - Prioritet: High  
 - Procjena složenosti: 3  
-- Status: To Do  
+- Status: Done 
 - Napomena: SIGN UP  
 
 ---
@@ -15,7 +15,7 @@
 - Tip: Feature  
 - Prioritet: High  
 - Procjena složenosti: 2  
-- Status: To Do   
+- Status: Done  
 - Napomena: LOG IN  
 
 ---
@@ -25,7 +25,7 @@
 - Tip: Feature  
 - Prioritet: High  
 - Procjena složenosti: 3  
-- Status: To Do   
+- Status: In progress  
 
 ---
 
@@ -34,7 +34,7 @@
 - Tip: Feature  
 - Prioritet: High  
 - Procjena složenosti: 3  
-- Status: To Do    
+- Status: In progress    
 
 ---
 
@@ -43,7 +43,7 @@
 - Tip: Feature  
 - Prioritet: High  
 - Procjena složenosti: 2  
-- Status: To Do  
+- Status: In progress 
 ---
 
 ### 6 - Kreiranje oglasa
@@ -51,7 +51,7 @@
 - Tip: Feature  
 - Prioritet: High  
 - Procjena složenosti: 5  
-- Status: To Do   
+- Status: In progress  
 
 ---
 
@@ -60,7 +60,7 @@
 - Tip: Feature  
 - Prioritet: High  
 - Procjena složenosti: 3  
-- Status: To Do  
+- Status: In progress  
 ---
 
 ### 8 - Detalji oglasa
@@ -125,7 +125,7 @@
 - Tip: Technical Task  
 - Prioritet: High  
 - Procjena složenosti: 5  
-- Status: To Do  
+- Status: Done 
 ---
 
 ### 16 - Implementacija autentifikacije
@@ -133,7 +133,7 @@
 - Tip: Technical Task  
 - Prioritet: High  
 - Procjena složenosti: 5  
-- Status: To Do  
+- Status: Done  
 ---
 
 ### 17 - Generisanje ugovora
@@ -197,7 +197,7 @@
 - Tip: Research  
 - Prioritet: Medium  
 - Procjena složenosti: 2  
-- Status: To Do  
+- Status: Done 
 ---
 
 ### 25 - Dokumentacija sistema
@@ -205,7 +205,7 @@
 - Tip: Documentation  
 - Prioritet: Medium  
 - Procjena složenosti: 3  
-- Status: To Do  
+- Status: Done  
 ---
 
 ### 26 - Uređivanje oglasa
@@ -267,7 +267,7 @@
 - Tip: Feature  
 - Prioritet: High  
 - Procjena složenosti: 3  
-- Status: To Do  
+- Status: Done  
 
 ---
 
@@ -276,7 +276,7 @@
 - Tip: Feature  
 - Prioritet: Low  
 - Procjena složenosti: 3
-- Status: To Do  
+- Status: In Progress 
 
 ---
 
@@ -285,7 +285,7 @@
 - Tip: Feature  
 - Prioritet: High  
 - Procjena složenosti: 3
-- Status: To Do  
+- Status: Done  
 
 ---
 
@@ -294,7 +294,7 @@
 - Tip: Feature  
 - Prioritet: High  
 - Procjena složenosti: 2
-- Status: To Do  
+- Status: In Progress 
 
 ---
 
@@ -303,7 +303,7 @@
 - Tip: Feature  
 - Prioritet: Medium  
 - Procjena složenosti: 2
-- Status: To Do  
+- Status: In Progress  
 
 ---
 
@@ -312,7 +312,7 @@
 - Tip: Feature  
 - Prioritet: Low
 - Procjena složenosti: 2
-- Status: To Do  
+- Status: Done 
 
 ---
 
@@ -321,7 +321,7 @@
 - Tip: Feature  
 - Prioritet: Low
 - Procjena složenosti: 2
-- Status: To Do
+- Status: Done
 
 ---
 
@@ -330,6 +330,6 @@
 - Tip: Feature  
 - Prioritet: Medium
 - Procjena složenosti: 2
-- Status: To Do
+- Status: In Progress
 
 ---

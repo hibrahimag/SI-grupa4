@@ -54,6 +54,29 @@ module.exports = (sequelize) => {
         allowNull: false,
         defaultValue: false,
       },
+      lokacija: {
+        type: DataTypes.STRING(100),
+        allowNull: true,
+      },
+      tip: {
+        type: DataTypes.STRING(20),
+        allowNull: true,
+        defaultValue: 'Onsite',
+      },
+      datumPocetka: {
+        type: DataTypes.DATEONLY,
+        allowNull: true,
+      },
+      tehnologije: {
+        type: DataTypes.ARRAY(DataTypes.TEXT),
+        allowNull: false,
+        defaultValue: [],
+      },
+      uslovi: {
+        type: DataTypes.ARRAY(DataTypes.TEXT),
+        allowNull: false,
+        defaultValue: [],
+      },
     },
     {
       tableName: 'oglasi',

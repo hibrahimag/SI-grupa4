@@ -56,6 +56,10 @@ export function deleteOdsjek(id) {
   return apiRequest(`/admin/odsjeci/${id}`, { method: 'DELETE' });
 }
 
+export function deleteUser(id) {
+  return apiRequest(`/admin/users/${id}`, { method: 'DELETE' });
+}
+
 export function getUserApprovalRequests() {
   return apiRequest('/approval-requests/users');
 }

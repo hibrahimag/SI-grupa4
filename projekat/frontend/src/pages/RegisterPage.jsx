@@ -3,9 +3,11 @@ import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { getPublicFaculties, getPublicOdsjeci, register, checkAvailability } from '../services/auth.service';
 import { useTheme } from '../context/ThemeContext';
 import './RegisterPage.css';
+import { Moon, Sun } from 'lucide-react';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PHONE_RE = /^\d{3}-\d{3}-\d{3}$/;
+const PHONE_RE = /^(?:\d{9,10}|\+387[1-9]\d{7,8})$/;
+const PHONE_VALIDATION_MESSAGE = 'Broj telefona mora sadržavati 9 ili 10 cifara ili biti u formatu +387.';
 
 const REQUIRED = {
   student: ['ime', 'prezime', 'username', 'email', 'password', 'confirmPassword', 'fakultetID', 'year_of_study', 'index_number'],
@@ -16,7 +18,7 @@ const REQUIRED = {
 export default function RegisterPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { darkMode } = useTheme();
+  const { darkMode, setDarkMode } = useTheme();
 
   const urlRole = searchParams.get('role');
   const initialRole = ['student', 'koordinator', 'kompanija'].includes(urlRole) ? urlRole : null;
@@ -102,10 +104,10 @@ export default function RegisterPage() {
       if (!msg) msg = 'Lozinke se ne podudaraju.';
     }
 
-    if (formData.telefon && !PHONE_RE.test(formData.telefon)) {
+    if (isProvidedPhone(formData.telefon) && !PHONE_RE.test(String(formData.telefon))) {
       newErrors.telefon = true;
       valid = false;
-      if (!msg) msg = 'Format telefona mora biti: 123-456-789.';
+      if (!msg) msg = PHONE_VALIDATION_MESSAGE;
     }
 
     if (availability.username === false) {
@@ -198,9 +200,18 @@ export default function RegisterPage() {
           </div>
         </main>
 
-        <aside className="reg-panel reg-panel--brand">
-          <BrandPanel role={role} step={step} />
-        </aside>
+              <aside className="reg-panel reg-panel--brand">
+      <button
+        type="button"
+        className="reg-theme-toggle"
+        onClick={() => setDarkMode(!darkMode)}
+        aria-label="Toggle dark mode"
+      >
+        {darkMode ? <Sun size={18} /> : <Moon size={18} />}
+      </button>
+
+      <BrandPanel role={role} step={step} />
+    </aside>
       </div>
     </div>
   );
@@ -365,7 +376,7 @@ function FormStep({ role, formData, errors, errorMsg, faculties, facultyLoadErro
         {role === 'kompanija' && (
           <div className="reg-form-row">
             <Field label="Adresa (opcionalno)" field="adresa" formData={formData} errors={errors} onChange={onChange} />
-            <Field label="Telefon (opcionalno)" field="telefon" placeholder="123-456-789" formData={formData} errors={errors} onChange={onChange} />
+            <Field label="Telefon (opcionalno)" field="telefon" placeholder="061123456 ili +38761123456" formData={formData} errors={errors} onChange={onChange} />
           </div>
         )}
 
@@ -546,6 +557,10 @@ function BrandPanel({ role, step }) {
       <p className="reg-brand__footer">&copy; {new Date().getFullYear()} PraksaHub. Sva prava zadržana.</p>
     </div>
   );
+}
+
+function isProvidedPhone(value) {
+  return value !== undefined && value !== null && value !== '';
 }
 
 function SuccessStep({ role }) {

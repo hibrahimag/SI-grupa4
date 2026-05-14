@@ -30,14 +30,36 @@ jest.mock('../src/infrastructure/database/models', () => ({
   },
   Koordinator: {
     count: jest.fn(),
+    findOne: jest.fn(),
   },
   Student: {
     count: jest.fn(),
+    findOne: jest.fn(),
   },
+  Kompanija: {
+    findOne: jest.fn(),
+  },
+  Oglas: {
+    findAll: jest.fn(),
+    update: jest.fn(),
+    destroy: jest.fn(),
+  },
+  PrijavaNaPraksu: {
+    findAll: jest.fn(),
+    update: jest.fn(),
+    destroy: jest.fn(),
+  },
+  Praksa: { findOne: jest.fn() },
+  Aktivnost: { destroy: jest.fn() },
+  Prisustvo: { destroy: jest.fn() },
+  Evaluacija: { destroy: jest.fn() },
+  Ugovor: { destroy: jest.fn() },
+  Izvjestaj: { destroy: jest.fn() },
+  sequelize: { transaction: jest.fn() },
 }));
 
 const app = require('../src/app');
-const { User, Fakultet, Odsjek, Koordinator, Student } = require('../src/infrastructure/database/models');
+const { User, Fakultet, Odsjek, Koordinator, Student, sequelize } = require('../src/infrastructure/database/models');
 
 function makeMockUser(overrides = {}) {
   const base = {
@@ -106,15 +128,15 @@ describe('GET /api/admin/users', () => {
   // Ulaz: GET /api/admin/users?status=PENDING
   // Očekivani izlaz: HTTP 200, User.findAll pozvan s where: { status: 'PENDING' }
   test('200 — filtrira po statusu kad je proslijeđen ?status=PENDING', async () => {
-    User.findAll.mockResolvedValue([makeMockUser({ status: 'PENDING' })]);
+  User.findAll.mockResolvedValue([makeMockUser({ status: 'PENDING' })]);
 
-    const res = await request(app).get('/api/admin/users?status=PENDING');
+  const res = await request(app).get('/api/admin/users?status=PENDING');
 
-    expect(res.status).toBe(200);
-    expect(User.findAll).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { status: 'PENDING' } })
-    );
-  });
+  expect(res.status).toBe(200);
+  expect(User.findAll).toHaveBeenCalledWith(
+    expect.objectContaining({ where: { status: 'PENDING', approvalStatus: 'APPROVED' } })
+  );
+});
 
   // Testira: endpoint vraća prazan niz kada nema korisnika u bazi
   // Ulaz: GET /api/admin/users, User.findAll vraća []
@@ -511,5 +533,42 @@ describe('PATCH /api/admin/users/:id/status', () => {
 
     expect(res.status).toBe(404);
     expect(res.body.message).toMatch(/not found/i);
+  });
+});
+
+// ── DELETE /api/admin/users/:id ────────────────────────────────────────────
+
+describe('DELETE /api/admin/users/:id', () => {
+  test('200 — uspješno briše STUDENT korisnika', async () => {
+    const user = {
+      ...makeMockUser({ role: 'STUDENT' }),
+      destroy: jest.fn().mockResolvedValue(undefined),
+    };
+    User.findByPk.mockResolvedValue(user);
+    Student.findOne.mockResolvedValue(null);
+    sequelize.transaction.mockImplementation(async (cb) => cb({}));
+
+    const res = await request(app).delete('/api/admin/users/1');
+
+    expect(res.status).toBe(200);
+    expect(res.body.message).toContain('deleted');
+  });
+
+  test('404 — korisnik ne postoji', async () => {
+    User.findByPk.mockResolvedValue(null);
+
+    const res = await request(app).delete('/api/admin/users/999');
+
+    expect(res.status).toBe(404);
+  });
+
+  test('500 — neočekivana greška transakcije', async () => {
+    User.findByPk.mockResolvedValue({ ...makeMockUser({ role: 'STUDENT' }), destroy: jest.fn() });
+    Student.findOne.mockResolvedValue(null);
+    sequelize.transaction.mockRejectedValue(new Error('DB error'));
+
+    const res = await request(app).delete('/api/admin/users/1');
+
+    expect(res.status).toBe(500);
   });
 });
