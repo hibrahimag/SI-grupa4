@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { checkDeactivation, deactivateAccount, deleteMyAccount } from '../services/userService';
@@ -464,7 +464,7 @@ export default function StudentDashboard() {
     <div className={`sd-page${darkMode ? ' dark' : ''}`}>
       {/* Navbar */}
       <nav className="sd-nav">
-        <span className="sd-nav-brand">PraksaHub</span>
+        <Link to="/" className="sd-nav-brand" aria-label="Idi na početnu stranicu">PraksaHub</Link>
         <div className="sd-nav-right">
           <button className="sd-theme-btn" onClick={() => setDarkMode(!darkMode)} title={darkMode ? 'Svjetla tema' : 'Tamna tema'}>
             {darkMode ? (

@@ -164,6 +164,9 @@ export default function AuthPage() {
               {loading && <span className="auth-btn__spinner" aria-hidden="true" />}
               {loading ? 'Prijavljivanje…' : 'Prijavite se'}
             </button>
+            <Link to="/" className="auth-back-home">
+              Nazad na početnu stranicu
+            </Link>
             {canResendVerification && (
               <button
                 type="button"

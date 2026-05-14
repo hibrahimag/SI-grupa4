@@ -36,6 +36,8 @@ const EMPTY_COMPANY_FORM = {
   adresa: '', telefon: '', kontaktOsoba: '',
 };
 
+const COMPANY_PROFILE_UPDATED_EVENT = 'company-profile-updated';
+
 function IconWarning() {
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -308,7 +310,7 @@ function StudentProfile({ profile, onProfileReload, authUser, login }) {
 // ─────────────────────────────────────────────────────────────
 // COMPANY PROFILE
 // ─────────────────────────────────────────────────────────────
-function CompanyProfile({ baseProfile }) {
+function CompanyProfile({ baseProfile, authUser, login }) {
   const [companyData, setCompanyData] = useState(null);
   const [loading,     setLoading]     = useState(true);
   const [loadError,   setLoadError]   = useState('');
@@ -379,7 +381,18 @@ function CompanyProfile({ baseProfile }) {
         kontaktOsoba:   form.kontaktOsoba.trim()   || null,
       };
       const result = await updateCompanyProfile(payload);
-      setCompanyData(result?.profile ?? result);
+      const responseProfile = result?.profile ?? result;
+      const updatedCompany = responseProfile && typeof responseProfile === 'object'
+        ? { ...(companyData || {}), ...responseProfile }
+        : { ...(companyData || {}), ...payload };
+      setCompanyData(updatedCompany);
+      window.dispatchEvent(new CustomEvent(COMPANY_PROFILE_UPDATED_EVENT, { detail: updatedCompany }));
+
+      const updatedName = updatedCompany?.naziv || payload.naziv;
+      const token = sessionStorage.getItem('token');
+      if (token && updatedName) {
+        login(token, { ...authUser, ime: updatedName, institution: updatedName });
+      }
       setEditMode(false);
       setToast({ message: 'Profil kompanije je uspješno ažuriran.', type: 'success' });
     } catch (err) {
@@ -642,7 +655,7 @@ export default function ProfilePage() {
           />
         )}
         {profile?.role === 'COMPANY' && (
-          <CompanyProfile baseProfile={profile} />
+          <CompanyProfile baseProfile={profile} authUser={authUser} login={login} />
         )}
         {(profile?.role === 'COORDINATOR' || profile?.role === 'ADMIN') && (
           <ReadOnlyProfile profile={profile} />
