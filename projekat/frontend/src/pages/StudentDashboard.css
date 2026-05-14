@@ -44,6 +44,13 @@
   font-weight: 800;
   color: var(--color-primary, #1a6fd4);
   letter-spacing: -0.02em;
+  text-decoration: none;
+  border-radius: 6px;
+}
+
+.sd-nav-brand:focus-visible {
+  outline: 3px solid rgba(26, 111, 212, 0.18);
+  outline-offset: 4px;
 }
 
 .sd-nav-right {

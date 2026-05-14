@@ -53,6 +53,12 @@
 .kd-navbar-brand {
   font-size: 1.15rem; font-weight: 800;
   color: #1a6fd4; letter-spacing: -0.02em;
+  text-decoration: none;
+  border-radius: 6px;
+}
+.kd-navbar-brand:focus-visible {
+  outline: 3px solid rgba(26, 111, 212, 0.18);
+  outline-offset: 4px;
 }
 
 /* ── Theme button ────────────────────────────────────────── */

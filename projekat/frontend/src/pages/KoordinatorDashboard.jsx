@@ -1,6 +1,6 @@
 // KoordinatorDashboard.jsx
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { koordinatorService } from '../services/koordinatorService';
@@ -138,7 +138,7 @@ export default function KoordinatorDashboard() {
 
       {/* ── Navbar ─────────────────────────────────────────── */}
       <nav className="kd-navbar">
-        <span className="kd-navbar-brand">PraksaHub</span>
+        <Link to="/" className="kd-navbar-brand" aria-label="Idi na početnu stranicu">PraksaHub</Link>
         <button className="kd-theme-btn" onClick={() => setDarkMode(!darkMode)} title="Promijeni temu">
           {darkMode ? <IconSun size={15} /> : <IconMoon size={15} />}
         </button>

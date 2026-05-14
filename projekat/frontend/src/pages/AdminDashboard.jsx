@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useReducer, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
   getUsers,
@@ -355,7 +355,7 @@ function handleLogout() { logout(); navigate('/'); }
 
       {/* ── Navbar ── */}
       <nav className="ad-navbar">
-        <span className="ad-navbar-brand">PraksaHub</span>
+        <Link to="/" className="ad-navbar-brand" aria-label="Idi na početnu stranicu">PraksaHub</Link>
         <button className="ad-theme-btn" onClick={() => setDarkMode(!darkMode)} title="Promijeni temu">
           {darkMode ? <IconSun size={17} /> : <IconMoon size={17} />}
         </button>
