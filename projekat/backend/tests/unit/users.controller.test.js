@@ -216,3 +216,93 @@ describe('POST /api/users/coordinator-deactivate', () => {
     expect(res.status).toBe(404);
   });
 });
+
+// ── DELETE /api/users/delete ────────────────────────────────────────────────
+
+describe('DELETE /api/users/delete', () => {
+  test('200 — uspješno briše studentski nalog', async () => {
+    usersService.deleteMyAccount.mockResolvedValue(undefined);
+    const res = await request(app).delete('/api/users/delete');
+    expect(res.status).toBe(200);
+    expect(res.body.message).toContain('obrisan');
+  });
+
+  test('409 — odobrena praksa blokira brisanje', async () => {
+    usersService.deleteMyAccount.mockRejectedValue(err('Imate odobrenu praksu.', 409, 'ODOBRENA_EXISTS'));
+    const res = await request(app).delete('/api/users/delete');
+    expect(res.status).toBe(409);
+    expect(res.body.code).toBe('ODOBRENA_EXISTS');
+  });
+
+  test('404 — korisnik nije pronađen', async () => {
+    usersService.deleteMyAccount.mockRejectedValue(err('Korisnik nije pronađen.', 404));
+    const res = await request(app).delete('/api/users/delete');
+    expect(res.status).toBe(404);
+  });
+
+  test('500 — neočekivana greška', async () => {
+    usersService.deleteMyAccount.mockRejectedValue(new Error('DB error'));
+    const res = await request(app).delete('/api/users/delete');
+    expect(res.status).toBe(500);
+  });
+});
+
+// ── DELETE /api/users/company-delete ───────────────────────────────────────
+
+describe('DELETE /api/users/company-delete', () => {
+  test('200 — uspješno briše nalog kompanije', async () => {
+    usersService.deleteCompanyAccount.mockResolvedValue(undefined);
+    const res = await request(app).delete('/api/users/company-delete');
+    expect(res.status).toBe(200);
+    expect(res.body.message).toContain('obrisan');
+  });
+
+  test('409 — aktivan oglas sa prijavama blokira brisanje', async () => {
+    usersService.deleteCompanyAccount.mockRejectedValue(err('Imate aktivne oglase.', 409, 'AKTIVAN_SA_PRIJAVAMA'));
+    const res = await request(app).delete('/api/users/company-delete');
+    expect(res.status).toBe(409);
+    expect(res.body.code).toBe('AKTIVAN_SA_PRIJAVAMA');
+  });
+
+  test('404 — korisnik nije pronađen', async () => {
+    usersService.deleteCompanyAccount.mockRejectedValue(err('Korisnik nije pronađen.', 404));
+    const res = await request(app).delete('/api/users/company-delete');
+    expect(res.status).toBe(404);
+  });
+
+  test('500 — neočekivana greška', async () => {
+    usersService.deleteCompanyAccount.mockRejectedValue(new Error('DB error'));
+    const res = await request(app).delete('/api/users/company-delete');
+    expect(res.status).toBe(500);
+  });
+});
+
+// ── DELETE /api/users/coordinator-delete ───────────────────────────────────
+
+describe('DELETE /api/users/coordinator-delete', () => {
+  test('200 — uspješno briše koordinatorski nalog', async () => {
+    usersService.deleteCoordinatorAccount.mockResolvedValue(undefined);
+    const res = await request(app).delete('/api/users/coordinator-delete');
+    expect(res.status).toBe(200);
+    expect(res.body.message).toContain('obrisan');
+  });
+
+  test('409 — odobrena praksa blokira brisanje koordinatora', async () => {
+    usersService.deleteCoordinatorAccount.mockRejectedValue(err('Imate aktivne prakse.', 409, 'ODOBRENA_EXISTS'));
+    const res = await request(app).delete('/api/users/coordinator-delete');
+    expect(res.status).toBe(409);
+    expect(res.body.code).toBe('ODOBRENA_EXISTS');
+  });
+
+  test('404 — korisnik nije pronađen', async () => {
+    usersService.deleteCoordinatorAccount.mockRejectedValue(err('Korisnik nije pronađen.', 404));
+    const res = await request(app).delete('/api/users/coordinator-delete');
+    expect(res.status).toBe(404);
+  });
+
+  test('500 — neočekivana greška', async () => {
+    usersService.deleteCoordinatorAccount.mockRejectedValue(new Error('DB error'));
+    const res = await request(app).delete('/api/users/coordinator-delete');
+    expect(res.status).toBe(500);
+  });
+});

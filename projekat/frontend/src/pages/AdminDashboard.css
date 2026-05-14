@@ -996,27 +996,64 @@
 
 .ad-deactivate-btn {
   padding: 5px 12px;
-  background: #dc2626;
-  color: #fff;
-  border: none;
+  background: transparent;
+  color: #dc2626;
+  border: 1px solid #dc2626;
   border-radius: 6px;
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 0.15s, color 0.15s;
   white-space: nowrap;
 }
 
 .ad-deactivate-btn:hover {
-  background: #b91c1c;
+  background: #dc2626;
+  color: #fff;
 }
 
 .dark .ad-deactivate-btn {
-  background: #991b1b;
+  color: #f87171;
+  border-color: #f87171;
 }
 
 .dark .ad-deactivate-btn:hover {
-  background: #b91c1c;
+  background: #dc2626;
+  color: #fff;
+}
+
+.ad-action-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.ad-delete-btn {
+  padding: 5px 12px;
+  background: transparent;
+  color: #dc2626;
+  border: 1px solid #dc2626;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.ad-delete-btn:hover {
+  background: #dc2626;
+  color: #fff;
+}
+
+.dark .ad-delete-btn {
+  color: #f87171;
+  border-color: #f87171;
+}
+
+.dark .ad-delete-btn:hover {
+  background: #dc2626;
+  color: #fff;
 }
 
 /* ── Body wrapper — kept for compatibility but hidden ── */

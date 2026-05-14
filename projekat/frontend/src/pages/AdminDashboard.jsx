@@ -16,6 +16,7 @@ import {
   getUserApprovalRequestById,
   approveUserRequest,
   rejectUserRequest,
+  deleteUser,
 } from '../services/adminService';
 import { useTheme } from '../context/ThemeContext';
 import './AdminDashboard.css';
@@ -81,6 +82,11 @@ function reducer(state, action) {
       return {
         ...state,
         users: state.users.map((u) => (u.id === action.payload.id ? { ...u, status: action.payload.status } : u)),
+      };
+    case 'REMOVE_USER':
+      return {
+        ...state,
+        users: state.users.filter((u) => u.id !== action.payload),
       };
     case 'SET_FACULTIES':
       return { ...state, faculties: action.payload };
@@ -151,6 +157,7 @@ export default function AdminDashboard() {
 function handleLogout() { logout(); navigate('/'); }
 
   const [confirmDeactivateId, setConfirmDeactivateId] = useState(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
   function showToast(message, type = 'success') {
     dispatch({ type: 'SHOW_TOAST', payload: { message, type } });
@@ -237,6 +244,22 @@ function handleLogout() { logout(); navigate('/'); }
       showToast(err.message || 'Greška pri deaktivaciji naloga.', 'error');
     } finally {
       setConfirmDeactivateId(null);
+    }
+  }
+
+  function handleDeleteUser(userId) {
+    setConfirmDeleteId(userId);
+  }
+
+  async function confirmDelete() {
+    try {
+      await deleteUser(confirmDeleteId);
+      dispatch({ type: 'REMOVE_USER', payload: confirmDeleteId });
+      showToast('Korisnik uspješno obrisan.');
+    } catch (err) {
+      showToast(err.message || 'Greška pri brisanju korisnika.', 'error');
+    } finally {
+      setConfirmDeleteId(null);
     }
   }
 
@@ -511,7 +534,7 @@ function handleLogout() { logout(); navigate('/'); }
         )}
 
         {view === 'users' && (
-          <UsersView users={visibleUsers} loading={usersLoading} statusFilter={statusFilter} roleFilter={roleFilter} dispatch={dispatch} onActivate={handleActivateUser} onDeactivate={handleDeactivateUser} />
+          <UsersView users={visibleUsers} loading={usersLoading} statusFilter={statusFilter} roleFilter={roleFilter} dispatch={dispatch} onActivate={handleActivateUser} onDeactivate={handleDeactivateUser} onDelete={handleDeleteUser} />
         )}
 
         {view === 'roles' && (
@@ -529,6 +552,24 @@ function handleLogout() { logout(); navigate('/'); }
       </main>
 
       {toast && <div className={`ad-toast ad-toast--${toast.type}`}>{toast.message}</div>}
+
+      {confirmDeleteId && (
+        <div className="ad-modal-backdrop" onClick={() => setConfirmDeleteId(null)}>
+          <div className="ad-confirm-modal" onClick={e => e.stopPropagation()}>
+            <div className="ad-confirm-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+              </svg>
+            </div>
+            <h3 className="ad-confirm-title">Obriši korisnika</h3>
+            <p className="ad-confirm-text">Ova akcija je nepovratna. Korisnik i svi njegovi podaci bit će trajno obrisani iz sistema.</p>
+            <div className="ad-confirm-actions">
+              <button className="ad-btn ad-btn--neutral" onClick={() => setConfirmDeleteId(null)}>Odustani</button>
+              <button className="ad-delete-btn" onClick={confirmDelete}>Obriši</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {confirmDeactivateId && (
         <div className="ad-modal-backdrop" onClick={() => setConfirmDeactivateId(null)}>
@@ -1027,10 +1068,8 @@ function FacultiesView({ faculties, onCreate, onUpdate, onDelete }) {
   );
 }
 
-function UsersView({ users, loading, statusFilter, roleFilter, dispatch, onActivate, onDeactivate }) {
-  const hasDeactivated = users.some((u) => u.status === 'DEACTIVATED');
-  const hasActive = users.some((u) => u.status === 'ACTIVE');
-  const showActions = hasDeactivated || hasActive;
+function UsersView({ users, loading, statusFilter, roleFilter, dispatch, onActivate, onDeactivate, onDelete }) {
+  const showActions = users.length > 0;
 
   return (
     <div className="ad-content">
@@ -1096,8 +1135,11 @@ function UsersView({ users, loading, statusFilter, roleFilter, dispatch, onActiv
           <td style={{ color: '#9aabbc', fontSize: '0.82rem' }}>{u.created_at ? u.created_at.slice(0, 10) : '—'}</td>
           {showActions && (
             <td>
-              {u.status === 'DEACTIVATED' && <button className="ad-activate-btn" onClick={() => onActivate(u.id)}>Aktiviraj</button>}
-              {u.status === 'ACTIVE' && <button className="ad-deactivate-btn" onClick={() => onDeactivate(u.id)}>Deaktiviraj</button>}
+              <div className="ad-action-stack">
+                {u.status === 'DEACTIVATED' && <button className="ad-activate-btn" onClick={() => onActivate(u.id)}>Aktiviraj</button>}
+                {u.status === 'ACTIVE' && <button className="ad-deactivate-btn" onClick={() => onDeactivate(u.id)}>Deaktiviraj</button>}
+                <button className="ad-delete-btn" onClick={() => onDelete(u.id)}>Obriši</button>
+              </div>
             </td>
           )}
         </tr>
@@ -1119,9 +1161,10 @@ function UsersView({ users, loading, statusFilter, roleFilter, dispatch, onActiv
           </div>
         </div>
         {showActions && (
-          <div>
+          <div className="ad-action-stack">
             {u.status === 'DEACTIVATED' && <button className="ad-activate-btn" onClick={() => onActivate(u.id)}>Aktiviraj</button>}
             {u.status === 'ACTIVE' && <button className="ad-deactivate-btn" onClick={() => onDeactivate(u.id)}>Deaktiviraj</button>}
+            <button className="ad-delete-btn" onClick={() => onDelete(u.id)}>Obriši</button>
           </div>
         )}
       </div>

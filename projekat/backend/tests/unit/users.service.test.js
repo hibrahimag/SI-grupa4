@@ -4,9 +4,15 @@ jest.mock('../../src/infrastructure/database/models', () => ({
   User: { findByPk: jest.fn(), findOne: jest.fn() },
   Student: { findOne: jest.fn() },
   Kompanija: { findOne: jest.fn(), create: jest.fn() },
-  Oglas: { findAll: jest.fn(), findOne: jest.fn(), update: jest.fn() },
-  PrijavaNaPraksu: { findAll: jest.fn(), findOne: jest.fn(), update: jest.fn(), count: jest.fn() },
+  Oglas: { findAll: jest.fn(), findOne: jest.fn(), update: jest.fn(), destroy: jest.fn() },
+  PrijavaNaPraksu: { findAll: jest.fn(), findOne: jest.fn(), update: jest.fn(), count: jest.fn(), destroy: jest.fn() },
   Koordinator: { findOne: jest.fn() },
+  Praksa: { findOne: jest.fn(), findAll: jest.fn() },
+  Aktivnost: { destroy: jest.fn() },
+  Prisustvo: { destroy: jest.fn() },
+  Evaluacija: { destroy: jest.fn() },
+  Ugovor: { destroy: jest.fn() },
+  Izvjestaj: { destroy: jest.fn() },
   sequelize: { transaction: jest.fn() },
 }));
 
@@ -15,7 +21,7 @@ jest.mock('../../src/business/services/email.service', () => ({
   sendStudentDeactivationToKoordinator: jest.fn().mockResolvedValue(undefined),
 }));
 
-const { User, Student, Kompanija, Oglas, PrijavaNaPraksu, Koordinator, sequelize } =
+const { User, Student, Kompanija, Oglas, PrijavaNaPraksu, Koordinator, Izvjestaj, sequelize } =
   require('../../src/infrastructure/database/models');
 
 const {
@@ -23,6 +29,7 @@ const {
   checkDeactivation, deactivateMyAccount,
   checkCompanyDeactivation, deactivateCompanyAccount,
   checkCoordinatorDeactivation, deactivateCoordinatorAccount,
+  deleteMyAccount, deleteCompanyAccount, deleteCoordinatorAccount,
 } = require('../../src/business/services/users.service');
 
 const {
@@ -434,5 +441,150 @@ describe('deactivateCoordinatorAccount — koordinator postoji', () => {
       expect.objectContaining({ where: expect.objectContaining({ koordinatorID: 7 }) })
     );
     expect(user.status).toBe('DEACTIVATED');
+  });
+});
+
+// ── deleteMyAccount ────────────────────────────────────────────────────────
+
+describe('deleteMyAccount', () => {
+  function setupTransaction() {
+    sequelize.transaction.mockImplementation(async (cb) => cb({}));
+  }
+
+  test('baca 404 ako user ne postoji', async () => {
+    User.findByPk.mockResolvedValue(null);
+    await expect(deleteMyAccount(1)).rejects.toMatchObject({ status: 404 });
+  });
+
+  test('baca 409 ako student ima odobrenu prijavu', async () => {
+    User.findByPk.mockResolvedValue(makeUser());
+    Student.findOne.mockResolvedValue({ id: 10 });
+    PrijavaNaPraksu.findOne.mockResolvedValueOnce({ id: 99 });
+    await expect(deleteMyAccount(1)).rejects.toMatchObject({ status: 409, code: 'ODOBRENA_EXISTS' });
+  });
+
+  test('briše studenta i usera kada nema blokirajućih prijava', async () => {
+    const user = { ...makeUser(), destroy: jest.fn().mockResolvedValue(undefined) };
+    const student = { id: 10, destroy: jest.fn().mockResolvedValue(undefined) };
+    User.findByPk.mockResolvedValue(user);
+    Student.findOne.mockResolvedValue(student);
+    PrijavaNaPraksu.findOne.mockResolvedValue(null);
+    PrijavaNaPraksu.findAll.mockResolvedValue([]);
+    PrijavaNaPraksu.destroy.mockResolvedValue(1);
+    setupTransaction();
+
+    await deleteMyAccount(1);
+
+    expect(student.destroy).toHaveBeenCalled();
+    expect(user.destroy).toHaveBeenCalled();
+  });
+
+  test('briše usera direktno kada nema student zapisa', async () => {
+    const user = { ...makeUser(), destroy: jest.fn().mockResolvedValue(undefined) };
+    User.findByPk.mockResolvedValue(user);
+    Student.findOne.mockResolvedValue(null);
+    setupTransaction();
+
+    await deleteMyAccount(1);
+
+    expect(user.destroy).toHaveBeenCalled();
+  });
+});
+
+// ── deleteCompanyAccount ───────────────────────────────────────────────────
+
+describe('deleteCompanyAccount', () => {
+  function setupTransaction() {
+    sequelize.transaction.mockImplementation(async (cb) => cb({}));
+  }
+
+  test('baca 404 ako user ne postoji', async () => {
+    User.findByPk.mockResolvedValue(null);
+    await expect(deleteCompanyAccount(1)).rejects.toMatchObject({ status: 404 });
+  });
+
+  test('baca 409 ako kompanija ima aktivan oglas s prijavama', async () => {
+    User.findByPk.mockResolvedValue(makeUser());
+    Kompanija.findOne.mockResolvedValue({ id: 5 });
+    Oglas.findOne.mockResolvedValue({ id: 20, naziv: 'Oglas 1' });
+    await expect(deleteCompanyAccount(1)).rejects.toMatchObject({ status: 409, code: 'AKTIVAN_SA_PRIJAVAMA' });
+  });
+
+  test('briše kompaniju i usera kada nema blokirajućih oglasa', async () => {
+    const user = { ...makeUser(), destroy: jest.fn().mockResolvedValue(undefined) };
+    const kompanija = { id: 5, destroy: jest.fn().mockResolvedValue(undefined) };
+    User.findByPk.mockResolvedValue(user);
+    Kompanija.findOne.mockResolvedValue(kompanija);
+    Oglas.findOne.mockResolvedValue(null);
+    Oglas.findAll.mockResolvedValue([]);
+    Oglas.destroy.mockResolvedValue(1);
+    setupTransaction();
+
+    await deleteCompanyAccount(1);
+
+    expect(kompanija.destroy).toHaveBeenCalled();
+    expect(user.destroy).toHaveBeenCalled();
+  });
+
+  test('briše usera direktno kada nema kompanija zapisa', async () => {
+    const user = { ...makeUser(), destroy: jest.fn().mockResolvedValue(undefined) };
+    User.findByPk.mockResolvedValue(user);
+    Kompanija.findOne.mockResolvedValue(null);
+    setupTransaction();
+
+    await deleteCompanyAccount(1);
+
+    expect(user.destroy).toHaveBeenCalled();
+  });
+});
+
+// ── deleteCoordinatorAccount ───────────────────────────────────────────────
+
+describe('deleteCoordinatorAccount', () => {
+  function setupTransaction() {
+    sequelize.transaction.mockImplementation(async (cb) => cb({}));
+  }
+
+  test('baca 404 ako user ne postoji', async () => {
+    User.findByPk.mockResolvedValue(null);
+    await expect(deleteCoordinatorAccount(1)).rejects.toMatchObject({ status: 404 });
+  });
+
+  test('baca 409 ako koordinator ima odobrenu praksu u toku', async () => {
+    User.findByPk.mockResolvedValue(makeUser());
+    Koordinator.findOne.mockResolvedValue({ id: 7 });
+    PrijavaNaPraksu.findOne.mockResolvedValue({ id: 55 });
+    await expect(deleteCoordinatorAccount(1)).rejects.toMatchObject({ status: 409, code: 'ODOBRENA_EXISTS' });
+  });
+
+  test('nulluje koordinatorID na prijavama i briše koordinatora i usera', async () => {
+    const user = { ...makeUser(), destroy: jest.fn().mockResolvedValue(undefined) };
+    const koordinator = { id: 7, destroy: jest.fn().mockResolvedValue(undefined) };
+    User.findByPk.mockResolvedValue(user);
+    Koordinator.findOne.mockResolvedValue(koordinator);
+    PrijavaNaPraksu.findOne.mockResolvedValue(null);
+    PrijavaNaPraksu.update.mockResolvedValue([0]);
+    Izvjestaj.destroy.mockResolvedValue(0);
+    setupTransaction();
+
+    await deleteCoordinatorAccount(1);
+
+    expect(PrijavaNaPraksu.update).toHaveBeenCalledWith(
+      { koordinatorID: null },
+      expect.objectContaining({ where: expect.objectContaining({ koordinatorID: 7 }) })
+    );
+    expect(koordinator.destroy).toHaveBeenCalled();
+    expect(user.destroy).toHaveBeenCalled();
+  });
+
+  test('briše usera direktno kada nema koordinator zapisa', async () => {
+    const user = { ...makeUser(), destroy: jest.fn().mockResolvedValue(undefined) };
+    User.findByPk.mockResolvedValue(user);
+    Koordinator.findOne.mockResolvedValue(null);
+    setupTransaction();
+
+    await deleteCoordinatorAccount(1);
+
+    expect(user.destroy).toHaveBeenCalled();
   });
 });
