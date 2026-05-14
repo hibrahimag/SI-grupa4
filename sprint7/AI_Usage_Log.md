@@ -120,3 +120,87 @@
 
 **Rizici, problemi ili greške:**
 - Pocetni dizajn kartice imao previse upadljivu animaciju koja je naknadno korigovana
+
+---
+
+## Unos 4 — Implementacija deaktivacije računa
+
+| Polje | Sadržaj |
+|---|---|
+| **Datum** | 14.05.2026 |
+| **Sprint broj** | 7 |
+| **Alat** | Claude (claude-sonnet-4-6, claude.ai) |
+| **Ko je koristio** | hhodzic9 |
+| **Svrha korištenja** | Implementacija funkcionalnosti deaktivacije korisničkog računa za sve role |
+
+**Kratak opis upita:**
+
+> Implementirati mogućnost deaktivacije računa za studenta, kompaniju i koordinatora putem settings panela na dashboardu. Admin treba moći deaktivirati bilo kojeg korisnika. Uključiti potvrdu akcije i prikaz grešaka.
+
+**Šta je AI predložio ili generisao:**
+
+- `admin.service.js` — funkcija `updateUserStatus` za promjenu statusa korisnika (ACTIVE/DEACTIVATED)
+- `admin.controller.js` — controller za deaktivaciju korisnika od strane admina
+- `admin.routes.js` — ruta `PATCH /api/admin/users/:id/status`
+- `users.service.js` — logika deaktivacije za studenta (zatvara aktivne prijave), kompaniju (zatvara oglase) i koordinatora
+- `users.controller.js` — controlleri za deaktivaciju po roli
+- `users.routes.js` — rute za deaktivaciju po roli
+- `StudentDashboard.jsx/css` — danger zona s potvrdom deaktivacije u settings panelu
+- `KompanijaDashboard.jsx/css` — settings panel s danger zonom za deaktivaciju
+- `KoordinatorDashboard.jsx/css` — settings panel s danger zonom za deaktivaciju
+- `AdminDashboard.jsx` — "Deaktiviraj" dugme uz svaki aktivni korisnički nalog
+
+**Šta je tim prihvatio:**
+- Kompletnu arhitekturu deaktivacije za sve role
+- Potvrdu akcije putem modalnog prozora s unosom provjere
+
+**Šta je tim izmijenio:**
+- Vizuelni stil settings panela usklađen između svih dashboarda
+
+**Šta je tim odbacio:**
+
+**Rizici, problemi ili greške:**
+
+---
+
+## Unos 5 — Implementacija brisanja računa
+
+| Polje | Sadržaj |
+|---|---|
+| **Datum** | 14.05.2026 |
+| **Sprint broj** | 7 |
+| **Alat** | Claude (claude-sonnet-4-6, claude.ai) |
+| **Ko je koristio** | hhodzic9 |
+| **Svrha korištenja** | Implementacija funkcionalnosti trajnog brisanja korisničkog računa za sve role |
+
+**Kratak opis upita:**
+
+> Implementirati trajno brisanje računa za studenta, kompaniju i koordinatora iz settings panela. Admin treba moći obrisati bilo kojeg korisnika. Brisanje treba biti unutar transakcije i ukloniti sve povezane podatke (prijave, prakse, oglasi, aktivnosti, evaluacije, ugovori, izvještaji).
+
+**Šta je AI predložio ili generisao:**
+
+- `users.service.js` — funkcije `deleteMyAccount`, `deleteCompanyAccount`, `deleteCoordinatorAccount` sa Sequelize transakcijama koje brišu sve povezane zapise
+- `admin.service.js` — funkcija `deleteUser` za admin brisanje po roli
+- `users.controller.js` — controlleri `deleteMyAccountController`, `deleteCompanyAccountController`, `deleteCoordinatorAccountController`
+- `admin.controller.js` — controller `deleteUser`
+- `users.routes.js` — rute `DELETE /api/users/delete`, `/company-delete`, `/coordinator-delete`
+- `admin.routes.js` — ruta `DELETE /api/admin/users/:id`
+- `StudentDashboard.jsx/css` — sekcija "Brisanje računa" s labelom izvan crvene kutije i modalnim prozorom za potvrdu
+- `KompanijaDashboard.jsx/css` — ista sekcija za brisanje u settings overlaju
+- `KoordinatorDashboard.jsx/css` — ista sekcija za brisanje u settings panelu
+- `AdminDashboard.jsx/css` — "Obriši" dugme (crveni outline) uz svaki korisnički nalog za sve statuse
+- `userService.js` — frontend API funkcije za delete endpointe
+- Testovi: 12 novih unit testova u `users.controller.test.js`, 12 u `users.service.test.js`, 6 u `admin.service.test.js`, 3 u `admin.routes.test.js`
+
+**Šta je tim prihvatio:**
+- Kompletnu logiku brisanja s transakcijama za sve role
+- Jedinstveni tekst modalnog prozora za potvrdu brisanja
+- Danger zone s labelama izvan crvenih kutija
+
+**Šta je tim izmijenio:**
+- Vizuelni prikaz settings panela unificiran između Student, Kompanija i Koordinator dashboarda
+
+**Šta je tim odbacio:**
+
+
+**Rizici, problemi ili greške:**
