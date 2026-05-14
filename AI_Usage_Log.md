@@ -774,3 +774,67 @@ loginService(identifier, password):
 - Moguć dupli poziv verifikacije, što može dati poruku “neispravan token” iako je prvi poziv uspio
 
 ---
+
+## Unos 16 — Implementacija funkcionalnosti kreiranja oglasa za praksu
+
+| Polje | Sadržaj |
+|---|---|
+| **Datum** | 12.05.2026 |
+| **Sprint broj** | 7 |
+| **Alat** | ChatGPT (GPT-5, OpenAI) i Cursor |
+| **Ko je koristio** | zpandza1 |
+| **Svrha korištenja** | Implementacija funkcionalnosti kreiranja oglasa za praksu od strane kompanije |
+
+---
+
+### Kratak opis upita
+
+> Potrebno je implementirati funkcionalnost kreiranja oglasa za praksu unutar kompanija dashboarda. Kompanija treba moći unijeti naziv pozicije, opis, potrebne vještine, trajanje, rok prijave i maksimalan broj studenata. Backend treba validirati podatke i sačuvati oglas u bazi, dok frontend treba omogućiti formu sa validacijom i prikaz poruka o uspjehu ili grešci.
+
+---
+
+### Šta je AI predložio ili generisao
+
+- Strukturu modela za oglas (naziv, opis, trajanje, rok prijave, broj mjesta, status)
+- Backend rutu i kontroler za kreiranje oglasa
+- Validaciju ulaznih podataka (obavezna polja, datum u budućnosti, broj mjesta > 0)
+- Povezivanje oglasa sa kompanijom putem companyId
+- Frontend formu sa kontrolisanim inputima (useState)
+- Prikaz success/error poruka nakon kreiranja oglasa
+- Predloženu organizaciju servisnog sloja za API komunikaciju
+
+---
+
+### Šta je tim prihvatio
+
+- Strukturu backend rute i servisne logike
+- Validaciju podataka na backendu
+- Osnovnu strukturu frontend forme
+- Prikaz poruka o uspješnom kreiranju oglasa
+
+---
+
+### Šta je tim izmijenio
+
+- Nazive polja prilagodio postojećoj strukturi baze
+- Validacione poruke lokalizovao na bosanski jezik
+- Refaktorisao API pozive da prate postojeću layered arhitekturu projekta
+- Prilagodio UI dizajn postojećem dashboard stilu
+
+---
+
+### Šta je tim odbacio
+
+- Automatsko objavljivanje oglasa bez pregleda (dodana mogućnost statusa DRAFT)
+- Generički error handler predložen od strane AI-ja, jer projekat već koristi centralizovani middleware za obradu grešaka
+
+---
+
+### Rizici, problemi ili greške
+
+- Merge konflikti sa postojećim dashboard izmjenama
+- Mogućnost slanja nevalidnog datuma zbog različitih timezone postavki
+- Potencijalno dupliranje oglasa ako korisnik više puta klikne submit
+- Neusklađenost frontend i backend validacije u početnoj fazi implementacije
+
+---
