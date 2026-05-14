@@ -1,7 +1,7 @@
 'use strict';
 
 const { Op } = require('sequelize');
-const { User, Fakultet, Koordinator, Student, Kompanija, Oglas, PrijavaNaPraksu, Odsjek } = require('../../infrastructure/database/models');
+const { sequelize, User, Fakultet, Koordinator, Student, Kompanija, Oglas, PrijavaNaPraksu, Praksa, Aktivnost, Prisustvo, Evaluacija, Ugovor, Izvjestaj, Odsjek } = require('../../infrastructure/database/models');
 
 const ALLOWED_ROLES = ['STUDENT', 'COMPANY', 'COORDINATOR', 'ADMIN'];
 
@@ -204,4 +204,75 @@ async function deleteOdsjek(id) {
   await odsjek.destroy();
 }
 
-module.exports = { getUsers, updateUserRole, updateUserStatus, getFaculties, createFaculty, updateFaculty, deleteFaculty, getOdsjeci, createOdsjek, deleteOdsjek };
+async function deleteUser(id) {
+  const user = await User.findByPk(id);
+  if (!user) {
+    const err = new Error('User not found.');
+    err.status = 404;
+    throw err;
+  }
+
+  await sequelize.transaction(async (t) => {
+    if (user.role === 'STUDENT') {
+      const student = await Student.findOne({ where: { userID: id }, transaction: t });
+      if (student) {
+        const prijave = await PrijavaNaPraksu.findAll({ where: { studentID: student.id }, transaction: t });
+        for (const prijava of prijave) {
+          const praksa = await Praksa.findOne({ where: { prijavaID: prijava.id }, transaction: t });
+          if (praksa) {
+            await Aktivnost.destroy({ where: { praksaID: praksa.id }, transaction: t });
+            await Prisustvo.destroy({ where: { praksaID: praksa.id }, transaction: t });
+            await Evaluacija.destroy({ where: { praksaID: praksa.id }, transaction: t });
+            await Ugovor.destroy({ where: { praksaID: praksa.id }, transaction: t });
+            await Izvjestaj.destroy({ where: { praksaID: praksa.id }, transaction: t });
+            await praksa.destroy({ transaction: t });
+          }
+        }
+        await PrijavaNaPraksu.destroy({ where: { studentID: student.id }, transaction: t });
+        await student.destroy({ transaction: t });
+      }
+
+    } else if (user.role === 'COMPANY') {
+      const kompanija = await Kompanija.findOne({ where: { userID: id }, transaction: t });
+      if (kompanija) {
+        const oglasi = await Oglas.findAll({ where: { kompanijaID: kompanija.id }, transaction: t });
+        for (const oglas of oglasi) {
+          const prijave = await PrijavaNaPraksu.findAll({ where: { oglasID: oglas.id }, transaction: t });
+          for (const prijava of prijave) {
+            const praksa = await Praksa.findOne({ where: { prijavaID: prijava.id }, transaction: t });
+            if (praksa) {
+              await Aktivnost.destroy({ where: { praksaID: praksa.id }, transaction: t });
+              await Prisustvo.destroy({ where: { praksaID: praksa.id }, transaction: t });
+              await Evaluacija.destroy({ where: { praksaID: praksa.id }, transaction: t });
+              await Ugovor.destroy({ where: { praksaID: praksa.id }, transaction: t });
+              await Izvjestaj.destroy({ where: { praksaID: praksa.id }, transaction: t });
+              await praksa.destroy({ transaction: t });
+            }
+          }
+          await PrijavaNaPraksu.destroy({ where: { oglasID: oglas.id }, transaction: t });
+        }
+        await Oglas.destroy({ where: { kompanijaID: kompanija.id }, transaction: t });
+        await kompanija.destroy({ transaction: t });
+      }
+
+    } else if (user.role === 'COORDINATOR') {
+      const koordinator = await Koordinator.findOne({ where: { userID: id }, transaction: t });
+      if (koordinator) {
+        await Izvjestaj.destroy({ where: { koordinatorID: koordinator.id }, transaction: t });
+        await PrijavaNaPraksu.update(
+          { koordinatorID: null },
+          { where: { koordinatorID: koordinator.id }, transaction: t }
+        );
+        await koordinator.destroy({ transaction: t });
+      }
+
+    } else if (user.role === 'ADMIN') {
+      await User.update({ approvedBy: null }, { where: { approvedBy: id }, transaction: t });
+      await User.update({ rejectedBy: null }, { where: { rejectedBy: id }, transaction: t });
+    }
+
+    await user.destroy({ transaction: t });
+  });
+}
+
+module.exports = { getUsers, updateUserRole, updateUserStatus, deleteUser, getFaculties, createFaculty, updateFaculty, deleteFaculty, getOdsjeci, createOdsjek, deleteOdsjek };

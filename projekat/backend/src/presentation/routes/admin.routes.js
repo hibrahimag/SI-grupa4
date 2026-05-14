@@ -11,6 +11,7 @@ router.use(authorize('ADMIN'));
 router.get('/users', adminController.getUsers);
 router.patch('/users/:id/role', adminController.updateUserRole);
 router.patch('/users/:id/status', adminController.updateUserStatus);
+router.delete('/users/:id', adminController.deleteUser);
 
 router.get('/faculties', adminController.getFaculties);
 router.post('/faculties', adminController.createFaculty);

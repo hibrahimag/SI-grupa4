@@ -1,19 +1,26 @@
 'use strict';
 
 jest.mock('../../src/infrastructure/database/models', () => ({
-  User: { findAll: jest.fn(), findByPk: jest.fn() },
+  User: { findAll: jest.fn(), findByPk: jest.fn(), update: jest.fn() },
   Fakultet: { findAll: jest.fn(), findByPk: jest.fn(), create: jest.fn() },
   Odsjek: { findAll: jest.fn(), findByPk: jest.fn(), create: jest.fn() },
   Koordinator: { count: jest.fn(), findOne: jest.fn() },
   Student: { count: jest.fn(), findOne: jest.fn() },
   Kompanija: { findOne: jest.fn() },
-  Oglas: { update: jest.fn() },
-  PrijavaNaPraksu: { update: jest.fn() },
+  Oglas: { findAll: jest.fn(), update: jest.fn(), destroy: jest.fn() },
+  PrijavaNaPraksu: { findAll: jest.fn(), update: jest.fn(), destroy: jest.fn() },
+  Praksa: { findOne: jest.fn() },
+  Aktivnost: { destroy: jest.fn() },
+  Prisustvo: { destroy: jest.fn() },
+  Evaluacija: { destroy: jest.fn() },
+  Ugovor: { destroy: jest.fn() },
+  Izvjestaj: { destroy: jest.fn() },
+  sequelize: { transaction: jest.fn() },
 }));
 
-const { User, Fakultet, Odsjek, Koordinator, Student, Kompanija, Oglas, PrijavaNaPraksu } = require('../../src/infrastructure/database/models');
+const { User, Fakultet, Odsjek, Koordinator, Student, Kompanija, Oglas, PrijavaNaPraksu, Izvjestaj, sequelize } = require('../../src/infrastructure/database/models');
 const {
-  getUsers, updateUserRole, updateUserStatus,
+  getUsers, updateUserRole, updateUserStatus, deleteUser,
   getFaculties, createFaculty, updateFaculty, deleteFaculty,
   getOdsjeci, createOdsjek, deleteOdsjek,
 } = require('../../src/business/services/admin.service');
@@ -531,5 +538,97 @@ describe('deleteOdsjek', () => {
     Odsjek.findByPk.mockResolvedValue(null);
 
     await expect(deleteOdsjek(999)).rejects.toMatchObject({ status: 404 });
+  });
+});
+
+// ── deleteUser ─────────────────────────────────────────────────────────────
+
+describe('deleteUser', () => {
+  function setupTransaction() {
+    sequelize.transaction.mockImplementation(async (cb) => cb({}));
+  }
+
+  function makeDbUserWithDestroy(overrides = {}) {
+    return { id: 1, role: 'STUDENT', destroy: jest.fn().mockResolvedValue(undefined), ...overrides };
+  }
+
+  test('baca 404 ako user ne postoji', async () => {
+    User.findByPk.mockResolvedValue(null);
+    await expect(deleteUser(999)).rejects.toMatchObject({ status: 404 });
+  });
+
+  test('STUDENT — briše studenta, prijave i usera', async () => {
+    const user = makeDbUserWithDestroy({ role: 'STUDENT' });
+    const student = { id: 10, destroy: jest.fn().mockResolvedValue(undefined) };
+    User.findByPk.mockResolvedValue(user);
+    Student.findOne.mockResolvedValue(student);
+    PrijavaNaPraksu.findAll.mockResolvedValue([]);
+    PrijavaNaPraksu.destroy.mockResolvedValue(1);
+    setupTransaction();
+
+    await deleteUser(1);
+
+    expect(student.destroy).toHaveBeenCalled();
+    expect(user.destroy).toHaveBeenCalled();
+  });
+
+  test('STUDENT — bez student zapisa briše samo usera', async () => {
+    const user = makeDbUserWithDestroy({ role: 'STUDENT' });
+    User.findByPk.mockResolvedValue(user);
+    Student.findOne.mockResolvedValue(null);
+    setupTransaction();
+
+    await deleteUser(1);
+
+    expect(user.destroy).toHaveBeenCalled();
+  });
+
+  test('COMPANY — briše kompaniju, oglase i usera', async () => {
+    const user = makeDbUserWithDestroy({ role: 'COMPANY' });
+    const kompanija = { id: 5, destroy: jest.fn().mockResolvedValue(undefined) };
+    User.findByPk.mockResolvedValue(user);
+    Kompanija.findOne.mockResolvedValue(kompanija);
+    Oglas.findAll.mockResolvedValue([]);
+    Oglas.destroy.mockResolvedValue(1);
+    setupTransaction();
+
+    await deleteUser(1);
+
+    expect(kompanija.destroy).toHaveBeenCalled();
+    expect(user.destroy).toHaveBeenCalled();
+  });
+
+  test('COORDINATOR — nulluje koordinatorID na prijavama i briše koordinatora i usera', async () => {
+    const user = makeDbUserWithDestroy({ role: 'COORDINATOR' });
+    const koordinator = { id: 7, destroy: jest.fn().mockResolvedValue(undefined) };
+    User.findByPk.mockResolvedValue(user);
+    Koordinator.findOne.mockResolvedValue(koordinator);
+    PrijavaNaPraksu.update.mockResolvedValue([0]);
+    Izvjestaj.destroy.mockResolvedValue(0);
+    setupTransaction();
+
+    await deleteUser(1);
+
+    expect(PrijavaNaPraksu.update).toHaveBeenCalledWith(
+      { koordinatorID: null },
+      expect.objectContaining({ where: expect.objectContaining({ koordinatorID: 7 }) })
+    );
+    expect(koordinator.destroy).toHaveBeenCalled();
+    expect(user.destroy).toHaveBeenCalled();
+  });
+
+  test('ADMIN — nulluje approvedBy/rejectedBy reference i briše usera', async () => {
+    const user = makeDbUserWithDestroy({ role: 'ADMIN' });
+    User.findByPk.mockResolvedValue(user);
+    User.update.mockResolvedValue([0]);
+    setupTransaction();
+
+    await deleteUser(1);
+
+    expect(User.update).toHaveBeenCalledWith(
+      { approvedBy: null },
+      expect.objectContaining({ where: { approvedBy: 1 } })
+    );
+    expect(user.destroy).toHaveBeenCalled();
   });
 });
