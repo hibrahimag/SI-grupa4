@@ -289,3 +289,55 @@
 
 
 **Rizici, problemi ili greške:**
+
+--- 
+
+## Unos 8 — Implementacija stranice profila (pregled i uređivanje)
+
+| Polje | Sadržaj |
+|---|---|
+| **Datum** | 13.05.2026 |
+| **Sprint broj** | 7 |
+| **Alat** | Claude (claude-sonnet-4-6, claude.ai) |
+| **Ko je koristio** | hibrahimag1 |
+| **Svrha korištenja** | Implementacija korisničkih priča 44 (Pregled profila) i 39 (Uređivanje profila studenta) — backend rute, servisna logika, kontroleri i frontend stranica profila s podrškom za sve uloge |
+
+**Kratak opis upita:**
+
+> Implementirati `GET /users/me` i `PUT /users/student/update` backend rute s autentifikacijom. U servisu dohvatiti podatke korisnika uz Sequelize `include` za `Student` i `Fakultet` modele, te implementirati logiku ažuriranja (ime, prezime, email, lozinka uz verifikaciju trenutne). Na frontendu kreirati `ProfilePage.jsx` s prikazom podataka za sve uloge — studenti dobivaju edit mode za osnovne podatke, kompanije dobivaju edit mode za kompanijske podatke (`naziv`, `opisPoslovanje`, `djelatnost`, `adresa`, `telefon`, `kontaktOsoba`), a koordinatori i admini dobivaju read-only prikaz. Ukloniti `ProfileShell` i `EditProfileShell` iz `KompanijaDashboard.jsx` i prebaciti tu funkcionalnost na `/profile` rutu.
+
+---
+
+**Šta je AI predložio ili generisao:**
+
+- Dodaci u `backend/src/business/services/users.service.js` — dvije nove funkcije: `getMyProfile` (dohvat korisnika s `include` za `Student` i `Fakultet`) i `updateStudentProfile` (validacija, provjera jedinstvenosti emaila, bcrypt verifikacija trenutne lozinke, hashovanje nove)
+- Dodaci u `backend/src/business/controllers/users.controller.js` — `getMyProfileController` i `updateStudentProfileController`
+- Dodaci u `backend/src/presentation/routes/users.routes.js` — `GET /me` i `PUT /student/update` rute zaštićene `authenticate` middlewareom
+- Dodaci u `frontend/src/services/api.js` — `getMyProfile()` i `updateStudentProfile()` funkcije
+- `frontend/src/pages/ProfilePage.jsx` — stranica s tri odvojene grane: `StudentProfile` (edit mode za ime, prezime, email, lozinka), `CompanyProfile` (poziva `getCompanyProfile()` i `updateCompanyProfile()`, edit mode za svih 6 kompanijskih polja), `ReadOnlyProfile` (koordinatori i admini)
+- `frontend/src/pages/ProfilePage.css` — ko-locirani stylesheet koji koristi `variables.css` tokene, s podrškom za dark mode i responzivni layout
+- Izmjene u `frontend/src/pages/KompanijaDashboard.jsx` — uklanjanje `ProfileShell`, `EditProfileShell`, `VIEWS.PROFILE`, `VIEWS.EDIT_PROFILE`, `profileLoading`, `profileError` stanja i `handleSaveCompanyProfile` funkcije; `Profil` nav dugme preusmjereno na `/profile` rutu
+- Dodavanje `Profil` opcije u profile menije u `StudentDashboard.jsx`, `KoordinatorDashboard.jsx` i `AdminDashboard.jsx` sidebar-ima
+- CSS dodaci u `AdminDashboard.css` za footer sidebar sekciju s avatarem, imenom i profile menijem
+
+---
+
+**Šta je tim prihvatio:**
+
+- Kompletnu backend implementaciju s bcrypt verifikacijom lozinke i čuvanjem jedinstvenosti emaila
+- Trojnu granu u `ProfilePage.jsx` po ulogama
+- Ko-locirani `ProfilePage.css` koji koristi `variables.css` design tokene
+- Uklanjanje duplirane logike profila iz `KompanijaDashboard.jsx`
+- Navigaciju na `/profile` iz svih dashboard sidebar-a i navbar-a
+
+---
+
+**Šta je tim izmijenio:**
+
+**Šta je tim odbacio:**
+
+---
+
+**Rizici, problemi ili greške:**
+
+- Bijeli ekran u `AdminDashboard.jsx` uzrokovan nedostajućim importima `useRef` i `useNavigate` — riješeno dodavanjem u postojeće import linije
