@@ -123,7 +123,92 @@
 
 ---
 
-## Unos 4 — Implementacija deaktivacije računa
+## Unos 4 — Implementacija role-based navigacije i dashboard shell-a (SB-42)
+
+| Polje | Sadržaj |
+|---|---|
+| **Datum** | 14.05.2026 |
+| **Sprint broj** | 7 |
+| **Alat** | Codex / ChatGPT (GPT-5, OpenAI) |
+| **Ko je koristio** | Haris Tucaković |
+| **Svrha korištenja** | Usklađivanje navigacije i dashboard interfejsa prema korisničkim rolama |
+
+**Kratak opis upita:**
+
+> Dopuniti navigaciju na dashboardima tako da korisnici imaju jasne linkove prema funkcionalnostima svoje role. Posebno uskladiti kompanijski dashboard sa postojećim vizuelnim sistemom, bočni meni, profil meni, odjavu, dark mode podršku i responzivno ponašanje.
+
+**Šta je AI predložio ili generisao:**
+
+- `KompanijaDashboard.jsx` — top navbar s logom, nazivom kompanije i role chip-om, hover-expand sidebar, linkove za pregled dashboarda, oglase, kreiranje oglasa, profil i odjavu
+- `KompanijaDashboard.css` — dashboard shell usklađen s `AdminDashboard` vizuelnim sistemom, stilovi za sidebar, navbar, profilni meni, dark mode i mobilne prikaze
+- Dopune u `StudentDashboard.jsx`, `KoordinatorDashboard.jsx` i `AdminDashboard.jsx` radi konzistentnijeg izgleda navigacije među rolama
+- Usklađivanje auth stranica i dashboard navigacije sa zajedničkim ikonama i postojećim CSS tokenima
+- Dodavanje `lucide-react` dependency-ja u `package.json` i `package-lock.json` jer su dashboard ikonice zavisile od te biblioteke
+
+**Šta je tim prihvatio:**
+- Role-based navigaciju sa jasno odvojenim stavkama po tipu korisnika
+- Sidebar koji se širi na hover i ostavlja više prostora glavnom sadržaju
+- Profilni meni sa brzim pristupom profilu i odjavi
+- Korištenje `useNavigate` i postojećih ruta umjesto ručnog mijenjanja URL-a
+- Dark mode i responsive pravila u istom CSS sistemu kao ostatak aplikacije
+
+**Šta je tim izmijenio:**
+- Nazivi i redoslijed stavki u navigaciji prilagođeni su backlog zadacima i postojećim rutama
+- Stil kompanijskog dashboarda dodatno je usklađen s admin dashboardom da se izbjegne različit vizuelni jezik među rolama
+
+**Šta je tim odbacio:**
+- Posebnu navigacijsku komponentu za svaku stranicu bez zajedničkog vizuelnog obrasca
+
+**Rizici, problemi ili greške:**
+- `lucide-react` nije bio upisan u dependency listu i mogao je uzrokovati grešku pri pokretanju frontenda; riješeno dodavanjem dependency-ja
+- Dio CSS-a za sidebar zahtijevao je dodatna responsive pravila da hover ponašanje ne remeti mobilni prikaz
+
+---
+
+## Unos 5 — Pregled i uređivanje profila kompanije (SB-45)
+
+| Polje | Sadržaj |
+|---|---|
+| **Datum** | 13.05.2026 |
+| **Sprint broj** | 7 |
+| **Alat** | Codex / ChatGPT (GPT-5, OpenAI) |
+| **Ko je koristio** | Haris Tucaković |
+| **Svrha korištenja** | Izmjena profila kompanije kroz postojeću profilnu stranicu |
+
+**Kratak opis upita:**
+
+> Doraditi pregled i uređivanje profila kompanije. Kompanija treba vidjeti svoje podatke, moći urediti naziv, djelatnost, adresu, telefon, kontakt osobu i opis poslovanja, dobiti poruku o uspješnom ažuriranju, a promjena naziva treba biti vidljiva i u kompanijskom dashboardu.
+
+**Šta je AI predložio ili generisao:**
+
+- `ProfilePage.jsx` — poseban prikaz za korisnike role `COMPANY` unutar postojeće profilne stranice
+- Učitavanje podataka kompanije preko `getCompanyProfile` i spremanje izmjena preko `updateCompanyProfile`
+- Formu za uređivanje polja `naziv`, `djelatnost`, `adresa`, `telefon`, `kontaktOsoba` i `opisPoslovanja`
+- Validaciju obaveznog naziva kompanije i prikaz lokalizovanih error/success poruka
+- Ažuriranje lokalnog auth korisnika nakon promjene naziva kompanije
+- `company-profile-updated` browser event kako bi `KompanijaDashboard` mogao osvježiti prikaz naziva bez ručnog reload-a
+
+**Šta je tim prihvatio:**
+- Zadržavanje jedinstvene `ProfilePage.jsx` stranice uz role-specific rendering
+- Korištenje postojećeg service sloja za API pozive umjesto direktnih fetch poziva iz komponente
+- Uređivanje samo poslovnih podataka kompanije, bez izmjene sistemskih polja kao što su rola i status
+- Toast poruku nakon uspješnog ažuriranja profila
+- Povratak na odgovarajući dashboard prema roli korisnika
+
+**Šta je tim izmijenio:**
+- Payload za update usklađen je sa stvarnim nazivima polja u backend modelu kompanije
+- Prikaz praznih vrijednosti prilagođen je tako da profil ostane čitljiv i kada nisu uneseni svi podaci
+- Sinhronizacija naziva kompanije između profila, auth state-a i dashboarda dodana je nakon testiranja korisničkog toka
+
+**Šta je tim odbacio:**
+- Uređivanje statusa naloga, role i drugih sistemskih atributa kroz profilnu stranicu
+
+
+**Rizici, problemi ili greške:**
+- Bez event sinhronizacije dashboard je mogao prikazivati stari naziv kompanije do reload-a stranice
+- Postojala je mogućnost neusklađenosti između auth korisnika i profila kompanije nakon update-a; riješeno osvježavanjem lokalnog auth state-a
+
+## Unos 6 — Implementacija deaktivacije računa
 
 | Polje | Sadržaj |
 |---|---|
@@ -163,7 +248,7 @@
 
 ---
 
-## Unos 5 — Implementacija brisanja računa
+## Unos 7 — Implementacija brisanja računa
 
 | Polje | Sadržaj |
 |---|---|
@@ -204,3 +289,55 @@
 
 
 **Rizici, problemi ili greške:**
+
+--- 
+
+## Unos 8 — Implementacija stranice profila (pregled i uređivanje)
+
+| Polje | Sadržaj |
+|---|---|
+| **Datum** | 13.05.2026 |
+| **Sprint broj** | 7 |
+| **Alat** | Claude (claude-sonnet-4-6, claude.ai) |
+| **Ko je koristio** | hibrahimag1 |
+| **Svrha korištenja** | Implementacija korisničkih priča 44 (Pregled profila) i 39 (Uređivanje profila studenta) — backend rute, servisna logika, kontroleri i frontend stranica profila s podrškom za sve uloge |
+
+**Kratak opis upita:**
+
+> Implementirati `GET /users/me` i `PUT /users/student/update` backend rute s autentifikacijom. U servisu dohvatiti podatke korisnika uz Sequelize `include` za `Student` i `Fakultet` modele, te implementirati logiku ažuriranja (ime, prezime, email, lozinka uz verifikaciju trenutne). Na frontendu kreirati `ProfilePage.jsx` s prikazom podataka za sve uloge — studenti dobivaju edit mode za osnovne podatke, kompanije dobivaju edit mode za kompanijske podatke (`naziv`, `opisPoslovanje`, `djelatnost`, `adresa`, `telefon`, `kontaktOsoba`), a koordinatori i admini dobivaju read-only prikaz. Ukloniti `ProfileShell` i `EditProfileShell` iz `KompanijaDashboard.jsx` i prebaciti tu funkcionalnost na `/profile` rutu.
+
+---
+
+**Šta je AI predložio ili generisao:**
+
+- Dodaci u `backend/src/business/services/users.service.js` — dvije nove funkcije: `getMyProfile` (dohvat korisnika s `include` za `Student` i `Fakultet`) i `updateStudentProfile` (validacija, provjera jedinstvenosti emaila, bcrypt verifikacija trenutne lozinke, hashovanje nove)
+- Dodaci u `backend/src/business/controllers/users.controller.js` — `getMyProfileController` i `updateStudentProfileController`
+- Dodaci u `backend/src/presentation/routes/users.routes.js` — `GET /me` i `PUT /student/update` rute zaštićene `authenticate` middlewareom
+- Dodaci u `frontend/src/services/api.js` — `getMyProfile()` i `updateStudentProfile()` funkcije
+- `frontend/src/pages/ProfilePage.jsx` — stranica s tri odvojene grane: `StudentProfile` (edit mode za ime, prezime, email, lozinka), `CompanyProfile` (poziva `getCompanyProfile()` i `updateCompanyProfile()`, edit mode za svih 6 kompanijskih polja), `ReadOnlyProfile` (koordinatori i admini)
+- `frontend/src/pages/ProfilePage.css` — ko-locirani stylesheet koji koristi `variables.css` tokene, s podrškom za dark mode i responzivni layout
+- Izmjene u `frontend/src/pages/KompanijaDashboard.jsx` — uklanjanje `ProfileShell`, `EditProfileShell`, `VIEWS.PROFILE`, `VIEWS.EDIT_PROFILE`, `profileLoading`, `profileError` stanja i `handleSaveCompanyProfile` funkcije; `Profil` nav dugme preusmjereno na `/profile` rutu
+- Dodavanje `Profil` opcije u profile menije u `StudentDashboard.jsx`, `KoordinatorDashboard.jsx` i `AdminDashboard.jsx` sidebar-ima
+- CSS dodaci u `AdminDashboard.css` za footer sidebar sekciju s avatarem, imenom i profile menijem
+
+---
+
+**Šta je tim prihvatio:**
+
+- Kompletnu backend implementaciju s bcrypt verifikacijom lozinke i čuvanjem jedinstvenosti emaila
+- Trojnu granu u `ProfilePage.jsx` po ulogama
+- Ko-locirani `ProfilePage.css` koji koristi `variables.css` design tokene
+- Uklanjanje duplirane logike profila iz `KompanijaDashboard.jsx`
+- Navigaciju na `/profile` iz svih dashboard sidebar-a i navbar-a
+
+---
+
+**Šta je tim izmijenio:**
+
+**Šta je tim odbacio:**
+
+---
+
+**Rizici, problemi ili greške:**
+
+- Bijeli ekran u `AdminDashboard.jsx` uzrokovan nedostajućim importima `useRef` i `useNavigate` — riješeno dodavanjem u postojeće import linije

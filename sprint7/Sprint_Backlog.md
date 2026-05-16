@@ -2,14 +2,14 @@
 
 | ID | Naziv zadatka | Odgovorna osoba | Status |
 |----|--------------|-----------------|--------|
-| SB-07 | Uređivanje profila studenta | Harun Ibrahimagić | In Progress |
-| SB-08 | Pristup koordinatora | Amina Lukovac | In Progress |
-| SB-10 | Kreiranje oglasa | Zerina Pandža | In Progress |
-| SB-11 | Pregled oglasa | Haris Husić | In Progress |
-| SB-40 | Deaktivacija/brisanje korisničkog računa | Hana Hodžić | In Progress |
-| SB-42 | Navigacija | Haris Tucaković | In Progress |
-| SB-44 | Pregled korisničkog profila | Harun Ibrahimagić | In Progress |
-| SB-45 | Uređivanje profila kompanije | Haris Tucaković | In Progress |
+| SB-07 | Uređivanje profila studenta | Harun Ibrahimagić | Done |
+| SB-08 | Pristup koordinatora | Amina Lukovac | Done |
+| SB-10 | Kreiranje oglasa | Zerina Pandža | Done |
+| SB-11 | Pregled oglasa | Haris Husić | Done |
+| SB-40 | Deaktivacija/brisanje korisničkog računa | Hana Hodžić | Done |
+| SB-42 | Navigacija | Haris Tucaković | Done |
+| SB-44 | Pregled korisničkog profila | Harun Ibrahimagić | Done |
+| SB-45 | Uređivanje profila kompanije | Haris Tucaković | Done |
 
 ---
 
