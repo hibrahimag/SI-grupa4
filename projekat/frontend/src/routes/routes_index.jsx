@@ -15,6 +15,7 @@ import TermsAndConditions    from '../pages/TermsAndConditions';
 import CookiesPolicy         from '../pages/CookiesPolicy';
 // ── Role dashboards (dummy pages until fully implemented) ──
 import StudentDashboard      from '../pages/StudentDashboard';
+import CompanyProfilePage    from '../pages/CompanyProfilePage';
 import KompanijaDashboard    from '../pages/KompanijaDashboard';
 import KoordinatorDashboard  from '../pages/KoordinatorDashboard';
 
@@ -43,6 +44,11 @@ export default function AppRouter() {
         <Route path="/dashboard/student" element={
           <ProtectedRoute allowedRoles={['STUDENT']}>
             <StudentDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/company/:id" element={
+          <ProtectedRoute allowedRoles={['STUDENT']}>
+            <CompanyProfilePage />
           </ProtectedRoute>
         } />
         <Route path="/dashboard/company" element={
