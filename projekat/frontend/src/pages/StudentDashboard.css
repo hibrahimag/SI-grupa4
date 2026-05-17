@@ -752,6 +752,31 @@
   color: var(--color-text, #0d1f3c);
 }
 
+.sd-company-name--link {
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.sd-company-name--link:hover {
+  color: var(--color-primary, #1a6fd4);
+}
+
+.sd-company-profile-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 14px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--color-primary, #1a6fd4);
+  text-decoration: none;
+  transition: opacity 0.15s;
+}
+
+.sd-company-profile-link:hover {
+  opacity: 0.85;
+}
+
 .sd-location {
   display: flex;
   align-items: center;

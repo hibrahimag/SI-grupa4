@@ -10,6 +10,7 @@ const notificationsRoutes = require('./presentation/routes/notifications.routes'
 const adminRoutes = require('./presentation/routes/admin.routes');
 const approvalRoutes = require('./presentation/routes/approval.routes');
 const koordinatorRoutes = require('./presentation/routes/koordinator.routes');
+const companiesRoutes = require('./presentation/routes/companies.routes');
 
 const app = express();
 
@@ -24,5 +25,6 @@ app.use('/api/notifications', notificationsRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/approval-requests', approvalRoutes);
 app.use('/api/koordinator', koordinatorRoutes);
+app.use('/api/companies', companiesRoutes);
 
 module.exports = app;

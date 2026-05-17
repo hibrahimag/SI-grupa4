@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { checkDeactivation, deactivateAccount, deleteMyAccount } from '../services/userService';
@@ -26,6 +26,7 @@ function mapOglas(oglas) {
     id: oglas.id,
     naziv: oglas.naziv,
     kompanija: kompNaziv,
+    kompanijaID: oglas.kompanijaID || oglas.Kompanija?.id || null,
     logo: deriveLogo(kompNaziv),
     logoColor: deriveLogoColor(kompNaziv),
     opis: oglas.opis || '',
@@ -147,7 +148,7 @@ function PraksaCard({ praksa, onSelect }) {
 }
 
 // ── PraksaModal ────────────────────────────────────────────────────────────
-function PraksaModal({ praksa, onClose, darkMode }) {
+function PraksaModal({ praksa, onClose }) {
   const dl = deadlineInfo(praksa.rokPrijave);
 
   useEffect(() => {
@@ -165,7 +166,17 @@ function PraksaModal({ praksa, onClose, darkMode }) {
           <div className="sd-company-row">
             <div className="sd-logo" style={{ background: praksa.logoColor }}>{praksa.logo}</div>
             <div className="sd-company-info">
-              <span className="sd-company-name">{praksa.kompanija}</span>
+              {praksa.kompanijaID ? (
+                <Link
+                  to={`/company/${praksa.kompanijaID}`}
+                  className="sd-company-name sd-company-name--link"
+                  onClick={e => e.stopPropagation()}
+                >
+                  {praksa.kompanija}
+                </Link>
+              ) : (
+                <span className="sd-company-name">{praksa.kompanija}</span>
+              )}
               {praksa.lokacija && (
                 <span className="sd-location">
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -290,6 +301,18 @@ function PraksaModal({ praksa, onClose, darkMode }) {
                 <a href={`mailto:${praksa.kontakt.email}`} className="sd-modal-email">{praksa.kontakt.email}</a>
               </div>
             </div>
+            {praksa.kompanijaID && (
+              <Link
+                to={`/company/${praksa.kompanijaID}`}
+                className="sd-company-profile-link"
+                onClick={e => e.stopPropagation()}
+              >
+                Pogledajte profil kompanije
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+                </svg>
+              </Link>
+            )}
           </div>
 
           {/* CTA */}
@@ -313,6 +336,7 @@ export default function StudentDashboard() {
   const { darkMode, setDarkMode } = useTheme();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [prakse, setPrakse] = useState([]);
   const [praksaLoading, setPraksaLoading] = useState(true);
@@ -348,6 +372,14 @@ export default function StudentDashboard() {
       .finally(() => { if (active) setPraksaLoading(false); });
     return () => { active = false; };
   }, []);
+
+  useEffect(() => {
+    const openId = location.state?.openOglasId;
+    if (!openId || prakse.length === 0) return;
+    const found = prakse.find(p => Number(p.id) === Number(openId));
+    if (found) setSelectedPraksa(found);
+    navigate('/dashboard/student', { replace: true, state: {} });
+  }, [location.state, prakse, navigate]);
 
   useEffect(() => {
     if (!profileMenuOpen) return;
@@ -838,7 +870,6 @@ export default function StudentDashboard() {
         <PraksaModal
           praksa={selectedPraksa}
           onClose={() => setSelectedPraksa(null)}
-          darkMode={darkMode}
         />
       )}
 
