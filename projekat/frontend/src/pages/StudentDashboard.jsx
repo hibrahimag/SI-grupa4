@@ -4,6 +4,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { checkDeactivation, deactivateAccount, deleteMyAccount } from '../services/userService';
 import { getActiveListings } from '../services/listingsService';
+import { getFavourites, addFavourite, removeFavourite } from '../services/favouritesService';
 import {
   formatDate, relativeDate, trajanjeLabel, mjestLabel, deadlineInfo,
 } from '../data/mockPrakse';
@@ -48,8 +49,13 @@ function mapOglas(oglas) {
   };
 }
 
+function isNovo(datumObjave) {
+  if (!datumObjave) return false;
+  return Date.now() - new Date(datumObjave).getTime() < 3 * 24 * 60 * 60 * 1000;
+}
+
 // ── PraksaCard ─────────────────────────────────────────────────────────────
-function PraksaCard({ praksa, onSelect }) {
+function PraksaCard({ praksa, onSelect, isFavourite, onToggleFavourite }) {
   const inactive = !praksa.aktivan;
   return (
     <div
@@ -57,7 +63,22 @@ function PraksaCard({ praksa, onSelect }) {
       onClick={() => !inactive && onSelect(praksa)}
     >
     <article className="sd-card" tabIndex={inactive ? -1 : 0} role="button" aria-label={`${praksa.naziv} — ${praksa.kompanija}`}>
+      <button
+        className={`sd-heart-btn${isFavourite ? ' sd-heart-btn--active' : ''}`}
+        onClick={e => { e.stopPropagation(); onToggleFavourite(praksa.id); }}
+        aria-label={isFavourite ? 'Ukloni iz omiljenih' : 'Dodaj u omiljene'}
+        title={isFavourite ? 'Ukloni iz omiljenih' : 'Dodaj u omiljene'}
+      >
+        <svg width="15" height="15" viewBox="0 0 24 24"
+          fill={isFavourite ? 'currentColor' : 'none'}
+          stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+        </svg>
+      </button>
       <div className="sd-card-head">
+        {isNovo(praksa.datumObjave) && (
+          <span className="sd-novo-badge">Novo</span>
+        )}
         <div className="sd-company-row">
           <div className="sd-logo" style={{ background: praksa.logoColor }}>
             {praksa.logo}
@@ -350,6 +371,9 @@ export default function StudentDashboard() {
   const [sortBy, setSortBy] = useState('najnovije');
   const [sectionsOpen, setSectionsOpen] = useState({ tech: false, duration: false, type: false, sort: false });
 
+  const [activeTab, setActiveTab] = useState('svi');
+  const [favourites, setFavourites] = useState(new Set());
+
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsTab, setSettingsTab] = useState('account');
@@ -391,6 +415,14 @@ export default function StudentDashboard() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [profileMenuOpen]);
+
+  useEffect(() => {
+    let active = true;
+    getFavourites()
+      .then(ids => { if (active) setFavourites(new Set(ids)); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, []);
 
   function handleLogout() {
     logout();
@@ -451,7 +483,7 @@ export default function StudentDashboard() {
   );
 
   const filteredPrakse = useMemo(() => {
-    let r = [...prakse];
+    let r = activeTab === 'omiljeni' ? prakse.filter(p => favourites.has(p.id)) : [...prakse];
     if (search.trim()) {
       const s = search.trim().toLowerCase();
       r = r.filter(p =>
@@ -476,7 +508,7 @@ export default function StudentDashboard() {
     else if (sortBy === 'trajanje-asc') r.sort((a, b) => a.trajanje - b.trajanje);
     else if (sortBy === 'trajanje-desc') r.sort((a, b) => b.trajanje - a.trajanje);
     return r;
-  }, [prakse, search, filterTehs, filterTips, filterTrajanja, sortBy]);
+  }, [prakse, search, filterTehs, filterTips, filterTrajanja, sortBy, activeTab, favourites]);
 
   const hasFilters = !!(search || filterTehs.length || filterTips.length || filterTrajanja.length);
 
@@ -490,6 +522,27 @@ export default function StudentDashboard() {
 
   function resetFilters() {
     setSearch(''); setFilterTehs([]); setFilterTips([]); setFilterTrajanja([]);
+  }
+
+  async function toggleFavourite(oglasId) {
+    const isFav = favourites.has(oglasId);
+    setFavourites(prev => {
+      const next = new Set(prev);
+      if (isFav) next.delete(oglasId);
+      else next.add(oglasId);
+      return next;
+    });
+    try {
+      if (isFav) await removeFavourite(oglasId);
+      else await addFavourite(oglasId);
+    } catch {
+      setFavourites(prev => {
+        const next = new Set(prev);
+        if (isFav) next.add(oglasId);
+        else next.delete(oglasId);
+        return next;
+      });
+    }
   }
 
   return (
@@ -524,6 +577,14 @@ export default function StudentDashboard() {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
+          </div>
+          <div className={`sd-sb-tab-icon${activeTab === 'omiljeni' ? ' sd-sb-tab-icon--heart' : ''}`}>
+            <svg width="15" height="15" viewBox="0 0 24 24"
+              fill={activeTab === 'omiljeni' ? 'currentColor' : 'none'}
+              stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+            {favourites.size > 0 && <span className="sd-sb-badge">{favourites.size}</span>}
           </div>
           <div className="sd-sb-tab-icon">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -570,6 +631,28 @@ export default function StudentDashboard() {
         {/* Expanded content */}
         <div className="sd-sidebar-inner">
           <div className="sd-sidebar-content">
+          {/* View tabs */}
+          <div className="sd-sb-tabs sd-sidebar-tabs">
+            <button
+              className={`sd-sb-tab-btn${activeTab === 'svi' ? ' active' : ''}`}
+              onClick={() => setActiveTab('svi')}
+            >
+              Svi oglasi
+            </button>
+            <button
+              className={`sd-sb-tab-btn${activeTab === 'omiljeni' ? ' active' : ''}`}
+              onClick={() => setActiveTab('omiljeni')}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24"
+                fill={activeTab === 'omiljeni' ? 'currentColor' : 'none'}
+                stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+              </svg>
+              Omiljeni
+              {favourites.size > 0 && <span className="sd-sb-count">{favourites.size}</span>}
+            </button>
+          </div>
+
           {/* Search with spinning glow border on focus */}
           <div className="sd-sb-search-outer sd-sidebar-search">
             <div className="sd-search-wrap">
@@ -848,17 +931,39 @@ export default function StudentDashboard() {
               <div className="sd-list">
                 {filteredPrakse.length === 0 ? (
                   <div className="sd-empty">
-                    <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                    </svg>
-                    <p className="sd-empty-title">Nema pronađenih oglasa</p>
-                    <p className="sd-empty-sub">
-                      Pokušaj sa drugačijim filterima ili{' '}
-                      <button className="sd-empty-link" onClick={resetFilters}>resetuj pretragu</button>.
-                    </p>
+                    {activeTab === 'omiljeni' ? (
+                      <>
+                        <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                        </svg>
+                        <p className="sd-empty-title">Nema omiljenih oglasa</p>
+                        <p className="sd-empty-sub">
+                          Klikni na srce na oglasu da ga dodaš ovdje.
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        <p className="sd-empty-title">Nema pronađenih oglasa</p>
+                        <p className="sd-empty-sub">
+                          Pokušaj sa drugačijim filterima ili{' '}
+                          <button className="sd-empty-link" onClick={resetFilters}>resetuj pretragu</button>.
+                        </p>
+                      </>
+                    )}
                   </div>
                 ) : (
-                  filteredPrakse.map(p => <PraksaCard key={p.id} praksa={p} onSelect={sel => setSelectedPraksa(sel)} />)
+                  filteredPrakse.map(p => (
+                    <PraksaCard
+                      key={p.id}
+                      praksa={p}
+                      onSelect={sel => setSelectedPraksa(sel)}
+                      isFavourite={favourites.has(p.id)}
+                      onToggleFavourite={toggleFavourite}
+                    />
+                  ))
                 )}
               </div>
             </>

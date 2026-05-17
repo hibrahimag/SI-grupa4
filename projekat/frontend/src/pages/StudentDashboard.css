@@ -704,7 +704,7 @@
 .sd-card {
   background: var(--color-surface, #fff);
   border-radius: 16.5px;
-  padding: 28px 32px;
+  padding: 32px 36px;
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -1987,4 +1987,166 @@
 .sd-main-search-clear:hover {
   background: var(--color-border, #e0edf9);
   color: var(--color-text, #0d1f3c);
+}
+
+/* ── Novo badge ─────────────────────────────────────────────────────────── */
+.sd-novo-badge {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.67rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #16a34a, #22c55e);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.3);
+  pointer-events: none;
+}
+
+.sd-page.dark .sd-novo-badge {
+  background: linear-gradient(135deg, #15803d, #16a34a);
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.2);
+}
+
+/* ── Heart / favourite button ──────────────────────────────────────────── */
+.sd-heart-btn {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--color-border, #e0edf9);
+  background: var(--color-surface, #fff);
+  color: var(--color-faint, #9aabbc);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s, border-color 0.15s, background 0.15s, transform 0.15s;
+  z-index: 2;
+}
+
+.sd-heart-btn:hover {
+  color: #e11d48;
+  border-color: rgba(225, 29, 72, 0.35);
+  background: rgba(225, 29, 72, 0.06);
+  transform: scale(1.1);
+}
+
+.sd-heart-btn--active {
+  color: #e11d48;
+  border-color: rgba(225, 29, 72, 0.3);
+  background: rgba(225, 29, 72, 0.06);
+}
+
+.sd-heart-btn--active:hover {
+  background: rgba(225, 29, 72, 0.12);
+  transform: scale(1.1);
+}
+
+/* push badges left so they don't overlap the heart button */
+.sd-card-head .sd-company-row {
+  padding-right: 38px;
+}
+
+/* ── Sidebar: omiljeni icon in collapsed strip ──────────────────────────── */
+.sd-sb-tab-icon--heart {
+  color: #e11d48;
+}
+
+/* ── Sidebar tabs ───────────────────────────────────────────────────────── */
+.sd-sb-tabs {
+  display: flex;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.sd-sidebar-tabs {
+  opacity: 0;
+  transform: translateX(-6px);
+  transition:
+    opacity 0.2s ease 0.06s,
+    transform 0.3s cubic-bezier(0.22, 1, 0.36, 1) 0.06s;
+}
+
+.sd-sidebar:hover .sd-sidebar-tabs {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.sd-sb-tab-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 6px 8px;
+  border: 1px solid var(--color-border, #e0edf9);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-muted, #5a7a9a);
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.sd-sb-tab-btn:hover {
+  background: var(--color-bg, #f0f6ff);
+  color: var(--color-text, #0d1f3c);
+}
+
+.sd-sb-tab-btn.active {
+  background: var(--color-primary-subtle, #ddeeff);
+  color: var(--color-primary, #1a6fd4);
+  border-color: rgba(26, 111, 212, 0.28);
+}
+
+.sd-sb-tab-btn.active svg {
+  color: #e11d48;
+}
+
+/* ── Dark mode additions ────────────────────────────────────────────────── */
+.sd-page.dark .sd-heart-btn {
+  background: #111827;
+  border-color: #1e2d40;
+  color: #475569;
+}
+.sd-page.dark .sd-heart-btn:hover {
+  color: #fb7185;
+  border-color: rgba(251, 113, 133, 0.35);
+  background: rgba(251, 113, 133, 0.08);
+}
+.sd-page.dark .sd-heart-btn--active {
+  color: #fb7185;
+  border-color: rgba(251, 113, 133, 0.3);
+  background: rgba(251, 113, 133, 0.08);
+}
+.sd-page.dark .sd-heart-btn--active:hover {
+  background: rgba(251, 113, 133, 0.15);
+}
+
+.sd-page.dark .sd-sb-tab-btn {
+  border-color: #1e2d40;
+  color: #64748b;
+}
+.sd-page.dark .sd-sb-tab-btn:hover {
+  background: #161f2e;
+  color: #e2e8f0;
+}
+.sd-page.dark .sd-sb-tab-btn.active {
+  background: rgba(59, 130, 246, 0.12);
+  color: #60a5fa;
+  border-color: rgba(59, 130, 246, 0.28);
+}
+.sd-page.dark .sd-sb-tab-btn.active svg {
+  color: #fb7185;
+}
+.sd-page.dark .sd-sb-tab-icon--heart {
+  color: #fb7185;
 }
