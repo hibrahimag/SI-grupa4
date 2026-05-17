@@ -49,6 +49,20 @@ async function resolveStudentFromUser(userId) {
   return { user, student };
 }
 
+async function resolveStudentForListing(userId) {
+  const user = await User.findByPk(userId);
+  if (!user || user.role !== 'STUDENT') {
+    throw makeError('Nemate dozvolu za pristup ovom resursu.', 403);
+  }
+
+  const student = await Student.findOne({ where: { userID: user.id } });
+  if (!student || !isStudentProfileComplete(user, student)) {
+    return null;
+  }
+
+  return student;
+}
+
 async function createApplication(userId, data = {}) {
   const oglasID = Number(data.oglasID);
   if (!Number.isInteger(oglasID) || oglasID <= 0) {
@@ -85,7 +99,8 @@ async function createApplication(userId, data = {}) {
 }
 
 async function getMyApplications(userId) {
-  const { student } = await resolveStudentFromUser(userId);
+  const student = await resolveStudentForListing(userId);
+  if (!student) return [];
 
   return PrijavaNaPraksu.findAll({
     where: { studentID: student.id },

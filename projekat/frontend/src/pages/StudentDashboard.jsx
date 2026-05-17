@@ -75,7 +75,7 @@ function applicationStatusTone(status) {
 }
 
 function applicationOglasId(application) {
-  return Number(application?.oglasID ?? application?.Ogla?.id ?? application?.Oglas?.id);
+  return Number(application?.oglasID);
 }
 
 // ── PraksaCard ─────────────────────────────────────────────────────────────

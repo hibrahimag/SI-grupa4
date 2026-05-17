@@ -1,5 +1,13 @@
 const applicationsService = require('../services/applications.service');
 
+function handleApplicationError(res, err) {
+  if (err.status) {
+    return res.status(err.status).json({ message: err.message });
+  }
+
+  return res.status(500).json({ message: 'Došlo je do greške na serveru.' });
+}
+
 async function createApplication(req, res) {
   try {
     const application = await applicationsService.createApplication(req.user.id, req.body);
@@ -8,7 +16,7 @@ async function createApplication(req, res) {
       application,
     });
   } catch (err) {
-    return res.status(err.status || 500).json({ message: err.message });
+    return handleApplicationError(res, err);
   }
 }
 
@@ -17,7 +25,7 @@ async function getMyApplications(req, res) {
     const applications = await applicationsService.getMyApplications(req.user.id);
     return res.json(applications);
   } catch (err) {
-    return res.status(err.status || 500).json({ message: err.message });
+    return handleApplicationError(res, err);
   }
 }
 
