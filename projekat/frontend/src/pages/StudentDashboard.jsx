@@ -149,7 +149,53 @@ function PraksaCard({ praksa, onSelect }) {
 
 // ── PraksaModal ────────────────────────────────────────────────────────────
 function PraksaModal({ praksa, onClose }) {
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState('');
   const dl = deadlineInfo(praksa.rokPrijave);
+
+ async function handleUpload() {
+  if (selectedFiles.length === 0) {
+    setUploadMessage('Odaberite barem jedan dokument.');
+    return;
+  }
+
+  try {
+    setUploading(true);
+    setUploadMessage('');
+
+    const formData = new FormData();
+
+    selectedFiles.forEach(item => {
+      formData.append('files', item.file);
+      formData.append('tip_dokumenta', item.tip);
+    });
+
+    const token = sessionStorage.getItem('token');
+
+    const response = await fetch('http://localhost:3000/api/dokumenti/upload', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Greška pri uploadu.');
+    }
+
+    setUploadMessage('Dokumenti uspješno uploadovani!');
+    setSelectedFiles([]);
+  } catch (err) {
+    setUploadMessage(err.message);
+  } finally {
+    setUploading(false);
+  }
+}
 
   useEffect(() => {
     function onKey(e) { if (e.key === 'Escape') onClose(); }
@@ -317,7 +363,10 @@ function PraksaModal({ praksa, onClose }) {
 
           {/* CTA */}
           <div className="sd-modal-cta">
-            <button className="sd-btn-apply">
+            <button
+              className="sd-btn-apply"
+              onClick={() => setShowUploadModal(true)}
+            >
               Prijavi se
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
@@ -326,6 +375,81 @@ function PraksaModal({ praksa, onClose }) {
             <button className="sd-btn-modal-cancel" onClick={onClose}>Zatvori</button>
           </div>
         </div>
+
+        {showUploadModal && (
+  <div className="sd-upload-overlay">
+    <div className="sd-upload-modal">
+
+      <h2>Upload dokumentacije</h2>
+
+      <p className="sd-upload-text">
+        Dodajte CV ili motivaciono pismo za prijavu.
+      </p>
+
+          <input
+            type="file"
+            accept=".pdf,.doc,.docx"
+            multiple
+            onChange={(e) => {
+              const files = Array.from(e.target.files).map(file => ({
+                file,
+                tip: 'CV',
+              }));
+              setSelectedFiles(files);
+            }}
+    />
+
+    {selectedFiles.map((item, index) => (
+  <div key={index} className="sd-file-row">
+    <span>{item.file.name}</span>
+
+    <select
+      value={item.tip}
+      onChange={(e) => {
+        const updated = [...selectedFiles];
+        updated[index].tip = e.target.value;
+        setSelectedFiles(updated);
+      }}
+    >
+      <option value="CV">CV</option>
+      <option value="MOTIVACIONO_PISMO">Motivaciono pismo</option>
+      <option value="OSTALO">Ostalo</option>
+    </select>
+  </div>
+))}
+
+
+      {uploadMessage && (
+        <p className="sd-upload-message">
+          {uploadMessage}
+        </p>
+      )}
+
+      <div className="sd-upload-actions">
+
+        <button
+          className="sd-btn-apply"
+          onClick={handleUpload}
+          disabled={uploading}
+        >
+          {uploading ? 'Upload...' : 'Pošalji dokumente'}
+        </button>
+
+        <button
+          className="sd-btn-modal-cancel"
+          onClick={() => {
+            setShowUploadModal(false);
+            setUploadMessage('');
+          }}
+        >
+          Otkaži
+        </button>
+
+      </div>
+    </div>
+  </div>
+)}
+
       </div>
     </div>
   );
