@@ -11,12 +11,15 @@ const adminRoutes = require('./presentation/routes/admin.routes');
 const approvalRoutes = require('./presentation/routes/approval.routes');
 const koordinatorRoutes = require('./presentation/routes/koordinator.routes');
 const companiesRoutes = require('./presentation/routes/companies.routes');
+const dokumentRoutes = require('./presentation/routes/dokument.routes');
 const favouritesRoutes = require('./presentation/routes/favourites.routes');
 
 const app = express();
+const path = require('path');
 
 app.use(cors());
 app.use(express.json());
+
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
@@ -27,6 +30,8 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/approval-requests', approvalRoutes);
 app.use('/api/koordinator', koordinatorRoutes);
 app.use('/api/companies', companiesRoutes);
+app.use('/api/dokumenti', dokumentRoutes);
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 app.use('/api/favourites', favouritesRoutes);
 
 module.exports = app;

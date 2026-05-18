@@ -417,7 +417,10 @@ function ApplicationModal({
   submitError,
   submitSuccess,
 }) {
-  const [documentPanelOpen, setDocumentPanelOpen] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState('');
   const inactive = !praksa.aktivan;
   const hasApplication = Boolean(existingApplication);
   const alreadyApplied = hasApplication && !submitSuccess;
@@ -433,7 +436,48 @@ function ApplicationModal({
   }, [onClose]);
 
   function handleOpenDocumentUpload() {
-    setDocumentPanelOpen(true);
+    setUploadMessage('');
+    setShowUploadModal(true);
+  }
+
+  async function handleUpload() {
+    if (selectedFiles.length === 0) {
+      setUploadMessage('Odaberite barem jedan dokument.');
+      return;
+    }
+
+    try {
+      setUploading(true);
+      setUploadMessage('');
+
+      const formData = new FormData();
+      formData.append('oglas_id', praksa.id);
+
+      selectedFiles.forEach(item => {
+        formData.append('files', item.file);
+        formData.append('tip_dokumenta', item.tip);
+      });
+
+      const token = sessionStorage.getItem('token');
+      const response = await fetch('/api/dokumenti/upload', {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Greška pri uploadu.');
+      }
+
+      setUploadMessage(data.message || 'Dokumenti uspješno uploadovani!');
+      setSelectedFiles([]);
+    } catch (err) {
+      setUploadMessage(err.message || 'Greška pri uploadu.');
+    } finally {
+      setUploading(false);
+    }
   }
 
   return (
@@ -507,10 +551,77 @@ function ApplicationModal({
                   Dodaj dokumentaciju
                 </button>
               </div>
-              {documentPanelOpen && (
-                <p className="sd-document-note">
-                  Dokumentaciju možete dodati u odvojenom koraku.
-                </p>
+              {showUploadModal && (
+                <div className="sd-upload-overlay" onClick={e => e.stopPropagation()}>
+                  <div className="sd-upload-modal">
+                    <h2>Upload dokumentacije</h2>
+
+                    <p className="sd-upload-text">
+                      Dodajte CV ili motivaciono pismo za prijavu.
+                    </p>
+
+                    <input
+                      type="file"
+                      accept=".pdf,.doc,.docx"
+                      multiple
+                      onChange={(e) => {
+                        const files = Array.from(e.target.files).map(file => ({
+                          file,
+                          tip: 'CV',
+                        }));
+                        setSelectedFiles(files);
+                        setUploadMessage('');
+                      }}
+                    />
+
+                    {selectedFiles.map((item, index) => (
+                      <div key={`${item.file.name}-${index}`} className="sd-file-row">
+                        <span>{item.file.name}</span>
+
+                        <select
+                          value={item.tip}
+                          onChange={(e) => {
+                            const updated = [...selectedFiles];
+                            updated[index] = { ...updated[index], tip: e.target.value };
+                            setSelectedFiles(updated);
+                          }}
+                        >
+                          <option value="CV">CV</option>
+                          <option value="MOTIVACIONO_PISMO">Motivaciono pismo</option>
+                          <option value="OSTALO">Ostalo</option>
+                        </select>
+                      </div>
+                    ))}
+
+                    {uploadMessage && (
+                      <p className="sd-upload-message">
+                        {uploadMessage}
+                      </p>
+                    )}
+
+                    <div className="sd-upload-actions">
+                      <button
+                        className="sd-btn-apply"
+                        type="button"
+                        onClick={handleUpload}
+                        disabled={uploading}
+                      >
+                        {uploading ? 'Upload...' : 'Pošalji dokumente'}
+                      </button>
+
+                      <button
+                        className="sd-btn-modal-cancel"
+                        type="button"
+                        onClick={() => {
+                          setShowUploadModal(false);
+                          setUploadMessage('');
+                        }}
+                      >
+                        Otkaži
+                      </button>
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
 
