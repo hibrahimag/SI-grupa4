@@ -1,9 +1,12 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Upload } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { checkDeactivation, deactivateAccount, deleteMyAccount } from '../services/userService';
 import { getActiveListings } from '../services/listingsService';
+import { getMyApplications, createApplication } from '../services/applicationsService';
+import { getFavourites, addFavourite, removeFavourite } from '../services/favouritesService';
 import {
   formatDate, relativeDate, trajanjeLabel, mjestLabel, deadlineInfo,
 } from '../data/mockPrakse';
@@ -48,8 +51,35 @@ function mapOglas(oglas) {
   };
 }
 
+function isNovo(datumObjave) {
+  if (!datumObjave) return false;
+  return Date.now() - new Date(datumObjave).getTime() < 3 * 24 * 60 * 60 * 1000;
+}
+
+const APPLICATION_STATUS_LABELS = {
+  PODNESENA: 'Na čekanju',
+  U_RAZMATRANJU: 'Na čekanju',
+  ODOBRENA: 'Odobreno',
+  ODBIJENA: 'Odbijeno',
+  ODUSTAO: 'Odustao',
+};
+
+function applicationStatusLabel(status) {
+  return APPLICATION_STATUS_LABELS[status] || status || 'Na čekanju';
+}
+
+function applicationStatusTone(status) {
+  if (status === 'ODOBRENA') return 'success';
+  if (status === 'ODBIJENA' || status === 'ODUSTAO') return 'error';
+  return 'info';
+}
+
+function applicationOglasId(application) {
+  return Number(application?.oglasID);
+}
+
 // ── PraksaCard ─────────────────────────────────────────────────────────────
-function PraksaCard({ praksa, onSelect }) {
+function PraksaCard({ praksa, onSelect, isFavourite, onToggleFavourite, application }) {
   const inactive = !praksa.aktivan;
   return (
     <div
@@ -57,7 +87,22 @@ function PraksaCard({ praksa, onSelect }) {
       onClick={() => !inactive && onSelect(praksa)}
     >
     <article className="sd-card" tabIndex={inactive ? -1 : 0} role="button" aria-label={`${praksa.naziv} — ${praksa.kompanija}`}>
+      <button
+        className={`sd-heart-btn${isFavourite ? ' sd-heart-btn--active' : ''}`}
+        onClick={e => { e.stopPropagation(); onToggleFavourite(praksa.id); }}
+        aria-label={isFavourite ? 'Ukloni iz omiljenih' : 'Dodaj u omiljene'}
+        title={isFavourite ? 'Ukloni iz omiljenih' : 'Dodaj u omiljene'}
+      >
+        <svg width="15" height="15" viewBox="0 0 24 24"
+          fill={isFavourite ? 'currentColor' : 'none'}
+          stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+        </svg>
+      </button>
       <div className="sd-card-head">
+        {isNovo(praksa.datumObjave) && (
+          <span className="sd-novo-badge">Novo</span>
+        )}
         <div className="sd-company-row">
           <div className="sd-logo" style={{ background: praksa.logoColor }}>
             {praksa.logo}
@@ -76,6 +121,11 @@ function PraksaCard({ praksa, onSelect }) {
           </div>
           <div className="sd-head-badges">
             {inactive && <span className="sd-inactive-badge">Istekao</span>}
+            {application && (
+              <span className={`sd-application-card-badge sd-application-card-badge--${applicationStatusTone(application.status)}`}>
+                {applicationStatusLabel(application.status)}
+              </span>
+            )}
             <span className={`sd-tip-badge sd-tip--${praksa.tip.toLowerCase()}`}>
               {!praksa.lokacija && (
                 <svg style={{marginRight:'4px'}} width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -148,54 +198,21 @@ function PraksaCard({ praksa, onSelect }) {
 }
 
 // ── PraksaModal ────────────────────────────────────────────────────────────
-function PraksaModal({ praksa, onClose }) {
-  const [showUploadModal, setShowUploadModal] = useState(false);
-  const [selectedFiles, setSelectedFiles] = useState([]);
-  const [uploading, setUploading] = useState(false);
-  const [uploadMessage, setUploadMessage] = useState('');
+function PraksaModal({
+  praksa,
+  onClose,
+  existingApplication,
+  onStartApplication,
+}) {
   const dl = deadlineInfo(praksa.rokPrijave);
-
- async function handleUpload() {
-  if (selectedFiles.length === 0) {
-    setUploadMessage('Odaberite barem jedan dokument.');
-    return;
-  }
-
-  try {
-    setUploading(true);
-    setUploadMessage('');
-
-    const formData = new FormData();
-
-    selectedFiles.forEach(item => {
-      formData.append('files', item.file);
-      formData.append('tip_dokumenta', item.tip);
-    });
-
-    const token = sessionStorage.getItem('token');
-
-    const response = await fetch('http://localhost:3000/api/dokumenti/upload', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      body: formData,
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Greška pri uploadu.');
-    }
-
-    setUploadMessage('Dokumenti uspješno uploadovani!');
-    setSelectedFiles([]);
-  } catch (err) {
-    setUploadMessage(err.message);
-  } finally {
-    setUploading(false);
-  }
-}
+  const inactive = !praksa.aktivan;
+  const alreadyApplied = Boolean(existingApplication);
+  const statusTone = alreadyApplied ? applicationStatusTone(existingApplication.status) : 'info';
+  const statusMessage = inactive
+    ? 'Nije moguće prijaviti se na neaktivan oglas.'
+    : alreadyApplied
+      ? `Već ste se prijavili na ovaj oglas. Status prijave: ${applicationStatusLabel(existingApplication.status)}.`
+      : '';
 
   useEffect(() => {
     function onKey(e) { if (e.key === 'Escape') onClose(); }
@@ -362,12 +379,22 @@ function PraksaModal({ praksa, onClose }) {
           </div>
 
           {/* CTA */}
+          {statusMessage && (
+            <div className="sd-application-messages">
+              <p className={`sd-application-message sd-application-message--${statusTone}`}>
+                {statusMessage}
+              </p>
+            </div>
+          )}
+
           <div className="sd-modal-cta">
             <button
               className="sd-btn-apply"
-              onClick={() => setShowUploadModal(true)}
+              type="button"
+              onClick={() => onStartApplication(praksa)}
+              disabled={inactive}
             >
-              Prijavi se
+              {inactive ? 'Oglas nije aktivan' : alreadyApplied ? 'Pregled prijave' : 'Prijavi se na praksu'}
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
               </svg>
@@ -375,81 +402,251 @@ function PraksaModal({ praksa, onClose }) {
             <button className="sd-btn-modal-cancel" onClick={onClose}>Zatvori</button>
           </div>
         </div>
-
-        {showUploadModal && (
-  <div className="sd-upload-overlay">
-    <div className="sd-upload-modal">
-
-      <h2>Upload dokumentacije</h2>
-
-      <p className="sd-upload-text">
-        Dodajte CV ili motivaciono pismo za prijavu.
-      </p>
-
-          <input
-            type="file"
-            accept=".pdf,.doc,.docx"
-            multiple
-            onChange={(e) => {
-              const files = Array.from(e.target.files).map(file => ({
-                file,
-                tip: 'CV',
-              }));
-              setSelectedFiles(files);
-            }}
-    />
-
-    {selectedFiles.map((item, index) => (
-  <div key={index} className="sd-file-row">
-    <span>{item.file.name}</span>
-
-    <select
-      value={item.tip}
-      onChange={(e) => {
-        const updated = [...selectedFiles];
-        updated[index].tip = e.target.value;
-        setSelectedFiles(updated);
-      }}
-    >
-      <option value="CV">CV</option>
-      <option value="MOTIVACIONO_PISMO">Motivaciono pismo</option>
-      <option value="OSTALO">Ostalo</option>
-    </select>
-  </div>
-))}
-
-
-      {uploadMessage && (
-        <p className="sd-upload-message">
-          {uploadMessage}
-        </p>
-      )}
-
-      <div className="sd-upload-actions">
-
-        <button
-          className="sd-btn-apply"
-          onClick={handleUpload}
-          disabled={uploading}
-        >
-          {uploading ? 'Upload...' : 'Pošalji dokumente'}
-        </button>
-
-        <button
-          className="sd-btn-modal-cancel"
-          onClick={() => {
-            setShowUploadModal(false);
-            setUploadMessage('');
-          }}
-        >
-          Otkaži
-        </button>
-
       </div>
     </div>
-  </div>
-)}
+  );
+}
 
+function ApplicationModal({
+  praksa,
+  onClose,
+  onCancel,
+  existingApplication,
+  onSubmit,
+  submitting,
+  submitError,
+  submitSuccess,
+}) {
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState('');
+  const inactive = !praksa.aktivan;
+  const hasApplication = Boolean(existingApplication);
+  const alreadyApplied = hasApplication && !submitSuccess;
+  const currentStatus = hasApplication || submitSuccess
+    ? applicationStatusLabel(existingApplication?.status || 'PODNESENA')
+    : 'Nije podnesena';
+  const canSubmit = !hasApplication && !inactive && !submitSuccess;
+
+  useEffect(() => {
+    function onKey(e) { if (e.key === 'Escape') onClose(); }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  function handleOpenDocumentUpload() {
+    setUploadMessage('');
+    setShowUploadModal(true);
+  }
+
+  async function handleUpload() {
+    if (selectedFiles.length === 0) {
+      setUploadMessage('Odaberite barem jedan dokument.');
+      return;
+    }
+
+    try {
+      setUploading(true);
+      setUploadMessage('');
+
+      const formData = new FormData();
+      formData.append('oglas_id', praksa.id);
+
+      selectedFiles.forEach(item => {
+        formData.append('files', item.file);
+        formData.append('tip_dokumenta', item.tip);
+      });
+
+      const token = sessionStorage.getItem('token');
+      const response = await fetch('/api/dokumenti/upload', {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Greška pri uploadu.');
+      }
+
+      setUploadMessage(data.message || 'Dokumenti uspješno uploadovani!');
+      setSelectedFiles([]);
+    } catch (err) {
+      setUploadMessage(err.message || 'Greška pri uploadu.');
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <div className="sd-modal-overlay" onClick={onClose}>
+      <div className="sd-modal sd-application-modal" onClick={e => e.stopPropagation()}>
+        <div className="sd-modal-header">
+          <button className="sd-modal-close" onClick={onClose} aria-label="Zatvori">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+          <p className="sd-modal-section-title">Prijava na praksu</p>
+          <h2 className="sd-modal-title">{praksa.naziv}</h2>
+          <p className="sd-application-company">{praksa.kompanija}</p>
+        </div>
+
+        <div className="sd-modal-body">
+          {(inactive || alreadyApplied || submitError || submitSuccess) && (
+            <div className="sd-application-messages">
+              {inactive && (
+                <p className="sd-application-message sd-application-message--error">
+                  Nije moguće prijaviti se na neaktivan oglas.
+                </p>
+              )}
+              {alreadyApplied && (
+                <p className="sd-application-message sd-application-message--info">
+                  Već ste se prijavili na ovaj oglas.
+                </p>
+              )}
+              {submitError && (
+                <p className="sd-application-message sd-application-message--error">
+                  {submitError}
+                </p>
+              )}
+              {submitSuccess && (
+                <p className="sd-application-message sd-application-message--success">
+                  {submitSuccess}
+                </p>
+              )}
+            </div>
+          )}
+
+          <section className="sd-application-flow" aria-label="Prijava na praksu">
+            <div className="sd-application-flow-head">
+              <div>
+                <p className="sd-modal-section-title">Status prijave</p>
+                <h3 className="sd-application-title">{praksa.naziv}</h3>
+                <p className="sd-application-company">{praksa.kompanija}</p>
+              </div>
+              <span className={`sd-application-status sd-application-status--${applicationStatusTone(existingApplication?.status || (submitSuccess ? 'PODNESENA' : ''))}`}>
+                {currentStatus}
+              </span>
+            </div>
+
+            <div className="sd-application-docs">
+              <p className="sd-application-subtitle">Dokumentacija</p>
+              <div className="sd-document-hook">
+                <div className="sd-document-hook-text">
+                  <Upload size={20} strokeWidth={2.4} />
+                  <div>
+                    <span>Dokumentaciju možete priložiti uz prijavu.</span>
+                    <small>CV, motivaciono pismo ili drugi dokumenti.</small>
+                  </div>
+                </div>
+                <button
+                  className="sd-btn-docs"
+                  type="button"
+                  onClick={handleOpenDocumentUpload}
+                  disabled={hasApplication || inactive || submitting || submitSuccess}
+                >
+                  Dodaj dokumentaciju
+                </button>
+              </div>
+              {showUploadModal && (
+                <div className="sd-upload-overlay" onClick={e => e.stopPropagation()}>
+                  <div className="sd-upload-modal">
+                    <h2>Upload dokumentacije</h2>
+
+                    <p className="sd-upload-text">
+                      Dodajte CV ili motivaciono pismo za prijavu.
+                    </p>
+
+                    <input
+                      type="file"
+                      accept=".pdf,.doc,.docx"
+                      multiple
+                      onChange={(e) => {
+                        const files = Array.from(e.target.files).map(file => ({
+                          file,
+                          tip: 'CV',
+                        }));
+                        setSelectedFiles(files);
+                        setUploadMessage('');
+                      }}
+                    />
+
+                    {selectedFiles.map((item, index) => (
+                      <div key={`${item.file.name}-${index}`} className="sd-file-row">
+                        <span>{item.file.name}</span>
+
+                        <select
+                          value={item.tip}
+                          onChange={(e) => {
+                            const updated = [...selectedFiles];
+                            updated[index] = { ...updated[index], tip: e.target.value };
+                            setSelectedFiles(updated);
+                          }}
+                        >
+                          <option value="CV">CV</option>
+                          <option value="MOTIVACIONO_PISMO">Motivaciono pismo</option>
+                          <option value="OSTALO">Ostalo</option>
+                        </select>
+                      </div>
+                    ))}
+
+                    {uploadMessage && (
+                      <p className="sd-upload-message">
+                        {uploadMessage}
+                      </p>
+                    )}
+
+                    <div className="sd-upload-actions">
+                      <button
+                        className="sd-btn-apply"
+                        type="button"
+                        onClick={handleUpload}
+                        disabled={uploading}
+                      >
+                        {uploading ? 'Upload...' : 'Pošalji dokumente'}
+                      </button>
+
+                      <button
+                        className="sd-btn-modal-cancel"
+                        type="button"
+                        onClick={() => {
+                          setShowUploadModal(false);
+                          setUploadMessage('');
+                        }}
+                      >
+                        Otkaži
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="sd-application-actions">
+              <button
+                className="sd-btn-modal-cancel"
+                type="button"
+                onClick={onCancel}
+                disabled={submitting}
+              >
+                Odustani
+              </button>
+              {canSubmit && (
+                <button
+                  className="sd-btn-apply"
+                  type="button"
+                  onClick={() => onSubmit(praksa)}
+                  disabled={submitting}
+                >
+                  {submitting ? 'Slanje prijave...' : 'Podnesi prijavu'}
+                </button>
+              )}
+            </div>
+          </section>
+        </div>
       </div>
     </div>
   );
@@ -467,12 +664,20 @@ export default function StudentDashboard() {
   const [praksaError, setPraksaError] = useState('');
 
   const [selectedPraksa, setSelectedPraksa] = useState(null);
+  const [applicationPraksa, setApplicationPraksa] = useState(null);
   const [search, setSearch] = useState('');
   const [filterTehs, setFilterTehs] = useState([]);
   const [filterTips, setFilterTips] = useState([]);
   const [filterTrajanja, setFilterTrajanja] = useState([]);
   const [sortBy, setSortBy] = useState('najnovije');
   const [sectionsOpen, setSectionsOpen] = useState({ tech: false, duration: false, type: false, sort: false });
+
+  const [activeTab, setActiveTab] = useState('svi');
+  const [favourites, setFavourites] = useState(new Set());
+  const [applications, setApplications] = useState([]);
+  const [applyLoadingId, setApplyLoadingId] = useState(null);
+  const [applyError, setApplyError] = useState('');
+  const [applySuccess, setApplySuccess] = useState('');
 
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -515,6 +720,27 @@ export default function StudentDashboard() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [profileMenuOpen]);
+
+  useEffect(() => {
+    let active = true;
+    getFavourites()
+      .then(ids => { if (active) setFavourites(new Set(ids)); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    getMyApplications()
+      .then(data => { if (active) setApplications(data || []); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    setApplyError('');
+    setApplySuccess('');
+  }, [selectedPraksa?.id, applicationPraksa?.id]);
 
   function handleLogout() {
     logout();
@@ -575,7 +801,7 @@ export default function StudentDashboard() {
   );
 
   const filteredPrakse = useMemo(() => {
-    let r = [...prakse];
+    let r = activeTab === 'omiljeni' ? prakse.filter(p => favourites.has(p.id)) : [...prakse];
     if (search.trim()) {
       const s = search.trim().toLowerCase();
       r = r.filter(p =>
@@ -600,7 +826,7 @@ export default function StudentDashboard() {
     else if (sortBy === 'trajanje-asc') r.sort((a, b) => a.trajanje - b.trajanje);
     else if (sortBy === 'trajanje-desc') r.sort((a, b) => b.trajanje - a.trajanje);
     return r;
-  }, [prakse, search, filterTehs, filterTips, filterTrajanja, sortBy]);
+  }, [prakse, search, filterTehs, filterTips, filterTrajanja, sortBy, activeTab, favourites]);
 
   const hasFilters = !!(search || filterTehs.length || filterTips.length || filterTrajanja.length);
 
@@ -614,6 +840,76 @@ export default function StudentDashboard() {
 
   function resetFilters() {
     setSearch(''); setFilterTehs([]); setFilterTips([]); setFilterTrajanja([]);
+  }
+
+  async function toggleFavourite(oglasId) {
+    const isFav = favourites.has(oglasId);
+    setFavourites(prev => {
+      const next = new Set(prev);
+      if (isFav) next.delete(oglasId);
+      else next.add(oglasId);
+      return next;
+    });
+    try {
+      if (isFav) await removeFavourite(oglasId);
+      else await addFavourite(oglasId);
+    } catch {
+      setFavourites(prev => {
+        const next = new Set(prev);
+        if (isFav) next.add(oglasId);
+        else next.delete(oglasId);
+        return next;
+      });
+    }
+  }
+
+  function findApplicationForOglas(oglasId) {
+    return applications.find(app => applicationOglasId(app) === Number(oglasId));
+  }
+
+  function handleStartApplication(praksa) {
+    setApplyError('');
+    setApplySuccess('');
+    setSelectedPraksa(null);
+    setApplicationPraksa(praksa);
+  }
+
+  function handleReturnToDetailsFromApplication() {
+    const praksa = applicationPraksa;
+    setApplicationPraksa(null);
+    if (praksa) setSelectedPraksa(praksa);
+  }
+
+  async function handleApplyToPraksa(praksa) {
+    if (!praksa?.aktivan) {
+      setApplyError('Nije moguće prijaviti se na neaktivan oglas.');
+      setApplySuccess('');
+      return;
+    }
+
+    if (findApplicationForOglas(praksa.id)) {
+      setApplyError('Već ste se prijavili na ovaj oglas.');
+      setApplySuccess('');
+      return;
+    }
+
+    setApplyLoadingId(praksa.id);
+    setApplyError('');
+    setApplySuccess('');
+
+    try {
+      const result = await createApplication(praksa.id);
+      const createdApplication = result.application || result;
+      setApplications(prev => {
+        const alreadyStored = prev.some(app => applicationOglasId(app) === Number(praksa.id));
+        return alreadyStored ? prev : [createdApplication, ...prev];
+      });
+      setApplySuccess(result.message || 'Prijava je uspješno podnesena.');
+    } catch (err) {
+      setApplyError(err.message || 'Greška pri podnošenju prijave.');
+    } finally {
+      setApplyLoadingId(null);
+    }
   }
 
   return (
@@ -648,6 +944,14 @@ export default function StudentDashboard() {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
+          </div>
+          <div className={`sd-sb-tab-icon${activeTab === 'omiljeni' ? ' sd-sb-tab-icon--heart' : ''}`}>
+            <svg width="15" height="15" viewBox="0 0 24 24"
+              fill={activeTab === 'omiljeni' ? 'currentColor' : 'none'}
+              stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+            {favourites.size > 0 && <span className="sd-sb-badge">{favourites.size}</span>}
           </div>
           <div className="sd-sb-tab-icon">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -694,6 +998,28 @@ export default function StudentDashboard() {
         {/* Expanded content */}
         <div className="sd-sidebar-inner">
           <div className="sd-sidebar-content">
+          {/* View tabs */}
+          <div className="sd-sb-tabs sd-sidebar-tabs">
+            <button
+              className={`sd-sb-tab-btn${activeTab === 'svi' ? ' active' : ''}`}
+              onClick={() => setActiveTab('svi')}
+            >
+              Svi oglasi
+            </button>
+            <button
+              className={`sd-sb-tab-btn${activeTab === 'omiljeni' ? ' active' : ''}`}
+              onClick={() => setActiveTab('omiljeni')}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24"
+                fill={activeTab === 'omiljeni' ? 'currentColor' : 'none'}
+                stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+              </svg>
+              Omiljeni
+              {favourites.size > 0 && <span className="sd-sb-count">{favourites.size}</span>}
+            </button>
+          </div>
+
           {/* Search with spinning glow border on focus */}
           <div className="sd-sb-search-outer sd-sidebar-search">
             <div className="sd-search-wrap">
@@ -972,17 +1298,40 @@ export default function StudentDashboard() {
               <div className="sd-list">
                 {filteredPrakse.length === 0 ? (
                   <div className="sd-empty">
-                    <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                    </svg>
-                    <p className="sd-empty-title">Nema pronađenih oglasa</p>
-                    <p className="sd-empty-sub">
-                      Pokušaj sa drugačijim filterima ili{' '}
-                      <button className="sd-empty-link" onClick={resetFilters}>resetuj pretragu</button>.
-                    </p>
+                    {activeTab === 'omiljeni' ? (
+                      <>
+                        <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                        </svg>
+                        <p className="sd-empty-title">Nema omiljenih oglasa</p>
+                        <p className="sd-empty-sub">
+                          Klikni na srce na oglasu da ga dodaš ovdje.
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        <p className="sd-empty-title">Nema pronađenih oglasa</p>
+                        <p className="sd-empty-sub">
+                          Pokušaj sa drugačijim filterima ili{' '}
+                          <button className="sd-empty-link" onClick={resetFilters}>resetuj pretragu</button>.
+                        </p>
+                      </>
+                    )}
                   </div>
                 ) : (
-                  filteredPrakse.map(p => <PraksaCard key={p.id} praksa={p} onSelect={sel => setSelectedPraksa(sel)} />)
+                  filteredPrakse.map(p => (
+                    <PraksaCard
+                      key={p.id}
+                      praksa={p}
+                      onSelect={sel => setSelectedPraksa(sel)}
+                      isFavourite={favourites.has(p.id)}
+                      onToggleFavourite={toggleFavourite}
+                      application={findApplicationForOglas(p.id)}
+                    />
+                  ))
                 )}
               </div>
             </>
@@ -994,6 +1343,21 @@ export default function StudentDashboard() {
         <PraksaModal
           praksa={selectedPraksa}
           onClose={() => setSelectedPraksa(null)}
+          existingApplication={findApplicationForOglas(selectedPraksa.id)}
+          onStartApplication={handleStartApplication}
+        />
+      )}
+
+      {applicationPraksa && (
+        <ApplicationModal
+          praksa={applicationPraksa}
+          onClose={() => setApplicationPraksa(null)}
+          onCancel={handleReturnToDetailsFromApplication}
+          existingApplication={findApplicationForOglas(applicationPraksa.id)}
+          onSubmit={handleApplyToPraksa}
+          submitting={applyLoadingId === applicationPraksa.id}
+          submitError={applyError}
+          submitSuccess={applySuccess}
         />
       )}
 

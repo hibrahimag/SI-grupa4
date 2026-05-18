@@ -12,6 +12,7 @@ const approvalRoutes = require('./presentation/routes/approval.routes');
 const koordinatorRoutes = require('./presentation/routes/koordinator.routes');
 const companiesRoutes = require('./presentation/routes/companies.routes');
 const dokumentRoutes = require('./presentation/routes/dokument.routes');
+const favouritesRoutes = require('./presentation/routes/favourites.routes');
 
 const app = express();
 const path = require('path');
@@ -31,5 +32,6 @@ app.use('/api/koordinator', koordinatorRoutes);
 app.use('/api/companies', companiesRoutes);
 app.use('/api/dokumenti', dokumentRoutes);
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/api/favourites', favouritesRoutes);
 
 module.exports = app;
