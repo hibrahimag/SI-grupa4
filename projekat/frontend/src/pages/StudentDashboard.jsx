@@ -1,9 +1,11 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Upload } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { checkDeactivation, deactivateAccount, deleteMyAccount } from '../services/userService';
 import { getActiveListings } from '../services/listingsService';
+import { getMyApplications, createApplication } from '../services/applicationsService';
 import { getFavourites, addFavourite, removeFavourite } from '../services/favouritesService';
 import {
   formatDate, relativeDate, trajanjeLabel, mjestLabel, deadlineInfo,
@@ -54,8 +56,30 @@ function isNovo(datumObjave) {
   return Date.now() - new Date(datumObjave).getTime() < 3 * 24 * 60 * 60 * 1000;
 }
 
+const APPLICATION_STATUS_LABELS = {
+  PODNESENA: 'Na čekanju',
+  U_RAZMATRANJU: 'Na čekanju',
+  ODOBRENA: 'Odobreno',
+  ODBIJENA: 'Odbijeno',
+  ODUSTAO: 'Odustao',
+};
+
+function applicationStatusLabel(status) {
+  return APPLICATION_STATUS_LABELS[status] || status || 'Na čekanju';
+}
+
+function applicationStatusTone(status) {
+  if (status === 'ODOBRENA') return 'success';
+  if (status === 'ODBIJENA' || status === 'ODUSTAO') return 'error';
+  return 'info';
+}
+
+function applicationOglasId(application) {
+  return Number(application?.oglasID);
+}
+
 // ── PraksaCard ─────────────────────────────────────────────────────────────
-function PraksaCard({ praksa, onSelect, isFavourite, onToggleFavourite }) {
+function PraksaCard({ praksa, onSelect, isFavourite, onToggleFavourite, application }) {
   const inactive = !praksa.aktivan;
   return (
     <div
@@ -97,6 +121,11 @@ function PraksaCard({ praksa, onSelect, isFavourite, onToggleFavourite }) {
           </div>
           <div className="sd-head-badges">
             {inactive && <span className="sd-inactive-badge">Istekao</span>}
+            {application && (
+              <span className={`sd-application-card-badge sd-application-card-badge--${applicationStatusTone(application.status)}`}>
+                {applicationStatusLabel(application.status)}
+              </span>
+            )}
             <span className={`sd-tip-badge sd-tip--${praksa.tip.toLowerCase()}`}>
               {!praksa.lokacija && (
                 <svg style={{marginRight:'4px'}} width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -169,8 +198,21 @@ function PraksaCard({ praksa, onSelect, isFavourite, onToggleFavourite }) {
 }
 
 // ── PraksaModal ────────────────────────────────────────────────────────────
-function PraksaModal({ praksa, onClose }) {
+function PraksaModal({
+  praksa,
+  onClose,
+  existingApplication,
+  onStartApplication,
+}) {
   const dl = deadlineInfo(praksa.rokPrijave);
+  const inactive = !praksa.aktivan;
+  const alreadyApplied = Boolean(existingApplication);
+  const statusTone = alreadyApplied ? applicationStatusTone(existingApplication.status) : 'info';
+  const statusMessage = inactive
+    ? 'Nije moguće prijaviti se na neaktivan oglas.'
+    : alreadyApplied
+      ? `Već ste se prijavili na ovaj oglas. Status prijave: ${applicationStatusLabel(existingApplication.status)}.`
+      : '';
 
   useEffect(() => {
     function onKey(e) { if (e.key === 'Escape') onClose(); }
@@ -337,15 +379,162 @@ function PraksaModal({ praksa, onClose }) {
           </div>
 
           {/* CTA */}
+          {statusMessage && (
+            <div className="sd-application-messages">
+              <p className={`sd-application-message sd-application-message--${statusTone}`}>
+                {statusMessage}
+              </p>
+            </div>
+          )}
+
           <div className="sd-modal-cta">
-            <button className="sd-btn-apply">
-              Prijavi se
+            <button
+              className="sd-btn-apply"
+              type="button"
+              onClick={() => onStartApplication(praksa)}
+              disabled={inactive}
+            >
+              {inactive ? 'Oglas nije aktivan' : alreadyApplied ? 'Pregled prijave' : 'Prijavi se na praksu'}
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
               </svg>
             </button>
             <button className="sd-btn-modal-cancel" onClick={onClose}>Zatvori</button>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ApplicationModal({
+  praksa,
+  onClose,
+  onCancel,
+  existingApplication,
+  onSubmit,
+  submitting,
+  submitError,
+  submitSuccess,
+}) {
+  const [documentPanelOpen, setDocumentPanelOpen] = useState(false);
+  const inactive = !praksa.aktivan;
+  const hasApplication = Boolean(existingApplication);
+  const alreadyApplied = hasApplication && !submitSuccess;
+  const currentStatus = hasApplication || submitSuccess
+    ? applicationStatusLabel(existingApplication?.status || 'PODNESENA')
+    : 'Nije podnesena';
+  const canSubmit = !hasApplication && !inactive && !submitSuccess;
+
+  useEffect(() => {
+    function onKey(e) { if (e.key === 'Escape') onClose(); }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  function handleOpenDocumentUpload() {
+    setDocumentPanelOpen(true);
+  }
+
+  return (
+    <div className="sd-modal-overlay" onClick={onClose}>
+      <div className="sd-modal sd-application-modal" onClick={e => e.stopPropagation()}>
+        <div className="sd-modal-header">
+          <button className="sd-modal-close" onClick={onClose} aria-label="Zatvori">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+          <p className="sd-modal-section-title">Prijava na praksu</p>
+          <h2 className="sd-modal-title">{praksa.naziv}</h2>
+          <p className="sd-application-company">{praksa.kompanija}</p>
+        </div>
+
+        <div className="sd-modal-body">
+          {(inactive || alreadyApplied || submitError || submitSuccess) && (
+            <div className="sd-application-messages">
+              {inactive && (
+                <p className="sd-application-message sd-application-message--error">
+                  Nije moguće prijaviti se na neaktivan oglas.
+                </p>
+              )}
+              {alreadyApplied && (
+                <p className="sd-application-message sd-application-message--info">
+                  Već ste se prijavili na ovaj oglas.
+                </p>
+              )}
+              {submitError && (
+                <p className="sd-application-message sd-application-message--error">
+                  {submitError}
+                </p>
+              )}
+              {submitSuccess && (
+                <p className="sd-application-message sd-application-message--success">
+                  {submitSuccess}
+                </p>
+              )}
+            </div>
+          )}
+
+          <section className="sd-application-flow" aria-label="Prijava na praksu">
+            <div className="sd-application-flow-head">
+              <div>
+                <p className="sd-modal-section-title">Status prijave</p>
+                <h3 className="sd-application-title">{praksa.naziv}</h3>
+                <p className="sd-application-company">{praksa.kompanija}</p>
+              </div>
+              <span className={`sd-application-status sd-application-status--${applicationStatusTone(existingApplication?.status || (submitSuccess ? 'PODNESENA' : ''))}`}>
+                {currentStatus}
+              </span>
+            </div>
+
+            <div className="sd-application-docs">
+              <p className="sd-application-subtitle">Dokumentacija</p>
+              <div className="sd-document-hook">
+                <div className="sd-document-hook-text">
+                  <Upload size={20} strokeWidth={2.4} />
+                  <div>
+                    <span>Dokumentaciju možete priložiti uz prijavu.</span>
+                    <small>CV, motivaciono pismo ili drugi dokumenti.</small>
+                  </div>
+                </div>
+                <button
+                  className="sd-btn-docs"
+                  type="button"
+                  onClick={handleOpenDocumentUpload}
+                  disabled={hasApplication || inactive || submitting || submitSuccess}
+                >
+                  Dodaj dokumentaciju
+                </button>
+              </div>
+              {documentPanelOpen && (
+                <p className="sd-document-note">
+                  Dokumentaciju možete dodati u odvojenom koraku.
+                </p>
+              )}
+            </div>
+
+            <div className="sd-application-actions">
+              <button
+                className="sd-btn-modal-cancel"
+                type="button"
+                onClick={onCancel}
+                disabled={submitting}
+              >
+                Odustani
+              </button>
+              {canSubmit && (
+                <button
+                  className="sd-btn-apply"
+                  type="button"
+                  onClick={() => onSubmit(praksa)}
+                  disabled={submitting}
+                >
+                  {submitting ? 'Slanje prijave...' : 'Podnesi prijavu'}
+                </button>
+              )}
+            </div>
+          </section>
         </div>
       </div>
     </div>
@@ -364,6 +553,7 @@ export default function StudentDashboard() {
   const [praksaError, setPraksaError] = useState('');
 
   const [selectedPraksa, setSelectedPraksa] = useState(null);
+  const [applicationPraksa, setApplicationPraksa] = useState(null);
   const [search, setSearch] = useState('');
   const [filterTehs, setFilterTehs] = useState([]);
   const [filterTips, setFilterTips] = useState([]);
@@ -373,6 +563,10 @@ export default function StudentDashboard() {
 
   const [activeTab, setActiveTab] = useState('svi');
   const [favourites, setFavourites] = useState(new Set());
+  const [applications, setApplications] = useState([]);
+  const [applyLoadingId, setApplyLoadingId] = useState(null);
+  const [applyError, setApplyError] = useState('');
+  const [applySuccess, setApplySuccess] = useState('');
 
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -423,6 +617,19 @@ export default function StudentDashboard() {
       .catch(() => {});
     return () => { active = false; };
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    getMyApplications()
+      .then(data => { if (active) setApplications(data || []); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    setApplyError('');
+    setApplySuccess('');
+  }, [selectedPraksa?.id, applicationPraksa?.id]);
 
   function handleLogout() {
     logout();
@@ -542,6 +749,55 @@ export default function StudentDashboard() {
         else next.delete(oglasId);
         return next;
       });
+    }
+  }
+
+  function findApplicationForOglas(oglasId) {
+    return applications.find(app => applicationOglasId(app) === Number(oglasId));
+  }
+
+  function handleStartApplication(praksa) {
+    setApplyError('');
+    setApplySuccess('');
+    setSelectedPraksa(null);
+    setApplicationPraksa(praksa);
+  }
+
+  function handleReturnToDetailsFromApplication() {
+    const praksa = applicationPraksa;
+    setApplicationPraksa(null);
+    if (praksa) setSelectedPraksa(praksa);
+  }
+
+  async function handleApplyToPraksa(praksa) {
+    if (!praksa?.aktivan) {
+      setApplyError('Nije moguće prijaviti se na neaktivan oglas.');
+      setApplySuccess('');
+      return;
+    }
+
+    if (findApplicationForOglas(praksa.id)) {
+      setApplyError('Već ste se prijavili na ovaj oglas.');
+      setApplySuccess('');
+      return;
+    }
+
+    setApplyLoadingId(praksa.id);
+    setApplyError('');
+    setApplySuccess('');
+
+    try {
+      const result = await createApplication(praksa.id);
+      const createdApplication = result.application || result;
+      setApplications(prev => {
+        const alreadyStored = prev.some(app => applicationOglasId(app) === Number(praksa.id));
+        return alreadyStored ? prev : [createdApplication, ...prev];
+      });
+      setApplySuccess(result.message || 'Prijava je uspješno podnesena.');
+    } catch (err) {
+      setApplyError(err.message || 'Greška pri podnošenju prijave.');
+    } finally {
+      setApplyLoadingId(null);
     }
   }
 
@@ -962,6 +1218,7 @@ export default function StudentDashboard() {
                       onSelect={sel => setSelectedPraksa(sel)}
                       isFavourite={favourites.has(p.id)}
                       onToggleFavourite={toggleFavourite}
+                      application={findApplicationForOglas(p.id)}
                     />
                   ))
                 )}
@@ -975,6 +1232,21 @@ export default function StudentDashboard() {
         <PraksaModal
           praksa={selectedPraksa}
           onClose={() => setSelectedPraksa(null)}
+          existingApplication={findApplicationForOglas(selectedPraksa.id)}
+          onStartApplication={handleStartApplication}
+        />
+      )}
+
+      {applicationPraksa && (
+        <ApplicationModal
+          praksa={applicationPraksa}
+          onClose={() => setApplicationPraksa(null)}
+          onCancel={handleReturnToDetailsFromApplication}
+          existingApplication={findApplicationForOglas(applicationPraksa.id)}
+          onSubmit={handleApplyToPraksa}
+          submitting={applyLoadingId === applicationPraksa.id}
+          submitError={applyError}
+          submitSuccess={applySuccess}
         />
       )}
 
