@@ -59,8 +59,34 @@ async function getActiveListings(req, res) {
   }
 }
 
+async function updateListing(req, res) {
+  try {
+    const id = Number(req.params.id);
+    const { naziv, opis, brojMjesta, rokPrijave } = req.body;
+
+    if (!naziv || !opis || !brojMjesta || !rokPrijave) {
+      return res.status(400).json({ message: 'Naziv, opis, broj mjesta i rok prijave su obavezni.' });
+    }
+
+    if (!Number.isInteger(Number(brojMjesta)) || Number(brojMjesta) <= 0) {
+      return res.status(400).json({ message: 'Broj mjesta mora biti pozitivan broj.' });
+    }
+
+    if (new Date(rokPrijave) <= new Date()) {
+      return res.status(400).json({ message: 'Rok prijave mora biti u budućnosti.' });
+    }
+
+    const oglas = await listingsService.updateListing(id, req.body, req.user.id);
+
+    return res.json({ message: 'Oglas je uspješno ažuriran.', oglas });
+  } catch (err) {
+    return res.status(err.status || 500).json({ message: err.message });
+  }
+}
+
 module.exports = {
   createListing,
   getCompanyListings,
   getActiveListings,
+  updateListing,
 };

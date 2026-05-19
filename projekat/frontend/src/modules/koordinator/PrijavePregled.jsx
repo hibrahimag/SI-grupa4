@@ -4,6 +4,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { koordinatorService } from '../../services/koordinatorService';
 import PrijavaDetalji from './PrijavaDetalji';
+import { formatDate } from '../../data/mockPrakse';
 
 const STATUS_LABELS = {
   na_cekanju_koordinatora: { label: 'Na čekanju',  cls: 'kd-status--cekanje'   },
@@ -126,7 +127,7 @@ export default function PrijavePregled({ filterStatus = 'na_cekanju_koordinatora
                         <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-muted)' }}>{komp?.naziv || ''}</div>
                       </td>
                       <td style={{ color: 'var(--color-muted)', fontSize: 'var(--font-size-sm)' }}>
-                        {new Date(p.createdAt).toLocaleDateString('bs-BA')}
+                        {formatDate(p.createdAt)}
                       </td>
                       <td>{statusBadge(p.status)}</td>
                       <td>

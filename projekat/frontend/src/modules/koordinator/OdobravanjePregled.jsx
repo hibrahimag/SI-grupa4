@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { koordinatorService } from '../../services/koordinatorService';
+import { formatDate } from '../../data/mockPrakse';
 
 export default function OdobravanjePregled() {
   const [zahtjevi, setZahtjevi] = useState([]);
@@ -119,7 +120,7 @@ export default function OdobravanjePregled() {
                   </td>
                   <td style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-muted)' }}>
                     {z.created_at || z.createdAt
-                      ? new Date(z.created_at || z.createdAt).toLocaleDateString('bs-BA')
+                      ? formatDate(z.created_at || z.createdAt)
                       : '—'}
                   </td>
                   <td>
