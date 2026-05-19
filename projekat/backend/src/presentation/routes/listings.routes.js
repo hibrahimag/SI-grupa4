@@ -31,6 +31,14 @@ router.get(
   listingsController.getCompanyListings
 );
 
+// Ažuriranje oglasa
+router.put(
+  '/:id',
+  authenticate,
+  authorize('COMPANY'),
+  listingsController.updateListing
+);
+
 
 
 module.exports = router;

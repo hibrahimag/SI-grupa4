@@ -7,6 +7,7 @@ import { getCompanyProfile, updateCompanyProfile } from '../services/companyProf
 import { checkCompanyDeactivation, deactivateCompanyAccount, deleteMyCompanyAccount } from '../services/userService';
 import './KompanijaDashboard.css';
 import { createListing, getCompanyListings } from '../services/listingsService';
+import EditOglas from '../modules/listings/EditOglas';
 
 const VIEWS = {
   DASHBOARD: 'dashboard',
@@ -58,6 +59,8 @@ export default function KompanijaDashboard() {
 
   const { darkMode, setDarkMode } = useTheme();
   const navigate = useNavigate();
+
+  const [editingListing, setEditingListing] = useState(null);
 
   const companyName = companyProfile?.naziv || user?.institution || user?.ime || 'Kompanija';
 
@@ -371,10 +374,11 @@ export default function KompanijaDashboard() {
             listingsLoading={listingsLoading}
             listingsError={listingsError}
             onOpenView={openView}
+            onEdit={(l) => setEditingListing(l)}
           />
         )}
         {view === VIEWS.LISTINGS && (
-          <ListingsShell listings={listings} loading={listingsLoading} error={listingsError} onOpenView={openView} />
+          <ListingsShell listings={listings} loading={listingsLoading} error={listingsError} onOpenView={openView} onEdit={(l) => setEditingListing(l)} />
         )}
         {view === VIEWS.CREATE_LISTING && (
           <CreateListingShell
@@ -486,11 +490,28 @@ export default function KompanijaDashboard() {
           onCancel={() => { setShowDeleteConfirm(false); setDeleteCheck(null); setDeleteError(''); }}
         />
       )}
+      {editingListing && (
+        <div className="cd-modal-overlay" role="dialog" aria-modal="true">
+          <div className="cd-modal-sheet">
+            <EditOglas
+              initial={editingListing}
+              onCancel={() => setEditingListing(null)}
+              onUpdated={(updated) => {
+                const og = updated?.oglas || updated;
+                if (og) {
+                  setListings((current) => current.map((l) => (l.id === og.id ? og : l)));
+                }
+                setEditingListing(null);
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-function DashboardShell({ listings, listingsLoading, listingsError, onOpenView }) {
+function DashboardShell({ listings, listingsLoading, listingsError, onOpenView, onEdit }) {
   const activeListings = listings.filter((l) => l.status === 'AKTIVAN').length;
   const stats = [
     {
@@ -519,12 +540,12 @@ function DashboardShell({ listings, listingsLoading, listingsError, onOpenView }
         ))}
       </section>
 
-      <ListingsShell listings={listings} loading={listingsLoading} error={listingsError} onOpenView={onOpenView} />
+      <ListingsShell listings={listings} loading={listingsLoading} error={listingsError} onOpenView={onOpenView} onEdit={onEdit} />
     </div>
   );
 }
 
-function ListingsShell({ listings = [], loading = false, error = '', onOpenView }) {
+function ListingsShell({ listings = [], loading = false, error = '', onOpenView, onEdit }) {
   return (
     <section className="cd-section">
       <div className="cd-section-header">
@@ -554,6 +575,11 @@ function ListingsShell({ listings = [], loading = false, error = '', onOpenView 
                 </span>
                 <span className="cd-listing-date">Rok: {formatListingDate(listing.rokPrijave)}</span>
                 <span className="cd-listing-date">Objava: {formatListingDate(listing.datumObjave)}</span>
+                <div style={{marginTop: '10px', display: 'flex', gap: '8px'}}>
+                  {listing.status === 'AKTIVAN' && (
+                    <button className="cd-btn cd-btn--secondary" onClick={(e) => { e.stopPropagation(); if (onEdit) onEdit(listing); }}>Uredi</button>
+                  )}
+                </div>
               </div>
             </article>
           ))}
