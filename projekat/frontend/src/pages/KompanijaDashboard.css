@@ -1379,6 +1379,20 @@
   color: var(--color-warning);
 }
 
+.cd-modal-sheet {
+  background: var(--color-surface);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.2);
+  width: min(100%, 980px);
+  max-height: calc(100vh - 64px);
+  overflow: auto;
+  padding: 24px;
+}
+
+.cd-modal-sheet .cd-profile-form {
+  margin: 0;
+}
+
 .cd-confirm-title {
   margin: 0;
   font-size: var(--font-size-md);

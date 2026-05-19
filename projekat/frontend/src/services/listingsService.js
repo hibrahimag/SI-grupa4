@@ -14,3 +14,10 @@ export async function getCompanyListings() {
 export async function getActiveListings() {
   return apiRequest('/listings/active');
 }
+
+export async function updateListing(id, data) {
+  return apiRequest(`/listings/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
