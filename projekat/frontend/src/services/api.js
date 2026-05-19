@@ -36,4 +36,19 @@ export async function updateStudentProfile(data) {
     body: JSON.stringify(data),
   });
 }
+
+export async function getMyDocuments() {
+  return apiRequest('/dokumenti/mine');
+}
+
+export async function deleteDocument(id) {
+  return apiRequest(`/dokumenti/${id}`, { method: 'DELETE' });
+}
+
+export async function attachDocumentsToOglas(oglasId, dokumentIds) {
+  return apiRequest('/dokumenti/attach', {
+    method: 'POST',
+    body: JSON.stringify({ oglas_id: oglasId, dokument_ids: dokumentIds }),
+  });
+}
  

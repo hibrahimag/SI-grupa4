@@ -8,6 +8,7 @@ import { checkCompanyDeactivation, deactivateCompanyAccount, deleteMyCompanyAcco
 import './KompanijaDashboard.css';
 import { createListing, getCompanyListings } from '../services/listingsService';
 import EditOglas from '../modules/listings/EditOglas';
+import { formatDate } from '../data/mockPrakse';
 
 const VIEWS = {
   DASHBOARD: 'dashboard',
@@ -573,8 +574,8 @@ function ListingsShell({ listings = [], loading = false, error = '', onOpenView,
                 <span className={`cd-listing-status cd-listing-status--${String(listing.status || '').toLowerCase()}`}>
                   {listing.status || 'Status'}
                 </span>
-                <span className="cd-listing-date">Rok: {formatListingDate(listing.rokPrijave)}</span>
-                <span className="cd-listing-date">Objava: {formatListingDate(listing.datumObjave)}</span>
+                <span className="cd-listing-date">Rok: {formatDate(listing.rokPrijave)}</span>
+                <span className="cd-listing-date">Objava: {formatDate(listing.datumObjave)}</span>
                 <div style={{marginTop: '10px', display: 'flex', gap: '8px'}}>
                   {listing.status === 'AKTIVAN' && (
                     <button className="cd-btn cd-btn--secondary" onClick={(e) => { e.stopPropagation(); if (onEdit) onEdit(listing); }}>Uredi</button>
@@ -745,12 +746,6 @@ function CreateListingShell({ onCancel, onCreated }) {
   );
 }
 
-function formatListingDate(value) {
-  if (!value) return 'Nije uneseno';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return 'Nije uneseno';
-  return date.toLocaleDateString('bs-BA');
-}
 
 
 function DeactivateModal({ check, deactivating, onConfirm, onCancel }) {

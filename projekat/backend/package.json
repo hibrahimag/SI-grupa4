@@ -8,7 +8,8 @@
     "start": "node src/server.js",
     "lint": "eslint src --ext .js",
     "test": "jest --testPathPattern=\\.test\\.js$",
-    "test:integration": "jest --testPathPattern=\\.integration\\.test\\.js$"
+    "test:integration": "jest --testPathPattern=\\.integration\\.test\\.js$",
+    "test:integration:coverage": "jest --testPathPattern=\\.integration\\.test\\.js$ --coverage"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

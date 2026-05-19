@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { koordinatorService } from '../../services/koordinatorService';
+import { formatDate } from '../../data/mockPrakse';
 
 const STATUS_MAP = {
   aktivna:  { label: 'Aktivna',  cls: 'kd-status--aktivna'  },
@@ -213,7 +214,7 @@ function PraksaDetaljiPanel({ praksa, onClose }) {
                   padding: 'var(--space-2) var(--space-3)',
                 }}>
                   <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-muted)' }}>
-                    {new Date(a.createdAt).toLocaleDateString('bs-BA')}
+                    {formatDate(a.createdAt)}
                   </div>
                   <div style={{ fontSize: 'var(--font-size-sm)' }}>{a.opis || '—'}</div>
                 </div>

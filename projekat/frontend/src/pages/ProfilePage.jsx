@@ -1,9 +1,10 @@
 // frontend/src/pages/ProfilePage.jsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getMyProfile, updateStudentProfile } from '../services/api';
+import { getMyProfile, updateStudentProfile, getMyDocuments, deleteDocument } from '../services/api';
 import { getCompanyProfile, updateCompanyProfile } from '../services/companyProfile.service';
+import { formatDate } from '../data/mockPrakse';
 import './ProfilePage.css';
 
 const ROLE_LABELS = {
@@ -64,6 +65,218 @@ function Toast({ message, type, onClose }) {
     return () => clearTimeout(t);
   }, [onClose]);
   return <div className={`pf-toast pf-toast--${type}`}>{message}</div>;
+}
+
+const DOC_TYPE_LABELS = {
+  CV: 'CV',
+  MOTIVACIONO_PISMO: 'Motivaciono pismo',
+  OSTALO: 'Ostalo',
+};
+
+function formatSize(bytes) {
+  if (!bytes) return '';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function DocIcon({ mime }) {
+  const isPdf = mime?.includes('pdf');
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
+      style={{ color: isPdf ? '#dc2626' : '#1a6fd4', flexShrink: 0 }}>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+      <polyline points="14 2 14 8 20 8"/>
+      {isPdf
+        ? <text x="6" y="18" fontSize="5" fontWeight="700" stroke="none" fill="#dc2626">PDF</text>
+        : <text x="5" y="18" fontSize="4.5" fontWeight="700" stroke="none" fill="#1a6fd4">DOC</text>
+      }
+    </svg>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// DOCUMENTS SECTION
+// ─────────────────────────────────────────────────────────────
+function DocumentsSection() {
+  const [docs, setDocs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [deleting, setDeleting] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadMsg, setUploadMsg] = useState('');
+  const fileInputRef = useRef(null);
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [tipMap, setTipMap] = useState({});
+
+  useEffect(() => { load(); }, []);
+
+  async function load() {
+    setLoading(true);
+    setError('');
+    try {
+      const data = await getMyDocuments();
+      setDocs(data || []);
+    } catch {
+      setError('Greška pri učitavanju dokumenata.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleDelete(id) {
+    setDeleting(id);
+    try {
+      await deleteDocument(id);
+      setDocs(prev => prev.filter(d => d.id !== id));
+    } catch {
+      setError('Greška pri brisanju dokumenta.');
+    } finally {
+      setDeleting(null);
+    }
+  }
+
+  function handleFileChange(e) {
+    const files = Array.from(e.target.files);
+    setSelectedFiles(files);
+    const map = {};
+    files.forEach(f => { map[f.name] = 'CV'; });
+    setTipMap(map);
+    setUploadMsg('');
+  }
+
+  async function handleUpload() {
+    if (!selectedFiles.length) return;
+    setUploading(true);
+    setUploadMsg('');
+    try {
+      const formData = new FormData();
+      selectedFiles.forEach(f => {
+        formData.append('files', f);
+        formData.append('tip_dokumenta', tipMap[f.name] || 'CV');
+      });
+      const token = sessionStorage.getItem('token');
+      const res = await fetch('/api/dokumenti/upload', {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || 'Greška pri uploadu.');
+      setUploadMsg('Dokumenti uspješno dodani.');
+      setSelectedFiles([]);
+      setTipMap({});
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      await load();
+    } catch (err) {
+      setUploadMsg(err.message);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <div className="pf-card">
+      <div className="pf-docs-header">
+        <h2 className="pf-section-title" style={{ margin: 0 }}>Moji dokumenti</h2>
+        <button className="pf-btn pf-btn--secondary pf-docs-add-btn"
+          onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Dodaj dokument
+        </button>
+      </div>
+
+      <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx" multiple
+        style={{ display: 'none' }} onChange={handleFileChange} />
+
+      {selectedFiles.length > 0 && (
+        <div className="pf-docs-upload-panel">
+          {selectedFiles.map(f => (
+            <div key={f.name} className="pf-docs-upload-row">
+              <span className="pf-docs-upload-name">{f.name}</span>
+              <select className="pf-docs-tip-select"
+                value={tipMap[f.name] || 'CV'}
+                onChange={e => setTipMap(prev => ({ ...prev, [f.name]: e.target.value }))}>
+                <option value="CV">CV</option>
+                <option value="MOTIVACIONO_PISMO">Motivaciono pismo</option>
+                <option value="OSTALO">Ostalo</option>
+              </select>
+            </div>
+          ))}
+          {uploadMsg && <p className={`pf-docs-msg${uploadMsg.includes('Greška') ? ' pf-docs-msg--error' : ' pf-docs-msg--success'}`}>{uploadMsg}</p>}
+          <div className="pf-docs-upload-actions">
+            <button className="pf-btn pf-btn--secondary" onClick={() => { setSelectedFiles([]); setTipMap({}); if (fileInputRef.current) fileInputRef.current.value = ''; }}>
+              Otkaži
+            </button>
+            <button className="pf-btn pf-btn--primary" onClick={handleUpload} disabled={uploading}>
+              {uploading ? 'Upload...' : 'Potvrdi upload'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {error && <p className="pf-docs-msg pf-docs-msg--error">{error}</p>}
+
+      {loading ? (
+        <p className="pf-state-msg">Učitavanje dokumenata…</p>
+      ) : docs.length === 0 ? (
+        <p className="pf-state-msg">Nema uploadovanih dokumenata.</p>
+      ) : (
+        <ul className="pf-docs-list">
+          {docs.map(doc => (
+            <li key={doc.id} className="pf-doc-item">
+              <DocIcon mime={doc.mime_path} />
+              <div className="pf-doc-info">
+                <span className="pf-doc-name">{doc.original_name}</span>
+                <div className="pf-doc-meta">
+                  <span className="pf-doc-type-badge">{DOC_TYPE_LABELS[doc.tip_dokumenta] || doc.tip_dokumenta}</span>
+                  {doc.size && <span className="pf-doc-size">{formatSize(doc.size)}</span>}
+                  {doc.created_at && (
+                    <span className="pf-doc-date">
+                      {formatDate(doc.created_at)}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="pf-doc-actions">
+                <a
+                  href={`/uploads/dokumenti/${doc.file_name}`}
+                  download={doc.original_name}
+                  className="pf-btn pf-btn--secondary pf-doc-download-btn"
+                  title="Preuzmi"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                  </svg>
+                </a>
+                <button className="pf-btn pf-doc-delete-btn"
+                  onClick={() => handleDelete(doc.id)}
+                  disabled={deleting === doc.id}
+                  title="Obriši">
+                  {deleting === doc.id
+                    ? <span className="pf-spinner" aria-hidden="true" />
+                    : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="3 6 5 6 21 6"/>
+                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                        <path d="M10 11v6"/><path d="M14 11v6"/>
+                        <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                      </svg>
+                  }
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -271,7 +484,7 @@ function StudentProfile({ profile, onProfileReload, authUser, login }) {
               <div className="pf-info-item">
                 <span className="pf-info-label">Nalog kreiran</span>
                 <span className="pf-info-value">
-                  {new Date(profile.created_at).toLocaleDateString('bs-BA')}
+                  {formatDate(profile.created_at)}
                 </span>
               </div>
             </div>
@@ -301,6 +514,8 @@ function StudentProfile({ profile, onProfileReload, authUser, login }) {
               </div>
             </div>
           )}
+
+          <DocumentsSection />
         </>
       )}
     </>
@@ -579,7 +794,7 @@ function ReadOnlyProfile({ profile }) {
           <div className="pf-info-item">
             <span className="pf-info-label">Nalog kreiran</span>
             <span className="pf-info-value">
-              {new Date(profile.created_at).toLocaleDateString('bs-BA')}
+              {formatDate(profile.created_at)}
             </span>
           </div>
         </div>

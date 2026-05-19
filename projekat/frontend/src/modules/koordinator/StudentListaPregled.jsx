@@ -1,6 +1,7 @@
 // StudentListaPregled.jsx
 import { useState, useEffect, useCallback } from 'react';
 import { koordinatorService } from '../../services/koordinatorService';
+import { formatDate } from '../../data/mockPrakse';
 
 const STATUS_MAP = {
   PODNESENA:     { label: 'Podnesena',     cls: 'kd-status--cekanje'     },
@@ -339,7 +340,7 @@ function PrijavaKartica({ prijava, highlight }) {
       </div>
       <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-muted)' }}>
         {kompNaziv && <span>{kompNaziv} · </span>}
-        {prijava.datumPrijave && new Date(prijava.datumPrijave).toLocaleDateString('bs-BA')}
+        {prijava.datumPrijave && formatDate(prijava.datumPrijave)}
       </div>
     </div>
   );

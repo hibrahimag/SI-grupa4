@@ -1,5 +1,6 @@
 'use strict';
 
+const { Op } = require('sequelize');
 const { Oglas, Kompanija, User, PrijavaNaPraksu } = require('../../infrastructure/database/models');
 
 async function createListing(data, userId) {
@@ -82,7 +83,7 @@ async function getListingsByCompany(userId) {
 
 async function getActiveListings() {
   return Oglas.findAll({
-    where: { status: 'AKTIVAN' },
+    where: { status: 'AKTIVAN', rokPrijave: { [Op.gt]: new Date() } },
     include: [{
       model: Kompanija,
       attributes: ['id', 'naziv', 'kontaktOsoba'],

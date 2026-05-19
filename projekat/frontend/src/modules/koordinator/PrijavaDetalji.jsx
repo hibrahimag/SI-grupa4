@@ -5,6 +5,7 @@
 
 import { useState, useEffect } from 'react';
 import { koordinatorService } from '../../services/koordinatorService';
+import { formatDate } from '../../data/mockPrakse';
 
 const STATUS_LABELS = {
   na_cekanju_koordinatora: { label: 'Na čekanju koordinatora', cls: 'kd-status--cekanje'    },
@@ -107,7 +108,7 @@ export default function PrijavaDetaljiModal({ prijavaId, onClose, onOdluka }) {
                     <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-muted)' }}>Status:</span>
                     {statusBadge(prijava.status)}
                     <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-faint)', marginLeft: 'auto' }}>
-                      Prijavljeno: {new Date(prijava.createdAt).toLocaleDateString('bs-BA')}
+                      Prijavljeno: {formatDate(prijava.createdAt)}
                     </span>
                   </div>
 
@@ -215,7 +216,7 @@ export default function PrijavaDetaljiModal({ prijavaId, onClose, onOdluka }) {
                           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
                             <span className="kd-status kd-status--odobrena">Generisan</span>
                             <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-muted)' }}>
-                              {new Date(ugovor.createdAt).toLocaleDateString('bs-BA')}
+                              {formatDate(ugovor.createdAt)}
                             </span>
                           </div>
                         ) : (
@@ -260,7 +261,7 @@ export default function PrijavaDetaljiModal({ prijavaId, onClose, onOdluka }) {
                                 padding: 'var(--space-3) var(--space-4)',
                               }}>
                                 <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-muted)', marginBottom: 4 }}>
-                                  {new Date(a.createdAt).toLocaleDateString('bs-BA')}
+                                  {formatDate(a.createdAt)}
                                 </div>
                                 <div style={{ fontSize: 'var(--font-size-base)' }}>{a.opis || '—'}</div>
                               </div>

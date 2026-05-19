@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { checkDeactivation, deactivateAccount, deleteMyAccount } from '../services/userService';
 import { getActiveListings } from '../services/listingsService';
 import { getMyApplications, createApplication } from '../services/applicationsService';
+import { getMyDocuments, attachDocumentsToOglas } from '../services/api';
 import { getFavourites, addFavourite, removeFavourite } from '../services/favouritesService';
 import {
   formatDate, relativeDate, trajanjeLabel, mjestLabel, deadlineInfo,
@@ -407,6 +408,8 @@ function PraksaModal({
   );
 }
 
+const DOC_TYPE_LABELS_SD = { CV: 'CV', MOTIVACIONO_PISMO: 'Mot. pismo', OSTALO: 'Ostalo' };
+
 function ApplicationModal({
   praksa,
   onClose,
@@ -417,10 +420,16 @@ function ApplicationModal({
   submitError,
   submitSuccess,
 }) {
-  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [existingDocs, setExistingDocs] = useState([]);
+  const [selectedExistingIds, setSelectedExistingIds] = useState(new Set());
+  const [attachingExisting, setAttachingExisting] = useState(false);
+  const [attachMsg, setAttachMsg] = useState('');
+
+  const [showNewUpload, setShowNewUpload] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [uploadMessage, setUploadMessage] = useState('');
+
   const inactive = !praksa.aktivan;
   const hasApplication = Boolean(existingApplication);
   const alreadyApplied = hasApplication && !submitSuccess;
@@ -428,6 +437,7 @@ function ApplicationModal({
     ? applicationStatusLabel(existingApplication?.status || 'PODNESENA')
     : 'Nije podnesena';
   const canSubmit = !hasApplication && !inactive && !submitSuccess;
+  const docsDisabled = hasApplication || inactive || submitting || submitSuccess;
 
   useEffect(() => {
     function onKey(e) { if (e.key === 'Escape') onClose(); }
@@ -435,42 +445,84 @@ function ApplicationModal({
     return () => document.removeEventListener('keydown', onKey);
   }, [onClose]);
 
-  function handleOpenDocumentUpload() {
-    setUploadMessage('');
-    setShowUploadModal(true);
+  useEffect(() => {
+    let active = true;
+    getMyDocuments()
+      .then(data => { if (active) setExistingDocs(data || []); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, []);
+
+  // Unique docs by file_name (keep most recent upload per file)
+  const uniqueDocs = useMemo(() => {
+    const seen = new Map();
+    for (const d of existingDocs) {
+      const existing = seen.get(d.file_name);
+      if (!existing || new Date(d.created_at) > new Date(existing.created_at)) {
+        seen.set(d.file_name, d);
+      }
+    }
+    return [...seen.values()];
+  }, [existingDocs]);
+
+  // file_names already attached to this specific oglas
+  const attachedFileNames = useMemo(() =>
+    new Set(existingDocs
+      .filter(d => Number(d.oglas_id) === Number(praksa.id))
+      .map(d => d.file_name)
+    ), [existingDocs, praksa.id]);
+
+  function toggleExistingDoc(id, fileName) {
+    if (attachedFileNames.has(fileName)) return;
+    setSelectedExistingIds(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+    setAttachMsg('');
+  }
+
+  async function handleAttachExisting() {
+    if (!selectedExistingIds.size) return;
+    setAttachingExisting(true);
+    setAttachMsg('');
+    try {
+      await attachDocumentsToOglas(praksa.id, [...selectedExistingIds]);
+      const fresh = await getMyDocuments();
+      setExistingDocs(fresh || []);
+      setSelectedExistingIds(new Set());
+      setAttachMsg('success:Dokumenti uspješno priloženi.');
+    } catch (err) {
+      setAttachMsg('error:' + (err.message || 'Greška pri prilaganju.'));
+    } finally {
+      setAttachingExisting(false);
+    }
   }
 
   async function handleUpload() {
-    if (selectedFiles.length === 0) {
+    if (!selectedFiles.length) {
       setUploadMessage('Odaberite barem jedan dokument.');
       return;
     }
-
+    setUploading(true);
+    setUploadMessage('');
     try {
-      setUploading(true);
-      setUploadMessage('');
-
       const formData = new FormData();
       formData.append('oglas_id', praksa.id);
-
       selectedFiles.forEach(item => {
         formData.append('files', item.file);
         formData.append('tip_dokumenta', item.tip);
       });
-
       const token = sessionStorage.getItem('token');
       const response = await fetch('/api/dokumenti/upload', {
         method: 'POST',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData,
       });
-
       const data = await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Greška pri uploadu.');
-      }
-
+      if (!response.ok) throw new Error(data.message || 'Greška pri uploadu.');
+      const fresh = await getMyDocuments();
+      setExistingDocs(fresh || []);
       setUploadMessage(data.message || 'Dokumenti uspješno uploadovani!');
       setSelectedFiles([]);
     } catch (err) {
@@ -479,6 +531,12 @@ function ApplicationModal({
       setUploading(false);
     }
   }
+
+  const [attachOk, attachErr] = attachMsg.startsWith('success:')
+    ? [attachMsg.slice(8), '']
+    : attachMsg.startsWith('error:')
+      ? ['', attachMsg.slice(6)]
+      : ['', ''];
 
   return (
     <div className="sd-modal-overlay" onClick={onClose}>
@@ -497,26 +555,10 @@ function ApplicationModal({
         <div className="sd-modal-body">
           {(inactive || alreadyApplied || submitError || submitSuccess) && (
             <div className="sd-application-messages">
-              {inactive && (
-                <p className="sd-application-message sd-application-message--error">
-                  Nije moguće prijaviti se na neaktivan oglas.
-                </p>
-              )}
-              {alreadyApplied && (
-                <p className="sd-application-message sd-application-message--info">
-                  Već ste se prijavili na ovaj oglas.
-                </p>
-              )}
-              {submitError && (
-                <p className="sd-application-message sd-application-message--error">
-                  {submitError}
-                </p>
-              )}
-              {submitSuccess && (
-                <p className="sd-application-message sd-application-message--success">
-                  {submitSuccess}
-                </p>
-              )}
+              {inactive && <p className="sd-application-message sd-application-message--error">Nije moguće prijaviti se na neaktivan oglas.</p>}
+              {alreadyApplied && <p className="sd-application-message sd-application-message--info">Već ste se prijavili na ovaj oglas.</p>}
+              {submitError && <p className="sd-application-message sd-application-message--error">{submitError}</p>}
+              {submitSuccess && <p className="sd-application-message sd-application-message--success">{submitSuccess}</p>}
             </div>
           )}
 
@@ -532,121 +574,304 @@ function ApplicationModal({
               </span>
             </div>
 
+            {/* ── Dokumentacija ── */}
             <div className="sd-application-docs">
               <p className="sd-application-subtitle">Dokumentacija</p>
-              <div className="sd-document-hook">
+
+              {/* Existing docs */}
+              {uniqueDocs.length > 0 && (
+                <div className="sd-existing-docs">
+                  <p className="sd-existing-docs-label">Odaberi iz postojećih dokumenata</p>
+                  <ul className="sd-existing-docs-list">
+                    {uniqueDocs.map(doc => {
+                      const alreadyAttached = attachedFileNames.has(doc.file_name);
+                      const isSelected = selectedExistingIds.has(doc.id);
+                      return (
+                        <li
+                          key={doc.id}
+                          className={`sd-existing-doc-item${alreadyAttached ? ' sd-existing-doc-item--attached' : ''}${isSelected ? ' sd-existing-doc-item--selected' : ''}`}
+                          onClick={() => !docsDisabled && !alreadyAttached && toggleExistingDoc(doc.id, doc.file_name)}
+                        >
+                          <span className="sd-existing-doc-check">
+                            {alreadyAttached
+                              ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                              : <span className={`sd-existing-doc-checkbox${isSelected ? ' sd-existing-doc-checkbox--checked' : ''}`} />
+                            }
+                          </span>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ color: doc.mime_path?.includes('pdf') ? '#dc2626' : '#1a6fd4', flexShrink: 0 }}>
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                          </svg>
+                          <span className="sd-existing-doc-name">{doc.original_name}</span>
+                          <span className="sd-existing-doc-type">{DOC_TYPE_LABELS_SD[doc.tip_dokumenta] || doc.tip_dokumenta}</span>
+                          {alreadyAttached && <span className="sd-existing-doc-attached-label">Priloženo</span>}
+                        </li>
+                      );
+                    })}
+                  </ul>
+
+                  {attachOk && <p className="sd-upload-message sd-upload-message--success">{attachOk}</p>}
+                  {attachErr && <p className="sd-upload-message sd-upload-message--error">{attachErr}</p>}
+
+                  {selectedExistingIds.size > 0 && !docsDisabled && (
+                    <button className="sd-btn-docs" type="button" onClick={handleAttachExisting} disabled={attachingExisting}>
+                      {attachingExisting ? 'Prilaganje...' : `Priloži odabrane (${selectedExistingIds.size})`}
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* New file upload */}
+              <div className="sd-document-hook" style={{ marginTop: uniqueDocs.length > 0 ? '12px' : 0 }}>
                 <div className="sd-document-hook-text">
                   <Upload size={20} strokeWidth={2.4} />
                   <div>
-                    <span>Dokumentaciju možete priložiti uz prijavu.</span>
-                    <small>CV, motivaciono pismo ili drugi dokumenti.</small>
+                    <span>Dodaj novi dokument</span>
+                    <small>PDF, DOC ili DOCX, max 5 MB</small>
                   </div>
                 </div>
-                <button
-                  className="sd-btn-docs"
-                  type="button"
-                  onClick={handleOpenDocumentUpload}
-                  disabled={hasApplication || inactive || submitting || submitSuccess}
-                >
-                  Dodaj dokumentaciju
+                <button className="sd-btn-docs" type="button"
+                  onClick={() => { setUploadMessage(''); setShowNewUpload(v => !v); }}
+                  disabled={docsDisabled}>
+                  {showNewUpload ? 'Zatvori' : 'Odaberi fajl'}
                 </button>
               </div>
-              {showUploadModal && (
-                <div className="sd-upload-overlay" onClick={e => e.stopPropagation()}>
-                  <div className="sd-upload-modal">
-                    <h2>Upload dokumentacije</h2>
 
-                    <p className="sd-upload-text">
-                      Dodajte CV ili motivaciono pismo za prijavu.
-                    </p>
-
-                    <input
-                      type="file"
-                      accept=".pdf,.doc,.docx"
-                      multiple
-                      onChange={(e) => {
-                        const files = Array.from(e.target.files).map(file => ({
-                          file,
-                          tip: 'CV',
-                        }));
-                        setSelectedFiles(files);
-                        setUploadMessage('');
-                      }}
-                    />
-
-                    {selectedFiles.map((item, index) => (
-                      <div key={`${item.file.name}-${index}`} className="sd-file-row">
-                        <span>{item.file.name}</span>
-
-                        <select
-                          value={item.tip}
-                          onChange={(e) => {
-                            const updated = [...selectedFiles];
-                            updated[index] = { ...updated[index], tip: e.target.value };
-                            setSelectedFiles(updated);
-                          }}
-                        >
-                          <option value="CV">CV</option>
-                          <option value="MOTIVACIONO_PISMO">Motivaciono pismo</option>
-                          <option value="OSTALO">Ostalo</option>
-                        </select>
-                      </div>
-                    ))}
-
-                    {uploadMessage && (
-                      <p className="sd-upload-message">
-                        {uploadMessage}
-                      </p>
-                    )}
-
+              {showNewUpload && (
+                <div className="sd-new-upload-panel">
+                  <input type="file" accept=".pdf,.doc,.docx" multiple
+                    onChange={e => {
+                      setSelectedFiles(Array.from(e.target.files).map(file => ({ file, tip: 'CV' })));
+                      setUploadMessage('');
+                    }}
+                  />
+                  {selectedFiles.map((item, index) => (
+                    <div key={`${item.file.name}-${index}`} className="sd-file-row">
+                      <span>{item.file.name}</span>
+                      <select value={item.tip} onChange={e => {
+                        const updated = [...selectedFiles];
+                        updated[index] = { ...updated[index], tip: e.target.value };
+                        setSelectedFiles(updated);
+                      }}>
+                        <option value="CV">CV</option>
+                        <option value="MOTIVACIONO_PISMO">Motivaciono pismo</option>
+                        <option value="OSTALO">Ostalo</option>
+                      </select>
+                    </div>
+                  ))}
+                  {uploadMessage && <p className="sd-upload-message">{uploadMessage}</p>}
+                  {selectedFiles.length > 0 && (
                     <div className="sd-upload-actions">
-                      <button
-                        className="sd-btn-apply"
-                        type="button"
-                        onClick={handleUpload}
-                        disabled={uploading}
-                      >
+                      <button className="sd-btn-modal-cancel" type="button" onClick={() => setSelectedFiles([])}>Poništi</button>
+                      <button className="sd-btn-apply" type="button" onClick={handleUpload} disabled={uploading}>
                         {uploading ? 'Upload...' : 'Pošalji dokumente'}
                       </button>
-
-                      <button
-                        className="sd-btn-modal-cancel"
-                        type="button"
-                        onClick={() => {
-                          setShowUploadModal(false);
-                          setUploadMessage('');
-                        }}
-                      >
-                        Otkaži
-                      </button>
                     </div>
-                  </div>
+                  )}
                 </div>
               )}
             </div>
 
             <div className="sd-application-actions">
-              <button
-                className="sd-btn-modal-cancel"
-                type="button"
-                onClick={onCancel}
-                disabled={submitting}
-              >
+              <button className="sd-btn-modal-cancel" type="button" onClick={onCancel} disabled={submitting}>
                 Odustani
               </button>
               {canSubmit && (
-                <button
-                  className="sd-btn-apply"
-                  type="button"
-                  onClick={() => onSubmit(praksa)}
-                  disabled={submitting}
-                >
+                <button className="sd-btn-apply" type="button" onClick={() => onSubmit(praksa)} disabled={submitting}>
                   {submitting ? 'Slanje prijave...' : 'Podnesi prijavu'}
                 </button>
               )}
             </div>
           </section>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ── MyApplicationsPanel ───────────────────────────────────────────────────
+function MyApplicationsPanel({ applications, prakse, onViewOglas }) {
+  const [activeFilter, setActiveFilter] = useState(null);
+
+  const total = applications.length;
+  const pending = applications.filter(a => a.status === 'PODNESENA' || a.status === 'U_RAZMATRANJU').length;
+  const approved = applications.filter(a => a.status === 'ODOBRENA').length;
+  const rejected = applications.filter(a => a.status === 'ODBIJENA' || a.status === 'ODUSTAO').length;
+
+  function toggleFilter(filter) {
+    setActiveFilter(prev => prev === filter ? null : filter);
+  }
+
+  const visibleApplications = activeFilter === 'pending'
+    ? applications.filter(a => a.status === 'PODNESENA' || a.status === 'U_RAZMATRANJU')
+    : activeFilter === 'approved'
+      ? applications.filter(a => a.status === 'ODOBRENA')
+      : activeFilter === 'rejected'
+        ? applications.filter(a => a.status === 'ODBIJENA' || a.status === 'ODUSTAO')
+        : applications;
+
+  function isRecentChange(app) {
+    if (!app.updatedAt || app.status === 'PODNESENA') return false;
+    return Date.now() - new Date(app.updatedAt).getTime() < 7 * 24 * 60 * 60 * 1000;
+  }
+
+  if (total === 0) {
+    return (
+      <div className="sd-empty">
+        <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+        </svg>
+        <p className="sd-empty-title">Nema prijava</p>
+        <p className="sd-empty-sub">Prijavite se na praksu da vidite status ovdje.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="sd-apps-panel">
+      <div className="sd-apps-stats">
+        <div
+          className={`sd-apps-stat${activeFilter === null ? ' sd-apps-stat--all-active' : ''}`}
+          onClick={() => setActiveFilter(null)}
+          role="button" tabIndex={0}
+        >
+          <span className="sd-apps-stat-value">{total}</span>
+          <span className="sd-apps-stat-label">Ukupno</span>
+        </div>
+        <div
+          className={`sd-apps-stat sd-apps-stat--clickable${activeFilter === 'pending' ? ' sd-apps-stat--active-info' : ''}`}
+          onClick={() => toggleFilter('pending')}
+          role="button" tabIndex={0}
+        >
+          <span className="sd-apps-stat-value sd-apps-stat-value--info">{pending}</span>
+          <span className="sd-apps-stat-label">Na čekanju</span>
+        </div>
+        <div
+          className={`sd-apps-stat sd-apps-stat--clickable${activeFilter === 'approved' ? ' sd-apps-stat--active-success' : ''}`}
+          onClick={() => toggleFilter('approved')}
+          role="button" tabIndex={0}
+        >
+          <span className="sd-apps-stat-value sd-apps-stat-value--success">{approved}</span>
+          <span className="sd-apps-stat-label">Odobreno</span>
+        </div>
+        <div
+          className={`sd-apps-stat sd-apps-stat--clickable${activeFilter === 'rejected' ? ' sd-apps-stat--active-error' : ''}`}
+          onClick={() => toggleFilter('rejected')}
+          role="button" tabIndex={0}
+        >
+          <span className="sd-apps-stat-value sd-apps-stat-value--error">{rejected}</span>
+          <span className="sd-apps-stat-label">Odbijeno</span>
+        </div>
+      </div>
+
+      <div className="sd-list">
+        {visibleApplications.map(app => {
+          const oglas = prakse.find(p => Number(p.id) === Number(app.oglasID));
+          const kompNaziv = oglas?.kompanija || app.Oglas?.Kompanija?.naziv || 'Kompanija';
+          const oglasNaziv = oglas?.naziv || app.Oglas?.naziv || 'Nepoznat oglas';
+          const logoColor = deriveLogoColor(kompNaziv);
+          const logo = deriveLogo(kompNaziv);
+          const recent = isRecentChange(app);
+          const inactive = !oglas;
+
+          return (
+            <div
+              key={app.id}
+              className={`sd-card-wrap${inactive ? ' sd-card-wrap--inactive' : ''}`}
+              onClick={() => oglas && onViewOglas(oglas)}
+            >
+              <article className="sd-card" tabIndex={inactive ? -1 : 0} role="button" aria-label={`${oglasNaziv} — ${kompNaziv}`}>
+                <div className="sd-card-head">
+                  {recent && <span className="sd-novo-badge sd-novo-badge--update">Promjena statusa</span>}
+                  <div className="sd-company-row">
+                    <div className="sd-logo" style={{ background: logoColor }}>{logo}</div>
+                    <div className="sd-company-info">
+                      <span className="sd-company-name">{kompNaziv}</span>
+                      {oglas?.lokacija && (
+                        <span className="sd-location">
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                            <circle cx="12" cy="10" r="3"/>
+                          </svg>
+                          {oglas.lokacija}
+                        </span>
+                      )}
+                    </div>
+                    <div className="sd-head-badges">
+                      {inactive && <span className="sd-inactive-badge">Istekao</span>}
+                      <span className={`sd-application-card-badge sd-application-card-badge--${applicationStatusTone(app.status)}`}>
+                        {applicationStatusLabel(app.status)}
+                      </span>
+                      {oglas?.tip && (
+                        <span className={`sd-tip-badge sd-tip--${oglas.tip.toLowerCase()}`}>
+                          {!oglas.lokacija && (
+                            <svg style={{marginRight:'4px'}} width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                            </svg>
+                          )}
+                          {oglas.tip}
+                        </span>
+                      )}
+                      {oglas?.stipendija && <span className="sd-stip-badge">Stipendija</span>}
+                    </div>
+                  </div>
+                  <h2 className="sd-card-title">{oglasNaziv}</h2>
+                  {oglas?.opis && <p className="sd-card-opis">{oglas.opis}</p>}
+                </div>
+
+                {oglas?.tehnologije?.length > 0 && (
+                  <div className="sd-tech-row">
+                    {oglas.tehnologije.map(t => (
+                      <span key={t} className="sd-tech-tag">{t}</span>
+                    ))}
+                  </div>
+                )}
+
+                <div className="sd-card-foot">
+                  <div className="sd-meta-row">
+                    {oglas?.trajanje && (
+                      <>
+                        <span className="sd-meta-item">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                          </svg>
+                          {trajanjeLabel(oglas.trajanje)}
+                        </span>
+                        <span className="sd-meta-dot"/>
+                      </>
+                    )}
+                    <span className="sd-meta-item">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+                        <line x1="3" y1="10" x2="21" y2="10"/>
+                      </svg>
+                      Prijavljeno {formatDate(app.datumPrijave?.slice(0, 10))}
+                    </span>
+                  </div>
+                  <div className="sd-foot-right">
+                    <button
+                      className="sd-btn-detail"
+                      disabled={inactive}
+                      onClick={e => { e.stopPropagation(); if (oglas) onViewOglas(oglas); }}
+                      tabIndex={-1}
+                    >
+                      {inactive ? 'Oglas istekao' : 'Pogledaj oglas'}
+                      {!inactive && (
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+                        </svg>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </article>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -899,11 +1124,8 @@ export default function StudentDashboard() {
 
     try {
       const result = await createApplication(praksa.id);
-      const createdApplication = result.application || result;
-      setApplications(prev => {
-        const alreadyStored = prev.some(app => applicationOglasId(app) === Number(praksa.id));
-        return alreadyStored ? prev : [createdApplication, ...prev];
-      });
+      const fresh = await getMyApplications();
+      setApplications(fresh || []);
       setApplySuccess(result.message || 'Prijava je uspješno podnesena.');
     } catch (err) {
       setApplyError(err.message || 'Greška pri podnošenju prijave.');
@@ -940,11 +1162,6 @@ export default function StudentDashboard() {
       <aside className="sd-sidebar">
         {/* Collapsed icon strip */}
         <div className="sd-sidebar-tab">
-          <div className="sd-sb-tab-icon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-            </svg>
-          </div>
           <div className={`sd-sb-tab-icon${activeTab === 'omiljeni' ? ' sd-sb-tab-icon--heart' : ''}`}>
             <svg width="15" height="15" viewBox="0 0 24 24"
               fill={activeTab === 'omiljeni' ? 'currentColor' : 'none'}
@@ -952,6 +1169,15 @@ export default function StudentDashboard() {
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
             </svg>
             {favourites.size > 0 && <span className="sd-sb-badge">{favourites.size}</span>}
+          </div>
+          <div className={`sd-sb-tab-icon${activeTab === 'prijave' ? ' sd-sb-tab-icon--apps' : ''}`}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+            </svg>
+            {applications.length > 0 && <span className="sd-sb-badge">{applications.length}</span>}
           </div>
           <div className="sd-sb-tab-icon">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -999,50 +1225,43 @@ export default function StudentDashboard() {
         <div className="sd-sidebar-inner">
           <div className="sd-sidebar-content">
           {/* View tabs */}
-          <div className="sd-sb-tabs sd-sidebar-tabs">
-            <button
-              className={`sd-sb-tab-btn${activeTab === 'svi' ? ' active' : ''}`}
-              onClick={() => setActiveTab('svi')}
-            >
-              Svi oglasi
-            </button>
-            <button
-              className={`sd-sb-tab-btn${activeTab === 'omiljeni' ? ' active' : ''}`}
-              onClick={() => setActiveTab('omiljeni')}
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24"
-                fill={activeTab === 'omiljeni' ? 'currentColor' : 'none'}
-                stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-              </svg>
-              Omiljeni
-              {favourites.size > 0 && <span className="sd-sb-count">{favourites.size}</span>}
-            </button>
-          </div>
-
-          {/* Search with spinning glow border on focus */}
-          <div className="sd-sb-search-outer sd-sidebar-search">
-            <div className="sd-search-wrap">
-              <svg className="sd-search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-              </svg>
-              <input
-                className="sd-search"
-                type="text"
-                placeholder="Pretraži..."
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-              />
-              {search && (
-                <button className="sd-search-clear" onClick={() => setSearch('')}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                  </svg>
-                </button>
-              )}
+          <div className="sd-sidebar-tabs">
+            <div className="sd-sb-tabs">
+              <button
+                className={`sd-sb-tab-btn${activeTab === 'svi' ? ' active' : ''}`}
+                onClick={() => setActiveTab('svi')}
+              >
+                Svi oglasi
+              </button>
+              <button
+                className={`sd-sb-tab-btn${activeTab === 'omiljeni' ? ' active' : ''}`}
+                onClick={() => setActiveTab('omiljeni')}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24"
+                  fill={activeTab === 'omiljeni' ? 'currentColor' : 'none'}
+                  stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                </svg>
+                Omiljeni
+                {favourites.size > 0 && <span className="sd-sb-count">{favourites.size}</span>}
+              </button>
             </div>
+            <button
+              className={`sd-sb-tab-btn sd-sb-tab-btn--prijave${activeTab === 'prijave' ? ' active' : ''}`}
+              onClick={() => setActiveTab('prijave')}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+              </svg>
+              Moje prijave
+              {applications.length > 0 && <span className="sd-sb-count">{applications.length}</span>}
+            </button>
           </div>
 
+          {activeTab !== 'prijave' && (<>
           {/* VS Code-style collapsible sections */}
           <div className="sd-sidebar-filters">
 
@@ -1147,6 +1366,7 @@ export default function StudentDashboard() {
               <button className="sd-reset-btn sd-sb-reset" onClick={resetFilters}>Resetuj filtere</button>
             )}
           </div>
+          </>)}
           </div>{/* end sd-sidebar-content */}
 
           {/* Sticky footer — user + logout */}
@@ -1260,80 +1480,86 @@ export default function StudentDashboard() {
         </div>
       ) : (
         <div className="sd-container">
-          {praksaLoading ? (
+          {activeTab === 'prijave' ? (
+            <MyApplicationsPanel
+              applications={applications}
+              prakse={prakse}
+              onViewOglas={sel => setSelectedPraksa(sel)}
+            />
+          ) : praksaLoading ? (
             <p className="sd-results-info">Učitavanje oglasa...</p>
           ) : praksaError ? (
             <p className="sd-results-info" style={{ color: 'var(--color-danger, #c0392b)' }}>{praksaError}</p>
           ) : (
             <>
-              <div className="sd-main-search-wrap">
-                <div className="sd-main-search-inner">
-                  <svg className="sd-main-search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                  </svg>
-                  <input
-                    className="sd-main-search-input"
-                    type="text"
-                    placeholder="Pretraži prakse, kompanije, tehnologije..."
-                    value={search}
-                    onChange={e => setSearch(e.target.value)}
-                  />
-                  {search && (
-                    <button className="sd-main-search-clear" onClick={() => setSearch('')}>
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                      </svg>
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              <p className="sd-results-info">
-                {filteredPrakse.length === 0
-                  ? 'Nema rezultata'
-                  : <><strong>{filteredPrakse.length}</strong> {filteredPrakse.length === 1 ? 'oglas' : 'oglasa'} pronađeno{hasFilters ? ' · filtrirano' : ''}</>
-                }
-              </p>
-
-              <div className="sd-list">
-                {filteredPrakse.length === 0 ? (
-                  <div className="sd-empty">
-                    {activeTab === 'omiljeni' ? (
-                      <>
-                        <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                <div className="sd-main-search-wrap">
+                  <div className="sd-main-search-inner">
+                    <svg className="sd-main-search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                    <input
+                      className="sd-main-search-input"
+                      type="text"
+                      placeholder="Pretraži prakse, kompanije, tehnologije..."
+                      value={search}
+                      onChange={e => setSearch(e.target.value)}
+                    />
+                    {search && (
+                      <button className="sd-main-search-clear" onClick={() => setSearch('')}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                         </svg>
-                        <p className="sd-empty-title">Nema omiljenih oglasa</p>
-                        <p className="sd-empty-sub">
-                          Klikni na srce na oglasu da ga dodaš ovdje.
-                        </p>
-                      </>
-                    ) : (
-                      <>
-                        <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
-                          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                        </svg>
-                        <p className="sd-empty-title">Nema pronađenih oglasa</p>
-                        <p className="sd-empty-sub">
-                          Pokušaj sa drugačijim filterima ili{' '}
-                          <button className="sd-empty-link" onClick={resetFilters}>resetuj pretragu</button>.
-                        </p>
-                      </>
+                      </button>
                     )}
                   </div>
-                ) : (
-                  filteredPrakse.map(p => (
-                    <PraksaCard
-                      key={p.id}
-                      praksa={p}
-                      onSelect={sel => setSelectedPraksa(sel)}
-                      isFavourite={favourites.has(p.id)}
-                      onToggleFavourite={toggleFavourite}
-                      application={findApplicationForOglas(p.id)}
-                    />
-                  ))
-                )}
-              </div>
+                </div>
+
+                <p className="sd-results-info">
+                  {filteredPrakse.length === 0
+                    ? 'Nema rezultata'
+                    : <><strong>{filteredPrakse.length}</strong> {filteredPrakse.length === 1 ? 'oglas' : 'oglasa'} pronađeno{hasFilters ? ' · filtrirano' : ''}</>
+                  }
+                </p>
+
+                <div className="sd-list">
+                  {filteredPrakse.length === 0 ? (
+                    <div className="sd-empty">
+                      {activeTab === 'omiljeni' ? (
+                        <>
+                          <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                          </svg>
+                          <p className="sd-empty-title">Nema omiljenih oglasa</p>
+                          <p className="sd-empty-sub">
+                            Klikni na srce na oglasu da ga dodaš ovdje.
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                          </svg>
+                          <p className="sd-empty-title">Nema pronađenih oglasa</p>
+                          <p className="sd-empty-sub">
+                            Pokušaj sa drugačijim filterima ili{' '}
+                            <button className="sd-empty-link" onClick={resetFilters}>resetuj pretragu</button>.
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  ) : (
+                    filteredPrakse.map(p => (
+                      <PraksaCard
+                        key={p.id}
+                        praksa={p}
+                        onSelect={sel => setSelectedPraksa(sel)}
+                        isFavourite={favourites.has(p.id)}
+                        onToggleFavourite={toggleFavourite}
+                        application={findApplicationForOglas(p.id)}
+                      />
+                    ))
+                  )}
+                </div>
             </>
           )}
         </div>
