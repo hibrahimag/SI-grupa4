@@ -180,8 +180,6 @@ function DocumentsSection() {
     }
   }
 
-  const standaloneDocs = docs.filter(d => !d.oglas_id);
-
   return (
     <div className="pf-card">
       <div className="pf-docs-header">
@@ -233,11 +231,11 @@ function DocumentsSection() {
 
       {loading ? (
         <p className="pf-state-msg">Učitavanje dokumenata…</p>
-      ) : standaloneDocs.length === 0 ? (
+      ) : docs.length === 0 ? (
         <p className="pf-state-msg">Nema uploadovanih dokumenata.</p>
       ) : (
         <ul className="pf-docs-list">
-          {standaloneDocs.map(doc => (
+          {docs.map(doc => (
             <li key={doc.id} className="pf-doc-item">
               <DocIcon mime={doc.mime_path} />
               <div className="pf-doc-info">
