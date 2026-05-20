@@ -2,10 +2,10 @@
 
 | ID | Naziv zadatka | Odgovorna osoba | Status |
 |----|--------------|-----------------|--------|
-| SB-13 | Prijava na praksu | Harun Ibrahimagić | Done |
+| SB-13 | Prijava na praksu | Haris Tucaković | Done |
 | SB-14 | Upload dokumentacije | Irma Lemes | Done |
+| SB-15 | Pregled prijava na praksu | Haris Husić | Done |
 | SB-32 | Uređivanje oglasa | Zerina Pandža | Done |
-| SB-35 | Student dashboard | Haris Husić | Done |
 | SB-43 | Pregled profila kompanije | Amna Glamoč | Done |
 | SB-48 | Favoriziranje oglasa | Hana Hodžić | Done |
 | SB-52 | Upravljanje rokovima prijave | Zerina Pandža | Done |
@@ -45,6 +45,18 @@
 
 ---
 
+## SB-15 - Pregled prijava na praksu
+
+**Prioritet:** Medium
+
+**Acceptance criteria:**
+- Sistem mora omogućiti kompaniji pregled svih prijavljenih studenata po oglasu
+- Sistem mora prikazati osnovne informacije o svakom kandidatu: ime, prezime, odsjek, godina studija
+- Sistem mora omogućiti pregled uploadovanih dokumenata svakog kandidata
+- Sistem ne smije dozvoliti pregled prijava na tuđe oglase
+
+---
+
 ## SB-32 – Uređivanje oglasa
 
 ### US-32 - Kao kompanija, želim da uredim postojeći oglas za praksu
@@ -58,22 +70,6 @@
 - Kompanija treba dobiti potvrdu nakon uspješnog uređivanja oglasa
 - Sistem ne smije dozvoliti uređivanje oglasa drugim kompanijama
 - Sistem ne smije dozvoliti uređivanje oglasa neprijavljenom korisniku
-
----
-
-## SB-35 – Student dashboard
-
-### US-35 - Kao student, želim da imam pregled svojih aktivnosti na jednom mjestu
-
-**Prioritet:** High
-
-**Acceptance criteria:**
-- Sistem mora prikazati dashboard sa osnovnim informacijama o studentu
-- Sistem mora prikazati pregled prijava na prakse
-- Sistem mora prikazati listu favoriziranih oglasa
-- Dashboard mora prikazivati status svake prijave
-- Student mora moći pristupiti dashboardu kroz navigaciju sistema
-- Sistem ne smije dozvoliti pristup dashboardu neprijavljenom korisniku
 
 ---
 
