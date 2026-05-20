@@ -80,7 +80,7 @@ Implementirana dinamička navigacija za studenta, kompaniju, koordinatora i admi
 
 Product Owner je zadovoljan napretkom i činjenicom da su implementirani i pojedini funkcionalni zahtjevi planirani za Sprint 8.   
 
-Predloženo je da se dodatno unaprijedi UX detaljnog prikaza oglasa i pripremi osnova za sistem prijave na praksu, što svakako spada u obaveze za naredni sprint.
+Predloženo je da se izmijeni trenutni format datuma mm/dd/yyyy i da se umjesto njega koristi dd/mm/yyyy format.
 
 ---
 
