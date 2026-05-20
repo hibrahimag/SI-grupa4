@@ -76,6 +76,7 @@ router.post('/attach', authenticate, async (req, res) => {
           file_path: doc.file_path,
           mime_path: doc.mime_path,
           size: doc.size,
+          created_at: new Date(),
         });
       })
     )).filter(Boolean);
@@ -121,6 +122,7 @@ router.post(
             file_path: file.path,
             mime_path: file.mimetype,
             size: file.size,
+            created_at: new Date(),
           });
         })
       );

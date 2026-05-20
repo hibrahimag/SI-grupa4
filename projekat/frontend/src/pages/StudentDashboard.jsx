@@ -508,7 +508,6 @@ function ApplicationModal({
     setUploadMessage('');
     try {
       const formData = new FormData();
-      formData.append('oglas_id', praksa.id);
       selectedFiles.forEach(item => {
         formData.append('files', item.file);
         formData.append('tip_dokumenta', item.tip);
@@ -521,9 +520,13 @@ function ApplicationModal({
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.message || 'Greška pri uploadu.');
+      const uploadedIds = (data.data || []).map(d => d.id);
+      if (uploadedIds.length > 0) {
+        await attachDocumentsToOglas(praksa.id, uploadedIds);
+      }
       const fresh = await getMyDocuments();
       setExistingDocs(fresh || []);
-      setUploadMessage(data.message || 'Dokumenti uspješno uploadovani!');
+      setUploadMessage('Dokumenti uspješno uploadovani i priloženi uz prijavu!');
       setSelectedFiles([]);
     } catch (err) {
       setUploadMessage(err.message || 'Greška pri uploadu.');
