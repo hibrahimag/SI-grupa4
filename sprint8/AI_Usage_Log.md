@@ -1258,3 +1258,76 @@ loginService(identifier, password):
 **Rizici, problemi ili greške:**
 - `created_at` bez default vrijednosti uzrokovao NULL u bazi i pogrešno sortiranje po datumu
 - Upload direktno s `oglas_id` sprječavao prikaz dokumenata u generalnoj listi na profilu — riješeno dvostepenim tokom
+
+---
+
+## Unos 27 — Implementacija favoriziranja oglasa 
+
+| Polje | Sadržaj |
+|---|---|
+| **Datum** | 20.05.2026 |
+| **Sprint broj** | 8 |
+| **Alat** | Claude Code (claude-sonnet-4-6) |
+| **Ko je koristio** | hhodzic9 |
+| **Svrha korištenja** | Implementacija US-48 — mogućnost označavanja oglasa kao omiljenog |
+
+**Kratak opis upita:**
+
+> Implementirati funkcionalnost favoriziranja oglasa za studente. Svaka kartica oglasa treba imati dugme u obliku srca u gornjem desnom uglu koje se oboji crveno kada se oglas označi kao omiljeni. Omiljeni oglasi trebaju biti dostupni u zasebnom tabu "Omiljeni oglasi" u sidebaru. Stanje omiljenih oglasa treba biti trajno (ne smije nestati pri promjeni stranice) i vezano za korisnički nalog, a ne za uređaj.
+
+**Šta je AI predložio ili generisao:**
+
+- `OmiljeniOglas.js` — novi Sequelize model, tabela `omiljeni_oglasi` s poljima `studentID` i `oglasID`
+- Ažuriranje `index.js` — registracija modela i asocijacije (`Student→OmiljeniOglas`, `Oglas→OmiljeniOglas`)
+- `favourites.service.js` — servisne funkcije `addFavourite`, `removeFavourite`, `getFavourites` (scoped po studentskom profilu)
+- `favourites.controller.js` — kontroleri za sva tri endpointa
+- `favourites.routes.js` — rute `GET /`, `POST /:oglasId`, `DELETE /:oglasId` zaštićene sa `authenticate` + `authorize('STUDENT')`
+- Ažuriranje `app.js` — registracija rute na `/api/favourites`
+- `favouritesService.js` (frontend) — API wrapper funkcije
+- Izmjene u `StudentDashboard.jsx` — dugme srca na svakoj kartici, optimistično ažuriranje UI-a s rollback logikom pri grešci, tab "Omiljeni" u sidebaru s brojevnim badge-om, posebna empty state poruka za omiljene
+- Izmjene u `StudentDashboard.css` — stilovi za dugme srca, sidebar tabove, dark mode varijante
+
+**Šta je tim prihvatio:**
+- Kompletnu backend arhitekturu s tabelom `omiljeni_oglasi`
+- Tab navigaciju u sidebaru s odvojenim prikazom omiljenih oglasa
+
+**Šta je tim izmijenio:**
+- Inicijalni prijedlog je koristio `localStorage` za čuvanje omiljenih — tim je zatražio backend rješenje radi ispravnog ispunjavanja kriterija US-48 (tuđi omiljeni ne smiju biti vidljivi drugom korisniku ni na dijeljenom uređaju)
+
+**Šta je tim odbacio:**
+
+**Rizici, problemi ili greške:**
+
+---
+
+## Unos 28 — Implementacija oznake "Novo" na oglasima (US-56)
+
+| Polje | Sadržaj |
+|---|---|
+| **Datum** | 20.05.2026 |
+| **Sprint broj** | 8 |
+| **Alat** | Claude Code (claude-sonnet-4-6) |
+| **Ko je koristio** | hhodzic9 |
+| **Svrha korištenja** | Implementacija US-56 — vizuelna oznaka "Novo" za nedavno objavljene oglase |
+
+**Kratak opis upita:**
+
+> Dodati oznaku "Novo" na kartice oglasa koji su objavljeni u poslijednjih 3 dana. Oznaka treba biti vidljiva u listi svih oglasa i u listi omiljenih oglasa, a treba se automatski ukloniti nakon isteka perioda bez ikakve intervencije.
+
+**Šta je AI predložio ili generisao:**
+
+- Funkciju `isNovo(datumObjave)` koja izračunava da li je oglas objavljen unutar 3 dana (`Date.now() - new Date(datumObjave) < 3 * 24 * 60 * 60 * 1000`)
+- Oznaku `<span className="sd-novo-badge">Novo</span>` kao prvi element unutar `sd-card-head` u komponenti `PraksaCard`
+- CSS stilove za `.sd-novo-badge` — zeleni gradijent, pill oblik, uppercase tekst, shadow efekt, dark mode varijanta
+
+**Šta je tim prihvatio:**
+- Čisto frontend rješenje bez ikakvih promjena na backendu ili bazi podataka — `datumObjave` je već dostupan u podacima koje vraća postojeći endpoint
+- Pozicioniranje oznake kao prvog inline elementa u `sd-card-head` (prirodno poravnanje s ostatkom sadržaja kartice)
+
+**Šta je tim izmijenio:**
+- Pozicija oznake iterativno podešavana (apsolutno pozicioniranje → inline u `sd-card-head`) radi boljeg vizuelnog rezultata
+
+**Šta je tim odbacio:**
+- Čuvanje `isNovo` stanja u bazi podataka — odbačeno jer je to redundantna informacija koja se može uvijek izračunati iz postojećeg `datumObjave` polja
+
+**Rizici, problemi ili greške:**
