@@ -1331,3 +1331,87 @@ loginService(identifier, password):
 - Čuvanje `isNovo` stanja u bazi podataka — odbačeno jer je to redundantna informacija koja se može uvijek izračunati iz postojećeg `datumObjave` polja
 
 **Rizici, problemi ili greške:**
+
+---
+
+## Unos 29 — Uređivanje oglasa (US-57)
+
+| Polje | Sadržaj |
+|---|---|
+| **Datum** | 20.05.2026 |
+| **Sprint broj** | 8 |
+| **Alat** | ChatGPT (GPT-4.1) |
+| **Ko je koristio** | zpandza1 |
+| **Svrha korištenja** | Implementacija funkcionalnosti uređivanja postojećeg oglasa |
+
+**Kratak opis upita:**
+
+> Potrebno je omogućiti kompaniji da uređuje već kreirani oglas (naziv, opis, trajanje, broj mjesta, uslovi). Kako najbolje organizovati validaciju i ograničenja izmjena ako već postoje prijave na oglas?
+
+**Šta je AI predložio ili generisao:**
+
+- Korištenje postojećeg modela oglasa bez kreiranja nove entitetske strukture  
+- Backend validaciju obaveznih polja prilikom izmjene  
+- Ograničavanje izmjene određenih polja (npr. broj mjesta) ukoliko već postoje aktivne prijave  
+- Vraćanje jasnih HTTP odgovora i poruka o greškama pri neuspjeloj validaciji  
+- Frontend formu za uređivanje sa već popunjenim postojećim podacima  
+
+**Šta je tim prihvatio:**
+
+- Centralizovanu backend validaciju kao primarni mehanizam kontrole  
+- Pre-popunjavanje forme postojećim podacima oglasa  
+- Provjeru da broj mjesta ne može biti manji od broja već prihvaćenih prijava  
+
+**Šta je tim izmijenio:**
+
+- Umjesto potpunog zaključavanja oglasa kada postoje prijave, dozvoljene su izmjene teksta (opis, uslovi), ali ne i kritičnih numeričkih parametara  
+
+**Šta je tim odbacio:**
+
+- Kreiranje verzionisanja oglasa (historija izmjena) — odbačeno za ovu fazu projekta  
+- Zaključavanje cijelog oglasa čim postoji barem jedna prijava  
+
+**Rizici, problemi ili greške:**
+
+- Potencijalna nekonzistentnost podataka ako se paralelno izvrše izmjene i nove prijave  
+- Potreba za dodatnim testiranjem scenarija izmjene broja mjesta  
+
+
+---
+
+## Unos 30 — Upravljanje rokovima prijave (US-58)
+
+| Polje | Sadržaj |
+|---|---|
+| **Datum** | 20.05.2026 |
+| **Sprint broj** | 8 |
+| **Alat** | ChatGPT (GPT-4.1) |
+| **Ko je koristio** | zpandza1 |
+| **Svrha korištenja** | Implementacija funkcionalnosti postavljanja, izmjene i isteka roka prijave za oglas |
+
+**Kratak opis upita:**
+
+> Potrebno je omogućiti kompaniji da postavi i izmijeni rok prijave na oglas te osigurati da oglas automatski postane nevidljiv studentima nakon isteka roka.
+
+**Šta je AI predložio ili generisao:**
+
+- Dodavanje polja za unos datuma kada je oglas aktivan   
+
+**Šta je tim prihvatio:**
+ 
+- Automatsko tretiranje oglasa kao zatvorenog na osnovu isteka datuma  
+
+**Šta je tim izmijenio:**
+
+- Nije uvedeno dodatno boolean polje (`isClosed`) jer je status izveden iz datuma   
+
+**Šta je tim odbacio:**
+
+- Cron job za periodično zatvaranje oglasa — odbačeno jer se status može izračunavati u realnom vremenu  
+- Ručno zatvaranje oglasa od strane administratora  
+
+**Rizici, problemi ili greške:**
+
+- Mogući problemi s vremenskim zonama (server vs. klijent)  
+- Potreba za testiranjem scenarija kada rok ističe u tačno određeno vrijeme (npr. 23:59)  
+
