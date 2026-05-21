@@ -1,0 +1,179 @@
+'use strict';
+
+require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
+
+const request = require('supertest');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
+const { Op } = require('sequelize');
+const app = require('../src/app');
+const {
+  User, Student, Kompanija, Oglas, PrijavaNaPraksu, Fakultet, sequelize,
+} = require('../src/infrastructure/database/models');
+
+const PREFIX = 'test_app_int_';
+const JWT_SECRET = process.env.JWT_SECRET;
+const FUTURE = new Date('2099-12-31');
+
+let studentUser, studentRec, fakultet;
+let companyUser, companyRec, oglas;
+let studentToken, otherStudentToken;
+
+beforeAll(async () => {
+  const passwordHash = await bcrypt.hash('Test@1234', 10);
+
+  fakultet = await Fakultet.create({ naziv: `${PREFIX}ETF`, email: `${PREFIX}etf@test.com` });
+
+  companyUser = await User.create({
+    ime: 'AppTest', prezime: 'Company',
+    username: `${PREFIX}company`, email: `${PREFIX}company@test.com`,
+    passwordHash, role: 'COMPANY', status: 'ACTIVE',
+    emailVerifikovan: true, approvalStatus: 'APPROVED', created_at: new Date(),
+  });
+  companyRec = await Kompanija.create({ userID: companyUser.id, naziv: `${PREFIX}Firma`, adresa: 'Test 1' });
+
+  oglas = await Oglas.create({
+    naziv: `${PREFIX}Oglas`,
+    opis: 'Oglas za testiranje prijava',
+    brojMjesta: 5,
+    rokPrijave: FUTURE,
+    status: 'AKTIVAN',
+    kompanijaID: companyRec.id,
+    tehnologije: [],
+    uslovi: [],
+  });
+
+  studentUser = await User.create({
+    ime: 'AppTest', prezime: 'Student',
+    username: `${PREFIX}student`, email: `${PREFIX}student@test.com`,
+    passwordHash, role: 'STUDENT', status: 'ACTIVE',
+    emailVerifikovan: true, approvalStatus: 'APPROVED', created_at: new Date(),
+  });
+  studentRec = await Student.create({
+    userID: studentUser.id,
+    index_number: `${PREFIX}IB123456`,
+    year_of_study: 3,
+    fakultetID: fakultet.id,
+  });
+
+  // Student bez kompletnog profila (nema Student record)
+  const otherUser = await User.create({
+    ime: 'AppTest', prezime: 'Incomplete',
+    username: `${PREFIX}incomplete`, email: `${PREFIX}incomplete@test.com`,
+    passwordHash, role: 'STUDENT', status: 'ACTIVE',
+    emailVerifikovan: true, approvalStatus: 'APPROVED', created_at: new Date(),
+  });
+  otherStudentToken = jwt.sign({ id: otherUser.id, role: 'STUDENT' }, JWT_SECRET, { expiresIn: '1h' });
+
+  studentToken = jwt.sign({ id: studentUser.id, role: 'STUDENT' }, JWT_SECRET, { expiresIn: '1h' });
+});
+
+afterAll(async () => {
+  await PrijavaNaPraksu.destroy({ where: { studentID: studentRec.id } }).catch(() => {});
+  await Oglas.destroy({ where: { naziv: { [Op.like]: `${PREFIX}%` } } }).catch(() => {});
+  await Kompanija.destroy({ where: { naziv: { [Op.like]: `${PREFIX}%` } } }).catch(() => {});
+  await Student.destroy({ where: { index_number: { [Op.like]: `${PREFIX}%` } } }).catch(() => {});
+  await User.destroy({ where: { username: { [Op.like]: `${PREFIX}%` } } });
+  await Fakultet.destroy({ where: { naziv: { [Op.like]: `${PREFIX}%` } } }).catch(() => {});
+  await sequelize.close();
+});
+
+// ── GET /api/applications/mine ───────────────────────────────────────────────
+describe('GET /api/applications/mine', () => {
+  // Testira: student s kompletnim profilom dobija listu svojih prijava
+  // Ulaz: GET /api/applications/mine s validnim studentskim JWT tokenom
+  // Očekivani izlaz: HTTP 200, niz (može biti prazan)
+  test('200 — vraća listu prijava studenta', async () => {
+    const res = await request(app)
+      .get('/api/applications/mine')
+      .set('Authorization', `Bearer ${studentToken}`);
+
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body)).toBe(true);
+  });
+
+  // Testira: student bez Student recorda dobija prazan niz
+  // Ulaz: GET /api/applications/mine s tokenom studenta koji nema Student profil
+  // Očekivani izlaz: HTTP 200, prazan niz
+  test('200 — student bez profila dobija prazan niz', async () => {
+    const res = await request(app)
+      .get('/api/applications/mine')
+      .set('Authorization', `Bearer ${otherStudentToken}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual([]);
+  });
+
+  // Testira: endpoint odbija zahtjev bez tokena
+  // Ulaz: GET /api/applications/mine bez Authorization headera
+  // Očekivani izlaz: HTTP 401
+  test('401 — odbija zahtjev bez tokena', async () => {
+    const res = await request(app).get('/api/applications/mine');
+    expect(res.status).toBe(401);
+  });
+});
+
+// ── POST /api/applications ───────────────────────────────────────────────────
+describe('POST /api/applications', () => {
+  // Testira: student uspješno podnosi prijavu na aktivan oglas
+  // Ulaz: POST /api/applications s oglasID aktivnog oglasa i studentskim tokenom
+  // Očekivani izlaz: HTTP 201, kreirana prijava sa statusom PODNESENA
+  test('201 — student uspješno podnosi prijavu', async () => {
+    const res = await request(app)
+      .post('/api/applications')
+      .set('Authorization', `Bearer ${studentToken}`)
+      .send({ oglasID: oglas.id });
+
+    expect(res.status).toBe(201);
+    expect(res.body.application).toMatchObject({
+      oglasID: oglas.id,
+      studentID: studentRec.id,
+      status: 'PODNESENA',
+    });
+  });
+
+  // Testira: dupla prijava na isti oglas vraća 409
+  // Ulaz: POST /api/applications s istim oglasID kao u prethodnom testu
+  // Očekivani izlaz: HTTP 409
+  test('409 — dupla prijava na isti oglas', async () => {
+    const res = await request(app)
+      .post('/api/applications')
+      .set('Authorization', `Bearer ${studentToken}`)
+      .send({ oglasID: oglas.id });
+
+    expect(res.status).toBe(409);
+    expect(res.body.message).toMatch(/već ste se prijavili/i);
+  });
+
+  // Testira: prijava na nepostojeći oglas vraća 404
+  // Ulaz: POST /api/applications s nepostojećim oglasID
+  // Očekivani izlaz: HTTP 404
+  test('404 — oglas ne postoji', async () => {
+    const res = await request(app)
+      .post('/api/applications')
+      .set('Authorization', `Bearer ${studentToken}`)
+      .send({ oglasID: 999999 });
+
+    expect(res.status).toBe(404);
+  });
+
+  // Testira: prijava bez oglasID vraća 404
+  // Ulaz: POST /api/applications bez polja oglasID
+  // Očekivani izlaz: HTTP 404
+  test('404 — nedostaje oglasID', async () => {
+    const res = await request(app)
+      .post('/api/applications')
+      .set('Authorization', `Bearer ${studentToken}`)
+      .send({});
+
+    expect(res.status).toBe(404);
+  });
+
+  // Testira: endpoint odbija zahtjev bez tokena
+  // Ulaz: POST /api/applications bez Authorization headera
+  // Očekivani izlaz: HTTP 401
+  test('401 — odbija zahtjev bez tokena', async () => {
+    const res = await request(app).post('/api/applications').send({ oglasID: oglas.id });
+    expect(res.status).toBe(401);
+  });
+});

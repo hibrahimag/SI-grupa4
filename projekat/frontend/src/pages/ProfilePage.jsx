@@ -106,6 +106,7 @@ function DocumentsSection() {
   const [deleting, setDeleting] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [uploadMsg, setUploadMsg] = useState('');
+  const [uploadSuccess, setUploadSuccess] = useState(false);
   const fileInputRef = useRef(null);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [tipMap, setTipMap] = useState({});
@@ -150,6 +151,7 @@ function DocumentsSection() {
     if (!selectedFiles.length) return;
     setUploading(true);
     setUploadMsg('');
+    setUploadSuccess(false);
     try {
       const formData = new FormData();
       selectedFiles.forEach(f => {
@@ -164,13 +166,15 @@ function DocumentsSection() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.message || 'Greška pri uploadu.');
-      setUploadMsg('Dokumenti uspješno dodani.');
       setSelectedFiles([]);
       setTipMap({});
       if (fileInputRef.current) fileInputRef.current.value = '';
       await load();
+      setUploadMsg('Dokumenti uspješno dodani.');
+      setUploadSuccess(true);
     } catch (err) {
       setUploadMsg(err.message);
+      setUploadSuccess(false);
     } finally {
       setUploading(false);
     }
@@ -181,7 +185,7 @@ function DocumentsSection() {
       <div className="pf-docs-header">
         <h2 className="pf-section-title" style={{ margin: 0 }}>Moji dokumenti</h2>
         <button className="pf-btn pf-btn--secondary pf-docs-add-btn"
-          onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+          onClick={() => { fileInputRef.current?.click(); setUploadMsg(''); setUploadSuccess(false); }} disabled={uploading}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
@@ -207,9 +211,9 @@ function DocumentsSection() {
               </select>
             </div>
           ))}
-          {uploadMsg && <p className={`pf-docs-msg${uploadMsg.includes('Greška') ? ' pf-docs-msg--error' : ' pf-docs-msg--success'}`}>{uploadMsg}</p>}
+          {uploadMsg && !uploadSuccess && <p className="pf-docs-msg pf-docs-msg--error">{uploadMsg}</p>}
           <div className="pf-docs-upload-actions">
-            <button className="pf-btn pf-btn--secondary" onClick={() => { setSelectedFiles([]); setTipMap({}); if (fileInputRef.current) fileInputRef.current.value = ''; }}>
+            <button className="pf-btn pf-btn--secondary" onClick={() => { setSelectedFiles([]); setTipMap({}); setUploadMsg(''); if (fileInputRef.current) fileInputRef.current.value = ''; }}>
               Otkaži
             </button>
             <button className="pf-btn pf-btn--primary" onClick={handleUpload} disabled={uploading}>
@@ -217,6 +221,10 @@ function DocumentsSection() {
             </button>
           </div>
         </div>
+      )}
+
+      {uploadMsg && uploadSuccess && (
+        <p className="pf-docs-msg pf-docs-msg--success">{uploadMsg}</p>
       )}
 
       {error && <p className="pf-docs-msg pf-docs-msg--error">{error}</p>}
