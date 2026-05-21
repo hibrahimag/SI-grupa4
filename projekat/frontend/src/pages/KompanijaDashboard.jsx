@@ -6,6 +6,8 @@ import { useTheme } from '../context/ThemeContext';
 import { getCompanyProfile, updateCompanyProfile } from '../services/companyProfile.service';
 import { checkCompanyDeactivation, deactivateCompanyAccount, deleteMyCompanyAccount } from '../services/userService';
 import './KompanijaDashboard.css';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import { createListing, getCompanyListings } from '../services/listingsService';
 import EditOglas from '../modules/listings/EditOglas';
 import { formatDate } from '../data/mockPrakse';
@@ -492,8 +494,13 @@ export default function KompanijaDashboard() {
         />
       )}
       {editingListing && (
-        <div className="cd-modal-overlay" role="dialog" aria-modal="true">
-          <div className="cd-modal-sheet">
+        <div className="cd-modal-overlay" role="dialog" aria-modal="true" onClick={() => setEditingListing(null)}>
+          <div className="cd-modal-sheet" onClick={(e) => e.stopPropagation()}>
+            <button className="cd-modal-close" onClick={() => setEditingListing(null)} aria-label="Zatvori">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
             <EditOglas
               initial={editingListing}
               onCancel={() => setEditingListing(null)}
@@ -613,6 +620,8 @@ function CreateListingShell({ onCancel, onCreated }) {
   const [success, setSuccess] = useState('');
   const [saving, setSaving] = useState(false);
 
+  const today = new Date().toISOString().slice(0, 10);
+
   function handleChange(field, value) {
     setFormData((prev) => ({ ...prev, [field]: value }));
     setError('');
@@ -623,6 +632,14 @@ function CreateListingShell({ onCancel, onCreated }) {
     e.preventDefault();
     if (!formData.naziv || !formData.opis || !formData.brojMjesta || !formData.rokPrijave) {
       setError('Naziv, opis, broj mjesta i rok prijave su obavezni.');
+      return;
+    }
+    if (formData.rokPrijave < today) {
+      setError('Rok prijave ne može biti u prošlosti.');
+      return;
+    }
+    if (formData.datumPocetka && formData.datumPocetka <= formData.rokPrijave) {
+      setError('Datum početka prakse mora biti nakon isteka roka prijave.');
       return;
     }
     setSaving(true);
@@ -683,11 +700,27 @@ function CreateListingShell({ onCancel, onCreated }) {
           <div className="cd-form-row">
             <div className="cd-form-field">
               <label className="cd-form-label">Rok prijave *</label>
-              <input className="cd-input" type="date" value={formData.rokPrijave} onChange={(e) => handleChange('rokPrijave', e.target.value)} />
+              <DatePicker
+                className="cd-input"
+                dateFormat="dd.MM.yyyy"
+                placeholderText="dd.mm.yyyy"
+                minDate={new Date(today)}
+                selected={formData.rokPrijave ? new Date(formData.rokPrijave) : null}
+                onChange={(date) => handleChange('rokPrijave', date ? date.toISOString().slice(0, 10) : '')}
+                autoComplete="off"
+              />
             </div>
             <div className="cd-form-field">
               <label className="cd-form-label">Datum početka prakse</label>
-              <input className="cd-input" type="date" value={formData.datumPocetka} onChange={(e) => handleChange('datumPocetka', e.target.value)} />
+              <DatePicker
+                className="cd-input"
+                dateFormat="dd.MM.yyyy"
+                placeholderText="dd.mm.yyyy"
+                minDate={formData.rokPrijave ? new Date(new Date(formData.rokPrijave).getTime() + 86400000) : new Date(today)}
+                selected={formData.datumPocetka ? new Date(formData.datumPocetka) : null}
+                onChange={(date) => handleChange('datumPocetka', date ? date.toISOString().slice(0, 10) : '')}
+                autoComplete="off"
+              />
             </div>
           </div>
 

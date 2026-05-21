@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { checkDeactivation, deactivateAccount, deleteMyAccount } from '../services/userService';
 import { getActiveListings } from '../services/listingsService';
 import { getMyApplications, createApplication } from '../services/applicationsService';
-import { getMyDocuments, attachDocumentsToOglas } from '../services/api';
+import { getMyDocuments, attachDocumentsToOglas, getNotifications, markNotificationRead, markAllNotificationsRead } from '../services/api';
 import { getFavourites, addFavourite, removeFavourite } from '../services/favouritesService';
 import {
   formatDate, relativeDate, trajanjeLabel, mjestLabel, deadlineInfo,
@@ -907,6 +907,10 @@ export default function StudentDashboard() {
   const [applyError, setApplyError] = useState('');
   const [applySuccess, setApplySuccess] = useState('');
 
+  const [notifications, setNotifications] = useState([]);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const notifRef = useRef(null);
+
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsTab, setSettingsTab] = useState('account');
@@ -964,6 +968,25 @@ export default function StudentDashboard() {
       .catch(() => {});
     return () => { active = false; };
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    getNotifications()
+      .then(data => { if (active) setNotifications(data || []); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    if (!notifOpen) return;
+    function handleClickOutside(e) {
+      if (notifRef.current && !notifRef.current.contains(e.target)) {
+        setNotifOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [notifOpen]);
 
   useEffect(() => {
     setApplyError('');
@@ -1026,6 +1049,11 @@ export default function StudentDashboard() {
   const sveTehnologije = useMemo(
     () => [...new Set(prakse.flatMap(p => p.tehnologije || []))].sort(),
     [prakse]
+  );
+
+  const activeFavouritesCount = useMemo(
+    () => prakse.filter(p => favourites.has(p.id)).length,
+    [prakse, favourites]
   );
 
   const filteredPrakse = useMemo(() => {
@@ -1143,6 +1171,69 @@ export default function StudentDashboard() {
       <nav className="sd-nav">
         <Link to="/" className="sd-nav-brand" aria-label="Idi na početnu stranicu">PraksaHub</Link>
         <div className="sd-nav-right">
+          {/* Notification bell */}
+          <div className="sd-notif-wrap" ref={notifRef}>
+            <button
+              className="sd-notif-btn"
+              onClick={() => setNotifOpen(o => !o)}
+              title="Notifikacije"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+              </svg>
+              {notifications.filter(n => !n.procitana).length > 0 && (
+                <span className="sd-notif-badge">
+                  {notifications.filter(n => !n.procitana).length > 9 ? '9+' : notifications.filter(n => !n.procitana).length}
+                </span>
+              )}
+            </button>
+
+            {notifOpen && (
+              <div className="sd-notif-dropdown">
+                <div className="sd-notif-header">
+                  <span className="sd-notif-title">Notifikacije</span>
+                  {notifications.some(n => !n.procitana) && (
+                    <button
+                      className="sd-notif-read-all"
+                      onClick={async () => {
+                        await markAllNotificationsRead().catch(() => {});
+                        setNotifications(prev => prev.map(n => ({ ...n, procitana: true })));
+                      }}
+                    >
+                      Označi sve
+                    </button>
+                  )}
+                </div>
+                <div className="sd-notif-list">
+                  {notifications.length === 0 ? (
+                    <p className="sd-notif-empty">Nema notifikacija.</p>
+                  ) : (
+                    notifications.map(n => (
+                      <div
+                        key={n.id}
+                        className={`sd-notif-item${n.procitana ? '' : ' sd-notif-item--unread'}`}
+                        onClick={async () => {
+                          if (!n.procitana) {
+                            await markNotificationRead(n.id).catch(() => {});
+                            setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, procitana: true } : x));
+                          }
+                        }}
+                      >
+                        <div className={`sd-notif-dot${n.procitana ? ' sd-notif-dot--read' : ''}`} />
+                        <div className="sd-notif-body">
+                          <p className="sd-notif-naslov">{n.naslov}</p>
+                          <p className="sd-notif-poruka">{n.poruka}</p>
+                          <span className="sd-notif-time">{new Date(n.created_at).toLocaleDateString('bs-BA')}</span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
           <button className="sd-theme-btn" onClick={() => setDarkMode(!darkMode)} title={darkMode ? 'Svjetla tema' : 'Tamna tema'}>
             {darkMode ? (
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -1171,7 +1262,7 @@ export default function StudentDashboard() {
               stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
             </svg>
-            {favourites.size > 0 && <span className="sd-sb-badge">{favourites.size}</span>}
+            {activeFavouritesCount > 0 && <span className="sd-sb-badge">{activeFavouritesCount}</span>}
           </div>
           <div className={`sd-sb-tab-icon${activeTab === 'prijave' ? ' sd-sb-tab-icon--apps' : ''}`}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -1246,7 +1337,7 @@ export default function StudentDashboard() {
                   <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
                 </svg>
                 Omiljeni
-                {favourites.size > 0 && <span className="sd-sb-count">{favourites.size}</span>}
+                {activeFavouritesCount > 0 && <span className="sd-sb-count">{activeFavouritesCount}</span>}
               </button>
             </div>
             <button
