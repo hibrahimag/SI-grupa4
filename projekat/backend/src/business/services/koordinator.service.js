@@ -107,7 +107,7 @@ const odluciOPrijavi = async (id, odluka, razlog, koordinatorUserId) => {
     include: [
       {
         model: db.Student,
-        include: [{ model: db.User, attributes: ['email'] }],
+        include: [{ model: db.User, attributes: ['id', 'email'] }],
         attributes: ['id'],
       },
       {
@@ -140,12 +140,16 @@ const odluciOPrijavi = async (id, odluka, razlog, koordinatorUserId) => {
     ? `Vaša prijava na praksu "${oglasNaziv}" kod kompanije ${kompanijaNaziv} je odobrena.`
     : `Vaša prijava na praksu "${oglasNaziv}" kod kompanije ${kompanijaNaziv} je odbijena.${razlog ? ` Razlog: ${razlog}` : ''}`;
 
-  if (studentId) {
-    createNotification(studentId, prijava.id, tip, naslov, poruka).catch(() => {});
-  }
-  if (studentEmail) {
-    sendPrijavaStatusEmail(studentEmail, oglasNaziv, kompanijaNaziv, noviStatus, razlog).catch(() => {});
-  }
+  const studentUserId = prijava.Student?.User?.id;
+const preferences = studentUserId ? await getOrCreatePreferences(studentUserId) : null;
+
+if (studentId && canSendInApp(preferences, tip)) {
+  createNotification(studentId, prijava.id, tip, naslov, poruka).catch(() => {});
+}
+
+if (studentEmail && canSendEmail(preferences, tip)) {
+  sendPrijavaStatusEmail(studentEmail, oglasNaziv, kompanijaNaziv, noviStatus, razlog).catch(() => {});
+}
 
   return { id: prijava.id, status: noviStatus };
 };
@@ -260,6 +264,11 @@ const getPrakse = async (status = '', koordinatorUserId) => {
 
 const { sendAccountApprovedEmail, sendAccountRejectedEmail, sendPrijavaStatusEmail } = require('./email.service');
 const { createNotification } = require('./notifications.service');
+const {
+  getOrCreatePreferences,
+  canSendInApp,
+  canSendEmail,
+} = require('./notificationPreferences.service');
 
 const approveStudent = async (studentUserId, koordinatorUserId) => {
   // Provjeri da koordinator i student dijele isti fakultet

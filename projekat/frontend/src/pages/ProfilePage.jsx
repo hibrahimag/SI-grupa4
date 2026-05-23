@@ -2,7 +2,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getMyProfile, updateStudentProfile, getMyDocuments, deleteDocument } from '../services/api';
+import {
+  getMyProfile,
+  updateStudentProfile,
+  getMyDocuments,
+  deleteDocument,
+  getNotificationPreferences,
+  updateNotificationPreferences,
+} from '../services/api';
 import { getCompanyProfile, updateCompanyProfile } from '../services/companyProfile.service';
 import { formatDate } from '../data/mockPrakse';
 import './ProfilePage.css';
@@ -295,6 +302,93 @@ function DocumentsSection() {
   );
 }
 
+
+function NotificationPreferencesSection() {
+  const [preferences, setPreferences] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [savingField, setSavingField] = useState('');
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    loadPreferences();
+  }, []);
+
+  async function loadPreferences() {
+    setLoading(true);
+    setError('');
+    try {
+      const data = await getNotificationPreferences();
+      setPreferences(data);
+    } catch {
+      setError('Greška pri učitavanju postavki notifikacija.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleToggle(field) {
+    const nextValue = !preferences[field];
+    const nextPreferences = { ...preferences, [field]: nextValue };
+
+    setPreferences(nextPreferences);
+    setSavingField(field);
+    setError('');
+
+    try {
+      const updated = await updateNotificationPreferences({ [field]: nextValue });
+      setPreferences(updated);
+    } catch {
+      setPreferences(preferences);
+      setError('Greška pri spremanju postavki notifikacija.');
+    } finally {
+      setSavingField('');
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="pf-card">
+        <h2 className="pf-section-title">Postavke notifikacija</h2>
+        <p className="pf-state-msg">Učitavanje postavki…</p>
+      </div>
+    );
+  }
+
+  if (!preferences) return null;
+
+  return (
+    <div className="pf-card">
+      <h2 className="pf-section-title">Postavke notifikacija</h2>
+      <p className="pf-readonly-note">
+        Odaberite koje obavijesti želite primati. Promjene se primjenjuju odmah.
+      </p>
+
+      {error && <p className="pf-docs-msg pf-docs-msg--error">{error}</p>}
+
+      <div className="pf-info-grid">
+        {[
+          ['prijava_podnesena_in_app', 'Prijava podnesena — notifikacija u aplikaciji'],
+          ['prijava_podnesena_email', 'Prijava podnesena — email'],
+          ['prijava_odobrena_in_app', 'Prijava odobrena — notifikacija u aplikaciji'],
+          ['prijava_odobrena_email', 'Prijava odobrena — email'],
+          ['prijava_odbijena_in_app', 'Prijava odbijena — notifikacija u aplikaciji'],
+          ['prijava_odbijena_email', 'Prijava odbijena — email'],
+        ].map(([field, label]) => (
+          <label key={field} className="pf-info-item" style={{ cursor: 'pointer' }}>
+            <span className="pf-info-label">{label}</span>
+            <input
+              type="checkbox"
+              checked={Boolean(preferences[field])}
+              disabled={savingField === field}
+              onChange={() => handleToggle(field)}
+            />
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─────────────────────────────────────────────────────────────
 // STUDENT PROFILE
 // ─────────────────────────────────────────────────────────────
@@ -530,6 +624,8 @@ function StudentProfile({ profile, onProfileReload, authUser, login }) {
               </div>
             </div>
           )}
+
+          <NotificationPreferencesSection />
 
           <DocumentsSection />
         </>

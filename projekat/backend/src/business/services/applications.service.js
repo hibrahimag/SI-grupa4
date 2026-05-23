@@ -10,6 +10,11 @@ const {
 } = require('../../infrastructure/database/models');
 const { createNotification } = require('./notifications.service');
 const { sendPrijavaPodnesenaEmail } = require('./email.service');
+const {
+  getOrCreatePreferences,
+  canSendInApp,
+  canSendEmail,
+} = require('./notificationPreferences.service');
 
 const { checkStudentApplicationLimit } = require('./application_limit.service');
 
@@ -134,15 +139,22 @@ async function createApplication(userId, data = {}) {
   const kompanija = await Kompanija.findByPk(oglas.kompanijaID);
   const kompanijaNaziv = kompanija?.naziv || 'Kompanija';
 
+  const tip = 'PRIJAVA_PODNESENA';
+const preferences = await getOrCreatePreferences(userId);
+
+if (canSendInApp(preferences, tip)) {
   createNotification(
     student.id,
     prijava.id,
-    'PRIJAVA_PODNESENA',
+    tip,
     'Prijava podnesena',
     `Vaša prijava na praksu "${oglas.naziv}" kod kompanije ${kompanijaNaziv} je uspješno podnesena.`
   ).catch(() => {});
+}
 
+if (canSendEmail(preferences, tip)) {
   sendPrijavaPodnesenaEmail(user.email, oglas.naziv, kompanijaNaziv).catch(() => {});
+}
 
   return prijava;
 }
