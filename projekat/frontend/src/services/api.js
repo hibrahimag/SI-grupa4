@@ -51,4 +51,16 @@ export async function attachDocumentsToOglas(oglasId, dokumentIds) {
     body: JSON.stringify({ oglas_id: oglasId, dokument_ids: dokumentIds }),
   });
 }
+
+export async function getNotifications() {
+  return apiRequest('/notifications');
+}
+
+export async function markNotificationRead(id) {
+  return apiRequest(`/notifications/${id}/read`, { method: 'PATCH' });
+}
+
+export async function markAllNotificationsRead() {
+  return apiRequest('/notifications/read-all', { method: 'PATCH' });
+}
  
