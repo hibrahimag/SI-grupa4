@@ -865,3 +865,51 @@
   color: var(--color-success);
   border: 1px solid #b3e9d6;
 }
+
+/* Unificirani omotač i raspored za akcione dugmiće na karticama oglasa */
+.cd-listing-actions-wrapper {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.cd-listing-actions-wrapper .cd-btn {
+  flex: 1;
+  min-width: 100px;
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--font-size-sm);
+  height: 38px; /* Uniform visina za sve akcije */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+/* Color definitions for warn dialog inside custom confirmation components */
+.cd-confirm-icon--warn {
+  background: var(--color-warning-subtle, #fef3c7);
+  color: var(--color-warning, #d97706);
+}
+
+/* Unified omotač i raspored za akcione dugmiće na karticama oglasa */
+.cd-listing-actions-wrapper {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.cd-listing-actions-wrapper .cd-btn {
+  flex: 1;
+  min-width: 100px;
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--font-size-sm);
+  height: 38px; /* Uniform visina za sve akcije */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}

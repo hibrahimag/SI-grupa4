@@ -68,6 +68,9 @@ export default function CompanyProfilePage() {
   const logo = company ? deriveLogo(company.naziv) : '';
   const logoColor = company ? deriveLogoColor(company.naziv) : LOGO_COLORS[0];
 
+  // Keep active and closed/expired listings, block only archived ones
+  const nonArchivedListings = listings.filter((oglas) => oglas.status !== 'ARHIVIRAN');
+
   return (
     <div className={`cp-page${darkMode ? ' dark' : ''}`}>
       <nav className="cp-nav">
@@ -148,43 +151,58 @@ export default function CompanyProfilePage() {
             </div>
 
             <div className="pf-card">
-              <h2 className="pf-section-title">Aktivni oglasi</h2>
-              {listings.length === 0 ? (
+              <h2 className="pf-section-title">Oglasi kompanije</h2>
+              {nonArchivedListings.length === 0 ? (
                 <div className="sd-empty">
                   <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
                     <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
                   </svg>
-                  <p className="sd-empty-title">Nema aktivnih oglasa</p>
-                  <p className="sd-empty-sub">Ova kompanija trenutno nema objavljenih aktivnih oglasa.</p>
+                  <p className="sd-empty-title">Nema aktivnih ili zatvorenih oglasa</p>
+                  <p className="sd-empty-sub">Ova kompanija trenutno nema objavljenih oglasa.</p>
                 </div>
               ) : (
                 <div className="cp-listings">
-                  {listings.map((oglas) => (
-                    <article key={oglas.id} className="cp-listing-card">
-                      <div>
-                        <h3 className="cp-listing-title">{oglas.naziv}</h3>
-                        <div className="cp-listing-meta">
-                          {oglas.lokacija && <span>{oglas.lokacija}</span>}
-                          {oglas.rokPrijave && (
-                            <span>Rok prijave: {formatDate(String(oglas.rokPrijave).slice(0, 10))}</span>
-                          )}
+                  {nonArchivedListings.map((oglas) => {
+                    const istekao = oglas.rokPrijave && new Date(oglas.rokPrijave) <= new Date();
+                    const isClosed = oglas.status === 'ZATVOREN' || istekao;
+
+                    return (
+                      <article key={oglas.id} className="cp-listing-card">
+                        <div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+                            <h3 className="cp-listing-title">{oglas.naziv}</h3>
+                            {isClosed && (
+                              <span 
+                                className="cd-listing-status cd-listing-status--zatvoren" 
+                                style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '4px', background: 'var(--color-danger-subtle, #fde8e8)', color: 'var(--color-danger, #e02424)' }}
+                              >
+                                {istekao && oglas.status === 'AKTIVAN' ? 'Istekao' : 'Zatvoren'}
+                              </span>
+                            )}
+                          </div>
+                          <div className="cp-listing-meta">
+                            {oglas.lokacija && <span>{oglas.lokacija}</span>}
+                            {oglas.rokPrijave && (
+                              <span>Rok prijave: {formatDate(String(oglas.rokPrijave).slice(0, 10))}</span>
+                            )}
+                          </div>
+                          {oglas.opis && <p className="cp-listing-opis">{oglas.opis}</p>}
                         </div>
-                        {oglas.opis && <p className="cp-listing-opis">{oglas.opis}</p>}
-                      </div>
-                      <button
-                        type="button"
-                        className="cp-btn-detail"
-                        onClick={() => openListingDetail(oglas.id)}
-                      >
-                        Detalji oglasa
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <line x1="5" y1="12" x2="19" y2="12" />
-                          <polyline points="12 5 19 12 12 19" />
-                        </svg>
-                      </button>
-                    </article>
-                  ))}
+                        <button
+                          type="button"
+                          className="cp-btn-detail"
+                          onClick={() => openListingDetail(oglas.id)}
+                        >
+                          Detalji oglasa
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="5" y1="12" x2="19" y2="12" />
+                            <polyline points="12 5 19 12 12 19" />
+                          </svg>
+                        </button>
+                      </article>
+                    );
+                  })}
                 </div>
               )}
             </div>

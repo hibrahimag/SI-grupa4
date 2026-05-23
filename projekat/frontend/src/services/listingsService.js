@@ -1,3 +1,4 @@
+// frontend/src/services/listingsService.js
 import { apiRequest } from './api';
 
 export async function createListing(data) {
@@ -28,4 +29,24 @@ export async function getClosedListings() {
 
 export async function getCompanyClosedListings() {
   return apiRequest('/listings/company/closed');
+}
+
+// === ADD THESE THREE NEW FUNCTIONS ===
+
+export async function closeListing(id) {
+  return apiRequest(`/listings/${id}/close`, {
+    method: 'PATCH',
+  });
+}
+
+export async function archiveListing(id) {
+  return apiRequest(`/listings/${id}/archive`, {
+    method: 'PATCH',
+  });
+}
+
+export async function restoreFromArchive(id) {
+  return apiRequest(`/listings/${id}/restore`, {
+    method: 'PATCH',
+  });
 }

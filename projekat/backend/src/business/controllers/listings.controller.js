@@ -102,6 +102,38 @@ async function getClosedListingsByCompany(req, res) {
   }
 }
 
+// === NOVI KONTROLERI ===
+
+async function closeListing(req, res) {
+  try {
+    const id = Number(req.params.id);
+    const oglas = await listingsService.closeListing(id, req.user.id);
+    return res.json({ message: 'Oglas je uspješno zatvoren.', oglas });
+  } catch (err) {
+    return res.status(err.status || 500).json({ message: err.message });
+  }
+}
+
+async function archiveListing(req, res) {
+  try {
+    const id = Number(req.params.id);
+    const oglas = await listingsService.archiveListing(id, req.user.id);
+    return res.json({ message: 'Oglas je uspješno arhiviran.', oglas });
+  } catch (err) {
+    return res.status(err.status || 500).json({ message: err.message });
+  }
+}
+
+async function restoreFromArchive(req, res) {
+  try {
+    const id = Number(req.params.id);
+    const oglas = await listingsService.restoreFromArchive(id, req.user.id);
+    return res.json({ message: 'Oglas je uspješno vraćen iz arhive.', oglas });
+  } catch (err) {
+    return res.status(err.status || 500).json({ message: err.message });
+  }
+}
+
 module.exports = {
   createListing,
   getCompanyListings,
@@ -109,4 +141,7 @@ module.exports = {
   updateListing,
   getClosedListings,
   getClosedListingsByCompany,
+  closeListing,
+  archiveListing,
+  restoreFromArchive,
 };

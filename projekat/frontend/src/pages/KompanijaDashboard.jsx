@@ -3,10 +3,17 @@ import { useEffect, useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { getCompanyProfile, updateCompanyProfile } from '../services/companyProfile.service';
+import { getCompanyProfile } from '../services/companyProfile.service';
 import { checkCompanyDeactivation, deactivateCompanyAccount, deleteMyCompanyAccount } from '../services/userService';
 import './KompanijaDashboard.css';
-import { createListing, getCompanyListings, getCompanyClosedListings } from '../services/listingsService';
+import { 
+  createListing, 
+  getCompanyListings, 
+  getCompanyClosedListings,
+  closeListing,
+  archiveListing,
+  restoreFromArchive
+} from '../services/listingsService';
 import { getApplicationStatistics } from '../services/applicationsService';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
@@ -21,6 +28,7 @@ const VIEWS = {
   LISTINGS: 'oglasi',
   CREATE_LISTING: 'create-oglas',
   CLOSED_LISTINGS: 'zatvoreni-oglasi',
+  ARCHIVED_LISTINGS: 'arhivirani-oglasi',
   STATISTICS: 'statistika',
 };
 
@@ -38,11 +46,33 @@ function ThemeIcon({ darkMode }) {
       </svg>
     );
   }
-
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
       <path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/>
     </svg>
+  );
+}
+
+// Reusable page-style confirm modal replacing browser's default alert window
+function CustomConfirmModal({ isOpen, title, message, onConfirm, onCancel, confirmText = "Potvrdi", cancelText = "Odustani", type = "danger" }) {
+  if (!isOpen) return null;
+  return (
+    <div className="cd-modal-overlay" role="dialog" aria-modal="true" onClick={onCancel}>
+      <div className="cd-confirm-modal" onClick={(e) => e.stopPropagation()}>
+        <div className={`cd-confirm-icon cd-confirm-icon--${type}`}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+        </div>
+        <h3 className="cd-confirm-title">{title}</h3>
+        <p className="cd-confirm-text">{message}</p>
+        <div className="cd-confirm-actions">
+          <button type="button" className="cd-btn cd-btn--secondary" onClick={onCancel}>{cancelText}</button>
+          <button type="button" className={`cd-btn cd-btn--${type === 'danger' ? 'danger' : 'primary'}`} onClick={onConfirm}>{confirmText}</button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -65,73 +95,55 @@ export default function KompanijaDashboard() {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef(null);
   const { user, logout } = useAuth();
-
   const { darkMode, setDarkMode } = useTheme();
   const navigate = useNavigate();
 
   const [editingListing, setEditingListing] = useState(null);
-  const [closedListings, setClosedListings] = useState([]);
-const [closedLoading, setClosedLoading] = useState(false);
-const [closedLoaded, setClosedLoaded] = useState(false);
+  const [actionProcessingId, setActionProcessingId] = useState(null);
+
+  // States handling the page-style custom confirmation popups
+  const [confirmConfig, setConfirmConfig] = useState({ isOpen: false, title: '', message: '', onConfirm: () => {}, type: 'danger' });
 
   const companyName = companyProfile?.naziv || user?.institution || user?.ime || 'Kompanija';
 
-  useEffect(() => {
-    let active = true;
-
-    async function loadCompanyData() {
-      setListingsLoading(true);
-      setListingsError('');
-      try {
-        const [profile, companyListings] = await Promise.all([
-          getCompanyProfile(),
-          getCompanyListings(),
-        ]);
-        if (active) {
-          setCompanyProfile(profile);
-          setListings(Array.isArray(companyListings) ? companyListings : []);
-        }
-      } catch (err) {
-        if (active) setListingsError(err.message || 'Greška pri učitavanju oglasa.');
-      } finally {
-        if (active) {
-          setListingsLoading(false);
-        }
-      }
+  async function loadCompanyData() {
+    setListingsLoading(true);
+    setListingsError('');
+    try {
+      const [profile, companyListings] = await Promise.all([
+        getCompanyProfile(),
+        getCompanyListings(),
+      ]);
+      setCompanyProfile(profile);
+      setListings(Array.isArray(companyListings) ? companyListings : []);
+    } catch (err) {
+      setListingsError(err.message || 'Greška pri učitavanju oglasa.');
+    } finally {
+      setListingsLoading(false);
     }
+  }
 
+  useEffect(() => {
     loadCompanyData();
-
-    return () => {
-      active = false;
-    };
   }, []);
 
   useEffect(() => {
     let active = true;
-
     async function refreshCompanyProfile() {
       try {
         const profile = await getCompanyProfile();
         if (active) setCompanyProfile(profile);
-      } catch {
-        // Keep the current dashboard state if background refresh fails.
-      }
+      } catch {}
     }
-
     function handleVisibilityChange() {
-      if (document.visibilityState === 'visible') {
-        refreshCompanyProfile();
-      }
+      if (document.visibilityState === 'visible') refreshCompanyProfile();
     }
-
     function handleCompanyProfileUpdated(event) {
       const updatedProfile = event.detail;
       if (updatedProfile && typeof updatedProfile === 'object') {
         setCompanyProfile((current) => ({ ...(current || {}), ...updatedProfile }));
       }
     }
-
     window.addEventListener('focus', refreshCompanyProfile);
     window.addEventListener('pageshow', refreshCompanyProfile);
     window.addEventListener(COMPANY_PROFILE_UPDATED_EVENT, handleCompanyProfileUpdated);
@@ -219,23 +231,81 @@ const [closedLoaded, setClosedLoaded] = useState(false);
     }
   }
 
-  async function handleSaveCompanyProfile(data) {
-    const result = await updateCompanyProfile(data);
-    const updatedProfile = getUpdatedCompanyProfile(result, data, companyProfile);
-    setCompanyProfile(updatedProfile);
-    return updatedProfile;
+  // Closes a listing layout safely
+  async function executeCloseListing(id) {
+    setActionProcessingId(id);
+    try {
+      await closeListing(id);
+      setListings(prev => prev.map(l => l.id === id ? { ...l, status: 'ZATVOREN' } : l));
+    } catch (err) {
+      alert(err.message || 'Greška pri zatvaranju oglasa.');
+    } finally {
+      setActionProcessingId(null);
+      setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+    }
   }
 
+  function handleCloseListingAction(id) {
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Zatvori oglas',
+      message: 'Jeste li sigurni da želite zatvoriti ovaj oglas? Prijave studenata na ovaj oglas više neće biti moguće.',
+      type: 'danger',
+      onConfirm: () => executeCloseListing(id)
+    });
+  }
+
+  // Pre-checks listing state. If it is expired but database still marks it AKTIVAN, 
+  // automatically invoke the close api step immediately before proceeding to archive.
+  async function executeArchiveListing(listing) {
+    setActionProcessingId(listing.id);
+    try {
+      if (listing.status === 'AKTIVAN') {
+        await closeListing(listing.id);
+      }
+      await archiveListing(listing.id);
+      setListings(prev => prev.map(l => l.id === listing.id ? { ...l, status: 'ARHIVIRAN' } : l));
+    } catch (err) {
+      alert(err.message || 'Greška pri arhiviranju oglasa.');
+    } finally {
+      setActionProcessingId(null);
+      setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+    }
+  }
+
+  function handleArchiveListingAction(listing) {
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Arhiviraj oglas',
+      message: 'Želite li arhivirati ovaj oglas? Oglas se uklanja sa spiska uobičajenih istorijskih zatvorenih oglasa.',
+      type: 'warn',
+      onConfirm: () => executeArchiveListing(listing)
+    });
+  }
+
+  async function handleRestoreListingAction(id) {
+    setActionProcessingId(id);
+    try {
+      await restoreFromArchive(id);
+      setListings(prev => prev.map(l => l.id === id ? { ...l, status: 'ZATVOREN' } : l));
+    } catch (err) {
+      alert(err.message || 'Greška pri vraćanju oglasa iz arhive.');
+    } finally {
+      setActionProcessingId(null);
+    }
+  }
+
+  // Dynamic grouping logic pulling expired listings seamlessly into Closed view
+  const locallyDerivedClosed = listings.filter(l => {
+    const passed = l.rokPrijave && new Date(l.rokPrijave) <= new Date();
+    return l.status === 'ZATVOREN' || (l.status === 'AKTIVAN' && passed);
+  });
 
   return (
     <div className={`cd-layout${darkMode ? ' dark' : ''}`}>
-
-      {/* ── Top navbar ── */}
       <nav className="cd-navbar">
         <div className="cd-navbar-left">
-          <Link to="/" className="cd-navbar-brand" aria-label="Idi na početnu stranicu">
-            PraksaHub
-          </Link>
+          <Link to="/" className="cd-navbar-brand" aria-label="Idi na početnu stranicu">PraksaHub</Link>
           <div className="cd-navbar-divider" />
           <span className="cd-navbar-title">Dashboard kompanije</span>
         </div>
@@ -279,6 +349,11 @@ const [closedLoaded, setClosedLoaded] = useState(false);
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
               <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+          </button>
+          <button type="button" className="cd-sb-tab-icon" onClick={() => openView(VIEWS.ARCHIVED_LISTINGS)} title="Arhivirani oglasi">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
             </svg>
           </button>
           <button type="button" className="cd-sb-tab-icon" onClick={() => openView(VIEWS.STATISTICS)} title="Statistika prijava">
@@ -332,6 +407,12 @@ const [closedLoaded, setClosedLoaded] = useState(false);
                   </svg>
                   Zatvoreni oglasi
                 </button>
+                <button type="button" className={`cd-nav-item ${view === VIEWS.ARCHIVED_LISTINGS ? 'active' : ''}`} onClick={() => openView(VIEWS.ARCHIVED_LISTINGS)}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                  </svg>
+                  Arhivirani oglasi
+                </button>
                 <button type="button" className={`cd-nav-item ${view === VIEWS.STATISTICS ? 'active' : ''}`} onClick={() => openView(VIEWS.STATISTICS)}>
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
@@ -372,8 +453,8 @@ const [closedLoaded, setClosedLoaded] = useState(false);
               </svg>
               <span className="cd-sb-footer-text">Odjava</span>
             </button>
-          </div>{/* end cd-sidebar-footer */}
-        </div>{/* end cd-sidebar-inner */}
+          </div>
+        </div>
       </aside>
 
       <main className="cd-main">
@@ -384,10 +465,20 @@ const [closedLoaded, setClosedLoaded] = useState(false);
             listingsError={listingsError}
             onOpenView={openView}
             onEdit={(l) => setEditingListing(l)}
+            onCloseListing={handleCloseListingAction}
+            actionProcessingId={actionProcessingId}
           />
         )}
         {view === VIEWS.LISTINGS && (
-          <ListingsShell listings={listings} loading={listingsLoading} error={listingsError} onOpenView={openView} onEdit={(l) => setEditingListing(l)} />
+          <ListingsShell 
+            listings={listings} 
+            loading={listingsLoading} 
+            error={listingsError} 
+            onOpenView={openView} 
+            onEdit={(l) => setEditingListing(l)}
+            onCloseListing={handleCloseListingAction}
+            actionProcessingId={actionProcessingId}
+          />
         )}
         {view === VIEWS.CREATE_LISTING && (
           <CreateListingShell
@@ -400,29 +491,24 @@ const [closedLoaded, setClosedLoaded] = useState(false);
             }}
           />
         )}
-        {view === VIEWS.STATISTICS && (
-          <StatistikaShell />
-        )}
+        {view === VIEWS.STATISTICS && <StatistikaShell />}
         {view === VIEWS.CLOSED_LISTINGS && (
          <ClosedListingsShell
-           listings={closedListings}
-           loading={closedLoading}
-           loaded={closedLoaded}
-           onLoad={async () => {
-            if (closedLoaded) return;
-            setClosedLoading(true);
-            try {
-              const data = await getCompanyClosedListings();
-              setClosedListings(Array.isArray(data) ? data : []);
-              setClosedLoaded(true);
-            } catch {
-              setClosedListings([]);
-              setClosedLoaded(true);
-            } finally {
-              setClosedLoading(false);
-            }
-          }}
+           listings={locallyDerivedClosed}
+           loading={listingsLoading}
+           error={listingsError}
+           onArchiveListing={handleArchiveListingAction}
+           actionProcessingId={actionProcessingId}
          />
+        )}
+        {view === VIEWS.ARCHIVED_LISTINGS && (
+          <ArchivedListingsShell
+            listings={listings.filter(l => l.status === 'ARHIVIRAN')}
+            loading={listingsLoading}
+            error={listingsError}
+            onRestoreListing={handleRestoreListingAction}
+            actionProcessingId={actionProcessingId}
+          />
         )}
       </main>
 
@@ -458,9 +544,7 @@ const [closedLoaded, setClosedLoaded] = useState(false);
                 <div className="cd-settings-account">
                   <h3 className="cd-settings-section-title">Račun</h3>
                   <div className="cd-settings-user-info">
-                    <div className="cd-settings-avatar">
-                      {(companyName?.[0] || 'K').toUpperCase()}
-                    </div>
+                    <div className="cd-settings-avatar">{(companyName?.[0] || 'K').toUpperCase()}</div>
                     <div>
                       <div className="cd-settings-username">{companyName}</div>
                       <div className="cd-settings-email">{user?.email || ''}</div>
@@ -476,9 +560,7 @@ const [closedLoaded, setClosedLoaded] = useState(false);
                         {deactivateError && (
                           <div className="cd-inline-message cd-inline-message--error" role="alert">{deactivateError}</div>
                         )}
-                        <button type="button" className="cd-btn cd-btn--danger" onClick={handleOpenDeactivate}>
-                          Deaktiviraj nalog
-                        </button>
+                        <button type="button" className="cd-btn cd-btn--danger" onClick={handleOpenDeactivate}>Deaktiviraj nalog</button>
                       </div>
                     </div>
                   </div>
@@ -492,9 +574,7 @@ const [closedLoaded, setClosedLoaded] = useState(false);
                         {deleteError && (
                           <div className="cd-inline-message cd-inline-message--error" role="alert">{deleteError}</div>
                         )}
-                        <button type="button" className="cd-btn cd-btn--danger" onClick={handleOpenDelete}>
-                          Obriši nalog
-                        </button>
+                        <button type="button" className="cd-btn cd-btn--danger" onClick={handleOpenDelete}>Obriši nalog</button>
                       </div>
                     </div>
                   </div>
@@ -523,6 +603,7 @@ const [closedLoaded, setClosedLoaded] = useState(false);
           onCancel={() => { setShowDeleteConfirm(false); setDeleteCheck(null); setDeleteError(''); }}
         />
       )}
+
       {editingListing && (
         <div className="cd-modal-overlay" role="dialog" aria-modal="true" onClick={() => setEditingListing(null)}>
           <div className="cd-modal-sheet" onClick={(e) => e.stopPropagation()}>
@@ -545,14 +626,25 @@ const [closedLoaded, setClosedLoaded] = useState(false);
           </div>
         </div>
       )}
+
+      {/* Web page styled custom popup replacement */}
+      <CustomConfirmModal
+        isOpen={confirmConfig.isOpen}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        type={confirmConfig.type}
+        onConfirm={confirmConfig.onConfirm}
+        onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+      />
     </div>
   );
 }
 
-function DashboardShell({ listings, listingsLoading, listingsError, onOpenView, onEdit }) {
+function DashboardShell({ listings, listingsLoading, listingsError, onOpenView, onEdit, onCloseListing, actionProcessingId }) {
   const activeListings = listings.filter((l) => 
-  l.status === 'AKTIVAN' && new Date(l.rokPrijave) > new Date()
-).length;
+    l.status === 'AKTIVAN' && new Date(l.rokPrijave) > new Date()
+  ).length;
+  
   const stats = [
     {
       label: 'Aktivni oglasi',
@@ -562,7 +654,7 @@ function DashboardShell({ listings, listingsLoading, listingsError, onOpenView, 
     },
     {
       label: 'Ukupno oglasa',
-      value: listingsLoading ? '...' : String(listings.length),
+      value: listingsLoading ? '...' : String(listings.filter(l => l.status !== 'ARHIVIRAN').length),
       sub: listings.length === 1 ? '1 kreiran oglas' : `${listings.length} kreiranih oglasa`,
       tone: 'muted',
     },
@@ -572,7 +664,7 @@ function DashboardShell({ listings, listingsLoading, listingsError, onOpenView, 
     <div className="cd-content">
       <section className="cd-stats-grid" aria-label="Sažetak kompanije">
         {stats.map((stat) => (
-          <article key={stat.label} className={`cd-stat-card${stat.compact ? ' cd-stat-card--compact' : ''}`}>
+          <article key={stat.label} className="cd-stat-card">
             <span className="cd-stat-label">{stat.label}</span>
             <span className="cd-stat-value">{stat.value}</span>
             <span className={`cd-stat-sub cd-stat-sub--${stat.tone}`}>{stat.sub}</span>
@@ -580,25 +672,35 @@ function DashboardShell({ listings, listingsLoading, listingsError, onOpenView, 
         ))}
       </section>
 
-      <ListingsShell listings={listings} loading={listingsLoading} error={listingsError} onOpenView={onOpenView} onEdit={onEdit} />
+      <ListingsShell 
+        listings={listings} 
+        loading={listingsLoading} 
+        error={listingsError} 
+        onOpenView={onOpenView} 
+        onEdit={onEdit} 
+        onCloseListing={onCloseListing}
+        actionProcessingId={actionProcessingId}
+      />
     </div>
   );
 }
 
-function ListingsShell({ listings = [], loading = false, error = '', onOpenView, onEdit }) {
+function ListingsShell({ listings = [], loading = false, error = '', onOpenView, onEdit, onCloseListing, actionProcessingId }) {
+  const activeOnly = listings.filter(l => l.status === 'AKTIVAN' && !(l.rokPrijave && new Date(l.rokPrijave) <= new Date()));
+
   return (
     <section className="cd-section">
       <div className="cd-section-header">
-        <h2 className="cd-section-title">Moji oglasi</h2>
+        <h2 className="cd-section-title">Moji aktivni oglasi</h2>
         <button type="button" className="cd-btn cd-btn--primary cd-section-action" onClick={() => onOpenView(VIEWS.CREATE_LISTING)}>
           Kreiraj oglas
         </button>
       </div>
       {loading && <div className="cd-inline-message" role="status">Učitavanje oglasa...</div>}
       {!loading && error && <div className="cd-inline-message cd-inline-message--error" role="alert">{error}</div>}
-      {!loading && !error && listings.length > 0 && (
+      {!loading && !error && activeOnly.length > 0 && (
         <div className="cd-listings-list">
-          {listings.map((listing) => (
+          {activeOnly.map((listing) => (
             <article key={listing.id} className="cd-listing-card">
               <div className="cd-listing-main">
                 <h3 className="cd-listing-title">{listing.naziv}</h3>
@@ -610,37 +712,35 @@ function ListingsShell({ listings = [], loading = false, error = '', onOpenView,
                 </div>
               </div>
               <div className="cd-listing-side">
-                {(() => {
-                  const istekao = listing.rokPrijave && new Date(listing.rokPrijave) <= new Date();
-                  const displayStatus = istekao && listing.status === 'AKTIVAN' ? 'ISTEKAO' : (listing.status || 'Status');
-                  const cssStatus = istekao && listing.status === 'AKTIVAN' ? 'zatvoren' : String(listing.status || '').toLowerCase();
-                  return (
-                    <span className={`cd-listing-status cd-listing-status--${cssStatus}`}>
-                    {displayStatus}
-                    </span>
-                  );
-                })()}
+                <span className="cd-listing-status cd-listing-status--aktivan">AKTIVAN</span>
                 <span className="cd-listing-date">Rok: {formatDate(listing.rokPrijave)}</span>
                 <span className="cd-listing-date">Objava: {formatDate(listing.datumObjave)}</span>
-                <div style={{marginTop: '10px', display: 'flex', gap: '8px'}}>
-                  {listing.status === 'AKTIVAN' && (
-                    <button className="cd-btn cd-btn--secondary" onClick={(e) => { e.stopPropagation(); if (onEdit) onEdit(listing); }}>Uredi</button>
-                  )}
+                <div className="cd-listing-actions-wrapper">
+                  <button 
+                    className="cd-btn cd-btn--secondary" 
+                    onClick={(e) => { e.stopPropagation(); if (onEdit) onEdit(listing); }}
+                    disabled={actionProcessingId === listing.id}
+                  >
+                    Uredi
+                  </button>
+                  <button 
+                    className="cd-btn cd-btn--danger" 
+                    onClick={(e) => { e.stopPropagation(); onCloseListing(listing.id); }}
+                    disabled={actionProcessingId === listing.id}
+                  >
+                    {actionProcessingId === listing.id ? 'Zatvaranje...' : 'Zatvori'}
+                  </button>
                 </div>
               </div>
             </article>
           ))}
         </div>
       )}
-      {!loading && !error && listings.length === 0 && (
+      {!loading && !error && activeOnly.length === 0 && (
         <div className="cd-empty-state">
-          <div className="cd-empty-title">Još nemate kreiranih oglasa.</div>
-          <p className="cd-empty-text">
-            Kada oglas bude kreiran, pojavit će se u ovom pregledu za kompaniju.
-          </p>
-          <button type="button" className="cd-btn cd-btn--primary" onClick={() => onOpenView(VIEWS.CREATE_LISTING)}>
-            Kreiraj prvi oglas
-          </button>
+          <div className="cd-empty-title">Nemate kreiranih aktivnih oglasa.</div>
+          <p className="cd-empty-text">Kada oglas bude kreiran i aktivan, pojavit će se u ovom pregledu.</p>
+          <button type="button" className="cd-btn cd-btn--primary" onClick={() => onOpenView(VIEWS.CREATE_LISTING)}>Kreiraj prvi oglas</button>
         </div>
       )}
     </section>
@@ -808,17 +908,13 @@ function CreateListingShell({ onCancel, onCreated }) {
             <button type="submit" className="cd-btn cd-btn--primary" disabled={saving}>
               {saving ? 'Kreiranje...' : 'Objavi oglas'}
             </button>
-            <button type="button" className="cd-btn cd-btn--secondary" onClick={onCancel} disabled={saving}>
-              Nazad
-            </button>
+            <button type="button" className="cd-btn cd-btn--secondary" onClick={onCancel} disabled={saving}>Nazad</button>
           </div>
         </form>
       </section>
     </div>
   );
 }
-
-
 
 function DeactivateModal({ check, deactivating, onConfirm, onCancel }) {
   const isBlocked = check && !check.canDeactivate;
@@ -836,9 +932,7 @@ function DeactivateModal({ check, deactivating, onConfirm, onCancel }) {
               </svg>
             </div>
             <h3 className="cd-confirm-title">Deaktivacija nije moguća</h3>
-            <p className="cd-confirm-text">
-              Vaši oglasi imaju aktivne prijave. Zatvorite sve oglase sa prijavama prije deaktivacije naloga.
-            </p>
+            <p className="cd-confirm-text">Vaši oglasi imaju aktivne prijave. Zatvorite sve oglase sa prijavama prije deaktivacije naloga.</p>
             <ul className="cd-confirm-app-list">
               {(check.oglasi || []).map((naziv, i) => <li key={i}>{naziv}</li>)}
             </ul>
@@ -855,10 +949,7 @@ function DeactivateModal({ check, deactivating, onConfirm, onCancel }) {
               </svg>
             </div>
             <h3 className="cd-confirm-title">Deaktivirajte račun</h3>
-            <p className="cd-confirm-text">
-              Ova akcija je nepovratna. Nakon deaktivacije više se nećete moći prijaviti ovim nalogom.
-              Samo administrator može ponovo aktivirati vaš nalog.
-            </p>
+            <p className="cd-confirm-text">Ova akcija je nepovratna. Nakon deaktivacije više se nećete moći prijaviti ovim nalogom. Samo administrator može ponovo aktivirati vaš nalog.</p>
             {oglasiToClose.length > 0 && (
               <div className="cd-confirm-warn-box">
                 <p className="cd-confirm-warn-label">Sljedeći aktivni oglasi bit će automatski zatvoreni:</p>
@@ -895,9 +986,7 @@ function DeleteModal({ check, deleting, deleteError, onConfirm, onCancel }) {
               </svg>
             </div>
             <h3 className="cd-confirm-title">Brisanje nije moguće</h3>
-            <p className="cd-confirm-text">
-              Vaši oglasi imaju aktivne prijave. Zatvorite sve oglase sa prijavama prije brisanja naloga.
-            </p>
+            <p className="cd-confirm-text">Vaši oglasi imaju aktivne prijave. Zatvorite sve oglase sa prijavama prije brisanja naloga.</p>
             <ul className="cd-confirm-app-list">
               {(check.oglasi || []).map((naziv, i) => <li key={i}>{naziv}</li>)}
             </ul>
@@ -916,12 +1005,8 @@ function DeleteModal({ check, deleting, deleteError, onConfirm, onCancel }) {
               </svg>
             </div>
             <h3 className="cd-confirm-title">Obriši nalog</h3>
-            <p className="cd-confirm-text">
-              Ova akcija je <strong>trajna i nepovratna</strong>. Svi vaši podaci bit će trajno obrisani sa platforme.
-            </p>
-            {deleteError && (
-              <div className="cd-inline-message cd-inline-message--error" role="alert">{deleteError}</div>
-            )}
+            <p className="cd-confirm-text">Ova akcija je <strong>trajna i nepovratna</strong>. Svi vaši podaci bit će trajno obrisani sa platforme.</p>
+            {deleteError && <div className="cd-inline-message cd-inline-message--error" role="alert">{deleteError}</div>}
             <div className="cd-confirm-actions">
               <button type="button" className="cd-btn cd-btn--secondary" onClick={onCancel} disabled={deleting}>Odustani</button>
               <button type="button" className="cd-btn cd-btn--danger" onClick={onConfirm} disabled={deleting}>
@@ -935,11 +1020,7 @@ function DeleteModal({ check, deleting, deleteError, onConfirm, onCancel }) {
   );
 }
 
-const CHART_COLORS = {
-  blue: '#1a6fd4',
-  purple: '#6d4ce1',
-  green: '#0e9e6e',
-};
+const CHART_COLORS = { blue: '#1a6fd4', purple: '#6d4ce1', green: '#0e9e6e' };
 
 function StatChart({ data, dataKey, nameKey, color, height = 260, tickFormatter }) {
   return (
@@ -1022,9 +1103,9 @@ function StatistikaShell() {
 
   const truncate = (str, n = 18) => str?.length > n ? str.slice(0, n) + '…' : str;
 
-  const perListingData  = (stats?.perListing  || []).map((l) => ({ naziv:    l.naziv,             'Broj prijava': l.count }));
-  const byYearData     = (stats?.byYear      || []).map((y) => ({ godina:  `${y.year}. godina`, 'Broj prijava': y.count }));
-  const byFakultetData = (stats?.byFakultet  || []).map((f) => ({ fakultet: f.naziv,            'Broj prijava': f.count }));
+  const perListingData  = (stats?.perListing  || []).map((l) => ({ naziv: l.naziv, 'Broj prijava': l.count }));
+  const byYearData     = (stats?.byYear      || []).map((y) => ({ godina: `${y.year}. godina`, 'Broj prijava': y.count }));
+  const byFakultetData = (stats?.byFakultet  || []).map((f) => ({ fakultet: f.naziv, 'Broj prijava': f.count }));
   const byOdsjekGroups = stats?.byOdsjek || [];
 
   const chartConfig = {
@@ -1067,11 +1148,7 @@ function StatistikaShell() {
             <div className="cd-stat-filter-row">
               <div className="cd-stat-filter-group">
                 <span className="cd-stat-filter-label">Status</span>
-                <select
-                  className="cd-stat-status-select"
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                >
+                <select className="cd-stat-status-select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
                   <option value="">Svi statusi</option>
                   <option value="PODNESENA">Podnesena</option>
                   <option value="U_RAZMATRANJU">U razmatranju</option>
@@ -1086,11 +1163,7 @@ function StatistikaShell() {
                   <div className="cd-stat-filter-divider" />
                   <div className="cd-stat-filter-group">
                     <span className="cd-stat-filter-label">Oglas</span>
-                    <select
-                      className="cd-stat-status-select"
-                      value={oglasFilter}
-                      onChange={(e) => setOglasFilter(e.target.value)}
-                    >
+                    <select className="cd-stat-status-select" value={oglasFilter} onChange={(e) => setOglasFilter(e.target.value)}>
                       <option value="">Svi oglasi</option>
                       {(stats.oglasi || []).map((o) => (
                         <option key={o.id} value={o.id}>{o.naziv}</option>
@@ -1163,41 +1236,100 @@ function StatistikaShell() {
   );
 }
 
-function ClosedListingsShell({ listings, loading, loaded, onLoad }) {
-  useEffect(() => {
-    onLoad();
-  }, []);
-
+function ClosedListingsShell({ listings, loading, error, onArchiveListing, actionProcessingId }) {
   return (
     <div className="cd-content">
       <header className="cd-header">
         <h1 className="cd-title">Zatvoreni oglasi</h1>
-        <p className="cd-subtitle">
-          Pregled vaših oglasa kojima je istekao rok prijave ili koji su zatvoreni.
-        </p>
+        <p className="cd-subtitle">Pregled vaših oglasa kojima je istekao rok prijave ili koji su zatvoreni ručno.</p>
       </header>
       <section className="cd-section">
         <div className="cd-section-header">
-          <h2 className="cd-section-title">Zatvoreni oglasi</h2>
+          <h2 className="cd-section-title">Zatvoreni i istekli oglasi</h2>
           {!loading && (
             <span className="cd-section-count">{listings.length} {listings.length === 1 ? 'oglas' : 'oglasa'}</span>
           )}
         </div>
 
-        {loading && (
-          <div className="cd-inline-message" role="status">Učitavanje zatvorenih oglasa...</div>
-        )}
+        {loading && <div className="cd-inline-message" role="status">Učitavanje zatvorenih oglasa...</div>}
+        {!loading && error && <div className="cd-inline-message cd-inline-message--error" role="alert">{error}</div>}
 
-        {!loading && listings.length === 0 && (
+        {!loading && !error && listings.length === 0 && (
           <div className="cd-empty-state">
-            <div className="cd-empty-title">Nema zatvorenih oglasa.</div>
-            <p className="cd-empty-text">
-              Ovdje će se prikazati oglasi kojima je istekao rok prijave ili koje zatvorite ručno.
-            </p>
+            <div className="cd-empty-title">Nema zatvorenih ili isteklih oglasa.</div>
+            <p className="cd-empty-text">Ovdje će se prikazati oglasi kojima je istekao rok prijave ili koje zatvorite ručno.</p>
           </div>
         )}
 
-        {!loading && listings.length > 0 && (
+        {!loading && !error && listings.length > 0 && (
+          <div className="cd-listings-list">
+            {listings.map((listing) => {
+              const istekao = listing.rokPrijave && new Date(listing.rokPrijave) <= new Date();
+              const displayStatus = istekao && listing.status === 'AKTIVAN' ? 'ISTEKAO' : 'ZATVOREN';
+
+              return (
+                <article key={listing.id} className="cd-listing-card">
+                  <div className="cd-listing-main">
+                    <h3 className="cd-listing-title">{listing.naziv}</h3>
+                    <p className="cd-listing-desc">{listing.opis}</p>
+                    <div className="cd-listing-meta">
+                      {listing.oblast && <span>{listing.oblast}</span>}
+                      {listing.trajanje && <span>{listing.trajanje} mj.</span>}
+                      <span>{listing.brojMjesta} {Number(listing.brojMjesta) === 1 ? 'mjesto' : 'mjesta'}</span>
+                      {listing.tip && <span>{listing.tip}</span>}
+                    </div>
+                  </div>
+                  <div className="cd-listing-side">
+                    <span className="cd-listing-status cd-listing-status--zatvoren">{displayStatus}</span>
+                    <span className="cd-listing-date">Rok: {formatDate(listing.rokPrijave)}</span>
+                    <span className="cd-listing-date">Objava: {formatDate(listing.datumObjave)}</span>
+                    
+                    <div className="cd-listing-actions-wrapper">
+                      <button 
+                        className="cd-btn cd-btn--secondary"
+                        onClick={(e) => { e.stopPropagation(); onArchiveListing(listing); }}
+                        disabled={actionProcessingId === listing.id}
+                      >
+                        {actionProcessingId === listing.id ? 'Arhiviranje...' : 'Arhiviraj'}
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function ArchivedListingsShell({ listings, loading, error, onRestoreListing, actionProcessingId }) {
+  return (
+    <div className="cd-content">
+      <header className="cd-header">
+        <h1 className="cd-title">Arhivirani oglasi</h1>
+        <p className="cd-subtitle">Pregled istorijskih oglasa koji su sklonjeni iz aktivne evidencije.</p>
+      </header>
+      <section className="cd-section">
+        <div className="cd-section-header">
+          <h2 className="cd-section-title">Arhiva oglasa</h2>
+          {!loading && (
+            <span className="cd-section-count">{listings.length} {listings.length === 1 ? 'oglas' : 'oglasa'}</span>
+          )}
+        </div>
+
+        {loading && <div className="cd-inline-message" role="status">Učitavanje arhive...</div>}
+        {!loading && error && <div className="cd-inline-message cd-inline-message--error" role="alert">{error}</div>}
+
+        {!loading && !error && listings.length === 0 && (
+          <div className="cd-empty-state">
+            <div className="cd-empty-title">Nema arhiviranih oglasa.</div>
+            <p className="cd-empty-text">Oglasi koje arhivirate unutar "Zatvoreni oglasi" sekcije će se pojaviti ovdje.</p>
+          </div>
+        )}
+
+        {!loading && !error && listings.length > 0 && (
           <div className="cd-listings-list">
             {listings.map((listing) => (
               <article key={listing.id} className="cd-listing-card">
@@ -1208,15 +1340,21 @@ function ClosedListingsShell({ listings, loading, loaded, onLoad }) {
                     {listing.oblast && <span>{listing.oblast}</span>}
                     {listing.trajanje && <span>{listing.trajanje} mj.</span>}
                     <span>{listing.brojMjesta} {Number(listing.brojMjesta) === 1 ? 'mjesto' : 'mjesta'}</span>
-                    {listing.tip && <span>{listing.tip}</span>}
                   </div>
                 </div>
                 <div className="cd-listing-side">
-                  <span className="cd-listing-status cd-listing-status--zatvoren">
-                    Zatvoreno
-                  </span>
+                  <span className="cd-listing-status cd-listing-status--arhiviran" style={{ backgroundColor: 'var(--color-muted)', color: '#fff' }}>Arhivirano</span>
                   <span className="cd-listing-date">Rok: {formatDate(listing.rokPrijave)}</span>
-                  <span className="cd-listing-date">Objava: {formatDate(listing.datumObjave)}</span>
+                  
+                  <div className="cd-listing-actions-wrapper">
+                    <button 
+                      className="cd-btn cd-btn--secondary"
+                      onClick={(e) => { e.stopPropagation(); onRestoreListing(listing.id); }}
+                      disabled={actionProcessingId === listing.id}
+                    >
+                      {actionProcessingId === listing.id ? 'Vraćanje...' : 'Vrati iz arhive'}
+                    </button>
+                  </div>
                 </div>
               </article>
             ))}
