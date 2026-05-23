@@ -4,9 +4,6 @@ const express = require('express');
 const router = express.Router();
 
 const listingsController = require('../../business/controllers/listings.controller');
-//const authMiddleware = require('../../middleware/auth.middleware');
-//const rbacMiddleware = require('../../middleware/rbac.middleware');
-
 const { authenticate } = require('../../middleware/auth.middleware');
 const { authorize } = require('../../middleware/rbac.middleware');
 
@@ -51,6 +48,27 @@ router.put(
   listingsController.updateListing
 );
 
+// === NOVE SAKRIVENE / AKCIJSKE RUTE ZA PROMJENU STATUSA ===
 
+router.patch(
+  '/:id/close',
+  authenticate,
+  authorize('COMPANY'),
+  listingsController.closeListing
+);
+
+router.patch(
+  '/:id/archive',
+  authenticate,
+  authorize('COMPANY'),
+  listingsController.archiveListing
+);
+
+router.patch(
+  '/:id/restore',
+  authenticate,
+  authorize('COMPANY'),
+  listingsController.restoreFromArchive
+);
 
 module.exports = router;
