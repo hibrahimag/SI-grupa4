@@ -10,3 +10,14 @@ export async function createApplication(oglasID) {
     body: JSON.stringify({ oglasID }),
   });
 }
+
+export async function getApplicationStatistics({ fakultetID, odsjekID, godina, status, oglasID } = {}) {
+  const params = new URLSearchParams();
+  if (fakultetID) params.set('fakultetID', fakultetID);
+  if (odsjekID) params.set('odsjekID', odsjekID);
+  if (godina) params.set('godina', godina);
+  if (status) params.set('status', status);
+  if (oglasID) params.set('oglasID', oglasID);
+  const query = params.toString();
+  return apiRequest(`/applications/statistics${query ? `?${query}` : ''}`);
+}

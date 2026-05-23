@@ -86,9 +86,9 @@ function PraksaCard({ praksa, onSelect, isFavourite, onToggleFavourite, applicat
   return (
     <div
       className={`sd-card-wrap${inactive ? ' sd-card-wrap--inactive' : ''}`}
-      onClick={() => !inactive && onSelect(praksa)}
+      onClick={() => onSelect(praksa)}
     >
-      <article className="sd-card" tabIndex={inactive ? -1 : 0} role="button" aria-label={`${praksa.naziv} — ${praksa.kompanija}`}>
+      <article className="sd-card" tabIndex={0} role="button" aria-label={`${praksa.naziv} — ${praksa.kompanija}`}>
         <button
           className={`sd-heart-btn${isFavourite ? ' sd-heart-btn--active' : ''}`}
           onClick={e => { e.stopPropagation(); onToggleFavourite(praksa.id); }}
@@ -181,16 +181,13 @@ function PraksaCard({ praksa, onSelect, isFavourite, onToggleFavourite, applicat
             <span className="sd-published">{relativeDate(praksa.datumObjave)}</span>
             <button
               className="sd-btn-detail"
-              disabled={inactive}
-              onClick={e => { e.stopPropagation(); if (!inactive) onSelect(praksa); }}
+              onClick={e => { e.stopPropagation(); onSelect(praksa); }}
               tabIndex={-1}
             >
-              {inactive ? 'Oglas istekao' : 'Saznaj više'}
-              {!inactive && (
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
-                </svg>
-              )}
+              {inactive ? 'Pogledaj detalje' : 'Saznaj više'}
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
+              </svg>
             </button>
           </div>
         </div>
@@ -1191,6 +1188,8 @@ export default function StudentDashboard() {
 
   const [activeTab, setActiveTab] = useState('svi');
   const [favourites, setFavourites] = useState(new Set());
+  const [favouriteListings, setFavouriteListings] = useState([]);
+  const [omiljeniShowAll, setOmiljeniShowAll] = useState(false);
   const [applications, setApplications] = useState([]);
   const { limit: applicationLimit, activeCount: activeApplicationCount, isAtLimit } = useApplicationLimit(applications);
   const vidljiviOmiljeni = useMemo(
@@ -1258,7 +1257,12 @@ export default function StudentDashboard() {
   useEffect(() => {
     let active = true;
     getFavourites()
-      .then(ids => { if (active) setFavourites(new Set(ids)); })
+      .then(({ ids, listings }) => {
+        if (active) {
+          setFavourites(new Set(ids));
+          setFavouriteListings(listings.map(mapOglas));
+        }
+      })
       .catch(() => { });
     return () => { active = false; };
   }, []);
@@ -1370,13 +1374,21 @@ export default function StudentDashboard() {
     [prakse]
   );
 
-  const activeFavouritesCount = useMemo(
-    () => prakse.filter(p => favourites.has(p.id)).length,
-    [prakse, favourites]
-  );
+  const activeFavouritesCount = favourites.size;
 
   const filteredPrakse = useMemo(() => {
-    let r = activeTab === 'omiljeni' ? prakse.filter(p => favourites.has(p.id)) : [...prakse];
+    let r;
+    if (activeTab === 'omiljeni') {
+      const aktivniOmiljeni = prakse.filter(p => favourites.has(p.id));
+      if (omiljeniShowAll) {
+        const aktivniIds = new Set(prakse.map(p => p.id));
+        r = [...aktivniOmiljeni, ...favouriteListings.filter(p => !aktivniIds.has(p.id))];
+      } else {
+        r = aktivniOmiljeni;
+      }
+    } else {
+      r = [...prakse];
+    }
     if (search.trim()) {
       const s = search.trim().toLowerCase();
       r = r.filter(p =>
@@ -1401,7 +1413,7 @@ export default function StudentDashboard() {
     else if (sortBy === 'trajanje-asc') r.sort((a, b) => a.trajanje - b.trajanje);
     else if (sortBy === 'trajanje-desc') r.sort((a, b) => b.trajanje - a.trajanje);
     return r;
-  }, [prakse, search, filterTehs, filterTips, filterTrajanja, sortBy, activeTab, favourites]);
+  }, [prakse, search, filterTehs, filterTips, filterTrajanja, sortBy, activeTab, favourites, omiljeniShowAll, favouriteListings]);
 
   const filteredZatvoreni = useMemo(() => {
     let r = [...zatvoreniOglasi];
@@ -1986,6 +1998,23 @@ export default function StudentDashboard() {
                   )}
                 </div>
               </div>
+
+              {activeTab === 'omiljeni' && (
+                <div className="sd-omiljeni-toggle">
+                  <button
+                    className={`sd-omiljeni-toggle-btn${!omiljeniShowAll ? ' active' : ''}`}
+                    onClick={() => setOmiljeniShowAll(false)}
+                  >
+                    Aktivni
+                  </button>
+                  <button
+                    className={`sd-omiljeni-toggle-btn${omiljeniShowAll ? ' active' : ''}`}
+                    onClick={() => setOmiljeniShowAll(true)}
+                  >
+                    Svi
+                  </button>
+                </div>
+              )}
 
               <p className="sd-results-info">
                 {filteredPrakse.length === 0

@@ -7,6 +7,8 @@ const {
   PrijavaNaPraksu,
   Kompanija,
   Dokument,
+  Odsjek,
+  Fakultet,
 } = require('../../infrastructure/database/models');
 const { createNotification } = require('./notifications.service');
 const { sendPrijavaPodnesenaEmail } = require('./email.service');
@@ -176,7 +178,137 @@ async function getMyApplications(userId) {
   });
 }
 
+async function getApplicationStatistics(userId, { fakultetID, odsjekID, godina, status, oglasID } = {}) {
+  const kompanija = await Kompanija.findOne({ where: { userID: userId } });
+  if (!kompanija) {
+    throw makeError('Kompanija nije pronađena.', 404);
+  }
+
+  const oglasi = await Oglas.findAll({
+    where: { kompanijaID: kompanija.id },
+    attributes: ['id', 'naziv', 'status'],
+  });
+
+  const oglasiList = oglasi.map((o) => ({ id: o.id, naziv: o.naziv }));
+
+  if (oglasi.length === 0) {
+    return {
+      summary: { totalApplications: 0, listingsWithApplications: 0 },
+      perListing: [],
+      byYear: [],
+      byOdsjek: [],
+      byFakultet: [],
+      oglasi: [],
+    };
+  }
+
+  const oglasIDs = oglasi.map((o) => o.id);
+  const oglasInfoMap = {};
+  for (const o of oglasi) {
+    oglasInfoMap[o.id] = { oglasID: o.id, naziv: o.naziv, oglasStatus: o.status, count: 0 };
+  }
+
+  const studentWhere = {};
+  if (fakultetID) studentWhere.fakultetID = Number(fakultetID);
+  if (odsjekID) studentWhere.odsjekID = Number(odsjekID);
+  if (godina) studentWhere.year_of_study = Number(godina);
+
+  const hasStudentFilter = Object.keys(studentWhere).length > 0;
+
+  const oglasIDNum = oglasID ? Number(oglasID) : null;
+  const prijaveWhere = {
+    oglasID: oglasIDNum && oglasIDs.includes(oglasIDNum) ? oglasIDNum : oglasIDs,
+  };
+  if (status) prijaveWhere.status = status;
+
+  const prijave = await PrijavaNaPraksu.findAll({
+    where: prijaveWhere,
+    attributes: ['id', 'oglasID'],
+    include: [
+      {
+        model: Student,
+        attributes: ['id', 'year_of_study', 'odsjekID', 'fakultetID'],
+        where: hasStudentFilter ? studentWhere : undefined,
+        required: hasStudentFilter,
+        include: [
+          { model: Odsjek, attributes: ['id', 'naziv'] },
+          { model: Fakultet, attributes: ['id', 'naziv'] },
+        ],
+      },
+    ],
+  });
+
+  const yearMap = {};
+  const odsjekMap = {};
+  const fakultetMap = {};
+
+  for (const prijava of prijave) {
+    const student = prijava.Student;
+    oglasInfoMap[prijava.oglasID].count++;
+
+    if (student?.year_of_study) {
+      const y = student.year_of_study;
+      yearMap[y] = (yearMap[y] || 0) + 1;
+    }
+
+    if (student?.Odsjek && student?.Fakultet) {
+      const o = student.Odsjek;
+      const f = student.Fakultet;
+      if (!odsjekMap[f.id]) {
+        odsjekMap[f.id] = { fakultetID: f.id, fakultetNaziv: f.naziv, odsjeci: {} };
+      }
+      if (!odsjekMap[f.id].odsjeci[o.id]) {
+        odsjekMap[f.id].odsjeci[o.id] = { odsjekID: o.id, naziv: o.naziv, count: 0 };
+      }
+      odsjekMap[f.id].odsjeci[o.id].count++;
+    }
+
+    if (student?.Fakultet) {
+      const f = student.Fakultet;
+      if (!fakultetMap[f.id]) {
+        fakultetMap[f.id] = { fakultetID: f.id, naziv: f.naziv, count: 0 };
+      }
+      fakultetMap[f.id].count++;
+    }
+  }
+
+  const perListing = Object.values(oglasInfoMap)
+    .filter((l) => l.count > 0)
+    .sort((a, b) => b.count - a.count);
+
+  const byYear = Object.entries(yearMap)
+    .map(([year, count]) => ({ year: Number(year), count }))
+    .sort((a, b) => a.year - b.year);
+
+  const byOdsjek = Object.values(odsjekMap)
+    .map((f) => ({
+      fakultetID: f.fakultetID,
+      fakultetNaziv: f.fakultetNaziv,
+      odsjeci: Object.values(f.odsjeci).sort((a, b) => b.count - a.count),
+    }))
+    .sort((a, b) => {
+      const totalA = a.odsjeci.reduce((s, o) => s + o.count, 0);
+      const totalB = b.odsjeci.reduce((s, o) => s + o.count, 0);
+      return totalB - totalA;
+    });
+
+  const byFakultet = Object.values(fakultetMap).sort((a, b) => b.count - a.count);
+
+  return {
+    summary: {
+      totalApplications: prijave.length,
+      listingsWithApplications: perListing.length,
+    },
+    perListing,
+    byYear,
+    byOdsjek,
+    byFakultet,
+    oglasi: oglasiList,
+  };
+}
+
 module.exports = {
   createApplication,
   getMyApplications,
+  getApplicationStatistics,
 };

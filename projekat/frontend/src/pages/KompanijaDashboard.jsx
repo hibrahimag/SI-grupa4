@@ -7,6 +7,10 @@ import { getCompanyProfile, updateCompanyProfile } from '../services/companyProf
 import { checkCompanyDeactivation, deactivateCompanyAccount, deleteMyCompanyAccount } from '../services/userService';
 import './KompanijaDashboard.css';
 import { createListing, getCompanyListings, getCompanyClosedListings } from '../services/listingsService';
+import { getApplicationStatistics } from '../services/applicationsService';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
+} from 'recharts';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import EditOglas from '../modules/listings/EditOglas';
@@ -17,6 +21,7 @@ const VIEWS = {
   LISTINGS: 'oglasi',
   CREATE_LISTING: 'create-oglas',
   CLOSED_LISTINGS: 'zatvoreni-oglasi',
+  STATISTICS: 'statistika',
 };
 
 const COMPANY_PROFILE_UPDATED_EVENT = 'company-profile-updated';
@@ -276,15 +281,9 @@ const [closedLoaded, setClosedLoaded] = useState(false);
               <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
             </svg>
           </button>
-          <button type="button" className="cd-sb-tab-icon" onClick={openProfilePage} title="Moj profil">
+          <button type="button" className="cd-sb-tab-icon" onClick={() => openView(VIEWS.STATISTICS)} title="Statistika prijava">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-            </svg>
-          </button>
-          <button type="button" className="cd-sb-tab-icon" onClick={openSettings} title="Postavke">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="3"/>
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+              <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
             </svg>
           </button>
           <div className="cd-sb-tab-footer">
@@ -333,16 +332,11 @@ const [closedLoaded, setClosedLoaded] = useState(false);
                   </svg>
                   Zatvoreni oglasi
                 </button>
-              </nav>
-            </div>
-            <div className="cd-nav-group">
-              <div className="cd-nav-label">Profil</div>
-              <nav className="cd-nav">
-                <button type="button" className="cd-nav-item" onClick={openProfilePage}>
+                <button type="button" className={`cd-nav-item ${view === VIEWS.STATISTICS ? 'active' : ''}`} onClick={() => openView(VIEWS.STATISTICS)}>
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                    <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
                   </svg>
-                  Moj profil
+                  Statistika prijava
                 </button>
               </nav>
             </div>
@@ -351,7 +345,13 @@ const [closedLoaded, setClosedLoaded] = useState(false);
           <div className="cd-sidebar-footer" ref={profileMenuRef}>
             {profileMenuOpen && (
               <div className="cd-profile-menu">
-                <button className="cd-profile-menu-item" onClick={openSettings}>
+                <button className="cd-profile-menu-item" onClick={() => { setProfileMenuOpen(false); openProfilePage(); }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                  </svg>
+                  <span>Moj profil</span>
+                </button>
+                <button className="cd-profile-menu-item" onClick={() => { setProfileMenuOpen(false); openSettings(); }}>
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="3"/>
                     <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
@@ -363,17 +363,6 @@ const [closedLoaded, setClosedLoaded] = useState(false);
             <button className="cd-sb-footer-row" onClick={() => setProfileMenuOpen(v => !v)}>
               <div className="cd-nav-avatar">{(companyName?.[0] || 'K').toUpperCase()}</div>
               <span className="cd-sb-footer-text">{companyName}</span>
-            </button>
-            <button
-              type="button"
-              className={`cd-sb-footer-row${settingsOpen ? ' active' : ''}`}
-              onClick={openSettings}
-            >
-              <svg className="cd-sb-footer-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="3"/>
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-              </svg>
-              <span className="cd-sb-footer-text">Postavke</span>
             </button>
             <button type="button" className="cd-sb-footer-row cd-sb-logout-row" onClick={handleLogout}>
               <svg className="cd-sb-footer-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -410,6 +399,9 @@ const [closedLoaded, setClosedLoaded] = useState(false);
               openView(VIEWS.LISTINGS);
             }}
           />
+        )}
+        {view === VIEWS.STATISTICS && (
+          <StatistikaShell />
         )}
         {view === VIEWS.CLOSED_LISTINGS && (
          <ClosedListingsShell
@@ -939,6 +931,234 @@ function DeleteModal({ check, deleting, deleteError, onConfirm, onCancel }) {
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+const CHART_COLORS = {
+  blue: '#1a6fd4',
+  purple: '#6d4ce1',
+  green: '#0e9e6e',
+};
+
+function StatChart({ data, dataKey, nameKey, color, height = 260, tickFormatter }) {
+  return (
+    <ResponsiveContainer width="100%" height={height}>
+      <BarChart data={data} margin={{ top: 8, right: 16, left: 0, bottom: 40 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
+        <XAxis
+          dataKey={nameKey}
+          tick={{ fontSize: 12, fill: 'var(--color-muted)', fontFamily: 'var(--font-sans)' }}
+          axisLine={false}
+          tickLine={false}
+          angle={-35}
+          textAnchor="end"
+          interval={0}
+          tickFormatter={tickFormatter}
+        />
+        <YAxis
+          allowDecimals={false}
+          tick={{ fontSize: 12, fill: 'var(--color-muted)', fontFamily: 'var(--font-sans)' }}
+          axisLine={false}
+          tickLine={false}
+          width={28}
+        />
+        <Tooltip
+          cursor={{ fill: 'var(--color-primary-subtle)', radius: 4 }}
+          contentStyle={{
+            background: 'var(--color-surface)',
+            border: '1px solid var(--color-border)',
+            borderRadius: 8,
+            fontSize: 13,
+            fontFamily: 'var(--font-sans)',
+            boxShadow: 'var(--shadow-card)',
+          }}
+          labelStyle={{ color: 'var(--color-dark)', fontWeight: 600 }}
+          itemStyle={{ color: color }}
+        />
+        <Bar dataKey={dataKey} radius={[4, 4, 0, 0]} maxBarSize={56}>
+          {data.map((_, i) => (
+            <Cell key={i} fill={color} fillOpacity={0.85 + (i % 2) * 0.1} />
+          ))}
+        </Bar>
+      </BarChart>
+    </ResponsiveContainer>
+  );
+}
+
+const STAT_TABS = [
+  { key: 'prijave',  label: 'Sve prijave' },
+  { key: 'odsjek',  label: 'Po odsjeku' },
+  { key: 'godina',  label: 'Po godini' },
+  { key: 'fakultet', label: 'Po fakultetu' },
+];
+
+function StatistikaShell() {
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [activeTab, setActiveTab] = useState('prijave');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [oglasFilter, setOglasFilter] = useState('');
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setError('');
+    getApplicationStatistics({
+      status: statusFilter || undefined,
+      oglasID: oglasFilter || undefined,
+    })
+      .then((data) => { if (active) setStats(data); })
+      .catch((err) => { if (active) setError(err.message || 'Greška pri učitavanju statistike.'); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [statusFilter, oglasFilter]);
+
+  function handleTabChange(key) {
+    setActiveTab(key);
+    if (key === 'prijave') setOglasFilter('');
+  }
+
+  const truncate = (str, n = 18) => str?.length > n ? str.slice(0, n) + '…' : str;
+
+  const perListingData  = (stats?.perListing  || []).map((l) => ({ naziv:    l.naziv,             'Broj prijava': l.count }));
+  const byYearData     = (stats?.byYear      || []).map((y) => ({ godina:  `${y.year}. godina`, 'Broj prijava': y.count }));
+  const byFakultetData = (stats?.byFakultet  || []).map((f) => ({ fakultet: f.naziv,            'Broj prijava': f.count }));
+  const byOdsjekGroups = stats?.byOdsjek || [];
+
+  const chartConfig = {
+    prijave:  { data: perListingData,  nameKey: 'naziv',    color: CHART_COLORS.blue,   tickN: 14, emptyMsg: 'Nema prijava na oglase.' },
+    godina:   { data: byYearData,      nameKey: 'godina',   color: CHART_COLORS.purple, tickN: 14, emptyMsg: 'Nema podataka o godini studija.' },
+    fakultet: { data: byFakultetData,  nameKey: 'fakultet', color: CHART_COLORS.green,  tickN: 14, emptyMsg: 'Nema podataka o fakultetu.' },
+  };
+  const current = chartConfig[activeTab];
+
+  return (
+    <div className="cd-content">
+      <header className="cd-header">
+        <h1 className="cd-title">Statistika prijava</h1>
+        <p className="cd-subtitle">Pregled prijava na vaše oglase sa analizom po odsjeku, godini studija i fakultetu.</p>
+      </header>
+
+      <section className="cd-section">
+        {loading && <div className="cd-inline-message" role="status">Učitavanje statistike...</div>}
+        {!loading && error && <div className="cd-inline-message cd-inline-message--error" role="alert">{error}</div>}
+
+        {!loading && !error && stats && (
+          <>
+            <div className="cd-stats-grid cd-stats-grid--stat" aria-label="Sažetak prijava">
+              <article className="cd-stat-card">
+                <span className="cd-stat-label">Ukupno prijava</span>
+                <span className="cd-stat-value">{stats.summary.totalApplications}</span>
+                <span className="cd-stat-sub cd-stat-sub--blue">
+                  {stats.summary.totalApplications === 1 ? '1 prijava' : `${stats.summary.totalApplications} prijava`}
+                </span>
+              </article>
+              <article className="cd-stat-card">
+                <span className="cd-stat-label">Oglasi sa prijavama</span>
+                <span className="cd-stat-value">{stats.summary.listingsWithApplications}</span>
+                <span className="cd-stat-sub cd-stat-sub--muted">
+                  {stats.summary.listingsWithApplications === 1 ? '1 oglas' : `${stats.summary.listingsWithApplications} oglasa`}
+                </span>
+              </article>
+            </div>
+
+            <div className="cd-stat-filter-row">
+              <div className="cd-stat-filter-group">
+                <span className="cd-stat-filter-label">Status</span>
+                <select
+                  className="cd-stat-status-select"
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                >
+                  <option value="">Svi statusi</option>
+                  <option value="PODNESENA">Podnesena</option>
+                  <option value="U_RAZMATRANJU">U razmatranju</option>
+                  <option value="ODOBRENA">Odobrena</option>
+                  <option value="ODBIJENA">Odbijena</option>
+                  <option value="ODUSTAO">Odustao</option>
+                </select>
+              </div>
+
+              {activeTab !== 'prijave' && (stats?.oglasi?.length > 0) && (
+                <>
+                  <div className="cd-stat-filter-divider" />
+                  <div className="cd-stat-filter-group">
+                    <span className="cd-stat-filter-label">Oglas</span>
+                    <select
+                      className="cd-stat-status-select"
+                      value={oglasFilter}
+                      onChange={(e) => setOglasFilter(e.target.value)}
+                    >
+                      <option value="">Svi oglasi</option>
+                      {(stats.oglasi || []).map((o) => (
+                        <option key={o.id} value={o.id}>{o.naziv}</option>
+                      ))}
+                    </select>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="cd-stat-tabs">
+              {STAT_TABS.map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  className={`cd-stat-tab${activeTab === tab.key ? ' active' : ''}`}
+                  onClick={() => handleTabChange(tab.key)}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {activeTab === 'odsjek' ? (
+              byOdsjekGroups.length === 0 ? (
+                <div className="cd-stats-panel">
+                  <h2 className="cd-stats-panel-title">Po odsjeku</h2>
+                  <div className="cd-empty-state cd-empty-state--inline">
+                    <div className="cd-empty-title">Nema podataka o odsjeku.</div>
+                  </div>
+                </div>
+              ) : (
+                byOdsjekGroups.map((group) => (
+                  <div key={group.fakultetID} className="cd-stats-panel">
+                    <h2 className="cd-stats-panel-title">{group.fakultetNaziv}</h2>
+                    <StatChart
+                      data={group.odsjeci.map((o) => ({ odsjek: o.naziv, 'Broj prijava': o.count }))}
+                      dataKey="Broj prijava"
+                      nameKey="odsjek"
+                      color={CHART_COLORS.green}
+                      height={260}
+                      tickFormatter={(v) => truncate(v, 14)}
+                    />
+                  </div>
+                ))
+              )
+            ) : (
+              <div className="cd-stats-panel">
+                <h2 className="cd-stats-panel-title">{STAT_TABS.find((t) => t.key === activeTab)?.label}</h2>
+                {current.data.length === 0 ? (
+                  <div className="cd-empty-state cd-empty-state--inline">
+                    <div className="cd-empty-title">{current.emptyMsg}</div>
+                  </div>
+                ) : (
+                  <StatChart
+                    data={current.data}
+                    dataKey="Broj prijava"
+                    nameKey={current.nameKey}
+                    color={current.color}
+                    height={300}
+                    tickFormatter={(v) => truncate(v, current.tickN)}
+                  />
+                )}
+              </div>
+            )}
+          </>
+        )}
+      </section>
     </div>
   );
 }

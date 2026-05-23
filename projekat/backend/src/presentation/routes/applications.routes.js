@@ -10,6 +10,13 @@ router.get(
   applicationsController.getMyApplications
 );
 
+router.get(
+  '/statistics',
+  authenticate,
+  authorize('COMPANY'),
+  applicationsController.getApplicationStatistics
+);
+
 router.post(
   '/',
   authenticate,
