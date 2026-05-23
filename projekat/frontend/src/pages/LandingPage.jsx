@@ -600,7 +600,7 @@ export default function LandingPage() {
                 onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 4px 20px rgba(26,111,212,0.35)"; }}
               >Počni kao student <IconArrowRight size={15} color="white" /></Link>
 
-              <Link to="/listings" style={btnOutline}
+              <Link to="/listings/public" style={btnOutline}
                 {...hov({ background: "#e8f1fb" }, { background: "white" })}
               ><IconSearch size={16} color="#1a6fd4" /> Pregledaj prakse</Link>
             </div>

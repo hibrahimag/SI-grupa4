@@ -17,6 +17,7 @@ const IzvjestajModel = require('./Izvjestaj');
 const OdsjekModel = require('./Odsjek');
 const DokumentModel = require('./Dokument');
 const OmiljeniOglasModel = require('./OmiljeniOglas');
+const SystemSettingModel = require('./SystemSetting');
 
 const User = UserModel(sequelize);
 const Student = StudentModel(sequelize);
@@ -34,6 +35,7 @@ const Izvjestaj = IzvjestajModel(sequelize);
 const Odsjek = OdsjekModel(sequelize);
 const Dokument = DokumentModel(sequelize);
 const OmiljeniOglas = OmiljeniOglasModel(sequelize);
+const SystemSetting = SystemSettingModel(sequelize);
 
 //relacije
 User.hasOne(Student, { foreignKey: 'userID' });
@@ -111,4 +113,4 @@ OmiljeniOglas.belongsTo(Oglas, { foreignKey: 'oglasID' });
 
 //eksport
 module.exports = { sequelize, User, Student, Kompanija, Fakultet, Koordinator, Odsjek, Oglas, PrijavaNaPraksu, Praksa,
-     Aktivnost, Prisustvo, Evaluacija, Ugovor, Izvjestaj, Dokument, OmiljeniOglas };
+     Aktivnost, Prisustvo, Evaluacija, Ugovor, Izvjestaj, Dokument, OmiljeniOglas, SystemSetting };

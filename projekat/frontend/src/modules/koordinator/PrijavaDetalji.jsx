@@ -37,7 +37,7 @@ export default function PrijavaDetaljiModal({ prijavaId, onClose, onOdluka }) {
       .finally(() => setLoading(false));
   }, [prijavaId]);
 
-  const mozeOdluciti = prijava?.status === 'na_cekanju_koordinatora';
+  const mozeOdluciti = prijava?.status === 'PODNESENA' || prijava?.status === 'U_RAZMATRANJU';
 
   const handleOdobri = async () => {
     setSubmitting(true);
@@ -108,7 +108,7 @@ export default function PrijavaDetaljiModal({ prijavaId, onClose, onOdluka }) {
                     <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-muted)' }}>Status:</span>
                     {statusBadge(prijava.status)}
                     <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-faint)', marginLeft: 'auto' }}>
-                      Prijavljeno: {formatDate(prijava.createdAt)}
+                      Prijavljeno: {formatDate(prijava.datumPrijave)}
                     </span>
                   </div>
 
@@ -116,11 +116,11 @@ export default function PrijavaDetaljiModal({ prijavaId, onClose, onOdluka }) {
                   <div className="kd-detail-section">
                     <p className="kd-detail-section-title">Student</p>
                     <div className="kd-detail-grid">
-                      <div className="kd-detail-field"><label>Ime i prezime</label><span>{prijava.student?.user?.ime} {prijava.student?.user?.prezime}</span></div>
-                      <div className="kd-detail-field"><label>Email</label><span>{prijava.student?.user?.email}</span></div>
-                      <div className="kd-detail-field"><label>Indeks</label><span style={{ fontFamily: 'monospace' }}>{prijava.student?.indeks}</span></div>
-                      <div className="kd-detail-field"><label>Godina studija</label><span>{prijava.student?.godinaStudija}</span></div>
-                      <div className="kd-detail-field"><label>Odsjek</label><span>{prijava.student?.odsjek}</span></div>
+                      <div className="kd-detail-field"><label>Ime i prezime</label><span>{prijava.Student?.User?.ime} {prijava.Student?.User?.prezime}</span></div>
+                      <div className="kd-detail-field"><label>Email</label><span>{prijava.Student?.User?.email}</span></div>
+                      <div className="kd-detail-field"><label>Indeks</label><span style={{ fontFamily: 'monospace' }}>{prijava.Student?.index_number}</span></div>
+                      <div className="kd-detail-field"><label>Godina studija</label><span>{prijava.Student?.year_of_study}</span></div>
+                      <div className="kd-detail-field"><label>Odsjek</label><span>{prijava.Student?.Odsjek?.naziv}</span></div>
                     </div>
                     {prijava.student?.bio && (
                       <div style={{ marginTop: 'var(--space-3)' }}>
@@ -140,15 +140,15 @@ export default function PrijavaDetaljiModal({ prijavaId, onClose, onOdluka }) {
                   <div className="kd-detail-section">
                     <p className="kd-detail-section-title">Oglas i kompanija</p>
                     <div className="kd-detail-grid">
-                      <div className="kd-detail-field"><label>Naziv oglasa</label><span>{prijava.oglas?.naziv}</span></div>
-                      <div className="kd-detail-field"><label>Trajanje</label><span>{prijava.oglas?.trajanje}</span></div>
-                      <div className="kd-detail-field"><label>Kompanija</label><span>{prijava.oglas?.kompanija?.naziv}</span></div>
-                      <div className="kd-detail-field"><label>Kontakt email</label><span>{prijava.oglas?.kompanija?.user?.email}</span></div>
-                      {prijava.oglas?.kompanija?.adresa && (
-                        <div className="kd-detail-field"><label>Adresa</label><span>{prijava.oglas.kompanija.adresa}</span></div>
+                      <div className="kd-detail-field"><label>Naziv oglasa</label><span>{prijava.Ogla?.naziv}</span></div>
+                      <div className="kd-detail-field"><label>Trajanje</label><span>{prijava.Ogla?.trajanje ? `${prijava.Ogla.trajanje} ${prijava.Ogla.trajanje === 1 ? 'mjesec' : 'mjeseci'}` : '—'}</span></div>
+                      <div className="kd-detail-field"><label>Kompanija</label><span>{prijava.Ogla?.Kompanija?.naziv}</span></div>
+                      <div className="kd-detail-field"><label>Kontakt email</label><span>{prijava.Ogla?.Kompanija?.User?.email}</span></div>
+                      {prijava.Ogla?.Kompanija?.adresa && (
+                        <div className="kd-detail-field"><label>Adresa</label><span>{prijava.Ogla.Kompanija.adresa}</span></div>
                       )}
-                      {prijava.oglas?.kompanija?.djelatnost && (
-                        <div className="kd-detail-field"><label>Djelatnost</label><span>{prijava.oglas.kompanija.djelatnost}</span></div>
+                      {prijava.Ogla?.Kompanija?.djelatnost && (
+                        <div className="kd-detail-field"><label>Djelatnost</label><span>{prijava.Ogla.Kompanija.djelatnost}</span></div>
                       )}
                     </div>
                   </div>
@@ -177,28 +177,31 @@ export default function PrijavaDetaljiModal({ prijavaId, onClose, onOdluka }) {
 
               {/* ── TAB: DOKUMENTI ── */}
               {aktivniTab === 'dokumenti' && (
-                <div>
-                  <div className="kd-info-banner">
-                    <IconInfo /> Dokumenti (CV, motivaciono pismo) bit će dostupni nakon implementacije Upload modula u Sprintu 9.
-                  </div>
-
-                  {/* Show mock structure so the UI is ready */}
-                  <div className="kd-table-wrap">
-                    <table className="kd-table">
-                      <thead>
-                        <tr><th>Dokument</th><th>Format</th><th>Datum uploada</th><th></th></tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          <td colSpan={4} style={{ textAlign: 'center', color: 'var(--color-muted)', padding: 'var(--space-8)' }}>
-                            Dokumenti još nisu uploadovani (implementacija u Sprintu 9)
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
+  <div>
+    {(!prijava.Dokuments || prijava.Dokuments.length === 0) ? (
+      <div className="kd-empty">
+        <p className="kd-empty-text">Student nije uploadovao dokumente uz ovu prijavu.</p>
+      </div>
+    ) : (
+      <div className="kd-table-wrap">
+        <table className="kd-table">
+          <thead>
+            <tr><th>Dokument</th><th>Tip</th><th>Datum uploada</th></tr>
+          </thead>
+          <tbody>
+            {prijava.Dokuments.map(d => (
+              <tr key={d.id}>
+                <td>{d.original_name}</td>
+                <td>{d.tip_dokumenta}</td>
+                <td>{formatDate(d.created_at)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )}
+  </div>
+)}
 
               {/* ── TAB: TOK PRAKSE ── */}
               {aktivniTab === 'tok' && (

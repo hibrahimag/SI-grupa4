@@ -882,6 +882,7 @@
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
+  line-clamp: 3;
   overflow: hidden;
 }
 
@@ -2812,6 +2813,23 @@
   gap: 8px;
 }
 
+.sd-sb-tab-btn--zatvoreni {
+  flex: none;
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  border-radius: 10px;
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+.sd-sb-tab-btn--zatvoreni.active {
+  background: linear-gradient(135deg, rgba(26,111,212,0.12), rgba(56,189,248,0.08));
+  border-color: rgba(26,111,212,0.35);
+  color: var(--color-primary, #1a6fd4);
+}
+
 .sd-sb-tab-btn--prijave.active {
   background: linear-gradient(135deg, rgba(26,111,212,0.12), rgba(56,189,248,0.08));
   border-color: rgba(26,111,212,0.35);
@@ -3086,3 +3104,150 @@
 .sd-page.dark .sd-app-card-naziv { color: #f1f5f9; }
 .sd-page.dark .sd-app-card-date { color: #64748b; }
 .sd-page.dark .sd-app-card-expired { color: #64748b; border-color: #334155; }
+
+/* ================================================================
+   Dopuna za StudentDashboard.css
+   Dodati na KRAJ postojećeg StudentDashboard.css fajla.
+   ================================================================ */
+
+/* ── US53 – Limit bar u sidebaru ─────────────────────────────── */
+.sd-limit-bar {
+  padding: 8px 10px;
+  background: var(--color-surface-alt, #f8fbff);
+  border: 1px solid var(--color-border, #e0edf9);
+  border-radius: var(--radius-md, 8px);
+  margin-bottom: 4px;
+}
+
+.sd-limit-bar-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--font-size-xs, 0.68rem);
+  font-weight: 600;
+  color: var(--color-muted, #5a7a9a);
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sd-limit-bar-count {
+  font-variant-numeric: tabular-nums;
+  color: var(--color-dark, #0d1f3c);
+}
+
+.sd-limit-bar-count--warn {
+  color: var(--color-danger, #c0392b);
+  font-weight: 700;
+}
+
+.sd-limit-bar-track {
+  height: 4px;
+  background: var(--color-border-mid, #d0e3f7);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.sd-limit-bar-fill {
+  height: 100%;
+  background: var(--color-primary, #1a6fd4);
+  border-radius: 99px;
+  transition: width 0.4s ease, background 0.25s ease;
+}
+
+.sd-limit-bar-fill--warn {
+  background: var(--color-danger, #c0392b);
+}
+
+/* ── US57 – Closed listings panel ───────────────────────────── */
+.sd-closed-panel {
+  padding: 0;
+}
+
+.sd-closed-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.sd-closed-header-icon {
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-md, 8px);
+  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-border, #e0edf9);
+  color: var(--color-muted, #5a7a9a);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sd-closed-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--color-dark, #0d1f3c);
+  margin: 0 0 4px;
+  letter-spacing: -0.02em;
+}
+
+.sd-closed-sub {
+  font-size: var(--font-size-sm, 0.78rem);
+  color: var(--color-muted, #5a7a9a);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Closed oglas button variant */
+.sd-btn-detail--closed {
+  opacity: 0.85;
+}
+.sd-btn-detail--closed:hover {
+  opacity: 1;
+  background: var(--color-surface-alt, #f8fbff);
+  border-color: var(--color-border-mid, #d0e3f7);
+  color: var(--color-dark, #0d1f3c);
+}
+
+/* ── Closed oglas modal notice ───────────────────────────────── */
+.sd-closed-modal-notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--color-surface-alt, #f8fbff);
+  border: 1px solid var(--color-border, #e0edf9);
+  border-radius: var(--radius-md, 8px);
+  color: var(--color-muted, #5a7a9a);
+  font-size: var(--font-size-sm, 0.78rem);
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+/* ── US53 – Sidebar tab icon for locked (zatvoreni) ─────────── */
+.sd-sb-tab-icon--lock {
+  color: var(--color-muted, #5a7a9a);
+}
+
+/* Ensure the new sidebar tab button style is consistent */
+.sd-sb-tab-btn svg {
+  vertical-align: middle;
+}
+.sd-card-wrap--closed {
+  cursor: pointer;
+  opacity: 0.82;
+}
+
+.sd-card-wrap--closed:hover,
+.sd-card-wrap--closed:focus-within {
+  transform: translateY(-4px);
+  box-shadow:
+    0 12px 36px rgba(0, 0, 0, 0.07),
+    0 4px 12px rgba(0, 0, 0, 0.04);
+  opacity: 1;
+}
+
+.sd-card-wrap--closed::before {
+  display: block;
+}

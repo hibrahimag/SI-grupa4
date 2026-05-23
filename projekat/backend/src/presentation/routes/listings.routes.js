@@ -12,8 +12,13 @@ const { authorize } = require('../../middleware/rbac.middleware');
 
 router.get(
   '/active',
-  authenticate,
   listingsController.getActiveListings
+);
+
+router.get(
+  '/closed',
+  authenticate,
+  listingsController.getClosedListings
 );
 
 // Kreiranje oglasa
@@ -29,6 +34,13 @@ router.get(
   authenticate,
   authorize('COMPANY'),
   listingsController.getCompanyListings
+);
+
+router.get(
+  '/company/closed',
+  authenticate,
+  authorize('COMPANY'),
+  listingsController.getClosedListingsByCompany
 );
 
 // Ažuriranje oglasa

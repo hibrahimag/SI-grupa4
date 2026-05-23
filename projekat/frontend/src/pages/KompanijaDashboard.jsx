@@ -6,7 +6,7 @@ import { useTheme } from '../context/ThemeContext';
 import { getCompanyProfile, updateCompanyProfile } from '../services/companyProfile.service';
 import { checkCompanyDeactivation, deactivateCompanyAccount, deleteMyCompanyAccount } from '../services/userService';
 import './KompanijaDashboard.css';
-import { createListing, getCompanyListings } from '../services/listingsService';
+import { createListing, getCompanyListings, getCompanyClosedListings } from '../services/listingsService';
 import EditOglas from '../modules/listings/EditOglas';
 import { formatDate } from '../data/mockPrakse';
 
@@ -14,6 +14,7 @@ const VIEWS = {
   DASHBOARD: 'dashboard',
   LISTINGS: 'oglasi',
   CREATE_LISTING: 'create-oglas',
+  CLOSED_LISTINGS: 'zatvoreni-oglasi',
 };
 
 const COMPANY_PROFILE_UPDATED_EVENT = 'company-profile-updated';
@@ -62,6 +63,9 @@ export default function KompanijaDashboard() {
   const navigate = useNavigate();
 
   const [editingListing, setEditingListing] = useState(null);
+  const [closedListings, setClosedListings] = useState([]);
+const [closedLoading, setClosedLoading] = useState(false);
+const [closedLoaded, setClosedLoaded] = useState(false);
 
   const companyName = companyProfile?.naziv || user?.institution || user?.ime || 'Kompanija';
 
@@ -264,6 +268,12 @@ export default function KompanijaDashboard() {
               <line x1="9" y1="13" x2="15" y2="13"/>
             </svg>
           </button>
+          <button type="button" className="cd-sb-tab-icon" onClick={() => openView(VIEWS.CLOSED_LISTINGS)} title="Zatvoreni oglasi">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+          </button>
           <button type="button" className="cd-sb-tab-icon" onClick={openProfilePage} title="Moj profil">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
@@ -313,6 +323,13 @@ export default function KompanijaDashboard() {
                     <line x1="9" y1="13" x2="15" y2="13"/>
                   </svg>
                   Kreiraj oglas
+                </button>
+                <button type="button" className={`cd-nav-item ${view === VIEWS.CLOSED_LISTINGS ? 'active' : ''}`} onClick={() => openView(VIEWS.CLOSED_LISTINGS)}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                  Zatvoreni oglasi
                 </button>
               </nav>
             </div>
@@ -391,6 +408,27 @@ export default function KompanijaDashboard() {
               openView(VIEWS.LISTINGS);
             }}
           />
+        )}
+        {view === VIEWS.CLOSED_LISTINGS && (
+         <ClosedListingsShell
+           listings={closedListings}
+           loading={closedLoading}
+           loaded={closedLoaded}
+           onLoad={async () => {
+            if (closedLoaded) return;
+            setClosedLoading(true);
+            try {
+              const data = await getCompanyClosedListings();
+              setClosedListings(Array.isArray(data) ? data : []);
+              setClosedLoaded(true);
+            } catch {
+              setClosedListings([]);
+              setClosedLoaded(true);
+            } finally {
+              setClosedLoading(false);
+            }
+          }}
+         />
         )}
       </main>
 
@@ -513,7 +551,9 @@ export default function KompanijaDashboard() {
 }
 
 function DashboardShell({ listings, listingsLoading, listingsError, onOpenView, onEdit }) {
-  const activeListings = listings.filter((l) => l.status === 'AKTIVAN').length;
+  const activeListings = listings.filter((l) => 
+  l.status === 'AKTIVAN' && new Date(l.rokPrijave) > new Date()
+).length;
   const stats = [
     {
       label: 'Aktivni oglasi',
@@ -571,9 +611,16 @@ function ListingsShell({ listings = [], loading = false, error = '', onOpenView,
                 </div>
               </div>
               <div className="cd-listing-side">
-                <span className={`cd-listing-status cd-listing-status--${String(listing.status || '').toLowerCase()}`}>
-                  {listing.status || 'Status'}
-                </span>
+                {(() => {
+                  const istekao = listing.rokPrijave && new Date(listing.rokPrijave) <= new Date();
+                  const displayStatus = istekao && listing.status === 'AKTIVAN' ? 'ISTEKAO' : (listing.status || 'Status');
+                  const cssStatus = istekao && listing.status === 'AKTIVAN' ? 'zatvoren' : String(listing.status || '').toLowerCase();
+                  return (
+                    <span className={`cd-listing-status cd-listing-status--${cssStatus}`}>
+                    {displayStatus}
+                    </span>
+                  );
+                })()}
                 <span className="cd-listing-date">Rok: {formatDate(listing.rokPrijave)}</span>
                 <span className="cd-listing-date">Objava: {formatDate(listing.datumObjave)}</span>
                 <div style={{marginTop: '10px', display: 'flex', gap: '8px'}}>
@@ -859,6 +906,70 @@ function DeleteModal({ check, deleting, deleteError, onConfirm, onCancel }) {
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+function ClosedListingsShell({ listings, loading, loaded, onLoad }) {
+  useEffect(() => {
+    onLoad();
+  }, []);
+
+  return (
+    <div className="cd-content">
+      <header className="cd-header">
+        <h1 className="cd-title">Zatvoreni oglasi</h1>
+        <p className="cd-subtitle">
+          Pregled vaših oglasa kojima je istekao rok prijave ili koji su zatvoreni.
+        </p>
+      </header>
+      <section className="cd-section">
+        <div className="cd-section-header">
+          <h2 className="cd-section-title">Zatvoreni oglasi</h2>
+          {!loading && (
+            <span className="cd-section-count">{listings.length} {listings.length === 1 ? 'oglas' : 'oglasa'}</span>
+          )}
+        </div>
+
+        {loading && (
+          <div className="cd-inline-message" role="status">Učitavanje zatvorenih oglasa...</div>
+        )}
+
+        {!loading && listings.length === 0 && (
+          <div className="cd-empty-state">
+            <div className="cd-empty-title">Nema zatvorenih oglasa.</div>
+            <p className="cd-empty-text">
+              Ovdje će se prikazati oglasi kojima je istekao rok prijave ili koje zatvorite ručno.
+            </p>
+          </div>
+        )}
+
+        {!loading && listings.length > 0 && (
+          <div className="cd-listings-list">
+            {listings.map((listing) => (
+              <article key={listing.id} className="cd-listing-card">
+                <div className="cd-listing-main">
+                  <h3 className="cd-listing-title">{listing.naziv}</h3>
+                  <p className="cd-listing-desc">{listing.opis}</p>
+                  <div className="cd-listing-meta">
+                    {listing.oblast && <span>{listing.oblast}</span>}
+                    {listing.trajanje && <span>{listing.trajanje} mj.</span>}
+                    <span>{listing.brojMjesta} {Number(listing.brojMjesta) === 1 ? 'mjesto' : 'mjesta'}</span>
+                    {listing.tip && <span>{listing.tip}</span>}
+                  </div>
+                </div>
+                <div className="cd-listing-side">
+                  <span className="cd-listing-status cd-listing-status--zatvoren">
+                    Zatvoreno
+                  </span>
+                  <span className="cd-listing-date">Rok: {formatDate(listing.rokPrijave)}</span>
+                  <span className="cd-listing-date">Objava: {formatDate(listing.datumObjave)}</span>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   );
 }

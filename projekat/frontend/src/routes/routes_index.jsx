@@ -22,6 +22,7 @@ import KoordinatorDashboard  from '../pages/KoordinatorDashboard';
 import ForgotPasswordPage  from '../pages/ForgotPasswordPage';
 import ResetPasswordPage   from '../pages/ResetPasswordPage';
 import VerifyEmailPage     from '../pages/VerifyEmailPage';
+import PublicListingsPage from '../pages/PublicListingsPage';
 
 export default function AppRouter() {
   return (
@@ -72,6 +73,7 @@ export default function AppRouter() {
         <Route path="/listings"      element={<ListingsPage />} />
         <Route path="/applications"  element={<ApplicationsPage />} />
         <Route path="/profile"       element={<ProfilePage />} />
+        <Route path="/listings/public" element={<PublicListingsPage />} />
 
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

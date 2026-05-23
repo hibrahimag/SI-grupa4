@@ -111,23 +111,23 @@ export default function PrijavePregled({ filterStatus = 'na_cekanju_koordinatora
               </thead>
               <tbody>
                 {prijave.map(p => {
-                  const student = p.student;
-                  const user    = student?.user;
-                  const oglas   = p.oglas;
-                  const komp    = oglas?.kompanija;
+                  const student = p.Student;
+                  const user    = student?.User;
+                  const oglas   = p.Ogla;
+                  const komp    = oglas?.Kompanija;
                   return (
                     <tr key={p.id}>
                       <td>
                         <strong>{user?.ime} {user?.prezime}</strong>
                         <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-muted)' }}>{user?.email}</div>
                       </td>
-                      <td style={{ color: 'var(--color-muted)', fontFamily: 'monospace' }}>{student?.indeks}</td>
+                      <td style={{ color: 'var(--color-muted)', fontFamily: 'monospace' }}>{student?.index_number}</td>
                       <td>
                         <div>{oglas?.naziv || '—'}</div>
                         <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-muted)' }}>{komp?.naziv || ''}</div>
                       </td>
                       <td style={{ color: 'var(--color-muted)', fontSize: 'var(--font-size-sm)' }}>
-                        {formatDate(p.createdAt)}
+                        {formatDate(p.datumPrijave)}
                       </td>
                       <td>{statusBadge(p.status)}</td>
                       <td>

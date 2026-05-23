@@ -14,8 +14,8 @@ const getDashboardStats = async () => {
   let aktivnePrakse = 0, zavrsene = 0;
   if (db.Praksa) {
     [aktivnePrakse, zavrsene] = await Promise.all([
-      db.Praksa.count({ where: { status: 'AKTIVNA'  } }).catch(() => 0),
-      db.Praksa.count({ where: { status: 'ZAVRSENA' } }).catch(() => 0),
+      db.Praksa.count().catch(() => 0),
+      Promise.resolve(0), // nema status kolone još
     ]);
   }
   return { ukupno, podnesene, odobrene, odbijene, aktivnePrakse, zavrsene };
@@ -56,7 +56,7 @@ const getPrijave = async ({ status, stranica = 1, limit = 15, koordinatorUserId 
     ],
     order: [['datumPrijave', 'DESC']],
   });
-
+  
   return {
     prijave: rows,
     ukupno: count,
@@ -87,6 +87,11 @@ const getPrijavaById = async (id, koordinatorUserId) => {
           attributes: ['id', 'naziv', 'adresa'],
         }],
       },
+      {
+      model: db.Dokument,
+      attributes: ['id', 'original_name', 'tip_dokumenta', 'mime_path', 'created_at'],
+      required: false,
+    },
     ],
   });
   if (!prijava) throw new Error('NOT_FOUND');
@@ -189,8 +194,7 @@ const getStudenti = async (koordinatorUserId, pretraga = '') => {
 const getPrakse = async (status = '', koordinatorUserId) => {
   if (!db.Praksa) return [];
   const where = {};
-  if (status) where.status = status.toUpperCase();
-
+  
   const koordinator = await db.Koordinator.findOne({
     where: { userID: koordinatorUserId },
     attributes: ['fakultetID'],

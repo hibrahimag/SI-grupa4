@@ -174,9 +174,48 @@ async function updateListing(id, data, userId) {
   return updated;
 }
 
+async function getClosedListings() {
+  return Oglas.findAll({
+    where: {
+      [Op.or]: [
+        { status: { [Op.ne]: 'AKTIVAN' } },
+        { rokPrijave: { [Op.lte]: new Date() } },
+      ],
+    },
+    include: [{
+      model: Kompanija,
+      attributes: ['id', 'naziv', 'kontaktOsoba'],
+      include: [{ model: User, attributes: ['email'] }],
+    }],
+    order: [['rokPrijave', 'DESC']],
+  });
+}
+
+async function getClosedListingsByCompany(userId) {
+  const kompanija = await Kompanija.findOne({ where: { userID: userId } });
+  if (!kompanija) {
+    const err = new Error('Kompanijski profil nije pronađen.');
+    err.status = 404;
+    throw err;
+  }
+
+  return Oglas.findAll({
+    where: {
+      kompanijaID: kompanija.id,
+      [Op.or]: [
+        { status: { [Op.ne]: 'AKTIVAN' } },
+        { rokPrijave: { [Op.lte]: new Date() } },
+      ],
+    },
+    order: [['rokPrijave', 'DESC']],
+  });
+}
+
 module.exports = {
   createListing,
   getListingsByCompany,
   getActiveListings,
   updateListing,
+  getClosedListings,
+  getClosedListingsByCompany,
 };

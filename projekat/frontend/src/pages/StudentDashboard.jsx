@@ -4,7 +4,7 @@ import { Upload } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { checkDeactivation, deactivateAccount, deleteMyAccount } from '../services/userService';
-import { getActiveListings } from '../services/listingsService';
+import { getActiveListings, getClosedListings} from '../services/listingsService';
 import { getMyApplications, createApplication } from '../services/applicationsService';
 import { getMyDocuments, attachDocumentsToOglas } from '../services/api';
 import { getFavourites, addFavourite, removeFavourite } from '../services/favouritesService';
@@ -12,6 +12,7 @@ import {
   formatDate, relativeDate, trajanjeLabel, mjestLabel, deadlineInfo,
 } from '../data/mockPrakse';
 import './StudentDashboard.css';
+import { useApplicationLimit } from '../hooks/useApplicationLimit';
 
 const LOGO_COLORS = ['#1a6fd4', '#0e9e6e', '#6d4ce1', '#e07b1a', '#0891b2', '#be185d', '#7c3aed', '#c0392b'];
 function deriveLogoColor(str) {
@@ -204,16 +205,20 @@ function PraksaModal({
   onClose,
   existingApplication,
   onStartApplication,
+  isAtLimit,
+  limitInfo,
 }) {
   const dl = deadlineInfo(praksa.rokPrijave);
   const inactive = !praksa.aktivan;
   const alreadyApplied = Boolean(existingApplication);
-  const statusTone = alreadyApplied ? applicationStatusTone(existingApplication.status) : 'info';
   const statusMessage = inactive
     ? 'Nije moguće prijaviti se na neaktivan oglas.'
     : alreadyApplied
       ? `Već ste se prijavili na ovaj oglas. Status prijave: ${applicationStatusLabel(existingApplication.status)}.`
-      : '';
+      : isAtLimit && limitInfo
+        ? `Dostigli ste maksimalan broj aktivnih prijava (${limitInfo.current}/${limitInfo.max}). Pričekajte da neka prijava bude riješena prije nego se prijavite ponovo.`
+        : '';
+  const statusTone = inactive ? 'error' : alreadyApplied ? applicationStatusTone(existingApplication.status) : isAtLimit ? 'error' : 'info';
 
   useEffect(() => {
     function onKey(e) { if (e.key === 'Escape') onClose(); }
@@ -233,7 +238,8 @@ function PraksaModal({
               {praksa.kompanijaID ? (
                 <Link
                   to={`/company/${praksa.kompanijaID}`}
-                  className="sd-company-name sd-company-name--link"
+                  state={{ from: 'svi' }}
+                  className="sd-company-profile-link"
                   onClick={e => e.stopPropagation()}
                 >
                   {praksa.kompanija}
@@ -393,9 +399,9 @@ function PraksaModal({
               className="sd-btn-apply"
               type="button"
               onClick={() => onStartApplication(praksa)}
-              disabled={inactive}
+              disabled={inactive || (!alreadyApplied && isAtLimit)}
             >
-              {inactive ? 'Oglas nije aktivan' : alreadyApplied ? 'Pregled prijave' : 'Prijavi se na praksu'}
+              {inactive ? 'Oglas nije aktivan' : alreadyApplied ? 'Pregled prijave' : isAtLimit ? 'Limit prijava dostignut' : 'Prijavi se na praksu'}
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
               </svg>
@@ -880,6 +886,258 @@ function MyApplicationsPanel({ applications, prakse, onViewOglas }) {
   );
 }
 
+// ── ClosedListingsPanel ───────────────────────────────────────────────────
+function ClosedListingsPanel({ oglasi, loading, error }) {
+  const [selectedOglas, setSelectedOglas] = useState(null);
+
+  if (loading) return <p className="sd-results-info">Učitavanje zatvorenih oglasa...</p>;
+  if (error) return <p className="sd-results-info" style={{ color: 'var(--color-danger)' }}>{error}</p>;
+
+  return (
+    <div className="sd-closed-panel">
+      <div className="sd-closed-header">
+        <div className="sd-closed-header-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+        </div>
+        <div>
+          <h2 className="sd-closed-title">Zatvoreni oglasi</h2>
+          <p className="sd-closed-sub">
+            Pregled isteklih oglasa radi uvida u zahtjeve kompanija.
+            Prijava na zatvorene oglase nije moguća.
+          </p>
+        </div>
+      </div>
+
+      <p className="sd-results-info">
+        {oglasi.length === 0 ? 'Nema zatvorenih oglasa.' : (
+          <><strong>{oglasi.length}</strong> zatvorenih oglasa</>
+        )}
+      </p>
+
+      {oglasi.length === 0 ? (
+        <div className="sd-empty">
+          <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          <p className="sd-empty-title">Nema zatvorenih oglasa</p>
+          <p className="sd-empty-sub">Trenutno nema oglasa s isteklim rokom prijave.</p>
+        </div>
+      ) : (
+        <div className="sd-list">
+          {oglasi.map(oglas => (
+            <div
+              key={oglas.id}
+              className="sd-card-wrap sd-card-wrap--closed"
+              onClick={() => setSelectedOglas(oglas)}
+            >
+              <article className="sd-card" tabIndex={0} role="button"
+                aria-label={`${oglas.naziv} — ${oglas.kompanija} (zatvoreno)`}>
+                <div className="sd-card-head">
+                  <div className="sd-company-row">
+                    <div className="sd-logo" style={{ background: oglas.logoColor }}>{oglas.logo}</div>
+                    <div className="sd-company-info">
+                      <span className="sd-company-name">{oglas.kompanija}</span>
+                      {oglas.lokacija && (
+                        <span className="sd-location">
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                            <circle cx="12" cy="10" r="3"/>
+                          </svg>
+                          {oglas.lokacija}
+                        </span>
+                      )}
+                    </div>
+                    <div className="sd-head-badges">
+                      <span className="sd-inactive-badge">Zatvoreno</span>
+                      <span className={`sd-tip-badge sd-tip--${oglas.tip.toLowerCase()}`}>{oglas.tip}</span>
+                      {oglas.stipendija && <span className="sd-stip-badge">Stipendija</span>}
+                    </div>
+                  </div>
+                  <h2 className="sd-card-title">{oglas.naziv}</h2>
+                  <p className="sd-card-opis">{oglas.opis}</p>
+                </div>
+                {oglas.tehnologije.length > 0 && (
+                  <div className="sd-tech-row">
+                    {oglas.tehnologije.map(t => <span key={t} className="sd-tech-tag">{t}</span>)}
+                  </div>
+                )}
+                <div className="sd-card-foot">
+                  <div className="sd-meta-row">
+                    <span className="sd-meta-item">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+                        <line x1="3" y1="10" x2="21" y2="10"/>
+                      </svg>
+                      Rok: {formatDate(oglas.rokPrijave)}
+                    </span>
+                    {oglas.trajanje && (
+                      <>
+                        <span className="sd-meta-dot"/>
+                        <span className="sd-meta-item">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                          </svg>
+                          {trajanjeLabel(oglas.trajanje)}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                  <div className="sd-foot-right">
+                    <button
+                      className="sd-btn-detail sd-btn-detail--closed"
+                      onClick={e => { e.stopPropagation(); setSelectedOglas(oglas); }}
+                      tabIndex={-1}
+                    >
+                      Pogledaj detalje
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </article>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {selectedOglas && (
+        <ClosedOglasModal oglas={selectedOglas} onClose={() => setSelectedOglas(null)} />
+      )}
+    </div>
+  );
+}
+
+// ── ClosedOglasModal ──────────────────────────────────────────────────────
+function ClosedOglasModal({ oglas, onClose }) {
+  useEffect(() => {
+    function onKey(e) { if (e.key === 'Escape') onClose(); }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  return (
+    <div className="sd-modal-overlay" onClick={onClose}>
+      <div className="sd-modal" onClick={e => e.stopPropagation()}>
+        <div className="sd-modal-header">
+          <div className="sd-company-row">
+            <div className="sd-logo" style={{ background: oglas.logoColor }}>{oglas.logo}</div>
+            <div className="sd-company-info">
+              {oglas.kompanijaID ? (
+                <Link
+                  to={`/company/${oglas.kompanijaID}`}
+                  state={{ from: 'zatvoreni' }}
+                  className="sd-company-name sd-company-name--link"
+                  onClick={e => e.stopPropagation()}
+                >
+                  {oglas.kompanija}
+                </Link>
+              ) : (
+                <span className="sd-company-name">{oglas.kompanija}</span>
+              )}
+              {oglas.lokacija && (
+                <span className="sd-location">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                  </svg>
+                  {oglas.lokacija}
+                </span>
+              )}
+              <div className="sd-head-badges">
+                <span className="sd-inactive-badge">Zatvoreno</span>
+                <span className={`sd-tip-badge sd-tip--${oglas.tip.toLowerCase()}`}>{oglas.tip}</span>
+                {oglas.stipendija && <span className="sd-stip-badge">Stipendija</span>}
+              </div>
+            </div>
+          </div>
+          <h2 className="sd-modal-title">{oglas.naziv}</h2>
+          <button className="sd-modal-close" onClick={onClose} aria-label="Zatvori">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+        <div className="sd-modal-body">
+          <div className="sd-closed-modal-notice">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            <span>Oglas je zatvoren — rok za prijavu je istekao {formatDate(oglas.rokPrijave)}. Prijava nije moguća.</span>
+          </div>
+          <div className="sd-modal-meta">
+            <span className="sd-meta-item">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+              </svg>
+              {trajanjeLabel(oglas.trajanje)}
+            </span>
+            <span className="sd-meta-dot"/>
+            <span className="sd-meta-item">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+              {mjestLabel(oglas.brojMjesta)}
+            </span>
+          </div>
+          <div className="sd-modal-section">
+            <p className="sd-modal-section-title">Opis prakse</p>
+            <p className="sd-modal-text">{oglas.opis}</p>
+          </div>
+          {oglas.uslovi.length > 0 && (
+            <div className="sd-modal-section">
+              <p className="sd-modal-section-title">Uslovi i zahtjevi</p>
+              <ul className="sd-modal-list">
+                {oglas.uslovi.map((u, i) => (
+                  <li key={i} className="sd-modal-list-item">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    <span>{u}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {oglas.tehnologije.length > 0 && (
+            <div className="sd-modal-section">
+              <p className="sd-modal-section-title">Tehnologije</p>
+              <div className="sd-tech-row">
+                {oglas.tehnologije.map(t => <span key={t} className="sd-tech-tag">{t}</span>)}
+              </div>
+            </div>
+          )}
+          {oglas.kontakt.osoba && (
+            <div className="sd-modal-section">
+              <p className="sd-modal-section-title">Kontakt</p>
+              <div className="sd-modal-contact">
+                <div className="sd-modal-contact-row">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                  </svg>
+                  <span>{oglas.kontakt.osoba}</span>
+                </div>
+              </div>
+            </div>
+          )}
+          <div className="sd-modal-cta">
+            <button className="sd-btn-modal-cancel" onClick={onClose}>Zatvori</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── StudentDashboard ───────────────────────────────────────────────────────
 export default function StudentDashboard() {
   const { darkMode, setDarkMode } = useTheme();
@@ -890,6 +1148,11 @@ export default function StudentDashboard() {
   const [prakse, setPrakse] = useState([]);
   const [praksaLoading, setPraksaLoading] = useState(true);
   const [praksaError, setPraksaError] = useState('');
+  
+  const [zatvoreniOglasi, setZatvoreniOglasi] = useState([]);
+  const [zatvoreniLoading, setZatvoreniLoading] = useState(false);
+  const [zatvoreniError, setZatvoreniError] = useState('');
+  const [zatvoreniLoaded, setZatvoreniLoaded] = useState(false);
 
   const [selectedPraksa, setSelectedPraksa] = useState(null);
   const [applicationPraksa, setApplicationPraksa] = useState(null);
@@ -903,6 +1166,11 @@ export default function StudentDashboard() {
   const [activeTab, setActiveTab] = useState('svi');
   const [favourites, setFavourites] = useState(new Set());
   const [applications, setApplications] = useState([]);
+  const { limit: applicationLimit, activeCount: activeApplicationCount, isAtLimit } = useApplicationLimit(applications);
+  const vidljiviOmiljeni = useMemo(
+    () => prakse.filter(p => favourites.has(p.id)),
+    [prakse, favourites]
+  );
   const [applyLoadingId, setApplyLoadingId] = useState(null);
   const [applyError, setApplyError] = useState('');
   const [applySuccess, setApplySuccess] = useState('');
@@ -932,6 +1200,14 @@ export default function StudentDashboard() {
 
   useEffect(() => {
     const openId = location.state?.openOglasId;
+    const openTab = location.state?.openTab;
+
+    if (openTab) {
+      setActiveTab(openTab);
+      navigate('/dashboard/student', { replace: true, state: {} });
+      return;
+    }
+
     if (!openId || prakse.length === 0) return;
     const found = prakse.find(p => Number(p.id) === Number(openId));
     if (found) setSelectedPraksa(found);
@@ -964,6 +1240,23 @@ export default function StudentDashboard() {
       .catch(() => {});
     return () => { active = false; };
   }, []);
+
+  useEffect(() => {
+    if (activeTab !== 'zatvoreni' || zatvoreniLoaded) return;
+    let active = true;
+    setZatvoreniLoading(true);
+    setZatvoreniError('');
+    getClosedListings()
+      .then(data => {
+        if (active) {
+          setZatvoreniOglasi((data || []).map(mapOglas));
+          setZatvoreniLoaded(true);
+        }
+      })
+      .catch(err => { if (active) setZatvoreniError(err.message || 'Greška pri učitavanju zatvorenih oglasa.'); })
+      .finally(() => { if (active) setZatvoreniLoading(false); });
+    return () => { active = false; };
+  }, [activeTab, zatvoreniLoaded]);
 
   useEffect(() => {
     setApplyError('');
@@ -1171,7 +1464,7 @@ export default function StudentDashboard() {
               stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
             </svg>
-            {favourites.size > 0 && <span className="sd-sb-badge">{favourites.size}</span>}
+            {vidljiviOmiljeni.length > 0 && <span className="sd-sb-badge">{vidljiviOmiljeni.length}</span>}
           </div>
           <div className={`sd-sb-tab-icon${activeTab === 'prijave' ? ' sd-sb-tab-icon--apps' : ''}`}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -1228,6 +1521,22 @@ export default function StudentDashboard() {
         <div className="sd-sidebar-inner">
           <div className="sd-sidebar-content">
           {/* View tabs */}
+          {applicationLimit !== null && (
+            <div className="sd-limit-bar">
+              <div className="sd-limit-bar-label">
+                <span>Prijave</span>
+                <span className={`sd-limit-bar-count${isAtLimit ? ' sd-limit-bar-count--warn' : ''}`}>
+                  {activeApplicationCount}/{applicationLimit}
+                </span>
+              </div>
+              <div className="sd-limit-bar-track">
+                <div
+                  className={`sd-limit-bar-fill${isAtLimit ? ' sd-limit-bar-fill--warn' : ''}`}
+                  style={{ width: `${Math.min(100, (activeApplicationCount / applicationLimit) * 100)}%` }}
+                />
+              </div>
+            </div>
+          )}
           <div className="sd-sidebar-tabs">
             <div className="sd-sb-tabs">
               <button
@@ -1246,7 +1555,7 @@ export default function StudentDashboard() {
                   <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
                 </svg>
                 Omiljeni
-                {favourites.size > 0 && <span className="sd-sb-count">{favourites.size}</span>}
+                {vidljiviOmiljeni.length > 0 && <span className="sd-sb-count">{vidljiviOmiljeni.length}</span>}
               </button>
             </div>
             <button
@@ -1262,6 +1571,16 @@ export default function StudentDashboard() {
               Moje prijave
               {applications.length > 0 && <span className="sd-sb-count">{applications.length}</span>}
             </button>
+            <button
+  className={`sd-sb-tab-btn sd-sb-tab-btn--zatvoreni${activeTab === 'zatvoreni' ? ' active' : ''}`}
+  onClick={() => setActiveTab('zatvoreni')}
+>
+                <svg style={{marginRight:'4px'}} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+                Zatvoreni oglasi
+              </button>
           </div>
 
           {activeTab !== 'prijave' && (<>
@@ -1489,6 +1808,13 @@ export default function StudentDashboard() {
               prakse={prakse}
               onViewOglas={sel => setSelectedPraksa(sel)}
             />
+            
+          ) : activeTab === 'zatvoreni' ? (
+            <ClosedListingsPanel
+              oglasi={zatvoreniOglasi}
+              loading={zatvoreniLoading}
+              error={zatvoreniError}
+            />
           ) : praksaLoading ? (
             <p className="sd-results-info">Učitavanje oglasa...</p>
           ) : praksaError ? (
@@ -1574,6 +1900,8 @@ export default function StudentDashboard() {
           onClose={() => setSelectedPraksa(null)}
           existingApplication={findApplicationForOglas(selectedPraksa.id)}
           onStartApplication={handleStartApplication}
+          isAtLimit={isAtLimit}
+          limitInfo={{ current: activeApplicationCount, max: applicationLimit }}
         />
       )}
 

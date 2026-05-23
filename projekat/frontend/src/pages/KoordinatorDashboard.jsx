@@ -10,6 +10,7 @@ import PraksePregled from '../modules/koordinator/PraksePregled';
 import StudentListaPregled from '../modules/koordinator/StudentListaPregled';
 import OdobravanjePregled from '../modules/koordinator/OdobravanjePregled';
 import './KoordinatorDashboard.css';
+import KoordinatorLimitPanel from '../modules/koordinator/KoordinatorLimitPanel';
 
 const IconMoon = ({ size = 18, color = 'currentColor' }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -238,6 +239,17 @@ export default function KoordinatorDashboard() {
                   <SvgShield />
                   Odobravanje naloga
                 </button>
+                <button
+                  className={`kd-nav-item${aktivan === 'limit' ? ' active' : ''}`}
+                  onClick={() => setAktivan('limit')}
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <line x1="23" y1="11" x2="17" y2="11"/>
+                 </svg>
+                 Limit prijava
+                </button>
               </nav>
             </div>
           </div>
@@ -275,6 +287,7 @@ export default function KoordinatorDashboard() {
           {aktivan === 'prakse'      && <PraksePregled />}
           {aktivan === 'studenti'    && <StudentListaPregled />}
           {aktivan === 'odobravanje' && <OdobravanjePregled />}
+          {aktivan === 'limit' && <KoordinatorLimitPanel />}
         </div>
       </main>
 
