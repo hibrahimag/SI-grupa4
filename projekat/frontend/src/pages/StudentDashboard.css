@@ -2840,6 +2840,38 @@
   margin-left: auto;
 }
 
+.sd-omiljeni-toggle {
+  display: inline-flex;
+  gap: 4px;
+  margin-bottom: 12px;
+  background: var(--color-surface-alt, #f8fbff);
+  border: 1px solid var(--color-border, #e0edf9);
+  border-radius: var(--radius-pill, 999px);
+  padding: 3px;
+}
+
+.sd-omiljeni-toggle-btn {
+  padding: 5px 18px;
+  border: none;
+  border-radius: var(--radius-pill, 999px);
+  background: none;
+  font-size: var(--font-size-xs, 0.68rem);
+  font-weight: 600;
+  font-family: var(--font-sans);
+  color: var(--color-muted, #5a7a9a);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.sd-omiljeni-toggle-btn:hover {
+  color: var(--color-dark);
+}
+
+.sd-omiljeni-toggle-btn.active {
+  background: var(--color-primary, #1a6fd4);
+  color: #fff;
+}
+
 /* ── Dark mode additions ────────────────────────────────────────────────── */
 .sd-page.dark .sd-heart-btn {
   background: #111827;

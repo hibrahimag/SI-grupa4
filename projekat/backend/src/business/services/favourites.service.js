@@ -1,6 +1,6 @@
 'use strict';
 
-const { OmiljeniOglas, Student, Oglas } = require('../../infrastructure/database/models');
+const { OmiljeniOglas, Student, Oglas, Kompanija, User } = require('../../infrastructure/database/models');
 
 async function addFavourite(userId, oglasId) {
   const student = await Student.findOne({ where: { userID: userId } });
@@ -47,7 +47,20 @@ async function getFavourites(userId) {
   }
 
   const rows = await OmiljeniOglas.findAll({ where: { studentID: student.id } });
-  return rows.map(r => r.oglasID);
+  const ids = rows.map(r => r.oglasID);
+
+  if (ids.length === 0) return { ids: [], listings: [] };
+
+  const listings = await Oglas.findAll({
+    where: { id: ids },
+    include: [{
+      model: Kompanija,
+      attributes: ['id', 'naziv', 'kontaktOsoba'],
+      include: [{ model: User, attributes: ['email'] }],
+    }],
+  });
+
+  return { ids, listings };
 }
 
 module.exports = { addFavourite, removeFavourite, getFavourites };

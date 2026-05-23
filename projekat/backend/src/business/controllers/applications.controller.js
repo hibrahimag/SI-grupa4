@@ -29,7 +29,19 @@ async function getMyApplications(req, res) {
   }
 }
 
+async function getApplicationStatistics(req, res) {
+  try {
+    const { fakultetID, odsjekID, godina, status, oglasID } = req.query;
+    const stats = await applicationsService.getApplicationStatistics(req.user.id, { fakultetID, odsjekID, godina, status, oglasID });
+    return res.json(stats);
+  } catch (err) {
+    console.error('[getApplicationStatistics]', err);
+    return handleApplicationError(res, err);
+  }
+}
+
 module.exports = {
   createApplication,
   getMyApplications,
+  getApplicationStatistics,
 };
