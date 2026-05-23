@@ -4,9 +4,14 @@ const router = require('express').Router();
 const { authenticate } = require('../../middleware/auth.middleware');
 const { authorize }    = require('../../middleware/rbac.middleware');
 const koordinatorController = require('../../business/controllers/koordinator.controller');
+const { getLimitController, setLimitController } = require('../../business/controllers/application_limit.controller');
 
 router.use(authenticate);
 router.use(authorize('COORDINATOR'));
+
+// Limit prijava
+router.get('/application-limit', authenticate, getLimitController);
+router.put('/application-limit', authenticate, authorize('COORDINATOR'), setLimitController);
 
 // Dashboard summary stats
 router.get('/dashboard', koordinatorController.getDashboardStats);

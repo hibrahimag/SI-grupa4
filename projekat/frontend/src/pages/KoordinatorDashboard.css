@@ -678,3 +678,190 @@
   transition: color 0.15s;
 }
 .kd-stu-search-clear:hover { color: var(--color-danger); }
+
+/* ================================================================
+   Dodati na KRAJ postojećeg KoordinatorDashboard.css fajla.
+   US53 – Ograničenje broja prijava po studentu
+   ================================================================ */
+
+/* ── Limit panel wrapper ──────────────────────────────────────── */
+.kd-limit-panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-8);
+  max-width: 600px;
+}
+
+/* ── Header row ───────────────────────────────────────────────── */
+.kd-limit-header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.kd-limit-icon {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  background: var(--color-primary-subtle);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.kd-limit-header-text { flex: 1; }
+
+.kd-limit-title {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--color-dark);
+  margin: 0 0 6px;
+  letter-spacing: -0.01em;
+}
+
+.kd-limit-desc {
+  font-size: var(--font-size-sm);
+  color: var(--color-muted);
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* ── Loading ──────────────────────────────────────────────────── */
+.kd-limit-loading {
+  font-size: var(--font-size-sm);
+  color: var(--color-muted);
+  padding: var(--space-4) 0;
+}
+
+/* ── Form ─────────────────────────────────────────────────────── */
+.kd-limit-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* Current value display */
+.kd-limit-current {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+}
+
+.kd-limit-current-label {
+  color: var(--color-muted);
+  font-weight: 500;
+}
+
+.kd-limit-current-value {
+  font-size: var(--font-size-xl);
+  font-weight: 800;
+  color: var(--color-primary);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.kd-limit-current-unit {
+  color: var(--color-muted);
+}
+
+/* Field */
+.kd-limit-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.kd-limit-label {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-dark);
+}
+
+.kd-limit-input-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.kd-limit-input {
+  width: 100px;
+  padding: 10px 14px;
+  border: 1.5px solid var(--color-border-mid);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-input);
+  color: var(--color-dark);
+  font-size: 1.2rem;
+  font-family: var(--font-sans);
+  font-weight: 700;
+  text-align: center;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  outline: none;
+}
+.kd-limit-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(26, 111, 212, 0.12);
+}
+.kd-limit-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.kd-limit-btn {
+  padding: 10px 24px;
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: background var(--transition-fast), box-shadow var(--transition-fast);
+  box-shadow: var(--shadow-btn);
+  white-space: nowrap;
+}
+.kd-limit-btn:hover:not(:disabled) {
+  background: var(--color-primary-dark);
+}
+.kd-limit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.kd-limit-hint {
+  font-size: var(--font-size-xs);
+  color: var(--color-faint);
+  margin: 0;
+}
+
+/* Messages */
+.kd-limit-message {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+}
+.kd-limit-message--error {
+  background: var(--color-danger-subtle);
+  color: var(--color-danger);
+  border: 1px solid #f5c6c2;
+}
+.kd-limit-message--success {
+  background: var(--color-success-subtle);
+  color: var(--color-success);
+  border: 1px solid #b3e9d6;
+}

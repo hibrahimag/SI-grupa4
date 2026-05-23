@@ -23,8 +23,14 @@ async function getCompanyProfileForStudent(kompanijaId) {
     throw err;
   }
 
+  const { Op } = require('sequelize');
+
   const oglasi = await Oglas.findAll({
-    where: { kompanijaID: kompanija.id, status: 'AKTIVAN' },
+    where: {
+      kompanijaID: kompanija.id,
+      status: 'AKTIVAN',
+      rokPrijave: { [Op.gt]: new Date() },
+    },
     attributes: ['id', 'naziv', 'lokacija', 'rokPrijave', 'opis'],
     order: [['datumObjave', 'DESC']],
   });

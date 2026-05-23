@@ -21,3 +21,11 @@ export async function updateListing(id, data) {
     body: JSON.stringify(data),
   });
 }
+
+export async function getClosedListings() {
+  return apiRequest('/listings/closed');
+}
+
+export async function getCompanyClosedListings() {
+  return apiRequest('/listings/company/closed');
+}

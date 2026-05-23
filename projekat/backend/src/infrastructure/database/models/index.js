@@ -17,6 +17,7 @@ const IzvjestajModel = require('./Izvjestaj');
 const OdsjekModel = require('./Odsjek');
 const DokumentModel = require('./Dokument');
 const OmiljeniOglasModel = require('./OmiljeniOglas');
+const SystemSettingModel = require('./SystemSetting');
 const NotifikacijaModel = require('./Notifikacija');
 const NotificationPreferenceModel = require('./NotificationPreference');
 
@@ -36,6 +37,7 @@ const Izvjestaj = IzvjestajModel(sequelize);
 const Odsjek = OdsjekModel(sequelize);
 const Dokument = DokumentModel(sequelize);
 const OmiljeniOglas = OmiljeniOglasModel(sequelize);
+const SystemSetting = SystemSettingModel(sequelize);
 const Notifikacija = NotifikacijaModel(sequelize);
 const NotificationPreference = NotificationPreferenceModel(sequelize);
 
@@ -124,4 +126,4 @@ NotificationPreference.belongsTo(Student, { foreignKey: 'student_id' });
 
 //eksport
 module.exports = { sequelize, User, Student, Kompanija, Fakultet, Koordinator, Odsjek, Oglas, PrijavaNaPraksu, Praksa,
-     Aktivnost, Prisustvo, Evaluacija, Ugovor, Izvjestaj, Dokument, OmiljeniOglas, Notifikacija, NotificationPreference };
+     Aktivnost, Prisustvo, Evaluacija, Ugovor, Izvjestaj, Dokument, OmiljeniOglas, Notifikacija, SystemSetting, NotificationPreference};

@@ -84,9 +84,29 @@ async function updateListing(req, res) {
   }
 }
 
+async function getClosedListings(req, res) {
+  try {
+    const listings = await listingsService.getClosedListings();
+    return res.json(listings);
+  } catch (err) {
+    return res.status(err.status || 500).json({ message: err.message });
+  }
+}
+
+async function getClosedListingsByCompany(req, res) {
+  try {
+    const listings = await listingsService.getClosedListingsByCompany(req.user.id);
+    return res.json(listings);
+  } catch (err) {
+    return res.status(err.status || 500).json({ message: err.message });
+  }
+}
+
 module.exports = {
   createListing,
   getCompanyListings,
   getActiveListings,
   updateListing,
+  getClosedListings,
+  getClosedListingsByCompany,
 };

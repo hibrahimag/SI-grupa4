@@ -16,6 +16,8 @@ const {
   canSendEmail,
 } = require('./notificationPreferences.service');
 
+const { checkStudentApplicationLimit } = require('./application_limit.service');
+
 function makeError(message, status) {
   const err = new Error(message);
   err.status = status;
@@ -72,6 +74,18 @@ async function resolveStudentForListing(userId) {
 }
 
 async function createApplication(userId, data = {}) {
+  
+// na početku createApplication funkcije:
+  const limitCheck = await checkStudentApplicationLimit(userId);
+  if (!limitCheck.allowed) {
+    const err = new Error(
+      `Dostigli ste maksimalan broj aktivnih prijava (${limitCheck.current}/${limitCheck.limit}). ` +
+      `Pričekajte da neka prijava bude riješena.`
+    );
+    err.status = 403;
+    throw err;
+  }
+
   const oglasID = Number(data.oglasID);
   if (!Number.isInteger(oglasID) || oglasID <= 0) {
     throw makeError('Oglas nije pronađen.', 404);

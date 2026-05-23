@@ -49,6 +49,11 @@
   text-decoration: none;
   margin-bottom: 4px;
   transition: color 0.15s;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0;
 }
 
 .cp-back:hover {

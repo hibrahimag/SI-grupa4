@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { getCompanyPublicProfile } from '../services/companyPublic.service';
 import { formatDate } from '../data/mockPrakse';
@@ -28,7 +28,9 @@ function displayVal(value) {
 export default function CompanyProfilePage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { darkMode, setDarkMode } = useTheme();
+  const fromTab = location.state?.from ?? 'svi';
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -93,12 +95,18 @@ export default function CompanyProfilePage() {
       </nav>
 
       <main className="cp-main">
-        <Link to="/dashboard/student" className="cp-back">
+        <button
+          type="button"
+          className="cp-back"
+          onClick={() => navigate('/dashboard/student', {
+            state: fromTab === 'zatvoreni' ? { openTab: 'zatvoreni' } : {}
+          })}
+        >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6" />
           </svg>
-          Nazad na oglase
-        </Link>
+          {fromTab === 'zatvoreni' ? 'Nazad na zatvorene oglase' : 'Nazad na oglase'}
+        </button>
 
         {loading ? (
           <p className="cp-state">Učitavanje profila kompanije...</p>
