@@ -1,13 +1,17 @@
 import React, { useState } from 'react';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import { updateListing } from '../../services/listingsService';
 
 export default function EditOglas({ initial, onCancel, onUpdated }) {
+  const today = new Date().toISOString().slice(0, 10);
+
   const [formData, setFormData] = useState({
     naziv: initial.naziv || '',
     opis: initial.opis || '',
     brojMjesta: initial.brojMjesta || '',
-    rokPrijave: initial.rokPrijave || '',
-    datumPocetka: initial.datumPocetka || '',
+    rokPrijave: initial.rokPrijave ? initial.rokPrijave.slice(0, 10) : '',
+    datumPocetka: initial.datumPocetka ? initial.datumPocetka.slice(0, 10) : '',
     trajanje: initial.trajanje || '',
     oblast: initial.oblast || '',
     lokacija: initial.lokacija || '',
@@ -37,8 +41,12 @@ export default function EditOglas({ initial, onCancel, onUpdated }) {
       setError('Broj mjesta mora biti pozitivan cijeli broj.');
       return;
     }
-    if (new Date(formData.rokPrijave) <= new Date()) {
-      setError('Rok prijave mora biti u budućnosti!');
+    if (formData.rokPrijave < today) {
+      setError('Rok prijave ne može biti u prošlosti.');
+      return;
+    }
+    if (formData.datumPocetka && formData.datumPocetka <= formData.rokPrijave) {
+      setError('Datum početka prakse mora biti nakon isteka roka prijave.');
       return;
     }
 
@@ -112,11 +120,27 @@ export default function EditOglas({ initial, onCancel, onUpdated }) {
         <div className="cd-form-row">
           <div className="cd-form-field">
             <label className="cd-form-label">Rok prijave *</label>
-            <input className="cd-input" type="date" value={formData.rokPrijave} onChange={(e) => handleChange('rokPrijave', e.target.value)} />
+            <DatePicker
+              className="cd-input"
+              dateFormat="dd.MM.yyyy"
+              placeholderText="dd.mm.yyyy"
+              minDate={new Date(today)}
+              selected={formData.rokPrijave ? new Date(formData.rokPrijave) : null}
+              onChange={(date) => handleChange('rokPrijave', date ? date.toISOString().slice(0, 10) : '')}
+              autoComplete="off"
+            />
           </div>
           <div className="cd-form-field">
             <label className="cd-form-label">Datum početka prakse</label>
-            <input className="cd-input" type="date" value={formData.datumPocetka} onChange={(e) => handleChange('datumPocetka', e.target.value)} />
+            <DatePicker
+              className="cd-input"
+              dateFormat="dd.MM.yyyy"
+              placeholderText="dd.mm.yyyy"
+              minDate={formData.rokPrijave ? new Date(new Date(formData.rokPrijave).getTime() + 86400000) : new Date(today)}
+              selected={formData.datumPocetka ? new Date(formData.datumPocetka) : null}
+              onChange={(date) => handleChange('datumPocetka', date ? date.toISOString().slice(0, 10) : '')}
+              autoComplete="off"
+            />
           </div>
         </div>
 

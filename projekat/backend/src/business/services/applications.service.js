@@ -6,7 +6,10 @@ const {
   Oglas,
   PrijavaNaPraksu,
   Kompanija,
+  Dokument,
 } = require('../../infrastructure/database/models');
+const { createNotification } = require('./notifications.service');
+const { sendPrijavaPodnesenaEmail } = require('./email.service');
 
 const { checkStudentApplicationLimit } = require('./application_limit.service');
 
@@ -83,7 +86,7 @@ async function createApplication(userId, data = {}) {
     throw makeError('Oglas nije pronađen.', 404);
   }
 
-  const { student } = await resolveStudentFromUser(userId);
+  const { student, user } = await resolveStudentFromUser(userId);
 
   const oglas = await Oglas.findByPk(oglasID);
   if (!oglas) {
@@ -105,11 +108,43 @@ async function createApplication(userId, data = {}) {
     throw makeError('Već ste se prijavili na ovaj oglas.', 409);
   }
 
-  return PrijavaNaPraksu.create({
+  const prijava = await PrijavaNaPraksu.create({
     studentID: student.id,
     oglasID: oglas.id,
     status: 'PODNESENA',
   });
+
+  await Dokument.update(
+    { prijava_id: prijava.id },
+    { where: { student_id: student.id, oglas_id: oglas.id, prijava_id: null } }
+  );
+
+  const prijavaDocs = await Dokument.findAll({
+    where: { student_id: student.id, prijava_id: prijava.id },
+  });
+
+  const cv = prijavaDocs.find(d => d.tip_dokumenta === 'CV');
+  const motivaciono = prijavaDocs.find(d => d.tip_dokumenta === 'MOTIVACIONO_PISMO');
+
+  await prijava.update({
+    cv: cv ? cv.file_path : null,
+    motivacionoPismo: motivaciono ? motivaciono.file_path : null,
+  });
+
+  const kompanija = await Kompanija.findByPk(oglas.kompanijaID);
+  const kompanijaNaziv = kompanija?.naziv || 'Kompanija';
+
+  createNotification(
+    student.id,
+    prijava.id,
+    'PRIJAVA_PODNESENA',
+    'Prijava podnesena',
+    `Vaša prijava na praksu "${oglas.naziv}" kod kompanije ${kompanijaNaziv} je uspješno podnesena.`
+  ).catch(() => {});
+
+  sendPrijavaPodnesenaEmail(user.email, oglas.naziv, kompanijaNaziv).catch(() => {});
+
+  return prijava;
 }
 
 async function getMyApplications(userId) {

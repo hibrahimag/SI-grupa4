@@ -251,18 +251,26 @@ function DocumentsSection() {
                 </div>
               </div>
               <div className="pf-doc-actions">
-                <a
-                  href={`/uploads/dokumenti/${doc.file_name}`}
-                  download={doc.original_name}
+                <button
                   className="pf-btn pf-btn--secondary pf-doc-download-btn"
                   title="Preuzmi"
+                  onClick={async () => {
+                    try {
+                      const token = sessionStorage.getItem('token');
+                      const res = await fetch(`/api/dokumenti/${doc.id}/download`, {
+                        headers: token ? { Authorization: `Bearer ${token}` } : {},
+                      });
+                      const data = await res.json();
+                      if (data.url) window.open(data.url, '_blank');
+                    } catch {}
+                  }}
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                     strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                     <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
                   </svg>
-                </a>
+                </button>
                 <button className="pf-btn pf-doc-delete-btn"
                   onClick={() => handleDelete(doc.id)}
                   disabled={deleting === doc.id}

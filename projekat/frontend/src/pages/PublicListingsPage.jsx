@@ -47,11 +47,6 @@ function ListingCard({ oglas, onLoginPrompt }) {
     <div className="sd-card-wrap" tabIndex="0">
       <article className="sd-card">
         <div className="sd-card-head">
-          {dl.cls === "urgent" && (
-            <span className="sd-novo-badge" style={{ background: "linear-gradient(135deg,#c0392b,#e74c3c)" }}>
-              Ističe uskoro
-            </span>
-          )}
           <div className="sd-company-row">
             <div className="sd-logo" style={{ background: logoColor(oglas.Kompanija?.naziv) }}>
               {initials(oglas.Kompanija?.naziv)}
@@ -182,9 +177,9 @@ export default function PublicListingsPage() {
   const [showModal, setShowModal] = useState(false);
 
   const [search,  setSearch]  = useState("");
-  const [oblast,  setOblast]  = useState("");
+  const [oblast,  setOblast]  = useState([]);
   const [placena, setPlacena] = useState("");
-  const [tip,     setTip]     = useState("");
+  const [tip,     setTip]     = useState([]);
 
   const [sectionsOpen, setSectionsOpen] = useState({ oblast: false, tip: false, placena: false });
 
@@ -207,14 +202,14 @@ export default function PublicListingsPage() {
     return (
       (!search || o.naziv?.toLowerCase().includes(q) || o.opis?.toLowerCase().includes(q)
         || o.Kompanija?.naziv?.toLowerCase().includes(q)) &&
-      (!oblast  || o.oblast === oblast) &&
+      (!oblast.length  || oblast.includes(o.oblast)) &&
       (!placena || (placena === "da" ? o.placenaPraksa : !o.placenaPraksa)) &&
-      (!tip     || o.tip === tip)
+      (!tip.length     || tip.includes(o.tip))
     );
   });
 
-  const hasFilters = search || oblast || placena || tip;
-  const clear = () => { setSearch(""); setOblast(""); setPlacena(""); setTip(""); };
+  const hasFilters = !!(search || oblast.length || placena || tip.length);
+  const clear = () => { setSearch(""); setOblast([]); setPlacena(""); setTip([]); };
   const toggle = key => setSectionsOpen(p => ({ ...p, [key]: !p[key] }));
 
   return (
@@ -261,9 +256,8 @@ export default function PublicListingsPage() {
               {/* Count */}
               <div className="pl-sb-hero">
                 <p className="pl-sb-hero-count">
-                  {loading ? "…" : <><strong>{oglasi.length}</strong> aktivnih oglasa</>}
+                  Filtriraj oglase
                 </p>
-                <p className="pl-sb-hero-sub">bez prijave</p>
               </div>
 
               {/* Search */}
@@ -296,19 +290,23 @@ export default function PublicListingsPage() {
                       <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
                     </svg>
                     <span className="pl-sb-section-title">Oblast</span>
-                    {oblast && <span className="pl-sb-count">1</span>}
+                    {oblast.length > 0 && <span className="pl-sb-count">{oblast.length}</span>}
                     <svg className={`pl-sb-chevron${sectionsOpen.oblast ? " open" : ""}`} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <polyline points="9 18 15 12 9 6"/>
                     </svg>
                   </button>
                   {sectionsOpen.oblast && (
                     <div className="pl-sb-section-body">
-                      {[["", "Sve oblasti"], ...OBLASTI.map(o => [o, o])].map(([v, lbl]) => (
-                        <label key={v} className="pl-sb-radio-row">
-                          <input type="radio" name="oblast" checked={oblast === v} onChange={() => setOblast(v)} />
-                          <span>{lbl}</span>
-                        </label>
-                      ))}
+                      {OBLASTI.map(o => (
+                        <label key={o} className="pl-sb-radio-row">
+                            <input 
+                              type="checkbox" 
+                              checked={oblast.includes(o)} 
+                              onChange={() => setOblast(prev => prev.includes(o) ? prev.filter(x => x !== o) : [...prev, o])} 
+                           />
+                           <span>{o}</span>
+                       </label>
+                    ))}
                     </div>
                   )}
                 </div>
@@ -321,21 +319,25 @@ export default function PublicListingsPage() {
                       <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
                     </svg>
                     <span className="pl-sb-section-title">Tip prakse</span>
-                    {tip && <span className="pl-sb-count">1</span>}
+                    {tip.length > 0 && <span className="pl-sb-count">{tip.length}</span>}
                     <svg className={`pl-sb-chevron${sectionsOpen.tip ? " open" : ""}`} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <polyline points="9 18 15 12 9 6"/>
                     </svg>
                   </button>
                   {sectionsOpen.tip && (
-                    <div className="pl-sb-section-body">
-                      {[["", "Svi tipovi"], ["Onsite", "Onsite"], ["Remote", "Remote"], ["Hybrid", "Hybrid"]].map(([v, lbl]) => (
-                        <label key={v} className="pl-sb-radio-row">
-                          <input type="radio" name="tip" checked={tip === v} onChange={() => setTip(v)} />
-                          <span>{lbl}</span>
-                        </label>
-                      ))}
-                    </div>
-                  )}
+  <div className="pl-sb-section-body">
+    {["Onsite", "Remote", "Hybrid"].map(v => (
+      <label key={v} className="pl-sb-radio-row">
+        <input 
+          type="checkbox" 
+          checked={tip.includes(v)} 
+          onChange={() => setTip(prev => prev.includes(v) ? prev.filter(x => x !== v) : [...prev, v])} 
+        />
+        <span>{v}</span>
+      </label>
+    ))}
+  </div>
+)}
                 </div>
 
                 {/* Naknada */}

@@ -103,7 +103,20 @@ const getPrijavaById = async (id, koordinatorUserId) => {
 
 // ─── odluciOPrijavi ───────────────────────────────────────────────────────────
 const odluciOPrijavi = async (id, odluka, razlog, koordinatorUserId) => {
-  const prijava = await db.PrijavaNaPraksu.findByPk(id);
+  const prijava = await db.PrijavaNaPraksu.findByPk(id, {
+    include: [
+      {
+        model: db.Student,
+        include: [{ model: db.User, attributes: ['email'] }],
+        attributes: ['id'],
+      },
+      {
+        model: db.Oglas,
+        include: [{ model: db.Kompanija, attributes: ['naziv'] }],
+        attributes: ['naziv'],
+      },
+    ],
+  });
   if (!prijava) throw new Error('NOT_FOUND');
 
   if (!['PODNESENA', 'U_RAZMATRANJU'].includes(prijava.status)) {
@@ -116,6 +129,23 @@ const odluciOPrijavi = async (id, odluka, razlog, koordinatorUserId) => {
     razlogOdbijanja: odluka === 'odbijena' ? razlog : null,
     koordinatorID: koordinatorUserId,
   });
+
+  const studentId = prijava.Student?.id;
+  const studentEmail = prijava.Student?.User?.email;
+  const oglasNaziv = prijava.Oglas?.naziv || 'praksu';
+  const kompanijaNaziv = prijava.Oglas?.Kompanija?.naziv || 'Kompanija';
+  const tip = noviStatus === 'ODOBRENA' ? 'PRIJAVA_ODOBRENA' : 'PRIJAVA_ODBIJENA';
+  const naslov = noviStatus === 'ODOBRENA' ? 'Prijava odobrena' : 'Prijava odbijena';
+  const poruka = noviStatus === 'ODOBRENA'
+    ? `Vaša prijava na praksu "${oglasNaziv}" kod kompanije ${kompanijaNaziv} je odobrena.`
+    : `Vaša prijava na praksu "${oglasNaziv}" kod kompanije ${kompanijaNaziv} je odbijena.${razlog ? ` Razlog: ${razlog}` : ''}`;
+
+  if (studentId) {
+    createNotification(studentId, prijava.id, tip, naslov, poruka).catch(() => {});
+  }
+  if (studentEmail) {
+    sendPrijavaStatusEmail(studentEmail, oglasNaziv, kompanijaNaziv, noviStatus, razlog).catch(() => {});
+  }
 
   return { id: prijava.id, status: noviStatus };
 };
@@ -228,7 +258,8 @@ const getPrakse = async (status = '', koordinatorUserId) => {
   });
 };
 
-const { sendAccountApprovedEmail, sendAccountRejectedEmail } = require('./email.service');
+const { sendAccountApprovedEmail, sendAccountRejectedEmail, sendPrijavaStatusEmail } = require('./email.service');
+const { createNotification } = require('./notifications.service');
 
 const approveStudent = async (studentUserId, koordinatorUserId) => {
   // Provjeri da koordinator i student dijele isti fakultet
