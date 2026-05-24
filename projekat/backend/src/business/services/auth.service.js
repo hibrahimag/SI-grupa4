@@ -7,6 +7,7 @@ const { Op, UniqueConstraintError } = require('sequelize');
 const { User, Student, Koordinator, Kompanija, Fakultet, Odsjek } = require('../../infrastructure/database/models');
 const sequelize = require('../../infrastructure/database/db');
 const { sendPasswordResetEmail, sendEmailVerificationEmail } = require('./email.service');
+const { ACTION_TYPES, logAudit } = require('./audit.service');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN ?? '8h';
@@ -120,6 +121,16 @@ async function register(data) {
       await user.save();
       const verificationLink = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
       await sendEmailVerificationEmail(user.email, verificationLink);
+      await logAudit({
+        userID: user.id,
+        actionType: ACTION_TYPES.USER_REGISTERED,
+        details: { role: user.role, username: user.username, email: user.email },
+        userSnapshot: {
+          userName: `${user.ime || ''} ${user.prezime || ''}`.trim() || user.email,
+          userEmail: user.email,
+          userRole: user.role,
+        },
+      });
       return user;
     }
 
@@ -148,6 +159,16 @@ async function register(data) {
       await user.save();
       const verificationLink = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
       await sendEmailVerificationEmail(user.email, verificationLink);
+      await logAudit({
+        userID: user.id,
+        actionType: ACTION_TYPES.USER_REGISTERED,
+        details: { role: user.role, username: user.username, email: user.email },
+        userSnapshot: {
+          userName: `${user.ime || ''} ${user.prezime || ''}`.trim() || user.email,
+          userEmail: user.email,
+          userRole: user.role,
+        },
+      });
       return user;
     }
 
@@ -171,6 +192,16 @@ async function register(data) {
       await user.save();
       const verificationLink = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
       await sendEmailVerificationEmail(user.email, verificationLink);
+      await logAudit({
+        userID: user.id,
+        actionType: ACTION_TYPES.USER_REGISTERED,
+        details: { role: user.role, username: user.username, email: user.email },
+        userSnapshot: {
+          userName: user.ime || user.email,
+          userEmail: user.email,
+          userRole: user.role,
+        },
+      });
       return user;
     }
 

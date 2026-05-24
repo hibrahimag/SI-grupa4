@@ -47,7 +47,7 @@ async function updateUserStatus(req, res) {
       return res.status(400).json({ message: 'Field "status" is required.' });
     }
 
-    const user = await adminService.updateUserStatus(numericId, status.toUpperCase());
+    const user = await adminService.updateUserStatus(numericId, status.toUpperCase(), req.user.id);
     res.json({ message: `Status updated to ${user.status}.`, user });
   } catch (err) {
     res.status(err.status || 500).json({ message: err.message });
@@ -145,11 +145,23 @@ async function deleteUser(req, res) {
     if (!Number.isInteger(numericId) || numericId <= 0) {
       return res.status(400).json({ message: 'Valid user id is required.' });
     }
-    await adminService.deleteUser(numericId);
+    await adminService.deleteUser(numericId, req.user.id);
     res.json({ message: 'User deleted successfully.' });
   } catch (err) {
     res.status(err.status || 500).json({ message: err.message });
   }
 }
 
-module.exports = { getUsers, updateUserRole, updateUserStatus, deleteUser, getFaculties, createFaculty, updateFaculty, deleteFaculty, getOdsjeci, createOdsjek, deleteOdsjek };
+async function getAuditLogs(req, res) {
+  try {
+    const logs = await adminService.getAuditLogs({
+      actionType: req.query.actionType,
+      limit: req.query.limit,
+    });
+    res.json(logs);
+  } catch (err) {
+    res.status(err.status || 500).json({ message: err.message });
+  }
+}
+
+module.exports = { getUsers, updateUserRole, updateUserStatus, deleteUser, getFaculties, createFaculty, updateFaculty, deleteFaculty, getOdsjeci, createOdsjek, deleteOdsjek, getAuditLogs };

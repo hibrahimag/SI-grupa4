@@ -2,6 +2,7 @@
 
 const { Op } = require('sequelize');
 const { sequelize, User, Fakultet, Koordinator, Student, Kompanija, Oglas, PrijavaNaPraksu, Praksa, Aktivnost, Prisustvo, Evaluacija, Ugovor, Izvjestaj, Odsjek } = require('../../infrastructure/database/models');
+const { ACTION_TYPES, logAudit, getAuditLogs } = require('./audit.service');
 
 const ALLOWED_ROLES = ['STUDENT', 'COMPANY', 'COORDINATOR', 'ADMIN'];
 
@@ -47,10 +48,16 @@ async function updateUserRole(id, role) {
 
 const ALLOWED_STATUSES = ['PENDING', 'ACTIVE', 'DEACTIVATED'];
 
-async function runDeactivationCleanup(user) {
+async function runDeactivationCleanup(user, actorId = null) {
   if (user.role === 'STUDENT') {
     const student = await Student.findOne({ where: { userID: user.id } });
     if (student) {
+      const prijave = await PrijavaNaPraksu.findAll({
+        where: {
+          studentID: student.id,
+          status: { [Op.in]: ['PODNESENA', 'U_RAZMATRANJU', 'ODOBRENA'] },
+        },
+      });
       await PrijavaNaPraksu.update(
         { status: 'ODUSTAO', datumOdustajanja: new Date() },
         {
@@ -60,6 +67,19 @@ async function runDeactivationCleanup(user) {
           },
         }
       );
+      for (const prijava of Array.isArray(prijave) ? prijave : []) {
+        await logAudit({
+          userID: actorId,
+          actionType: ACTION_TYPES.INTERNSHIP_WITHDRAWN,
+          details: {
+            prijavaID: prijava.id,
+            studentUserID: user.id,
+            reason: 'ADMIN_DEACTIVATION',
+            fromStatus: prijava.status,
+            toStatus: 'ODUSTAO',
+          },
+        });
+      }
     }
   } else if (user.role === 'COMPANY') {
     const kompanija = await Kompanija.findOne({ where: { userID: user.id } });
@@ -85,7 +105,7 @@ async function runDeactivationCleanup(user) {
   }
 }
 
-async function updateUserStatus(id, status) {
+async function updateUserStatus(id, status, actorId = null) {
   if (!ALLOWED_STATUSES.includes(status)) {
     const err = new Error(`Invalid status: ${status}. Allowed: ${ALLOWED_STATUSES.join(', ')}`);
     err.status = 400;
@@ -112,12 +132,22 @@ async function updateUserStatus(id, status) {
   } else if (status === 'DEACTIVATED') {
     user.approvalStatus = 'REJECTED';
     user.rejectedAt = new Date();
-    await runDeactivationCleanup(user);
+    await runDeactivationCleanup(user, actorId);
   } else if (status === 'PENDING') {
     user.approvalStatus = 'PENDING_APPROVAL';
     user.approvalRequestedAt = new Date();
   }
   await user.save();
+  await logAudit({
+    userID: actorId,
+    actionType: ACTION_TYPES.APPLICATION_STATUS_CHANGED,
+    details: {
+      entityType: 'USER_STATUS',
+      targetUserID: user.id,
+      targetEmail: user.email,
+      toStatus: status,
+    },
+  });
   return mapUser(user);
 }
 
@@ -205,13 +235,18 @@ async function deleteOdsjek(id) {
   await odsjek.destroy();
 }
 
-async function deleteUser(id) {
+async function deleteUser(id, actorId = null) {
   const user = await User.findByPk(id);
   if (!user) {
     const err = new Error('User not found.');
     err.status = 404;
     throw err;
   }
+  const deletedUserSnapshot = {
+    userName: `${user.ime || ''} ${user.prezime || ''}`.trim() || user.email,
+    userEmail: user.email,
+    userRole: user.role,
+  };
 
   await sequelize.transaction(async (t) => {
     if (user.role === 'STUDENT') {
@@ -273,7 +308,16 @@ async function deleteUser(id) {
     }
 
     await user.destroy({ transaction: t });
+    await logAudit({
+      userID: actorId,
+      actionType: ACTION_TYPES.USER_DELETED,
+      details: {
+        deletedUserID: id,
+        deletedUser: deletedUserSnapshot,
+      },
+      transaction: t,
+    });
   });
 }
 
-module.exports = { getUsers, updateUserRole, updateUserStatus, deleteUser, getFaculties, createFaculty, updateFaculty, deleteFaculty, getOdsjeci, createOdsjek, deleteOdsjek };
+module.exports = { getUsers, updateUserRole, updateUserStatus, deleteUser, getFaculties, createFaculty, updateFaculty, deleteFaculty, getOdsjeci, createOdsjek, deleteOdsjek, getAuditLogs };

@@ -2,6 +2,7 @@
 
 const { Op } = require('sequelize');
 const { Oglas, Kompanija, User, PrijavaNaPraksu } = require('../../infrastructure/database/models');
+const { ACTION_TYPES, logAudit } = require('./audit.service');
 
 async function createListing(data, userId) {
   const user = await User.findByPk(userId);
@@ -170,6 +171,16 @@ async function updateListing(id, data, userId) {
     datumPocetka: typeof data.datumPocetka !== 'undefined' ? data.datumPocetka : oglas.datumPocetka,
     tehnologije: Array.isArray(data.tehnologije) ? data.tehnologije.filter(Boolean) : oglas.tehnologije,
     uslovi: Array.isArray(data.uslovi) ? data.uslovi.filter(Boolean) : oglas.uslovi,
+  });
+
+  await logAudit({
+    userID: userId,
+    actionType: ACTION_TYPES.LISTING_UPDATED,
+    details: {
+      oglasID: oglas.id,
+      naziv: updated.naziv,
+      changedFields: Object.keys(data || {}),
+    },
   });
 
   return updated;

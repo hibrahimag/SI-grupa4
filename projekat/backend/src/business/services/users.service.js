@@ -4,6 +4,7 @@ const { Op } = require('sequelize');
 const { sequelize, User, Student, Kompanija, Oglas, PrijavaNaPraksu, Koordinator, Fakultet, Praksa, Aktivnost, Prisustvo, Evaluacija, Ugovor, Izvjestaj } = require('../../infrastructure/database/models');
 const { sendStudentDeactivationToCompany, sendStudentDeactivationToKoordinator } = require('./email.service');
 const bcrypt = require('bcrypt');
+const { ACTION_TYPES, logAudit } = require('./audit.service');
 
 const PROFILE_FIELDS = ['naziv', 'opisPoslovanja', 'djelatnost', 'adresa', 'telefon', 'kontaktOsoba'];
 const OPTIONAL_FIELDS = ['opisPoslovanja', 'djelatnost', 'telefon', 'kontaktOsoba'];
@@ -263,6 +264,17 @@ async function deactivateMyAccount(userId) {
       const notifPromises = [];
       for (const prijava of pending) {
         const oglasNaziv = prijava.Oglas?.naziv || 'N/A';
+        await logAudit({
+          userID: userId,
+          actionType: ACTION_TYPES.INTERNSHIP_WITHDRAWN,
+          details: {
+            prijavaID: prijava.id,
+            oglasNaziv,
+            reason: 'ACCOUNT_DEACTIVATION',
+            fromStatus: prijava.status,
+            toStatus: 'ODUSTAO',
+          },
+        });
         const companyEmail = prijava.Oglas?.Kompanija?.User?.email;
         if (companyEmail) {
           notifPromises.push(
@@ -514,6 +526,11 @@ async function updateStudentProfile(userId, data) {
 
 async function deleteMyAccount(userId) {
   const user = await User.findByPk(userId);
+  const userSnapshot = user ? {
+    userName: `${user.ime || ''} ${user.prezime || ''}`.trim() || user.email,
+    userEmail: user.email,
+    userRole: user.role,
+  } : {};
   if (!user) throw makeError('Korisnik nije pronađen.', 404);
 
   const student = await Student.findOne({ where: { userID: userId } });
@@ -545,6 +562,18 @@ async function deleteMyAccount(userId) {
       const notifPromises = [];
       for (const prijava of pending) {
         const oglasNaziv = prijava.Oglas?.naziv || 'N/A';
+        await logAudit({
+          userID: userId,
+          actionType: ACTION_TYPES.INTERNSHIP_WITHDRAWN,
+          details: {
+            prijavaID: prijava.id,
+            oglasNaziv,
+            reason: 'ACCOUNT_DELETION',
+            fromStatus: prijava.status,
+            toStatus: 'ODUSTAO',
+          },
+          userSnapshot,
+        });
         const companyEmail = prijava.Oglas?.Kompanija?.User?.email;
         const koordinatorEmail = prijava.Koordinator?.User?.email;
         if (companyEmail) notifPromises.push(sendStudentDeactivationToCompany(companyEmail, studentName, oglasNaziv).catch(() => {}));
@@ -572,11 +601,23 @@ async function deleteMyAccount(userId) {
       await student.destroy({ transaction: t });
     }
     await user.destroy({ transaction: t });
+    await logAudit({
+      userID: userId,
+      actionType: ACTION_TYPES.USER_DELETED,
+      details: { deletedBy: 'SELF', deletedUserID: userId },
+      userSnapshot,
+      transaction: t,
+    });
   });
 }
 
 async function deleteCompanyAccount(userId) {
   const user = await User.findByPk(userId);
+  const userSnapshot = user ? {
+    userName: `${user.ime || ''} ${user.prezime || ''}`.trim() || user.email,
+    userEmail: user.email,
+    userRole: user.role,
+  } : {};
   if (!user) throw makeError('Korisnik nije pronađen.', 404);
 
   const kompanija = await Kompanija.findOne({ where: { userID: userId } });
@@ -615,11 +656,23 @@ async function deleteCompanyAccount(userId) {
       await kompanija.destroy({ transaction: t });
     }
     await user.destroy({ transaction: t });
+    await logAudit({
+      userID: userId,
+      actionType: ACTION_TYPES.USER_DELETED,
+      details: { deletedBy: 'SELF', deletedUserID: userId },
+      userSnapshot,
+      transaction: t,
+    });
   });
 }
 
 async function deleteCoordinatorAccount(userId) {
   const user = await User.findByPk(userId);
+  const userSnapshot = user ? {
+    userName: `${user.ime || ''} ${user.prezime || ''}`.trim() || user.email,
+    userEmail: user.email,
+    userRole: user.role,
+  } : {};
   if (!user) throw makeError('Korisnik nije pronađen.', 404);
 
   const koordinator = await Koordinator.findOne({ where: { userID: userId } });
@@ -645,6 +698,13 @@ async function deleteCoordinatorAccount(userId) {
       await koordinator.destroy({ transaction: t });
     }
     await user.destroy({ transaction: t });
+    await logAudit({
+      userID: userId,
+      actionType: ACTION_TYPES.USER_DELETED,
+      details: { deletedBy: 'SELF', deletedUserID: userId },
+      userSnapshot,
+      transaction: t,
+    });
   });
 }
 
