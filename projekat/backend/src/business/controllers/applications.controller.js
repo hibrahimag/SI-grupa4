@@ -29,7 +29,80 @@ async function getMyApplications(req, res) {
   }
 }
 
+async function getApplicationStatistics(req, res) {
+  try {
+    const { fakultetID, odsjekID, godina, status, oglasID } = req.query;
+    const stats = await applicationsService.getApplicationStatistics(req.user.id, { fakultetID, odsjekID, godina, status, oglasID });
+    return res.json(stats);
+  } catch (err) {
+    console.error('[getApplicationStatistics]', err);
+    return handleApplicationError(res, err);
+  }
+}
+
+async function getCompanyApplicationsForListing(req, res) {
+  try {
+    const data = await applicationsService.getCompanyApplicationsForListing(
+      req.user.id,
+      req.params.oglasId
+    );
+    return res.json(data);
+  } catch (err) {
+    return handleApplicationError(res, err);
+  }
+}
+
+async function shortlistApplication(req, res) {
+  try {
+    const application = await applicationsService.shortlistApplication(
+      req.user.id,
+      req.params.id
+    );
+    return res.json({
+      message: 'Kandidat je uspješno označen za uži krug.',
+      application,
+    });
+  } catch (err) {
+    return handleApplicationError(res, err);
+  }
+}
+
+async function approveApplicationByCompany(req, res) {
+  try {
+    const application = await applicationsService.approveApplicationByCompany(
+      req.user.id,
+      req.params.id
+    );
+    return res.json({
+      message: 'Kandidat je uspjesno odobren.',
+      application,
+    });
+  } catch (err) {
+    return handleApplicationError(res, err);
+  }
+}
+
+async function rejectApplicationByCompany(req, res) {
+  try {
+    const application = await applicationsService.rejectApplicationByCompany(
+      req.user.id,
+      req.params.id
+    );
+    return res.json({
+      message: 'Kandidat je uspjesno odbijen.',
+      application,
+    });
+  } catch (err) {
+    return handleApplicationError(res, err);
+  }
+}
+
 module.exports = {
   createApplication,
   getMyApplications,
+  getApplicationStatistics,
+  getCompanyApplicationsForListing,
+  shortlistApplication,
+  approveApplicationByCompany,
+  rejectApplicationByCompany,
 };

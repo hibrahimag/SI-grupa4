@@ -600,7 +600,7 @@ export default function LandingPage() {
                 onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 4px 20px rgba(26,111,212,0.35)"; }}
               >Počni kao student <IconArrowRight size={15} color="white" /></Link>
 
-              <Link to="/listings" style={btnOutline}
+              <Link to={user ? (ROLE_ROUTES[user.role] ?? '/dashboard') : '/listings/public'} style={btnOutline}
                 {...hov({ background: "#e8f1fb" }, { background: "white" })}
               ><IconSearch size={16} color="#1a6fd4" /> Pregledaj prakse</Link>
             </div>
@@ -669,7 +669,7 @@ export default function LandingPage() {
 
           <div className="lp-feature-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
             {[
-              { Icon: IconClipboard, title: "Status prijave",   val: "Na čekanju → Odobreno",   color: "#1a6fd4", bg: "#ddeeff" },
+              { Icon: IconClipboard, title: "Status prijave",   val: "Koordinator → Kompanija",   color: "#1a6fd4", bg: "#ddeeff" },
               { Icon: IconFile,      title: "Moji dokumenti",   val: "CV + Motivaciono pismo",  color: "#6d4ce1", bg: "#ede8ff" },
               { Icon: IconBell,      title: "Notifikacije",     val: "3 nove obavijesti",        color: "#0e9e6e", bg: "#e0f7ef" },
               { Icon: IconStar,      title: "Evaluacija",       val: "Ocijeni kompaniju",        color: "#e07b1a", bg: "#fef0dd" },

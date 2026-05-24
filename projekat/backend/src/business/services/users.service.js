@@ -3,7 +3,15 @@
 const { Op } = require('sequelize');
 const { sequelize, User, Student, Kompanija, Oglas, PrijavaNaPraksu, Koordinator, Fakultet, Praksa, Aktivnost, Prisustvo, Evaluacija, Ugovor, Izvjestaj } = require('../../infrastructure/database/models');
 const { sendStudentDeactivationToCompany, sendStudentDeactivationToKoordinator } = require('./email.service');
+const {
+  APPLICATION_STATUS,
+  ACTIVE_APPLICATION_STATUSES,
+  COMPANY_BLOCKING_STATUSES,
+  COORDINATOR_STATUS,
+  STUDENT_BLOCKING_STATUSES,
+} = require('./applicationStatus.service');
 const bcrypt = require('bcrypt');
+const { ACTION_TYPES, logAudit } = require('./audit.service');
 
 const PROFILE_FIELDS = ['naziv', 'opisPoslovanja', 'djelatnost', 'adresa', 'telefon', 'kontaktOsoba'];
 const OPTIONAL_FIELDS = ['opisPoslovanja', 'djelatnost', 'telefon', 'kontaktOsoba'];
@@ -169,7 +177,7 @@ async function checkDeactivation(userId) {
   const applications = await PrijavaNaPraksu.findAll({
     where: {
       studentID: student.id,
-      status: { [Op.in]: ['PODNESENA', 'U_RAZMATRANJU', 'ODOBRENA'] },
+      status: { [Op.in]: STUDENT_BLOCKING_STATUSES },
     },
     include: [
       {
@@ -180,7 +188,7 @@ async function checkDeactivation(userId) {
     ],
   });
 
-  const odobrene = applications.filter(a => a.status === 'ODOBRENA');
+  const odobrene = applications.filter(a => a.status === APPLICATION_STATUS.APPROVED);
   if (odobrene.length > 0) {
     return {
       canDeactivate: false,
@@ -189,7 +197,7 @@ async function checkDeactivation(userId) {
     };
   }
 
-  const pending = applications.filter(a => ['PODNESENA', 'U_RAZMATRANJU'].includes(a.status));
+  const pending = applications.filter(a => ACTIVE_APPLICATION_STATUSES.includes(a.status));
   return {
     canDeactivate: true,
     pendingApplications: pending.map(a => ({
@@ -216,7 +224,7 @@ async function deactivateMyAccount(userId) {
 
   if (student) {
     const odobrena = await PrijavaNaPraksu.findOne({
-      where: { studentID: student.id, status: 'ODOBRENA' },
+      where: { studentID: student.id, status: APPLICATION_STATUS.APPROVED },
     });
     if (odobrena) {
       const err = new Error('Imate odobrenu praksu. Morate se najprije odjaviti s prakse prije deaktivacije naloga.');
@@ -228,7 +236,7 @@ async function deactivateMyAccount(userId) {
     const pending = await PrijavaNaPraksu.findAll({
       where: {
         studentID: student.id,
-        status: { [Op.in]: ['PODNESENA', 'U_RAZMATRANJU'] },
+        status: { [Op.in]: ACTIVE_APPLICATION_STATUSES },
       },
       include: [
         {
@@ -250,11 +258,11 @@ async function deactivateMyAccount(userId) {
 
     if (pending.length > 0) {
       await PrijavaNaPraksu.update(
-        { status: 'ODUSTAO', datumOdustajanja: new Date() },
+        { status: APPLICATION_STATUS.WITHDRAWN, datumOdustajanja: new Date() },
         {
           where: {
             studentID: student.id,
-            status: { [Op.in]: ['PODNESENA', 'U_RAZMATRANJU'] },
+            status: { [Op.in]: ACTIVE_APPLICATION_STATUSES },
           },
         }
       );
@@ -263,6 +271,17 @@ async function deactivateMyAccount(userId) {
       const notifPromises = [];
       for (const prijava of pending) {
         const oglasNaziv = prijava.Oglas?.naziv || 'N/A';
+        await logAudit({
+          userID: userId,
+          actionType: ACTION_TYPES.INTERNSHIP_WITHDRAWN,
+          details: {
+            prijavaID: prijava.id,
+            oglasNaziv,
+            reason: 'ACCOUNT_DEACTIVATION',
+            fromStatus: prijava.status,
+            toStatus: 'ODUSTAO',
+          },
+        });
         const companyEmail = prijava.Oglas?.Kompanija?.User?.email;
         if (companyEmail) {
           notifPromises.push(
@@ -299,7 +318,10 @@ async function checkCompanyDeactivation(userId) {
     where: { kompanijaID: company.id, status: 'AKTIVAN' },
     include: [{
       model: PrijavaNaPraksu,
-      where: { status: { [Op.in]: ['PODNESENA', 'U_RAZMATRANJU'] } },
+      where: {
+        koordinatorStatus: COORDINATOR_STATUS.APPROVED,
+        status: { [Op.in]: COMPANY_BLOCKING_STATUSES },
+      },
       required: false,
     }],
   });
@@ -339,7 +361,10 @@ async function deactivateCompanyAccount(userId) {
       where: { kompanijaID: company.id, status: 'AKTIVAN' },
       include: [{
         model: PrijavaNaPraksu,
-        where: { status: { [Op.in]: ['PODNESENA', 'U_RAZMATRANJU'] } },
+        where: {
+          koordinatorStatus: COORDINATOR_STATUS.APPROVED,
+          status: { [Op.in]: COMPANY_BLOCKING_STATUSES },
+        },
         required: true,
       }],
     });
@@ -372,7 +397,7 @@ async function checkCoordinatorDeactivation(userId) {
   if (!coordinator) return { canDeactivate: true, pendingCount: 0 };
 
   const odobrene = await PrijavaNaPraksu.findAll({
-    where: { koordinatorID: coordinator.id, status: 'ODOBRENA' },
+    where: { koordinatorID: coordinator.id, status: APPLICATION_STATUS.APPROVED },
     include: [{ model: Student, include: [{ model: User, attributes: ['ime', 'prezime'] }] }],
   });
 
@@ -388,7 +413,7 @@ async function checkCoordinatorDeactivation(userId) {
   }
 
   const pendingCount = await PrijavaNaPraksu.count({
-    where: { koordinatorID: coordinator.id, status: { [Op.in]: ['PODNESENA', 'U_RAZMATRANJU'] } },
+    where: { koordinatorID: coordinator.id, status: { [Op.in]: ACTIVE_APPLICATION_STATUSES } },
   });
 
   return { canDeactivate: true, pendingCount };
@@ -411,7 +436,7 @@ async function deactivateCoordinatorAccount(userId) {
 
   if (coordinator) {
     const blocked = await PrijavaNaPraksu.findOne({
-      where: { koordinatorID: coordinator.id, status: 'ODOBRENA' },
+      where: { koordinatorID: coordinator.id, status: APPLICATION_STATUS.APPROVED },
     });
     if (blocked) {
       const err = new Error('Imate aktivne prakse u toku. Riješite ih prije deaktivacije naloga.');
@@ -422,7 +447,7 @@ async function deactivateCoordinatorAccount(userId) {
 
     await PrijavaNaPraksu.update(
       { koordinatorID: null },
-      { where: { koordinatorID: coordinator.id, status: { [Op.in]: ['PODNESENA', 'U_RAZMATRANJU'] } } }
+      { where: { koordinatorID: coordinator.id, status: { [Op.in]: ACTIVE_APPLICATION_STATUSES } } }
     );
   }
 
@@ -514,13 +539,18 @@ async function updateStudentProfile(userId, data) {
 
 async function deleteMyAccount(userId) {
   const user = await User.findByPk(userId);
+  const userSnapshot = user ? {
+    userName: `${user.ime || ''} ${user.prezime || ''}`.trim() || user.email,
+    userEmail: user.email,
+    userRole: user.role,
+  } : {};
   if (!user) throw makeError('Korisnik nije pronađen.', 404);
 
   const student = await Student.findOne({ where: { userID: userId } });
 
   if (student) {
     const odobrena = await PrijavaNaPraksu.findOne({
-      where: { studentID: student.id, status: 'ODOBRENA' },
+      where: { studentID: student.id, status: APPLICATION_STATUS.APPROVED },
     });
     if (odobrena) {
       const err = makeError('Imate odobrenu praksu. Morate se najprije odjaviti s prakse prije brisanja naloga.', 409);
@@ -529,7 +559,7 @@ async function deleteMyAccount(userId) {
     }
 
     const pending = await PrijavaNaPraksu.findAll({
-      where: { studentID: student.id, status: { [Op.in]: ['PODNESENA', 'U_RAZMATRANJU'] } },
+      where: { studentID: student.id, status: { [Op.in]: ACTIVE_APPLICATION_STATUSES } },
       include: [
         { model: Oglas, attributes: ['naziv'], include: [{ model: Kompanija, include: [{ model: User, attributes: ['email'] }] }] },
         { model: Koordinator, include: [{ model: User, attributes: ['email'] }] },
@@ -538,13 +568,25 @@ async function deleteMyAccount(userId) {
 
     if (pending.length > 0) {
       await PrijavaNaPraksu.update(
-        { status: 'ODUSTAO', datumOdustajanja: new Date() },
-        { where: { studentID: student.id, status: { [Op.in]: ['PODNESENA', 'U_RAZMATRANJU'] } } }
+        { status: APPLICATION_STATUS.WITHDRAWN, datumOdustajanja: new Date() },
+        { where: { studentID: student.id, status: { [Op.in]: ACTIVE_APPLICATION_STATUSES } } }
       );
       const studentName = `${user.ime} ${user.prezime}`;
       const notifPromises = [];
       for (const prijava of pending) {
         const oglasNaziv = prijava.Oglas?.naziv || 'N/A';
+        await logAudit({
+          userID: userId,
+          actionType: ACTION_TYPES.INTERNSHIP_WITHDRAWN,
+          details: {
+            prijavaID: prijava.id,
+            oglasNaziv,
+            reason: 'ACCOUNT_DELETION',
+            fromStatus: prijava.status,
+            toStatus: 'ODUSTAO',
+          },
+          userSnapshot,
+        });
         const companyEmail = prijava.Oglas?.Kompanija?.User?.email;
         const koordinatorEmail = prijava.Koordinator?.User?.email;
         if (companyEmail) notifPromises.push(sendStudentDeactivationToCompany(companyEmail, studentName, oglasNaziv).catch(() => {}));
@@ -572,11 +614,23 @@ async function deleteMyAccount(userId) {
       await student.destroy({ transaction: t });
     }
     await user.destroy({ transaction: t });
+    await logAudit({
+      userID: userId,
+      actionType: ACTION_TYPES.USER_DELETED,
+      details: { deletedBy: 'SELF', deletedUserID: userId },
+      userSnapshot,
+      transaction: t,
+    });
   });
 }
 
 async function deleteCompanyAccount(userId) {
   const user = await User.findByPk(userId);
+  const userSnapshot = user ? {
+    userName: `${user.ime || ''} ${user.prezime || ''}`.trim() || user.email,
+    userEmail: user.email,
+    userRole: user.role,
+  } : {};
   if (!user) throw makeError('Korisnik nije pronađen.', 404);
 
   const kompanija = await Kompanija.findOne({ where: { userID: userId } });
@@ -584,7 +638,14 @@ async function deleteCompanyAccount(userId) {
   if (kompanija) {
     const blocked = await Oglas.findOne({
       where: { kompanijaID: kompanija.id, status: 'AKTIVAN' },
-      include: [{ model: PrijavaNaPraksu, where: { status: { [Op.in]: ['PODNESENA', 'U_RAZMATRANJU'] } }, required: true }],
+      include: [{
+        model: PrijavaNaPraksu,
+        where: {
+          koordinatorStatus: COORDINATOR_STATUS.APPROVED,
+          status: { [Op.in]: COMPANY_BLOCKING_STATUSES },
+        },
+        required: true,
+      }],
     });
     if (blocked) {
       const err = makeError('Imate aktivne oglase sa prijavama. Zatvorite oglase prije brisanja naloga.', 409);
@@ -615,18 +676,30 @@ async function deleteCompanyAccount(userId) {
       await kompanija.destroy({ transaction: t });
     }
     await user.destroy({ transaction: t });
+    await logAudit({
+      userID: userId,
+      actionType: ACTION_TYPES.USER_DELETED,
+      details: { deletedBy: 'SELF', deletedUserID: userId },
+      userSnapshot,
+      transaction: t,
+    });
   });
 }
 
 async function deleteCoordinatorAccount(userId) {
   const user = await User.findByPk(userId);
+  const userSnapshot = user ? {
+    userName: `${user.ime || ''} ${user.prezime || ''}`.trim() || user.email,
+    userEmail: user.email,
+    userRole: user.role,
+  } : {};
   if (!user) throw makeError('Korisnik nije pronađen.', 404);
 
   const koordinator = await Koordinator.findOne({ where: { userID: userId } });
 
   if (koordinator) {
     const blocked = await PrijavaNaPraksu.findOne({
-      where: { koordinatorID: koordinator.id, status: 'ODOBRENA' },
+      where: { koordinatorID: koordinator.id, status: APPLICATION_STATUS.APPROVED },
     });
     if (blocked) {
       const err = makeError('Imate aktivne prakse u toku. Riješite ih prije brisanja naloga.', 409);
@@ -645,6 +718,13 @@ async function deleteCoordinatorAccount(userId) {
       await koordinator.destroy({ transaction: t });
     }
     await user.destroy({ transaction: t });
+    await logAudit({
+      userID: userId,
+      actionType: ACTION_TYPES.USER_DELETED,
+      details: { deletedBy: 'SELF', deletedUserID: userId },
+      userSnapshot,
+      transaction: t,
+    });
   });
 }
 

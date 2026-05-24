@@ -2,9 +2,10 @@
 
 const { Op } = require('sequelize');
 const { Oglas, Kompanija, User, PrijavaNaPraksu } = require('../../infrastructure/database/models');
+const { ACTION_TYPES, logAudit } = require('./audit.service');
+const { APPLICATION_STATUS } = require('./applicationStatus.service');
 
 async function createListing(data, userId) {
-
   const user = await User.findByPk(userId);
   if (!user) {
     const err = new Error('Korisnik nije pronađen.');
@@ -75,6 +76,7 @@ async function getListingsByCompany(userId) {
     throw err;
   }
 
+  // Kompanija vidi sve svoje oglase (Aktivne, Zatvorene, Arhivirane)
   return Oglas.findAll({
     where: { kompanijaID: kompanija.id },
     order: [['datumObjave', 'DESC']],
@@ -82,6 +84,7 @@ async function getListingsByCompany(userId) {
 }
 
 async function getActiveListings() {
+  // Aktivni oglasi ne smiju biti arhivirani
   return Oglas.findAll({
     where: { status: 'AKTIVAN', rokPrijave: { [Op.gt]: new Date() } },
     include: [{
@@ -128,7 +131,7 @@ async function updateListing(id, data, userId) {
   }
 
   if (oglas.status !== 'AKTIVAN') {
-    const err = new Error('Zatvoreni oglasi se ne mogu uređivati.');
+    const err = new Error('Zatvoreni ili arhivirani oglasi se ne mogu uređivati.');
     err.status = 400;
     throw err;
   }
@@ -148,7 +151,9 @@ async function updateListing(id, data, userId) {
       err.status = 400;
       throw err;
     }
-    const accepted = await PrijavaNaPraksu.count({ where: { oglasID: id, status: 'ODOBRENA' } });
+    const accepted = await PrijavaNaPraksu.count({
+      where: { oglasID: id, status: APPLICATION_STATUS.APPROVED },
+    });
     if (broj < accepted) {
       const err = new Error('Ne možete smanjiti broj mjesta ispod broja već odobrenih prijava.');
       err.status = 400;
@@ -171,7 +176,126 @@ async function updateListing(id, data, userId) {
     uslovi: Array.isArray(data.uslovi) ? data.uslovi.filter(Boolean) : oglas.uslovi,
   });
 
+  await logAudit({
+    userID: userId,
+    actionType: ACTION_TYPES.LISTING_UPDATED,
+    details: {
+      oglasID: oglas.id,
+      naziv: updated.naziv,
+      changedFields: Object.keys(data || {}),
+    },
+  });
+
   return updated;
+}
+
+async function getClosedListings() {
+  // Javni pregled zatvorenih oglasa (ne prikazujemo arhivirane)
+  return Oglas.findAll({
+    where: {
+      status: 'ZATVOREN',
+    },
+    include: [{
+      model: Kompanija,
+      attributes: ['id', 'naziv', 'kontaktOsoba'],
+      include: [{ model: User, attributes: ['email'] }],
+    }],
+    order: [['rokPrijave', 'DESC']],
+  });
+}
+
+async function getClosedListingsByCompany(userId) {
+  const kompanija = await Kompanija.findOne({ where: { userID: userId } });
+  if (!kompanija) {
+    const err = new Error('Kompanijski profil nije pronađen.');
+    err.status = 404;
+    throw err;
+  }
+
+  // Kompanija vidi svoje zatvorene oglase (isključujemo arhivirane)
+  return Oglas.findAll({
+    where: {
+      kompanijaID: kompanija.id,
+      status: 'ZATVOREN'
+    },
+    order: [['rokPrijave', 'DESC']],
+  });
+}
+
+// === NOVE FUNKCIJE ZA IMPLEMENTACIJU USLOVA ZADATKA ===
+
+async function closeListing(id, userId) {
+  const oglas = await Oglas.findByPk(id);
+  if (!oglas) {
+    const err = new Error('Oglas nije pronađen.');
+    err.status = 404;
+    throw err;
+  }
+
+  const kompanija = await Kompanija.findOne({ where: { userID: userId } });
+  if (!kompanija || oglas.kompanijaID !== kompanija.id) {
+    const err = new Error('Nemate dozvolu za zatvaranje ovog oglasa.');
+    err.status = 403;
+    throw err;
+  }
+
+  if (oglas.status !== 'AKTIVAN') {
+    const err = new Error('Moguće je zatvoriti samo aktivne oglase.');
+    err.status = 400;
+    throw err;
+  }
+
+  return await oglas.update({ status: 'ZATVOREN' });
+}
+
+async function archiveListing(id, userId) {
+  const oglas = await Oglas.findByPk(id);
+  if (!oglas) {
+    const err = new Error('Oglas nije pronađen.');
+    err.status = 404;
+    throw err;
+  }
+
+  const kompanija = await Kompanija.findOne({ where: { userID: userId } });
+  if (!kompanija || oglas.kompanijaID !== kompanija.id) {
+    const err = new Error('Nemate dozvolu za arhiviranje ovog oglasa.');
+    err.status = 403;
+    throw err;
+  }
+
+  // Uslov: Oglas mora biti prethodno zatvoren
+  if (oglas.status !== 'ZATVOREN') {
+    const err = new Error('Oglas mora biti prethodno zatvoren da bi se mogao arhivirati.');
+    err.status = 400;
+    throw err;
+  }
+
+  return await oglas.update({ status: 'ARHIVIRAN' });
+}
+
+async function restoreFromArchive(id, userId) {
+  const oglas = await Oglas.findByPk(id);
+  if (!oglas) {
+    const err = new Error('Oglas nije pronađen.');
+    err.status = 404;
+    throw err;
+  }
+
+  const kompanija = await Kompanija.findOne({ where: { userID: userId } });
+  if (!kompanija || oglas.kompanijaID !== kompanija.id) {
+    const err = new Error('Nemate dozvolu za upravljanje ovim oglasom.');
+    err.status = 403;
+    throw err;
+  }
+
+  if (oglas.status !== 'ARHIVIRAN') {
+    const err = new Error('Samo arhivirani oglasi se mogu vratiti iz arhive.');
+    err.status = 400;
+    throw err;
+  }
+
+  // Vraćamo ga u status 'ZATVOREN' kako bi kompanija mogla odlučiti hoće li produžiti rok i aktivirati ga ponovo
+  return await oglas.update({ status: 'ZATVOREN' });
 }
 
 module.exports = {
@@ -179,4 +303,9 @@ module.exports = {
   getListingsByCompany,
   getActiveListings,
   updateListing,
+  getClosedListings,
+  getClosedListingsByCompany,
+  closeListing,
+  archiveListing,
+  restoreFromArchive,
 };

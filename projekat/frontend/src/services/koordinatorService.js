@@ -11,7 +11,7 @@ export const koordinatorService = {
   getDashboardStats: () =>
     apiRequest(`${BASE}/dashboard`),
 
-  // Applications list — optional ?status=PODNESENA&stranica=1
+  // Applications list — optional ?status=CEKA_KOORDINATORA&stranica=1
   getPrijave: (params = {}) => {
     const qs = new URLSearchParams(params).toString();
     return apiRequest(`${BASE}/prijave${qs ? `?${qs}` : ''}`);

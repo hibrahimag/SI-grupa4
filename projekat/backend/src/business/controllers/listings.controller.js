@@ -84,9 +84,64 @@ async function updateListing(req, res) {
   }
 }
 
+async function getClosedListings(req, res) {
+  try {
+    const listings = await listingsService.getClosedListings();
+    return res.json(listings);
+  } catch (err) {
+    return res.status(err.status || 500).json({ message: err.message });
+  }
+}
+
+async function getClosedListingsByCompany(req, res) {
+  try {
+    const listings = await listingsService.getClosedListingsByCompany(req.user.id);
+    return res.json(listings);
+  } catch (err) {
+    return res.status(err.status || 500).json({ message: err.message });
+  }
+}
+
+// === NOVI KONTROLERI ===
+
+async function closeListing(req, res) {
+  try {
+    const id = Number(req.params.id);
+    const oglas = await listingsService.closeListing(id, req.user.id);
+    return res.json({ message: 'Oglas je uspješno zatvoren.', oglas });
+  } catch (err) {
+    return res.status(err.status || 500).json({ message: err.message });
+  }
+}
+
+async function archiveListing(req, res) {
+  try {
+    const id = Number(req.params.id);
+    const oglas = await listingsService.archiveListing(id, req.user.id);
+    return res.json({ message: 'Oglas je uspješno arhiviran.', oglas });
+  } catch (err) {
+    return res.status(err.status || 500).json({ message: err.message });
+  }
+}
+
+async function restoreFromArchive(req, res) {
+  try {
+    const id = Number(req.params.id);
+    const oglas = await listingsService.restoreFromArchive(id, req.user.id);
+    return res.json({ message: 'Oglas je uspješno vraćen iz arhive.', oglas });
+  } catch (err) {
+    return res.status(err.status || 500).json({ message: err.message });
+  }
+}
+
 module.exports = {
   createListing,
   getCompanyListings,
   getActiveListings,
   updateListing,
+  getClosedListings,
+  getClosedListingsByCompany,
+  closeListing,
+  archiveListing,
+  restoreFromArchive,
 };

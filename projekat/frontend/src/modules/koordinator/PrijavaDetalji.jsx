@@ -8,23 +8,30 @@ import { koordinatorService } from '../../services/koordinatorService';
 import { formatDate } from '../../data/mockPrakse';
 
 const STATUS_LABELS = {
-  na_cekanju_koordinatora: { label: 'Na čekanju koordinatora', cls: 'kd-status--cekanje'    },
-  odobrena_koordinator:    { label: 'Odobrena',                cls: 'kd-status--odobrena'   },
-  odbijena_koordinator:    { label: 'Odbijena',                cls: 'kd-status--odbijena'   },
-  potvrdjena_student:      { label: 'Potvrđena od studenta',   cls: 'kd-status--potvrdjeno' },
-  na_cekanju_kompanije:    { label: 'Na čekanju kompanije',    cls: 'kd-status--default'    },
-  odabrana_kompanija:      { label: 'Odabrana od kompanije',   cls: 'kd-status--aktivna'    },
-  odustao:                 { label: 'Student odustao',         cls: 'kd-status--odbijena'   },
+  CEKA_KOORDINATORA: { label: 'Čeka koordinatora', cls: 'kd-status--cekanje' },
+  CEKA_KOMPANIJU: { label: 'Proslijeđeno kompaniji', cls: 'kd-status--razmatranje' },
+  U_RAZMATRANJU: { label: 'Uži krug', cls: 'kd-status--razmatranje' },
+  ODOBRENA: { label: 'Praksa odobrena', cls: 'kd-status--odobrena' },
+  ODBIJENA_KOORDINATOR: { label: 'Odbijeno od koordinatora', cls: 'kd-status--odbijena' },
+  ODBIJENA_KOMPANIJA: { label: 'Odbijeno od kompanije', cls: 'kd-status--odbijena' },
+  PODNESENA: { label: 'Čeka koordinatora', cls: 'kd-status--cekanje' },
+  ODBIJENA: { label: 'Odbijeno', cls: 'kd-status--odbijena' },
+  ODUSTAO: { label: 'Odustao', cls: 'kd-status--odbijena' },
 };
 
-export default function PrijavaDetaljiModal({ prijavaId, onClose, onOdluka }) {
+export default function PrijavaDetaljiModal({ prijavaId, onClose, onOdluka, initialReject = false }) {
   const [prijava, setPrijava]       = useState(null);
   const [loading, setLoading]       = useState(true);
   const [error, setError]           = useState('');
-  const [pokaziOdbij, setPokazOdbij]= useState(false);
+  const [pokaziOdbij, setPokazOdbij]= useState(initialReject);
   const [razlog, setRazlog]         = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [aktivniTab, setAktivniTab] = useState('info');
+
+  useEffect(() => {
+    setPokazOdbij(initialReject);
+    setRazlog('');
+  }, [prijavaId, initialReject]);
 
   useEffect(() => {
     setLoading(true);
@@ -37,7 +44,7 @@ export default function PrijavaDetaljiModal({ prijavaId, onClose, onOdluka }) {
       .finally(() => setLoading(false));
   }, [prijavaId]);
 
-  const mozeOdluciti = prijava?.status === 'na_cekanju_koordinatora';
+  const mozeOdluciti = prijava?.status === 'CEKA_KOORDINATORA' || prijava?.status === 'PODNESENA';
 
   const handleOdobri = async () => {
     setSubmitting(true);
@@ -57,7 +64,12 @@ export default function PrijavaDetaljiModal({ prijavaId, onClose, onOdluka }) {
     return <span className={`kd-status ${s.cls}`}>{s.label}</span>;
   };
 
-  // Progress data from the associated praksa (available in later sprints)
+  const oglas = prijava?.Oglas || prijava?.Ogla || prijava?.oglas || {};
+  const kompanija = oglas?.Kompanija || oglas?.kompanija || {};
+  const kompanijaUser = kompanija?.User || kompanija?.user || {};
+  const prikazi = (value) => value || '-';
+
+  // Progress data from the associated praksa.
   const praksa      = prijava?.praksa;
   const aktivnosti  = praksa?.aktivnosti  || [];
   const prisustvo   = praksa?.prisustvo   || [];
@@ -108,7 +120,7 @@ export default function PrijavaDetaljiModal({ prijavaId, onClose, onOdluka }) {
                     <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-muted)' }}>Status:</span>
                     {statusBadge(prijava.status)}
                     <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-faint)', marginLeft: 'auto' }}>
-                      Prijavljeno: {formatDate(prijava.createdAt)}
+                      Prijavljeno: {formatDate(prijava.datumPrijave)}
                     </span>
                   </div>
 
@@ -116,11 +128,11 @@ export default function PrijavaDetaljiModal({ prijavaId, onClose, onOdluka }) {
                   <div className="kd-detail-section">
                     <p className="kd-detail-section-title">Student</p>
                     <div className="kd-detail-grid">
-                      <div className="kd-detail-field"><label>Ime i prezime</label><span>{prijava.student?.user?.ime} {prijava.student?.user?.prezime}</span></div>
-                      <div className="kd-detail-field"><label>Email</label><span>{prijava.student?.user?.email}</span></div>
-                      <div className="kd-detail-field"><label>Indeks</label><span style={{ fontFamily: 'monospace' }}>{prijava.student?.indeks}</span></div>
-                      <div className="kd-detail-field"><label>Godina studija</label><span>{prijava.student?.godinaStudija}</span></div>
-                      <div className="kd-detail-field"><label>Odsjek</label><span>{prijava.student?.odsjek}</span></div>
+                      <div className="kd-detail-field"><label>Ime i prezime</label><span>{prijava.Student?.User?.ime} {prijava.Student?.User?.prezime}</span></div>
+                      <div className="kd-detail-field"><label>Email</label><span>{prijava.Student?.User?.email}</span></div>
+                      <div className="kd-detail-field"><label>Indeks</label><span style={{ fontFamily: 'monospace' }}>{prijava.Student?.index_number}</span></div>
+                      <div className="kd-detail-field"><label>Godina studija</label><span>{prijava.Student?.year_of_study}</span></div>
+                      <div className="kd-detail-field"><label>Odsjek</label><span>{prijava.Student?.Odsjek?.naziv}</span></div>
                     </div>
                     {prijava.student?.bio && (
                       <div style={{ marginTop: 'var(--space-3)' }}>
@@ -140,25 +152,35 @@ export default function PrijavaDetaljiModal({ prijavaId, onClose, onOdluka }) {
                   <div className="kd-detail-section">
                     <p className="kd-detail-section-title">Oglas i kompanija</p>
                     <div className="kd-detail-grid">
-                      <div className="kd-detail-field"><label>Naziv oglasa</label><span>{prijava.oglas?.naziv}</span></div>
-                      <div className="kd-detail-field"><label>Trajanje</label><span>{prijava.oglas?.trajanje}</span></div>
-                      <div className="kd-detail-field"><label>Kompanija</label><span>{prijava.oglas?.kompanija?.naziv}</span></div>
-                      <div className="kd-detail-field"><label>Kontakt email</label><span>{prijava.oglas?.kompanija?.user?.email}</span></div>
-                      {prijava.oglas?.kompanija?.adresa && (
-                        <div className="kd-detail-field"><label>Adresa</label><span>{prijava.oglas.kompanija.adresa}</span></div>
+                      <div className="kd-detail-field"><label>Naziv oglasa</label><span>{prikazi(oglas.naziv)}</span></div>
+                      <div className="kd-detail-field"><label>Kompanija</label><span>{prikazi(kompanija.naziv)}</span></div>
+                      <div className="kd-detail-field"><label>Kontakt osoba</label><span>{prikazi(kompanija.kontaktOsoba || kompanijaUser.ime)}</span></div>
+                      <div className="kd-detail-field"><label>Kontakt email</label><span>{prikazi(kompanijaUser.email)}</span></div>
+                      <div className="kd-detail-field"><label>Telefon</label><span>{prikazi(kompanija.telefon)}</span></div>
+                      <div className="kd-detail-field"><label>Adresa</label><span>{prikazi(kompanija.adresa)}</span></div>
+                      <div className="kd-detail-field"><label>Djelatnost</label><span>{prikazi(kompanija.djelatnost)}</span></div>
+                      <div className="kd-detail-field"><label>Lokacija</label><span>{prikazi(oglas.lokacija)}</span></div>
+                      <div className="kd-detail-field"><label>Tip rada</label><span>{prikazi(oglas.tip)}</span></div>
+                      <div className="kd-detail-field"><label>Broj mjesta</label><span>{prikazi(oglas.brojMjesta)}</span></div>
+                      <div className="kd-detail-field"><label>Trajanje</label><span>{oglas.trajanje ? `${oglas.trajanje} ${Number(oglas.trajanje) === 1 ? 'mjesec' : 'mjeseci'}` : '-'}</span></div>
+                      <div className="kd-detail-field"><label>Rok prijave</label><span>{oglas.rokPrijave ? formatDate(oglas.rokPrijave) : '-'}</span></div>
+                      <div className="kd-detail-field"><label>Početak prakse</label><span>{oglas.datumPocetka ? formatDate(oglas.datumPocetka) : '-'}</span></div>
+                      <div className="kd-detail-field"><label>Oblast</label><span>{prikazi(oglas.oblast)}</span></div>
+                      {kompanija.opisPoslovanja && (
+                        <div className="kd-detail-field" style={{ gridColumn: '1 / -1' }}><label>Opis kompanije</label><span>{kompanija.opisPoslovanja}</span></div>
                       )}
-                      {prijava.oglas?.kompanija?.djelatnost && (
-                        <div className="kd-detail-field"><label>Djelatnost</label><span>{prijava.oglas.kompanija.djelatnost}</span></div>
+                      {oglas.opis && (
+                        <div className="kd-detail-field" style={{ gridColumn: '1 / -1' }}><label>Opis oglasa</label><span>{oglas.opis}</span></div>
                       )}
                     </div>
                   </div>
 
                   {/* Coordinator's previous comment if rejected */}
-                  {prijava.koordinatorKomentar && (
+                  {prijava.razlogOdbijanja && (
                     <>
                       <div style={{ height: 1, background: 'var(--color-border)', margin: 'var(--space-4) 0' }} />
                       <div className="kd-detail-section">
-                        <p className="kd-detail-section-title">Komentar koordinatora</p>
+                        <p className="kd-detail-section-title">Razlog odbijanja</p>
                         <div style={{
                           background: 'var(--color-danger-subtle)',
                           border: '1px solid var(--color-danger)',
@@ -167,7 +189,7 @@ export default function PrijavaDetaljiModal({ prijavaId, onClose, onOdluka }) {
                           fontSize: 'var(--font-size-sm)',
                           color: 'var(--color-danger)',
                         }}>
-                          {prijava.koordinatorKomentar}
+                          {prijava.razlogOdbijanja}
                         </div>
                       </div>
                     </>
@@ -177,35 +199,38 @@ export default function PrijavaDetaljiModal({ prijavaId, onClose, onOdluka }) {
 
               {/* ── TAB: DOKUMENTI ── */}
               {aktivniTab === 'dokumenti' && (
-                <div>
-                  <div className="kd-info-banner">
-                    <IconInfo /> Dokumenti (CV, motivaciono pismo) bit će dostupni nakon implementacije Upload modula u Sprintu 9.
-                  </div>
-
-                  {/* Show mock structure so the UI is ready */}
-                  <div className="kd-table-wrap">
-                    <table className="kd-table">
-                      <thead>
-                        <tr><th>Dokument</th><th>Format</th><th>Datum uploada</th><th></th></tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          <td colSpan={4} style={{ textAlign: 'center', color: 'var(--color-muted)', padding: 'var(--space-8)' }}>
-                            Dokumenti još nisu uploadovani (implementacija u Sprintu 9)
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
+  <div>
+    {(!prijava.Dokuments || prijava.Dokuments.length === 0) ? (
+      <div className="kd-empty">
+        <p className="kd-empty-text">Student nije uploadovao dokumente uz ovu prijavu.</p>
+      </div>
+    ) : (
+      <div className="kd-table-wrap">
+        <table className="kd-table">
+          <thead>
+            <tr><th>Dokument</th><th>Tip</th><th>Datum uploada</th></tr>
+          </thead>
+          <tbody>
+            {prijava.Dokuments.map(d => (
+              <tr key={d.id}>
+                <td>{d.original_name}</td>
+                <td>{d.tip_dokumenta}</td>
+                <td>{formatDate(d.created_at)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )}
+  </div>
+)}
 
               {/* ── TAB: TOK PRAKSE ── */}
               {aktivniTab === 'tok' && (
                 <div>
                   {!praksa ? (
                     <div className="kd-info-banner">
-                      <IconInfo /> Praksa još nije počela — tok prakse bit će vidljiv nakon odobrenja i potvrde studenta (Sprint 9–10).
+                      <IconInfo /> Praksa još nije počela. Tok prakse bit će vidljiv nakon konačnog odobrenja.
                     </div>
                   ) : (
                     <>
@@ -220,7 +245,7 @@ export default function PrijavaDetaljiModal({ prijavaId, onClose, onOdluka }) {
                             </span>
                           </div>
                         ) : (
-                          <div className="kd-info-banner"><IconInfo /> Ugovor još nije generisan (Sprint 10).</div>
+                          <div className="kd-info-banner"><IconInfo /> Ugovor još nije generisan.</div>
                         )}
                       </div>
 
@@ -228,7 +253,7 @@ export default function PrijavaDetaljiModal({ prijavaId, onClose, onOdluka }) {
                       <div className="kd-detail-section">
                         <p className="kd-detail-section-title">Prisustvo</p>
                         {prisustvo.length === 0 ? (
-                          <div className="kd-info-banner"><IconInfo /> Evidencija prisustva bit će dostupna u Sprintu 10.</div>
+                          <div className="kd-info-banner"><IconInfo /> Evidencija prisustva još nije dostupna.</div>
                         ) : (
                           <>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)', marginBottom: 'var(--space-3)' }}>
@@ -250,7 +275,7 @@ export default function PrijavaDetaljiModal({ prijavaId, onClose, onOdluka }) {
                       <div className="kd-detail-section">
                         <p className="kd-detail-section-title">Evidencija aktivnosti ({aktivnosti.length})</p>
                         {aktivnosti.length === 0 ? (
-                          <div className="kd-info-banner"><IconInfo /> Student još nije unio aktivnosti (Sprint 10).</div>
+                          <div className="kd-info-banner"><IconInfo /> Student još nije unio aktivnosti.</div>
                         ) : (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
                             {aktivnosti.map(a => (
@@ -291,7 +316,7 @@ export default function PrijavaDetaljiModal({ prijavaId, onClose, onOdluka }) {
                             )}
                           </div>
                         ) : (
-                          <div className="kd-info-banner"><IconInfo /> Evaluacija još nije popunjena (Sprint 10).</div>
+                          <div className="kd-info-banner"><IconInfo /> Evaluacija još nije popunjena.</div>
                         )}
                       </div>
                     </>
@@ -337,7 +362,7 @@ export default function PrijavaDetaljiModal({ prijavaId, onClose, onOdluka }) {
                   ✕ Odbij prijavu
                 </button>
                 <button className="kd-btn kd-btn--success" onClick={handleOdobri} disabled={submitting}>
-                  {submitting ? 'Slanje…' : '✓ Odobri prijavu'}
+                  {submitting ? 'Slanje…' : '✓ Proslijedi kompaniji'}
                 </button>
               </>
             ) : (

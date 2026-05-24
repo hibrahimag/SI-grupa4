@@ -2,6 +2,7 @@
 
 const { User, Koordinator, Student  } = require('../../infrastructure/database/models');
 const { sendAccountApprovedEmail, sendAccountRejectedEmail } = require('./email.service');
+const { ACTION_TYPES, logAudit } = require('./audit.service');
 
 const ALLOWED_ASSIGN_ROLES = ['STUDENT', 'COMPANY', 'COORDINATOR'];
 const OVERDUE_HOURS = 48;
@@ -95,6 +96,19 @@ async function approveUserRequest(id, assignedRole, actorId) {
   user.rejectionReason = null;
   await user.save();
 
+  await logAudit({
+    userID: actorId,
+    actionType: ACTION_TYPES.APPLICATION_STATUS_CHANGED,
+    details: {
+      entityType: 'USER_APPROVAL',
+      targetUserID: user.id,
+      targetEmail: user.email,
+      fromStatus: 'PENDING_APPROVAL',
+      toStatus: 'APPROVED',
+      assignedRole,
+    },
+  });
+
   await sendAccountApprovedEmail(user.email, assignedRole);
   return mapApprovalRequest(user);
 }
@@ -127,6 +141,19 @@ async function rejectUserRequest(id, rejectionReason, actorId) {
   user.approvedBy = null;
   user.approvedAt = null;
   await user.save();
+
+  await logAudit({
+    userID: actorId,
+    actionType: ACTION_TYPES.APPLICATION_STATUS_CHANGED,
+    details: {
+      entityType: 'USER_APPROVAL',
+      targetUserID: user.id,
+      targetEmail: user.email,
+      fromStatus: 'PENDING_APPROVAL',
+      toStatus: 'REJECTED',
+      rejectionReason: user.rejectionReason,
+    },
+  });
 
   await sendAccountRejectedEmail(user.email, user.rejectionReason);
   return mapApprovalRequest(user);

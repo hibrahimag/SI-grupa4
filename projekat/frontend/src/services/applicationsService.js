@@ -10,3 +10,40 @@ export async function createApplication(oglasID) {
     body: JSON.stringify({ oglasID }),
   });
 }
+
+export async function getApplicationStatistics({ fakultetID, odsjekID, godina, status, oglasID } = {}) {
+  const params = new URLSearchParams();
+  if (fakultetID) params.set('fakultetID', fakultetID);
+  if (odsjekID) params.set('odsjekID', odsjekID);
+  if (godina) params.set('godina', godina);
+  if (status) params.set('status', status);
+  if (oglasID) params.set('oglasID', oglasID);
+  const query = params.toString();
+  return apiRequest(`/applications/statistics${query ? `?${query}` : ''}`);
+}
+
+export async function getCompanyApplicationsForListing(oglasId) {
+  return apiRequest(`/applications/company/${oglasId}`);
+}
+
+export async function shortlistApplication(id) {
+  return apiRequest(`/applications/${id}/shortlist`, {
+    method: 'PATCH',
+  });
+}
+
+export async function approveApplicationByCompany(id) {
+  return apiRequest(`/applications/${id}/approve`, {
+    method: 'PATCH',
+  });
+}
+
+export async function rejectApplicationByCompany(id) {
+  return apiRequest(`/applications/${id}/reject`, {
+    method: 'PATCH',
+  });
+}
+
+export async function getCompanyApplicationDocumentDownloadUrl(id) {
+  return apiRequest(`/dokumenti/${id}/company-download`);
+}

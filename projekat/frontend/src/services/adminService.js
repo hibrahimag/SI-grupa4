@@ -60,6 +60,14 @@ export function deleteUser(id) {
   return apiRequest(`/admin/users/${id}`, { method: 'DELETE' });
 }
 
+export function getAuditLogs(params = {}) {
+  const query = new URLSearchParams();
+  if (params.actionType) query.set('actionType', params.actionType);
+  if (params.limit) query.set('limit', params.limit);
+  const suffix = query.toString() ? `?${query.toString()}` : '';
+  return apiRequest(`/admin/audit-logs${suffix}`);
+}
+
 export function getUserApprovalRequests() {
   return apiRequest('/approval-requests/users');
 }

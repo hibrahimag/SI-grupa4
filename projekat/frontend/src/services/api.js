@@ -51,4 +51,51 @@ export async function attachDocumentsToOglas(oglasId, dokumentIds) {
     body: JSON.stringify({ oglas_id: oglasId, dokument_ids: dokumentIds }),
   });
 }
+
+export async function getNotifications() {
+  return apiRequest('/notifications');
+}
+
+export async function markNotificationRead(id) {
+  return apiRequest(`/notifications/${id}/read`, { method: 'PATCH' });
+}
+
+export async function markAllNotificationsRead() {
+  return apiRequest('/notifications/read-all', { method: 'PATCH' });
+}
  
+
+export async function getNotificationPreferences() {
+  const token = sessionStorage.getItem('token');
+
+  const response = await fetch('/api/notification-preferences', {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Greška pri učitavanju postavki notifikacija.');
+  }
+
+  return response.json();
+}
+
+export async function updateNotificationPreferences(data) {
+  const token = sessionStorage.getItem('token');
+
+  const response = await fetch('/api/notification-preferences', {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    throw new Error('Greška pri spremanju postavki notifikacija.');
+  }
+
+  return response.json();
+}
