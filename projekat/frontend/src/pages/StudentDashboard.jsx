@@ -60,7 +60,7 @@ function isNovo(datumObjave) {
 
 const APPLICATION_STATUS_LABELS = {
   PODNESENA: 'Na čekanju',
-  U_RAZMATRANJU: 'Uži krug',
+  U_RAZMATRANJU: 'U razmatranju',
   ODOBRENA: 'Odobreno',
   ODBIJENA: 'Odbijeno',
   ODUSTAO: 'Odustao',

@@ -20,12 +20,14 @@ router.get(
 router.get(
   '/company/:oglasId',
   authenticate,
+  authorize('COMPANY'),
   applicationsController.getCompanyApplicationsForListing
 );
 
 router.patch(
   '/:id/shortlist',
   authenticate,
+  authorize('COMPANY'),
   applicationsController.shortlistApplication
 );
 

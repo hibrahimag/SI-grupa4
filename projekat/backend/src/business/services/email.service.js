@@ -22,6 +22,15 @@ async function brevoSend({ to, subject, html }) {
   }
 }
 
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 async function sendPasswordResetEmail(to, resetLink) {
   await brevoSend({
     to,
@@ -386,6 +395,9 @@ async function sendPrijavaPodnesenaEmail(to, oglasNaziv, kompanijaNaziv) {
 }
 
 async function sendPrijavaShortlistedEmail(to, oglasNaziv, kompanijaNaziv) {
+  const safeOglasNaziv = escapeHtml(oglasNaziv);
+  const safeKompanijaNaziv = escapeHtml(kompanijaNaziv);
+
   await brevoSend({
     to,
     subject: 'Promjena statusa prijave',
@@ -399,7 +411,7 @@ async function sendPrijavaShortlistedEmail(to, oglasNaziv, kompanijaNaziv) {
         <div style="padding:40px 32px;">
           <h2 style="margin-top:0;color:#071b4a;font-size:24px;">Promjena statusa prijave</h2>
           <p style="color:#4b5563;font-size:15px;line-height:1.7;">
-            Vaša prijava na praksu <strong>${oglasNaziv}</strong> kod kompanije <strong>${kompanijaNaziv}</strong>
+            Vaša prijava na praksu <strong>${safeOglasNaziv}</strong> kod kompanije <strong>${safeKompanijaNaziv}</strong>
             je ažurirana.
           </p>
           <p style="color:#4b5563;font-size:15px;line-height:1.7;">

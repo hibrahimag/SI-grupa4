@@ -333,27 +333,52 @@ async function shortlistApplication(userId, applicationId) {
       throw makeError('Status prijave ne dozvoljava selekciju kandidata.', 400);
     }
 
-    await prijava.update({ status: 'U_RAZMATRANJU' });
+    const [updatedCount] = await PrijavaNaPraksu.update(
+      { status: 'U_RAZMATRANJU' },
+      { where: { id: prijava.id, status: 'PODNESENA' } }
+    );
 
-    const studentId = prijava.Student?.id;
-    const studentUserId = prijava.Student?.User?.id;
-    const studentEmail = prijava.Student?.User?.email;
-    const kompanijaNaziv = oglas.Kompanija?.naziv || kompanija.naziv || 'Kompanija';
-    const tip = 'PRIJAVA_UZI_KRUG';
-    const naslov = 'Promjena statusa prijave';
-    const poruka = 'Vaša prijava za praksu je ažurirana. Označeni ste za uži krug kandidata.';
-    const preferences = studentUserId ? await getOrCreatePreferences(studentUserId) : null;
-
-    if (studentId && canSendInApp(preferences, tip)) {
-      createNotification(studentId, prijava.id, tip, naslov, poruka).catch((err) => {
-        console.error('[shortlistApplication] Greška pri kreiranju notifikacije:', err.message);
+    if (updatedCount === 0) {
+      const latest = await PrijavaNaPraksu.findByPk(prijava.id, {
+        attributes: ['id', 'status'],
       });
+
+      if (!latest) {
+        throw makeError('Prijava nije pronađena.', 404);
+      }
+
+      if (latest.status !== 'U_RAZMATRANJU') {
+        if (['ODOBRENA', 'ODBIJENA', 'ODUSTAO'].includes(latest.status)) {
+          throw makeError('Nije moguće selektovati prijavu koja je već zaključena.', 400);
+        }
+
+        throw makeError('Status prijave ne dozvoljava selekciju kandidata.', 400);
+      }
+
+      prijava.status = latest.status;
     }
 
-    if (studentEmail && canSendEmail(preferences, tip)) {
-      sendPrijavaShortlistedEmail(studentEmail, oglas.naziv, kompanijaNaziv).catch((err) => {
-        console.error('[shortlistApplication] Greška pri slanju emaila:', err.message);
-      });
+    if (updatedCount === 1) {
+      prijava.status = 'U_RAZMATRANJU';
+
+      const studentId = prijava.Student?.id;
+      const studentEmail = prijava.Student?.User?.email;
+      const kompanijaNaziv = oglas.Kompanija?.naziv || kompanija.naziv || 'Kompanija';
+      const tip = 'PRIJAVA_UZI_KRUG';
+      const naslov = 'Promjena statusa prijave';
+      const poruka = 'Vaša prijava za praksu je ažurirana. Označeni ste za uži krug kandidata.';
+
+      if (studentId) {
+        createNotification(studentId, prijava.id, tip, naslov, poruka).catch((err) => {
+          console.error('[shortlistApplication] Greška pri kreiranju notifikacije:', err.message);
+        });
+      }
+
+      if (studentEmail) {
+        sendPrijavaShortlistedEmail(studentEmail, oglas.naziv, kompanijaNaziv).catch((err) => {
+          console.error('[shortlistApplication] Greška pri slanju emaila:', err.message);
+        });
+      }
     }
   }
 
