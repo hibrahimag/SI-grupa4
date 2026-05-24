@@ -68,19 +68,31 @@ function normalizeId(id, missingMessage) {
   return value;
 }
 
+function mapCompanyApplicationDocument(dokument) {
+  return {
+    id: dokument.id,
+    naziv: dokument.original_name,
+    tip: dokument.tip_dokumenta,
+    mimeType: dokument.mime_path,
+    velicina: dokument.size,
+    datumDodavanja: dokument.created_at,
+  };
+}
+
 function mapCompanyApplication(prijava) {
   const student = prijava.Student;
   const user = student?.User;
+  const oglas = prijava.Oglas || prijava.Ogla;
 
   return {
     id: prijava.id,
     status: prijava.status,
     datumPrijave: prijava.datumPrijave,
-    oglas: prijava.Oglas
+    oglas: oglas
       ? {
-          id: prijava.Oglas.id,
-          naziv: prijava.Oglas.naziv,
-          status: prijava.Oglas.status,
+          id: oglas.id,
+          naziv: oglas.naziv,
+          status: oglas.status,
         }
       : null,
     student: student
@@ -98,6 +110,9 @@ function mapCompanyApplication(prijava) {
             : null,
         }
       : null,
+    dokumenti: Array.isArray(prijava.Dokuments)
+      ? prijava.Dokuments.map(mapCompanyApplicationDocument)
+      : [],
   };
 }
 
@@ -269,6 +284,10 @@ async function getCompanyApplicationsForListing(userId, oglasId) {
         model: Oglas,
         attributes: ['id', 'naziv', 'status'],
       },
+      {
+        model: Dokument,
+        attributes: ['id', 'original_name', 'tip_dokumenta', 'mime_path', 'size', 'created_at'],
+      },
     ],
     order: [['datumPrijave', 'DESC']],
   });
@@ -396,6 +415,10 @@ async function shortlistApplication(userId, applicationId) {
           { model: Fakultet, attributes: ['id', 'naziv'] },
           { model: Odsjek, attributes: ['id', 'naziv'] },
         ],
+      },
+      {
+        model: Dokument,
+        attributes: ['id', 'original_name', 'tip_dokumenta', 'mime_path', 'size', 'created_at'],
       },
     ],
   });

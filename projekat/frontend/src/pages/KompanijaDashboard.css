@@ -725,7 +725,7 @@
 .cd-candidates-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 820px;
+  min-width: 980px;
   font-size: 0.82rem;
 }
 
@@ -755,6 +755,45 @@
   color: #7f96ad;
   font-size: 0.74rem;
   font-weight: 600;
+}
+
+.cd-candidate-docs {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.cd-candidate-doc-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 190px;
+  padding: 6px 9px;
+  border: 1px solid #d0e3f7;
+  border-radius: 7px;
+  background: #f8fbff;
+  color: #1a6fd4;
+  font-size: 0.74rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: border-color 0.16s ease, background 0.16s ease, color 0.16s ease;
+}
+
+.cd-candidate-doc-btn:hover:not(:disabled) {
+  border-color: #9bc7ef;
+  background: #edf6ff;
+}
+
+.cd-candidate-doc-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.68;
+}
+
+.cd-candidate-doc-btn span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .cd-candidate-status {
@@ -966,6 +1005,19 @@
 .cd-layout.dark .cd-candidates-select-label,
 .dark .cd-candidates-select-label {
   color: #7a9ab8;
+}
+
+.cd-layout.dark .cd-candidate-doc-btn,
+.dark .cd-candidate-doc-btn {
+  background: #111827;
+  border-color: #1e2d40;
+  color: #8bbff5;
+}
+
+.cd-layout.dark .cd-candidate-doc-btn:hover:not(:disabled),
+.dark .cd-candidate-doc-btn:hover:not(:disabled) {
+  background: #1e2d40;
+  border-color: #34506f;
 }
 
 .cd-layout.dark .cd-listing-meta span,

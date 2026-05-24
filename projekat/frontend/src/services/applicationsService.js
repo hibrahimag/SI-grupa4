@@ -31,3 +31,7 @@ export async function shortlistApplication(id) {
     method: 'PATCH',
   });
 }
+
+export async function getCompanyApplicationDocumentDownloadUrl(id) {
+  return apiRequest(`/dokumenti/${id}/company-download`);
+}

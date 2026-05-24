@@ -16,6 +16,7 @@ import {
 } from '../services/listingsService';
 import {
   getApplicationStatistics,
+  getCompanyApplicationDocumentDownloadUrl,
   getCompanyApplicationsForListing,
   shortlistApplication,
 } from '../services/applicationsService';
@@ -800,6 +801,14 @@ const CANDIDATE_STATUS_LABELS = {
   ODUSTAO: { label: 'Odustao', cls: 'cd-candidate-status--rejected' },
 };
 
+const CANDIDATE_DOCUMENT_TYPE_LABELS = {
+  CV: 'CV',
+  MOTIVACIONO_PISMO: 'Motivaciono pismo',
+  TRANSKRIPT: 'Transkript',
+  POTVRDA: 'Potvrda',
+  OSTALO: 'Ostalo',
+};
+
 function candidateStatusBadge(status) {
   const mapped = CANDIDATE_STATUS_LABELS[status] || {
     label: status || 'Nepoznat status',
@@ -807,6 +816,10 @@ function candidateStatusBadge(status) {
   };
 
   return <span className={`cd-candidate-status ${mapped.cls}`}>{mapped.label}</span>;
+}
+
+function candidateDocumentTypeLabel(tip) {
+  return CANDIDATE_DOCUMENT_TYPE_LABELS[tip] || tip || 'Dokument';
 }
 
 function CandidatesShell({
@@ -825,6 +838,7 @@ function CandidatesShell({
   const [applicationsError, setApplicationsError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [processingId, setProcessingId] = useState(null);
+  const [openingDocumentId, setOpeningDocumentId] = useState(null);
 
   useEffect(() => {
     if (loading) return;
@@ -889,6 +903,38 @@ function CandidatesShell({
       setApplicationsError(err.message || 'Greška pri označavanju kandidata.');
     } finally {
       setProcessingId(null);
+    }
+  }
+
+  async function handleOpenDocument(dokument) {
+    if (!dokument?.id) return;
+
+    const pendingWindow = window.open('', '_blank');
+    if (pendingWindow) {
+      pendingWindow.opener = null;
+    }
+
+    setOpeningDocumentId(dokument.id);
+    setApplicationsError('');
+
+    try {
+      const result = await getCompanyApplicationDocumentDownloadUrl(dokument.id);
+      if (!result?.url) {
+        throw new Error('Link za dokument nije dostupan.');
+      }
+
+      if (pendingWindow) {
+        pendingWindow.location.href = result.url;
+      } else {
+        window.open(result.url, '_blank', 'noopener,noreferrer');
+      }
+    } catch (err) {
+      if (pendingWindow) {
+        pendingWindow.close();
+      }
+      setApplicationsError(err.message || 'Greška pri otvaranju dokumenta.');
+    } finally {
+      setOpeningDocumentId(null);
     }
   }
 
@@ -972,6 +1018,7 @@ function CandidatesShell({
                       <th>Fakultet / odsjek</th>
                       <th>Godina</th>
                       <th>Datum prijave</th>
+                      <th>Dokumenti</th>
                       <th>Status</th>
                       <th>Akcija</th>
                     </tr>
@@ -982,6 +1029,7 @@ function CandidatesShell({
                       const fullName = [student.ime, student.prezime].filter(Boolean).join(' ') || 'Nepoznat kandidat';
                       const fakultet = student.fakultet?.naziv || 'Fakultet nije unesen';
                       const odsjek = student.odsjek?.naziv || 'Odsjek nije unesen';
+                      const dokumenti = Array.isArray(application.dokumenti) ? application.dokumenti : [];
                       const canShortlist = application.status === 'PODNESENA';
                       const isProcessing = processingId === application.id;
 
@@ -997,6 +1045,33 @@ function CandidatesShell({
                           </td>
                           <td>{student.godinaStudija ? `${student.godinaStudija}. godina` : 'Nije uneseno'}</td>
                           <td>{formatDate(application.datumPrijave)}</td>
+                          <td>
+                            {dokumenti.length > 0 ? (
+                              <div className="cd-candidate-docs">
+                                {dokumenti.map((dokument) => {
+                                  const isOpening = openingDocumentId === dokument.id;
+                                  return (
+                                    <button
+                                      key={dokument.id}
+                                      type="button"
+                                      className="cd-candidate-doc-btn"
+                                      disabled={isOpening}
+                                      onClick={() => handleOpenDocument(dokument)}
+                                      title={dokument.naziv || candidateDocumentTypeLabel(dokument.tip)}
+                                    >
+                                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                        <polyline points="14 2 14 8 20 8" />
+                                      </svg>
+                                      <span>{isOpening ? 'Otvaranje...' : (dokument.naziv || candidateDocumentTypeLabel(dokument.tip))}</span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <span className="cd-candidate-muted">Nema dokumenata</span>
+                            )}
+                          </td>
                           <td>{candidateStatusBadge(application.status)}</td>
                           <td>
                             {canShortlist ? (
