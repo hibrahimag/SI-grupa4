@@ -7,13 +7,11 @@ import PrijavaDetalji from './PrijavaDetalji';
 import { formatDate } from '../../data/mockPrakse';
 
 const STATUS_LABELS = {
-  na_cekanju_koordinatora: { label: 'Na čekanju',  cls: 'kd-status--cekanje'   },
-  odobrena_koordinator:    { label: 'Odobrena',    cls: 'kd-status--odobrena'  },
-  odbijena_koordinator:    { label: 'Odbijena',    cls: 'kd-status--odbijena'  },
-  potvrdjena_student:      { label: 'Potvrđena',   cls: 'kd-status--potvrdjeno'},
-  na_cekanju_kompanije:    { label: 'Kod kompanije',cls: 'kd-status--default'  },
-  odabrana_kompanija:      { label: 'Odabrana',    cls: 'kd-status--aktivna'   },
-  odustao:                 { label: 'Odustao',     cls: 'kd-status--odbijena'  },
+  PODNESENA:     { label: 'Podnesena',     cls: 'kd-status--cekanje'     },
+  U_RAZMATRANJU: { label: 'U razmatranju', cls: 'kd-status--razmatranje' },
+  ODOBRENA:      { label: 'Odobrena',      cls: 'kd-status--odobrena'    },
+  ODBIJENA:      { label: 'Odbijena',      cls: 'kd-status--odbijena'    },
+  ODUSTAO:       { label: 'Odustao',       cls: 'kd-status--odbijena'    },
 };
 
 function statusBadge(status) {
@@ -21,7 +19,7 @@ function statusBadge(status) {
   return <span className={`kd-status ${s.cls}`}>{s.label}</span>;
 }
 
-export default function PrijavePregled({ filterStatus = 'na_cekanju_koordinatora', onOdluka }) {
+export default function PrijavePregled({ filterStatus = 'PODNESENA', onOdluka }) {
   const [prijave, setPrijave]         = useState([]);
   const [loading, setLoading]         = useState(true);
   const [error, setError]             = useState('');
@@ -29,6 +27,7 @@ export default function PrijavePregled({ filterStatus = 'na_cekanju_koordinatora
   const [ukupnoStr, setUkupnoStr]     = useState(1);
   const [ukupno, setUkupno]           = useState(0);
   const [aktivnaId, setAktivnaId]     = useState(null);
+  const [odbijMod, setOdbijMod]       = useState(false);
   const [toast, setToast]             = useState(null);
 
   const ucitaj = useCallback((str = 1) => {
@@ -64,6 +63,7 @@ export default function PrijavePregled({ filterStatus = 'na_cekanju_koordinatora
       if (res.success) {
         showToast(res.message, 'success');
         setAktivnaId(null);
+        setOdbijMod(false);
         ucitaj(stranica);
         onOdluka?.();
       } else {
@@ -78,7 +78,7 @@ export default function PrijavePregled({ filterStatus = 'na_cekanju_koordinatora
     <div>
       <div className="kd-module-header">
         <h2 className="kd-module-title">
-          {filterStatus === 'na_cekanju_koordinatora'
+          {filterStatus === 'PODNESENA'
             ? 'Prijave na čekanju odobrenja'
             : 'Sve prijave'}
           {ukupno > 0 && <span style={{ marginLeft: 8, fontSize: 'var(--font-size-sm)', color: 'var(--color-muted)', fontWeight: 500 }}>({ukupno})</span>}
@@ -113,8 +113,9 @@ export default function PrijavePregled({ filterStatus = 'na_cekanju_koordinatora
                 {prijave.map(p => {
                   const student = p.Student;
                   const user    = student?.User;
-                  const oglas   = p.Ogla;
+                  const oglas   = p.Oglas;
                   const komp    = oglas?.Kompanija;
+                  const mozeOdluciti = p.status === 'PODNESENA' || p.status === 'U_RAZMATRANJU';
                   return (
                     <tr key={p.id}>
                       <td>
@@ -131,12 +132,30 @@ export default function PrijavePregled({ filterStatus = 'na_cekanju_koordinatora
                       </td>
                       <td>{statusBadge(p.status)}</td>
                       <td>
-                        <button
-                          className="kd-btn kd-btn--ghost kd-btn--sm"
-                          onClick={() => setAktivnaId(p.id)}
-                        >
-                          Detalji
-                        </button>
+                        <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                          <button
+                            className="kd-btn kd-btn--ghost kd-btn--sm"
+                            onClick={() => { setAktivnaId(p.id); setOdbijMod(false); }}
+                          >
+                            Detalji
+                          </button>
+                          {mozeOdluciti && (
+                            <>
+                              <button
+                                className="kd-btn kd-btn--success kd-btn--sm"
+                                onClick={() => handleOdluka(p.id, 'odobrena', '')}
+                              >
+                                Odobri
+                              </button>
+                              <button
+                                className="kd-btn kd-btn--danger kd-btn--sm"
+                                onClick={() => { setAktivnaId(p.id); setOdbijMod(true); }}
+                              >
+                                Odbij
+                              </button>
+                            </>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -166,7 +185,8 @@ export default function PrijavePregled({ filterStatus = 'na_cekanju_koordinatora
       {aktivnaId && (
         <PrijavaDetalji
           prijavaId={aktivnaId}
-          onClose={() => setAktivnaId(null)}
+          initialReject={odbijMod}
+          onClose={() => { setAktivnaId(null); setOdbijMod(false); }}
           onOdluka={handleOdluka}
         />
       )}

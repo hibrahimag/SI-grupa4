@@ -66,7 +66,9 @@ const odluciPrijava = async (req, res) => {
 
     res.json({ success: true, message: poruka, data });
   } catch (err) {
-    if (err.message === 'NOT_FOUND')     return res.status(404).json({ success: false, message: 'Prijava nije pronađena.' });
+    if (err.message === 'NOT_FOUND')      return res.status(404).json({ success: false, message: 'Prijava nije pronađena.' });
+    if (err.message === 'KOORDINATOR_NOT_FOUND') return res.status(404).json({ success: false, message: 'Koordinatorski profil nije pronađen.' });
+    if (err.message === 'RAZLOG_REQUIRED') return res.status(400).json({ success: false, message: 'Razlog odbijanja je obavezan.' });
     if (err.message === 'INVALID_STATUS') return res.status(400).json({ success: false, message: 'Prijava nije u statusu koji dozvoljava odluku koordinatora.' });
     console.error('[koordinator] odluciPrijava:', err);
     res.status(500).json({ success: false, message: 'Greška na serveru.' });

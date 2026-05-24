@@ -256,6 +256,10 @@ describe('getPrijavaById', () => {
 
 // ── odluciOPrijavi ────────────────────────────────────────────────────────────
 describe('odluciOPrijavi', () => {
+  beforeEach(() => {
+    db.Koordinator.findOne.mockResolvedValue(makeMockKoordinator());
+  });
+
   test('odobrava prijavu i postavlja status ODOBRENA', async () => {
     const prijava = makeMockPrijava();
     db.PrijavaNaPraksu.findByPk.mockResolvedValue(prijava);
@@ -264,7 +268,7 @@ describe('odluciOPrijavi', () => {
 
     expect(result).toEqual({ id: 100, status: 'ODOBRENA' });
     expect(prijava.update).toHaveBeenCalledWith(
-      expect.objectContaining({ status: 'ODOBRENA', razlogOdbijanja: null })
+      expect.objectContaining({ status: 'ODOBRENA', razlogOdbijanja: null, koordinatorID: 1 })
     );
   });
 
@@ -279,8 +283,22 @@ describe('odluciOPrijavi', () => {
       expect.objectContaining({
         status: 'ODBIJENA',
         razlogOdbijanja: 'Nepotpuna dokumentacija',
+        koordinatorID: 1,
       })
     );
+  });
+
+  test('baca RAZLOG_REQUIRED kada je odbijanje bez razloga', async () => {
+    await expect(odluciOPrijavi(100, 'odbijena', '', 1)).rejects.toThrow('RAZLOG_REQUIRED');
+    expect(db.PrijavaNaPraksu.findByPk).not.toHaveBeenCalled();
+  });
+
+  test('baca NOT_FOUND kada student nije s fakulteta koordinatora', async () => {
+    db.PrijavaNaPraksu.findByPk.mockResolvedValue(
+      makeMockPrijava({ Student: makeMockStudent({ fakultetID: 99 }) })
+    );
+
+    await expect(odluciOPrijavi(100, 'odobrena', '', 1)).rejects.toThrow('NOT_FOUND');
   });
 
   test('baca NOT_FOUND kada prijava ne postoji', async () => {
