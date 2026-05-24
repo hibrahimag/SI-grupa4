@@ -8,23 +8,26 @@ import { koordinatorService } from '../../services/koordinatorService';
 import { formatDate } from '../../data/mockPrakse';
 
 const STATUS_LABELS = {
-  na_cekanju_koordinatora: { label: 'Na čekanju koordinatora', cls: 'kd-status--cekanje'    },
-  odobrena_koordinator:    { label: 'Odobrena',                cls: 'kd-status--odobrena'   },
-  odbijena_koordinator:    { label: 'Odbijena',                cls: 'kd-status--odbijena'   },
-  potvrdjena_student:      { label: 'Potvrđena od studenta',   cls: 'kd-status--potvrdjeno' },
-  na_cekanju_kompanije:    { label: 'Na čekanju kompanije',    cls: 'kd-status--default'    },
-  odabrana_kompanija:      { label: 'Odabrana od kompanije',   cls: 'kd-status--aktivna'    },
-  odustao:                 { label: 'Student odustao',         cls: 'kd-status--odbijena'   },
+  PODNESENA:     { label: 'Podnesena',     cls: 'kd-status--cekanje'     },
+  U_RAZMATRANJU: { label: 'U razmatranju', cls: 'kd-status--razmatranje' },
+  ODOBRENA:      { label: 'Odobrena',      cls: 'kd-status--odobrena'    },
+  ODBIJENA:      { label: 'Odbijena',      cls: 'kd-status--odbijena'    },
+  ODUSTAO:       { label: 'Odustao',       cls: 'kd-status--odbijena'    },
 };
 
-export default function PrijavaDetaljiModal({ prijavaId, onClose, onOdluka }) {
+export default function PrijavaDetaljiModal({ prijavaId, onClose, onOdluka, initialReject = false }) {
   const [prijava, setPrijava]       = useState(null);
   const [loading, setLoading]       = useState(true);
   const [error, setError]           = useState('');
-  const [pokaziOdbij, setPokazOdbij]= useState(false);
+  const [pokaziOdbij, setPokazOdbij]= useState(initialReject);
   const [razlog, setRazlog]         = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [aktivniTab, setAktivniTab] = useState('info');
+
+  useEffect(() => {
+    setPokazOdbij(initialReject);
+    setRazlog('');
+  }, [prijavaId, initialReject]);
 
   useEffect(() => {
     setLoading(true);
@@ -140,25 +143,25 @@ export default function PrijavaDetaljiModal({ prijavaId, onClose, onOdluka }) {
                   <div className="kd-detail-section">
                     <p className="kd-detail-section-title">Oglas i kompanija</p>
                     <div className="kd-detail-grid">
-                      <div className="kd-detail-field"><label>Naziv oglasa</label><span>{prijava.Ogla?.naziv}</span></div>
-                      <div className="kd-detail-field"><label>Trajanje</label><span>{prijava.Ogla?.trajanje ? `${prijava.Ogla.trajanje} ${prijava.Ogla.trajanje === 1 ? 'mjesec' : 'mjeseci'}` : '—'}</span></div>
-                      <div className="kd-detail-field"><label>Kompanija</label><span>{prijava.Ogla?.Kompanija?.naziv}</span></div>
-                      <div className="kd-detail-field"><label>Kontakt email</label><span>{prijava.Ogla?.Kompanija?.User?.email}</span></div>
-                      {prijava.Ogla?.Kompanija?.adresa && (
-                        <div className="kd-detail-field"><label>Adresa</label><span>{prijava.Ogla.Kompanija.adresa}</span></div>
+                      <div className="kd-detail-field"><label>Naziv oglasa</label><span>{prijava.Oglas?.naziv}</span></div>
+                      <div className="kd-detail-field"><label>Trajanje</label><span>{prijava.Oglas?.trajanje ? `${prijava.Oglas.trajanje} ${prijava.Oglas.trajanje === 1 ? 'mjesec' : 'mjeseci'}` : '—'}</span></div>
+                      <div className="kd-detail-field"><label>Kompanija</label><span>{prijava.Oglas?.Kompanija?.naziv}</span></div>
+                      <div className="kd-detail-field"><label>Kontakt email</label><span>{prijava.Oglas?.Kompanija?.User?.email}</span></div>
+                      {prijava.Oglas?.Kompanija?.adresa && (
+                        <div className="kd-detail-field"><label>Adresa</label><span>{prijava.Oglas.Kompanija.adresa}</span></div>
                       )}
-                      {prijava.Ogla?.Kompanija?.djelatnost && (
-                        <div className="kd-detail-field"><label>Djelatnost</label><span>{prijava.Ogla.Kompanija.djelatnost}</span></div>
+                      {prijava.Oglas?.Kompanija?.djelatnost && (
+                        <div className="kd-detail-field"><label>Djelatnost</label><span>{prijava.Oglas.Kompanija.djelatnost}</span></div>
                       )}
                     </div>
                   </div>
 
                   {/* Coordinator's previous comment if rejected */}
-                  {prijava.koordinatorKomentar && (
+                  {prijava.razlogOdbijanja && (
                     <>
                       <div style={{ height: 1, background: 'var(--color-border)', margin: 'var(--space-4) 0' }} />
                       <div className="kd-detail-section">
-                        <p className="kd-detail-section-title">Komentar koordinatora</p>
+                        <p className="kd-detail-section-title">Razlog odbijanja</p>
                         <div style={{
                           background: 'var(--color-danger-subtle)',
                           border: '1px solid var(--color-danger)',
@@ -167,7 +170,7 @@ export default function PrijavaDetaljiModal({ prijavaId, onClose, onOdluka }) {
                           fontSize: 'var(--font-size-sm)',
                           color: 'var(--color-danger)',
                         }}>
-                          {prijava.koordinatorKomentar}
+                          {prijava.razlogOdbijanja}
                         </div>
                       </div>
                     </>

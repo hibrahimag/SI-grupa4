@@ -52,6 +52,17 @@ jest.mock('../../src/infrastructure/database/models', () => ({
 jest.mock('../../src/business/services/email.service', () => ({
   sendAccountApprovedEmail: jest.fn().mockResolvedValue(undefined),
   sendAccountRejectedEmail: jest.fn().mockResolvedValue(undefined),
+  sendPrijavaStatusEmail: jest.fn().mockResolvedValue(undefined),
+}));
+
+jest.mock('../../src/business/services/notifications.service', () => ({
+  createNotification: jest.fn().mockResolvedValue(undefined),
+}));
+
+jest.mock('../../src/business/services/notificationPreferences.service', () => ({
+  getOrCreatePreferences: jest.fn().mockResolvedValue(null),
+  canSendInApp: jest.fn().mockReturnValue(false),
+  canSendEmail: jest.fn().mockReturnValue(false),
 }));
 
 // ── Mock approval.service za getZahtjevi ─────────────────────────────────────
@@ -294,6 +305,7 @@ describe('PATCH /api/koordinator/prijave/:id/odluka', () => {
   // Očekivani izlaz: HTTP 200, data.status = 'ODOBRENA'
   test('200 — uspješno odobrava prijavu', async () => {
     const mockPrijava = makeMockPrijava();
+    db.Koordinator.findOne.mockResolvedValue(makeMockKoordinator());
     db.PrijavaNaPraksu.findByPk.mockResolvedValue(mockPrijava);
 
     const res = await request(app)
@@ -312,6 +324,7 @@ describe('PATCH /api/koordinator/prijave/:id/odluka', () => {
   // Očekivani izlaz: HTTP 200, data.status = 'ODBIJENA'
   test('200 — uspješno odbija prijavu s razlogom', async () => {
     const mockPrijava = makeMockPrijava();
+    db.Koordinator.findOne.mockResolvedValue(makeMockKoordinator());
     db.PrijavaNaPraksu.findByPk.mockResolvedValue(mockPrijava);
 
     const res = await request(app)
@@ -352,6 +365,7 @@ describe('PATCH /api/koordinator/prijave/:id/odluka', () => {
   // Ulaz: PATCH /api/koordinator/prijave/999/odluka, body { odluka: 'odobrena' }, findByPk vraća null
   // Očekivani izlaz: HTTP 404
   test('404 — prijava ne postoji', async () => {
+    db.Koordinator.findOne.mockResolvedValue(makeMockKoordinator());
     db.PrijavaNaPraksu.findByPk.mockResolvedValue(null);
 
     const res = await request(app)
@@ -365,6 +379,7 @@ describe('PATCH /api/koordinator/prijave/:id/odluka', () => {
   // Ulaz: PATCH /api/koordinator/prijave/100/odluka, prijava ima status 'ODOBRENA'
   // Očekivani izlaz: HTTP 400
   test('400 — prijava već ima finalni status (ODOBRENA)', async () => {
+    db.Koordinator.findOne.mockResolvedValue(makeMockKoordinator());
     db.PrijavaNaPraksu.findByPk.mockResolvedValue(makeMockPrijava({ status: 'ODOBRENA' }));
 
     const res = await request(app)

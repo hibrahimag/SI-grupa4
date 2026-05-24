@@ -103,12 +103,22 @@ const getPrijavaById = async (id, koordinatorUserId) => {
 
 // ─── odluciOPrijavi ───────────────────────────────────────────────────────────
 const odluciOPrijavi = async (id, odluka, razlog, koordinatorUserId) => {
+  const koordinator = await db.Koordinator.findOne({
+    where: { userID: koordinatorUserId },
+    attributes: ['id', 'fakultetID'],
+  });
+  if (!koordinator) throw new Error('KOORDINATOR_NOT_FOUND');
+
+  if (odluka === 'odbijena' && !razlog?.trim()) {
+    throw new Error('RAZLOG_REQUIRED');
+  }
+
   const prijava = await db.PrijavaNaPraksu.findByPk(id, {
     include: [
       {
         model: db.Student,
         include: [{ model: db.User, attributes: ['id', 'email'] }],
-        attributes: ['id'],
+        attributes: ['id', 'fakultetID'],
       },
       {
         model: db.Oglas,
@@ -118,6 +128,9 @@ const odluciOPrijavi = async (id, odluka, razlog, koordinatorUserId) => {
     ],
   });
   if (!prijava) throw new Error('NOT_FOUND');
+  if (prijava.Student?.fakultetID !== koordinator.fakultetID) {
+    throw new Error('NOT_FOUND');
+  }
 
   if (!['PODNESENA', 'U_RAZMATRANJU'].includes(prijava.status)) {
     throw new Error('INVALID_STATUS');
@@ -126,8 +139,8 @@ const odluciOPrijavi = async (id, odluka, razlog, koordinatorUserId) => {
   const noviStatus = odluka === 'odobrena' ? 'ODOBRENA' : 'ODBIJENA';
   await prijava.update({
     status: noviStatus,
-    razlogOdbijanja: odluka === 'odbijena' ? razlog : null,
-    koordinatorID: koordinatorUserId,
+    razlogOdbijanja: odluka === 'odbijena' ? razlog.trim() : null,
+    koordinatorID: koordinator.id,
   });
 
   const studentId = prijava.Student?.id;
