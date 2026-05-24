@@ -25,14 +25,34 @@ module.exports = (sequelize) => {
       },
       status: {
         type: DataTypes.ENUM(
-          'PODNESENA',
+          'CEKA_KOORDINATORA',
+          'CEKA_KOMPANIJU',
           'U_RAZMATRANJU',
           'ODOBRENA',
-          'ODBIJENA',
-          'ODUSTAO'
+          'ODBIJENA_KOORDINATOR',
+          'ODBIJENA_KOMPANIJA',
+          'ODUSTAO',
+          'PODNESENA',
+          'ODBIJENA'
         ),
         allowNull: false,
-        defaultValue: 'PODNESENA',
+        defaultValue: 'CEKA_KOORDINATORA',
+      },
+      koordinatorStatus: {
+        type: DataTypes.ENUM('NA_CEKANJU', 'ODOBRENO', 'ODBIJENO'),
+        allowNull: false,
+        defaultValue: 'NA_CEKANJU',
+      },
+      kompanijaStatus: {
+        type: DataTypes.ENUM(
+          'NIJE_DOSTUPNO',
+          'NA_CEKANJU',
+          'U_RAZMATRANJU',
+          'ODOBRENO',
+          'ODBIJENO'
+        ),
+        allowNull: false,
+        defaultValue: 'NIJE_DOSTUPNO',
       },
       datumPrijave: {
         type: DataTypes.DATE,

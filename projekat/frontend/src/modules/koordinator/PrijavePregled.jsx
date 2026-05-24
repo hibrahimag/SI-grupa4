@@ -7,11 +7,15 @@ import PrijavaDetalji from './PrijavaDetalji';
 import { formatDate } from '../../data/mockPrakse';
 
 const STATUS_LABELS = {
-  PODNESENA:     { label: 'Podnesena',     cls: 'kd-status--cekanje'     },
-  U_RAZMATRANJU: { label: 'U razmatranju', cls: 'kd-status--razmatranje' },
-  ODOBRENA:      { label: 'Odobrena',      cls: 'kd-status--odobrena'    },
-  ODBIJENA:      { label: 'Odbijena',      cls: 'kd-status--odbijena'    },
-  ODUSTAO:       { label: 'Odustao',       cls: 'kd-status--odbijena'    },
+  CEKA_KOORDINATORA: { label: 'Čeka koordinatora', cls: 'kd-status--cekanje' },
+  CEKA_KOMPANIJU: { label: 'Proslijeđeno kompaniji', cls: 'kd-status--razmatranje' },
+  U_RAZMATRANJU: { label: 'Uži krug', cls: 'kd-status--razmatranje' },
+  ODOBRENA: { label: 'Praksa odobrena', cls: 'kd-status--odobrena' },
+  ODBIJENA_KOORDINATOR: { label: 'Odbijeno od koordinatora', cls: 'kd-status--odbijena' },
+  ODBIJENA_KOMPANIJA: { label: 'Odbijeno od kompanije', cls: 'kd-status--odbijena' },
+  PODNESENA: { label: 'Čeka koordinatora', cls: 'kd-status--cekanje' },
+  ODBIJENA: { label: 'Odbijeno', cls: 'kd-status--odbijena' },
+  ODUSTAO: { label: 'Odustao', cls: 'kd-status--odbijena' },
 };
 
 function statusBadge(status) {
@@ -19,7 +23,7 @@ function statusBadge(status) {
   return <span className={`kd-status ${s.cls}`}>{s.label}</span>;
 }
 
-export default function PrijavePregled({ filterStatus = 'PODNESENA', onOdluka }) {
+export default function PrijavePregled({ filterStatus = 'CEKA_KOORDINATORA', onOdluka }) {
   const [prijave, setPrijave]         = useState([]);
   const [loading, setLoading]         = useState(true);
   const [error, setError]             = useState('');
@@ -78,8 +82,8 @@ export default function PrijavePregled({ filterStatus = 'PODNESENA', onOdluka })
     <div>
       <div className="kd-module-header">
         <h2 className="kd-module-title">
-          {filterStatus === 'PODNESENA'
-            ? 'Prijave na čekanju odobrenja'
+          {filterStatus === 'CEKA_KOORDINATORA'
+            ? 'Prijave koje čekaju koordinatora'
             : 'Sve prijave'}
           {ukupno > 0 && <span style={{ marginLeft: 8, fontSize: 'var(--font-size-sm)', color: 'var(--color-muted)', fontWeight: 500 }}>({ukupno})</span>}
         </h2>
@@ -115,7 +119,7 @@ export default function PrijavePregled({ filterStatus = 'PODNESENA', onOdluka })
                   const user    = student?.User;
                   const oglas   = p.Oglas;
                   const komp    = oglas?.Kompanija;
-                  const mozeOdluciti = p.status === 'PODNESENA' || p.status === 'U_RAZMATRANJU';
+                  const mozeOdluciti = p.status === 'CEKA_KOORDINATORA' || p.status === 'PODNESENA';
                   return (
                     <tr key={p.id}>
                       <td>
@@ -145,7 +149,7 @@ export default function PrijavePregled({ filterStatus = 'PODNESENA', onOdluka })
                                 className="kd-btn kd-btn--success kd-btn--sm"
                                 onClick={() => handleOdluka(p.id, 'odobrena', '')}
                               >
-                                Odobri
+                                Proslijedi kompaniji
                               </button>
                               <button
                                 className="kd-btn kd-btn--danger kd-btn--sm"

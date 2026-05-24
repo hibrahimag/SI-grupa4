@@ -9,6 +9,7 @@
  */
 
 const { SystemSetting, Student, PrijavaNaPraksu } = require('../../infrastructure/database/models');
+const { ACTIVE_APPLICATION_STATUSES } = require('./applicationStatus.service');
 
 const SETTING_KEY    = 'max_active_applications';
 const DEFAULT_LIMIT  = 5;
@@ -47,7 +48,7 @@ async function setApplicationLimit(limit) {
 
 /**
  * Provjerava da li student može podnijeti novu prijavu.
- * Broji prijave u statusima PODNESENA i U_RAZMATRANJU (aktivne).
+ * Broji prijave koje jos nisu dobile konacan ishod.
  */
 async function checkStudentApplicationLimit(userId) {
   const limit = await getApplicationLimit();
@@ -58,7 +59,7 @@ async function checkStudentApplicationLimit(userId) {
   const current = await PrijavaNaPraksu.count({
     where: {
       studentID: student.id,
-      status: ['PODNESENA', 'U_RAZMATRANJU'],
+      status: ACTIVE_APPLICATION_STATUSES,
     },
   });
 

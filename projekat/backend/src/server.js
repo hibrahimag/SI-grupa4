@@ -1,15 +1,16 @@
 const app = require('./app');
-const { sequelize } = require('./infrastructure/database/models');
+const { sequelize, PrijavaNaPraksu } = require('./infrastructure/database/models');
+const { backfillApplicationStatuses } = require('./business/services/applicationStatus.service');
 
 const PORT = process.env.PORT || 3000;
 
 sequelize
   .sync({ alter: true })
-  .then(() => console.log('Baza spojena'))
-  .catch((err) => console.error('Greška:', err));
-
-
-
-app.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
-});
+  .then(async () => {
+    await backfillApplicationStatuses(PrijavaNaPraksu);
+    console.log('Baza spojena');
+    app.listen(PORT, () => {
+      console.log(`Server listening on port ${PORT}`);
+    });
+  })
+  .catch((err) => console.error('Greska:', err));

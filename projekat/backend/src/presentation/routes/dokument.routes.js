@@ -5,13 +5,21 @@ const router = express.Router();
 const path = require('path');
 
 const { authenticate } = require('../../middleware/auth.middleware');
+const { authorize } = require('../../middleware/rbac.middleware');
 const { uploadDocuments } = require('../../middleware/upload.middleware');
 const supabase = require('../../infrastructure/supabase');
 
 const {
   Dokument,
   Student,
+  Kompanija,
+  Oglas,
+  PrijavaNaPraksu,
 } = require('../../infrastructure/database/models');
+const {
+  APPLICATION_STATUS,
+  COORDINATOR_STATUS,
+} = require('../../business/services/applicationStatus.service');
 
 const BUCKET = 'dokumenti';
 
@@ -29,6 +37,73 @@ router.get('/mine', authenticate, async (req, res) => {
     return res.json(dokumenti);
   } catch (err) {
     return res.status(500).json({ message: 'Greška pri dohvatanju dokumenata.' });
+  }
+});
+
+// GET /api/dokumenti/:id/company-download
+router.get('/:id/company-download', authenticate, authorize('COMPANY'), async (req, res) => {
+  try {
+    const dokumentId = Number(req.params.id);
+    if (!Number.isInteger(dokumentId) || dokumentId <= 0) {
+      return res.status(404).json({ message: 'Dokument nije pronađen.' });
+    }
+
+    const kompanija = await Kompanija.findOne({ where: { userID: req.user.id } });
+    if (!kompanija) {
+      return res.status(404).json({ message: 'Profil kompanije nije pronađen.' });
+    }
+
+    const dokument = await Dokument.findByPk(dokumentId, {
+      attributes: ['id', 'prijava_id', 'file_path', 'original_name'],
+      include: [
+        {
+          model: PrijavaNaPraksu,
+          attributes: ['id', 'oglasID', 'status', 'koordinatorStatus'],
+          required: true,
+          include: [
+            {
+              model: Oglas,
+              attributes: ['id', 'kompanijaID', 'status'],
+              required: true,
+            },
+          ],
+        },
+      ],
+    });
+
+    if (!dokument) {
+      return res.status(404).json({ message: 'Dokument nije pronađen.' });
+    }
+
+    const oglas = dokument.PrijavaNaPraksu?.Ogla || dokument.PrijavaNaPraksu?.Oglas;
+    if (!oglas || oglas.kompanijaID !== kompanija.id) {
+      return res.status(403).json({ message: 'Nemate pravo pristupa ovom dokumentu.' });
+    }
+
+    const prijava = dokument.PrijavaNaPraksu;
+    if (
+      oglas.status !== 'AKTIVAN' ||
+      prijava.koordinatorStatus !== COORDINATOR_STATUS.APPROVED ||
+      prijava.status === APPLICATION_STATUS.WITHDRAWN
+    ) {
+      return res.status(403).json({ message: 'Dokument nije dostupan za ovu prijavu.' });
+    }
+
+    if (!dokument.file_path) {
+      return res.status(404).json({ message: 'Dokument nije dostupan.' });
+    }
+
+    const { data, error } = await supabase.storage
+      .from(BUCKET)
+      .createSignedUrl(dokument.file_path, 60, { download: dokument.original_name || 'dokument' });
+
+    if (error) {
+      return res.status(500).json({ message: 'Greška pri generisanju linka.' });
+    }
+
+    return res.json({ url: data.signedUrl });
+  } catch (err) {
+    return res.status(500).json({ message: 'Greška pri preuzimanju dokumenta.' });
   }
 });
 

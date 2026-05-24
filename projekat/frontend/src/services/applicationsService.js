@@ -21,3 +21,29 @@ export async function getApplicationStatistics({ fakultetID, odsjekID, godina, s
   const query = params.toString();
   return apiRequest(`/applications/statistics${query ? `?${query}` : ''}`);
 }
+
+export async function getCompanyApplicationsForListing(oglasId) {
+  return apiRequest(`/applications/company/${oglasId}`);
+}
+
+export async function shortlistApplication(id) {
+  return apiRequest(`/applications/${id}/shortlist`, {
+    method: 'PATCH',
+  });
+}
+
+export async function approveApplicationByCompany(id) {
+  return apiRequest(`/applications/${id}/approve`, {
+    method: 'PATCH',
+  });
+}
+
+export async function rejectApplicationByCompany(id) {
+  return apiRequest(`/applications/${id}/reject`, {
+    method: 'PATCH',
+  });
+}
+
+export async function getCompanyApplicationDocumentDownloadUrl(id) {
+  return apiRequest(`/dokumenti/${id}/company-download`);
+}
