@@ -700,7 +700,8 @@ function MyApplicationsPanel({ applications, prakse, onViewOglas }) {
   const [activeFilter, setActiveFilter] = useState(null);
 
   const total = applications.length;
-  const pending = applications.filter(a => a.status === 'PODNESENA' || a.status === 'U_RAZMATRANJU').length;
+  const pending = applications.filter(a => a.status === 'PODNESENA').length;
+  const underReview = applications.filter(a => a.status === 'U_RAZMATRANJU').length;
   const approved = applications.filter(a => a.status === 'ODOBRENA').length;
   const rejected = applications.filter(a => a.status === 'ODBIJENA' || a.status === 'ODUSTAO').length;
 
@@ -709,7 +710,9 @@ function MyApplicationsPanel({ applications, prakse, onViewOglas }) {
   }
 
   const visibleApplications = activeFilter === 'pending'
-    ? applications.filter(a => a.status === 'PODNESENA' || a.status === 'U_RAZMATRANJU')
+    ? applications.filter(a => a.status === 'PODNESENA')
+    : activeFilter === 'review'
+      ? applications.filter(a => a.status === 'U_RAZMATRANJU')
     : activeFilter === 'approved'
       ? applications.filter(a => a.status === 'ODOBRENA')
       : activeFilter === 'rejected'
@@ -738,15 +741,18 @@ function MyApplicationsPanel({ applications, prakse, onViewOglas }) {
 
   return (
     <div className="sd-apps-panel">
-      <div className="sd-apps-stats">
-        <div
-          className={`sd-apps-stat${activeFilter === null ? ' sd-apps-stat--all-active' : ''}`}
+      <div className="sd-apps-filter-top">
+        <button
+          type="button"
+          className={`sd-apps-total-btn${activeFilter === null ? ' active' : ''}`}
           onClick={() => setActiveFilter(null)}
-          role="button" tabIndex={0}
         >
-          <span className="sd-apps-stat-value">{total}</span>
-          <span className="sd-apps-stat-label">Ukupno</span>
-        </div>
+          <span>Ukupno</span>
+          <strong>{total}</strong>
+        </button>
+      </div>
+
+      <div className="sd-apps-stats">
         <div
           className={`sd-apps-stat sd-apps-stat--clickable${activeFilter === 'pending' ? ' sd-apps-stat--active-info' : ''}`}
           onClick={() => toggleFilter('pending')}
@@ -754,6 +760,14 @@ function MyApplicationsPanel({ applications, prakse, onViewOglas }) {
         >
           <span className="sd-apps-stat-value sd-apps-stat-value--info">{pending}</span>
           <span className="sd-apps-stat-label">Na čekanju</span>
+        </div>
+        <div
+          className={`sd-apps-stat sd-apps-stat--clickable${activeFilter === 'review' ? ' sd-apps-stat--active-info' : ''}`}
+          onClick={() => toggleFilter('review')}
+          role="button" tabIndex={0}
+        >
+          <span className="sd-apps-stat-value sd-apps-stat-value--info">{underReview}</span>
+          <span className="sd-apps-stat-label">U razmatranju</span>
         </div>
         <div
           className={`sd-apps-stat sd-apps-stat--clickable${activeFilter === 'approved' ? ' sd-apps-stat--active-success' : ''}`}

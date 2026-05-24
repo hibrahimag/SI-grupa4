@@ -2010,6 +2010,7 @@
   .sd-container { padding: 24px 16px 48px; }
   .sd-listings-layout { grid-template-columns: 1fr; }
   .sd-info-panel { display: none; }
+  .sd-apps-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
   .sd-header {
     flex-direction: column;
@@ -2035,6 +2036,7 @@
 }
 
 @media (max-width: 480px) {
+  .sd-apps-stats { grid-template-columns: 1fr; }
   .sd-meta-row { gap: 8px; }
   .sd-meta-dot { display: none; }
   .sd-stats { gap: 8px; }
@@ -2924,12 +2926,54 @@
 .sd-apps-panel {
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 18px;
+}
+
+.sd-apps-filter-top {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.sd-apps-total-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 13px;
+  border: 1px solid var(--color-border, #e0edf9);
+  border-radius: 999px;
+  background: var(--color-surface, #fff);
+  color: var(--color-muted, #5a7a9a);
+  font-size: 0.78rem;
+  font-weight: 800;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+
+.sd-apps-total-btn:hover,
+.sd-apps-total-btn.active {
+  border-color: rgba(26,111,212,0.34);
+  background: rgba(26,111,212,0.06);
+  color: var(--color-primary, #1a6fd4);
+}
+
+.sd-apps-total-btn.active {
+  box-shadow: 0 0 0 3px rgba(26,111,212,0.08);
+}
+
+.sd-apps-total-btn strong {
+  min-width: 24px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(26,111,212,0.12);
+  color: var(--color-primary, #1a6fd4);
+  text-align: center;
+  font-size: 0.78rem;
 }
 
 .sd-apps-stats {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
 }
 
@@ -3096,6 +3140,21 @@
 .sd-page.dark .sd-apps-stat {
   background: #1e293b;
   border-color: #334155;
+}
+.sd-page.dark .sd-apps-total-btn {
+  background: #1e293b;
+  border-color: #334155;
+  color: #94a3b8;
+}
+.sd-page.dark .sd-apps-total-btn:hover,
+.sd-page.dark .sd-apps-total-btn.active {
+  background: rgba(96,165,250,0.1);
+  border-color: rgba(96,165,250,0.35);
+  color: #60a5fa;
+}
+.sd-page.dark .sd-apps-total-btn strong {
+  background: rgba(96,165,250,0.14);
+  color: #60a5fa;
 }
 .sd-page.dark .sd-apps-stat--all-active {
   border-color: #60a5fa;
