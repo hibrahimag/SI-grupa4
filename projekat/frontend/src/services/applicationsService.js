@@ -21,3 +21,13 @@ export async function getApplicationStatistics({ fakultetID, odsjekID, godina, s
   const query = params.toString();
   return apiRequest(`/applications/statistics${query ? `?${query}` : ''}`);
 }
+
+export async function getCompanyApplicationsForListing(oglasId) {
+  return apiRequest(`/applications/company/${oglasId}`);
+}
+
+export async function shortlistApplication(id) {
+  return apiRequest(`/applications/${id}/shortlist`, {
+    method: 'PATCH',
+  });
+}

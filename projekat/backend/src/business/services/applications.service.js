@@ -11,7 +11,10 @@ const {
   Fakultet,
 } = require('../../infrastructure/database/models');
 const { createNotification } = require('./notifications.service');
-const { sendPrijavaPodnesenaEmail } = require('./email.service');
+const {
+  sendPrijavaPodnesenaEmail,
+  sendPrijavaShortlistedEmail,
+} = require('./email.service');
 const {
   getOrCreatePreferences,
   canSendInApp,
@@ -41,6 +44,61 @@ function isStudentProfileComplete(user, student) {
     Number(student.year_of_study) > 0 &&
     hasValue(student.fakultetID)
   );
+}
+
+async function resolveCompanyFromUser(userId) {
+  const user = await User.findByPk(userId);
+  if (!user || user.role !== 'COMPANY') {
+    throw makeError('Samo kompanije mogu vršiti selekciju kandidata.', 403);
+  }
+
+  const kompanija = await Kompanija.findOne({ where: { userID: user.id } });
+  if (!kompanija) {
+    throw makeError('Profil kompanije nije pronađen.', 404);
+  }
+
+  return { user, kompanija };
+}
+
+function normalizeId(id, missingMessage) {
+  const value = Number(id);
+  if (!Number.isInteger(value) || value <= 0) {
+    throw makeError(missingMessage, 404);
+  }
+  return value;
+}
+
+function mapCompanyApplication(prijava) {
+  const student = prijava.Student;
+  const user = student?.User;
+
+  return {
+    id: prijava.id,
+    status: prijava.status,
+    datumPrijave: prijava.datumPrijave,
+    oglas: prijava.Oglas
+      ? {
+          id: prijava.Oglas.id,
+          naziv: prijava.Oglas.naziv,
+          status: prijava.Oglas.status,
+        }
+      : null,
+    student: student
+      ? {
+          id: student.id,
+          ime: user?.ime || null,
+          prezime: user?.prezime || null,
+          email: user?.email || null,
+          godinaStudija: student.year_of_study,
+          fakultet: student.Fakultet
+            ? { id: student.Fakultet.id, naziv: student.Fakultet.naziv }
+            : null,
+          odsjek: student.Odsjek
+            ? { id: student.Odsjek.id, naziv: student.Odsjek.naziv }
+            : null,
+        }
+      : null,
+  };
 }
 
 async function resolveStudentFromUser(userId) {
@@ -178,6 +236,148 @@ async function getMyApplications(userId) {
   });
 }
 
+async function getCompanyApplicationsForListing(userId, oglasId) {
+  const { kompanija } = await resolveCompanyFromUser(userId);
+  const listingId = normalizeId(oglasId, 'Oglas nije pronađen.');
+
+  const oglas = await Oglas.findByPk(listingId, {
+    attributes: ['id', 'naziv', 'status', 'kompanijaID'],
+  });
+
+  if (!oglas) {
+    throw makeError('Oglas nije pronađen.', 404);
+  }
+
+  if (oglas.kompanijaID !== kompanija.id) {
+    throw makeError('Nemate pravo upravljati ovim oglasom.', 403);
+  }
+
+  const applications = await PrijavaNaPraksu.findAll({
+    where: { oglasID: oglas.id },
+    attributes: ['id', 'studentID', 'oglasID', 'status', 'datumPrijave'],
+    include: [
+      {
+        model: Student,
+        attributes: ['id', 'year_of_study', 'fakultetID', 'odsjekID'],
+        include: [
+          { model: User, attributes: ['ime', 'prezime', 'email'] },
+          { model: Fakultet, attributes: ['id', 'naziv'] },
+          { model: Odsjek, attributes: ['id', 'naziv'] },
+        ],
+      },
+      {
+        model: Oglas,
+        attributes: ['id', 'naziv', 'status'],
+      },
+    ],
+    order: [['datumPrijave', 'DESC']],
+  });
+
+  return {
+    oglas: {
+      id: oglas.id,
+      naziv: oglas.naziv,
+      status: oglas.status,
+    },
+    applications: applications.map(mapCompanyApplication),
+  };
+}
+
+async function shortlistApplication(userId, applicationId) {
+  const { kompanija } = await resolveCompanyFromUser(userId);
+  const prijavaId = normalizeId(applicationId, 'Prijava nije pronađena.');
+
+  const prijava = await PrijavaNaPraksu.findByPk(prijavaId, {
+    attributes: ['id', 'studentID', 'oglasID', 'status', 'datumPrijave'],
+    include: [
+      {
+        model: Student,
+        attributes: ['id', 'year_of_study', 'fakultetID', 'odsjekID'],
+        include: [
+          { model: User, attributes: ['id', 'ime', 'prezime', 'email'] },
+          { model: Fakultet, attributes: ['id', 'naziv'] },
+          { model: Odsjek, attributes: ['id', 'naziv'] },
+        ],
+      },
+    ],
+  });
+
+  if (!prijava) {
+    throw makeError('Prijava nije pronađena.', 404);
+  }
+
+  const oglas = await Oglas.findByPk(prijava.oglasID, {
+    attributes: ['id', 'naziv', 'status', 'kompanijaID'],
+    include: [{ model: Kompanija, attributes: ['id', 'naziv'] }],
+  });
+
+  if (!oglas) {
+    throw makeError('Oglas nije pronađen.', 404);
+  }
+
+  if (oglas.kompanijaID !== kompanija.id) {
+    throw makeError('Nemate pravo upravljati ovim oglasom.', 403);
+  }
+
+  if (oglas.status !== 'AKTIVAN') {
+    throw makeError('Selekcija kandidata je moguća samo za aktivne oglase.', 400);
+  }
+
+  if (['ODOBRENA', 'ODBIJENA', 'ODUSTAO'].includes(prijava.status)) {
+    throw makeError('Nije moguće selektovati prijavu koja je već zaključena.', 400);
+  }
+
+  const alreadyShortlisted = prijava.status === 'U_RAZMATRANJU';
+  if (!alreadyShortlisted) {
+    if (prijava.status !== 'PODNESENA') {
+      throw makeError('Status prijave ne dozvoljava selekciju kandidata.', 400);
+    }
+
+    await prijava.update({ status: 'U_RAZMATRANJU' });
+
+    const studentId = prijava.Student?.id;
+    const studentUserId = prijava.Student?.User?.id;
+    const studentEmail = prijava.Student?.User?.email;
+    const kompanijaNaziv = oglas.Kompanija?.naziv || kompanija.naziv || 'Kompanija';
+    const tip = 'PRIJAVA_UZI_KRUG';
+    const naslov = 'Promjena statusa prijave';
+    const poruka = 'Vaša prijava za praksu je ažurirana. Označeni ste za uži krug kandidata.';
+    const preferences = studentUserId ? await getOrCreatePreferences(studentUserId) : null;
+
+    if (studentId && canSendInApp(preferences, tip)) {
+      createNotification(studentId, prijava.id, tip, naslov, poruka).catch((err) => {
+        console.error('[shortlistApplication] Greška pri kreiranju notifikacije:', err.message);
+      });
+    }
+
+    if (studentEmail && canSendEmail(preferences, tip)) {
+      sendPrijavaShortlistedEmail(studentEmail, oglas.naziv, kompanijaNaziv).catch((err) => {
+        console.error('[shortlistApplication] Greška pri slanju emaila:', err.message);
+      });
+    }
+  }
+
+  const updated = await PrijavaNaPraksu.findByPk(prijava.id, {
+    include: [
+      {
+        model: Oglas,
+        attributes: ['id', 'naziv', 'status'],
+      },
+      {
+        model: Student,
+        attributes: ['id', 'year_of_study', 'fakultetID', 'odsjekID'],
+        include: [
+          { model: User, attributes: ['ime', 'prezime', 'email'] },
+          { model: Fakultet, attributes: ['id', 'naziv'] },
+          { model: Odsjek, attributes: ['id', 'naziv'] },
+        ],
+      },
+    ],
+  });
+
+  return mapCompanyApplication(updated || prijava);
+}
+
 async function getApplicationStatistics(userId, { fakultetID, odsjekID, godina, status, oglasID } = {}) {
   const kompanija = await Kompanija.findOne({ where: { userID: userId } });
   if (!kompanija) {
@@ -311,4 +511,6 @@ module.exports = {
   createApplication,
   getMyApplications,
   getApplicationStatistics,
+  getCompanyApplicationsForListing,
+  shortlistApplication,
 };

@@ -17,6 +17,18 @@ router.get(
   applicationsController.getApplicationStatistics
 );
 
+router.get(
+  '/company/:oglasId',
+  authenticate,
+  applicationsController.getCompanyApplicationsForListing
+);
+
+router.patch(
+  '/:id/shortlist',
+  authenticate,
+  applicationsController.shortlistApplication
+);
+
 router.post(
   '/',
   authenticate,

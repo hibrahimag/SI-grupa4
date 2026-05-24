@@ -40,8 +40,37 @@ async function getApplicationStatistics(req, res) {
   }
 }
 
+async function getCompanyApplicationsForListing(req, res) {
+  try {
+    const data = await applicationsService.getCompanyApplicationsForListing(
+      req.user.id,
+      req.params.oglasId
+    );
+    return res.json(data);
+  } catch (err) {
+    return handleApplicationError(res, err);
+  }
+}
+
+async function shortlistApplication(req, res) {
+  try {
+    const application = await applicationsService.shortlistApplication(
+      req.user.id,
+      req.params.id
+    );
+    return res.json({
+      message: 'Kandidat je uspješno označen za uži krug.',
+      application,
+    });
+  } catch (err) {
+    return handleApplicationError(res, err);
+  }
+}
+
 module.exports = {
   createApplication,
   getMyApplications,
   getApplicationStatistics,
+  getCompanyApplicationsForListing,
+  shortlistApplication,
 };

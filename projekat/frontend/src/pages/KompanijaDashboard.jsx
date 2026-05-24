@@ -1,5 +1,5 @@
 // frontend/src/pages/KompanijaDashboard.jsx
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -14,7 +14,11 @@ import {
   archiveListing,
   restoreFromArchive
 } from '../services/listingsService';
-import { getApplicationStatistics } from '../services/applicationsService';
+import {
+  getApplicationStatistics,
+  getCompanyApplicationsForListing,
+  shortlistApplication,
+} from '../services/applicationsService';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts';
@@ -27,6 +31,7 @@ const VIEWS = {
   DASHBOARD: 'dashboard',
   LISTINGS: 'oglasi',
   CREATE_LISTING: 'create-oglas',
+  CANDIDATES: 'kandidati',
   CLOSED_LISTINGS: 'zatvoreni-oglasi',
   ARCHIVED_LISTINGS: 'arhivirani-oglasi',
   STATISTICS: 'statistika',
@@ -100,6 +105,7 @@ export default function KompanijaDashboard() {
 
   const [editingListing, setEditingListing] = useState(null);
   const [actionProcessingId, setActionProcessingId] = useState(null);
+  const [candidateListingId, setCandidateListingId] = useState('');
 
   // States handling the page-style custom confirmation popups
   const [confirmConfig, setConfirmConfig] = useState({ isOpen: false, title: '', message: '', onConfirm: () => {}, type: 'danger' });
@@ -160,6 +166,11 @@ export default function KompanijaDashboard() {
 
   function openView(nextView) {
     setView(nextView);
+  }
+
+  function openCandidatesForListing(listingId) {
+    setCandidateListingId(String(listingId));
+    setView(VIEWS.CANDIDATES);
   }
 
   function openProfilePage() {
@@ -338,6 +349,13 @@ export default function KompanijaDashboard() {
               <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
             </svg>
           </button>
+          <button type="button" className="cd-sb-tab-icon" onClick={() => openView(VIEWS.CANDIDATES)} title="Prijave kandidata">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <polyline points="17 11 19 13 23 9"/>
+            </svg>
+          </button>
           <button type="button" className="cd-sb-tab-icon" onClick={() => openView(VIEWS.CREATE_LISTING)} title="Kreiraj oglas">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="5" width="18" height="16" rx="2"/>
@@ -391,6 +409,14 @@ export default function KompanijaDashboard() {
                     <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
                   </svg>
                   Oglasi
+                </button>
+                <button type="button" className={`cd-nav-item ${view === VIEWS.CANDIDATES ? 'active' : ''}`} onClick={() => openView(VIEWS.CANDIDATES)}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <polyline points="17 11 19 13 23 9"/>
+                  </svg>
+                  Prijave kandidata
                 </button>
                 <button type="button" className={`cd-nav-item ${view === VIEWS.CREATE_LISTING ? 'active' : ''}`} onClick={() => openView(VIEWS.CREATE_LISTING)}>
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -466,6 +492,7 @@ export default function KompanijaDashboard() {
             onOpenView={openView}
             onEdit={(l) => setEditingListing(l)}
             onCloseListing={handleCloseListingAction}
+            onOpenCandidates={openCandidatesForListing}
             actionProcessingId={actionProcessingId}
           />
         )}
@@ -477,6 +504,7 @@ export default function KompanijaDashboard() {
             onOpenView={openView} 
             onEdit={(l) => setEditingListing(l)}
             onCloseListing={handleCloseListingAction}
+            onOpenCandidates={openCandidatesForListing}
             actionProcessingId={actionProcessingId}
           />
         )}
@@ -489,6 +517,15 @@ export default function KompanijaDashboard() {
               }
               openView(VIEWS.LISTINGS);
             }}
+          />
+        )}
+        {view === VIEWS.CANDIDATES && (
+          <CandidatesShell
+            listings={listings}
+            loading={listingsLoading}
+            error={listingsError}
+            selectedListingId={candidateListingId}
+            onSelectedListingIdChange={setCandidateListingId}
           />
         )}
         {view === VIEWS.STATISTICS && <StatistikaShell />}
@@ -640,7 +677,7 @@ export default function KompanijaDashboard() {
   );
 }
 
-function DashboardShell({ listings, listingsLoading, listingsError, onOpenView, onEdit, onCloseListing, actionProcessingId }) {
+function DashboardShell({ listings, listingsLoading, listingsError, onOpenView, onEdit, onCloseListing, onOpenCandidates, actionProcessingId }) {
   const activeListings = listings.filter((l) => 
     l.status === 'AKTIVAN' && new Date(l.rokPrijave) > new Date()
   ).length;
@@ -679,13 +716,14 @@ function DashboardShell({ listings, listingsLoading, listingsError, onOpenView, 
         onOpenView={onOpenView} 
         onEdit={onEdit} 
         onCloseListing={onCloseListing}
+        onOpenCandidates={onOpenCandidates}
         actionProcessingId={actionProcessingId}
       />
     </div>
   );
 }
 
-function ListingsShell({ listings = [], loading = false, error = '', onOpenView, onEdit, onCloseListing, actionProcessingId }) {
+function ListingsShell({ listings = [], loading = false, error = '', onOpenView, onEdit, onCloseListing, onOpenCandidates, actionProcessingId }) {
   const activeOnly = listings.filter(l => l.status === 'AKTIVAN' && !(l.rokPrijave && new Date(l.rokPrijave) <= new Date()));
 
   return (
@@ -716,6 +754,13 @@ function ListingsShell({ listings = [], loading = false, error = '', onOpenView,
                 <span className="cd-listing-date">Rok: {formatDate(listing.rokPrijave)}</span>
                 <span className="cd-listing-date">Objava: {formatDate(listing.datumObjave)}</span>
                 <div className="cd-listing-actions-wrapper">
+                  <button
+                    className="cd-btn cd-btn--primary"
+                    onClick={(e) => { e.stopPropagation(); onOpenCandidates?.(listing.id); }}
+                    disabled={actionProcessingId === listing.id}
+                  >
+                    Vidi prijavljene
+                  </button>
                   <button 
                     className="cd-btn cd-btn--secondary" 
                     onClick={(e) => { e.stopPropagation(); if (onEdit) onEdit(listing); }}
@@ -744,6 +789,240 @@ function ListingsShell({ listings = [], loading = false, error = '', onOpenView,
         </div>
       )}
     </section>
+  );
+}
+
+const CANDIDATE_STATUS_LABELS = {
+  PODNESENA: { label: 'Na čekanju', cls: 'cd-candidate-status--pending' },
+  U_RAZMATRANJU: { label: 'U razmatranju', cls: 'cd-candidate-status--shortlisted' },
+  ODOBRENA: { label: 'Odobreno', cls: 'cd-candidate-status--approved' },
+  ODBIJENA: { label: 'Odbijeno', cls: 'cd-candidate-status--rejected' },
+  ODUSTAO: { label: 'Odustao', cls: 'cd-candidate-status--rejected' },
+};
+
+function candidateStatusBadge(status) {
+  const mapped = CANDIDATE_STATUS_LABELS[status] || {
+    label: status || 'Nepoznat status',
+    cls: 'cd-candidate-status--default',
+  };
+
+  return <span className={`cd-candidate-status ${mapped.cls}`}>{mapped.label}</span>;
+}
+
+function CandidatesShell({
+  listings = [],
+  loading = false,
+  error = '',
+  selectedListingId = '',
+  onSelectedListingIdChange,
+}) {
+  const activeListings = useMemo(
+    () => listings.filter((listing) => listing.status === 'AKTIVAN'),
+    [listings]
+  );
+  const [applications, setApplications] = useState([]);
+  const [applicationsLoading, setApplicationsLoading] = useState(false);
+  const [applicationsError, setApplicationsError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [processingId, setProcessingId] = useState(null);
+
+  useEffect(() => {
+    if (loading) return;
+
+    if (activeListings.length === 0) {
+      onSelectedListingIdChange?.('');
+      return;
+    }
+
+    const selectedExists = activeListings.some(
+      (listing) => String(listing.id) === String(selectedListingId)
+    );
+
+    if (!selectedListingId || !selectedExists) {
+      onSelectedListingIdChange?.(String(activeListings[0].id));
+    }
+  }, [activeListings, loading, selectedListingId, onSelectedListingIdChange]);
+
+  useEffect(() => {
+    if (!selectedListingId) {
+      setApplications([]);
+      return;
+    }
+
+    let active = true;
+    setApplicationsLoading(true);
+    setApplicationsError('');
+    setSuccessMessage('');
+
+    getCompanyApplicationsForListing(selectedListingId)
+      .then((data) => {
+        if (!active) return;
+        setApplications(Array.isArray(data?.applications) ? data.applications : []);
+      })
+      .catch((err) => {
+        if (active) setApplicationsError(err.message || 'Greška pri učitavanju prijava kandidata.');
+      })
+      .finally(() => {
+        if (active) setApplicationsLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [selectedListingId]);
+
+  async function handleShortlist(applicationId) {
+    setProcessingId(applicationId);
+    setApplicationsError('');
+    setSuccessMessage('');
+
+    try {
+      const result = await shortlistApplication(applicationId);
+      const updated = result?.application;
+      setApplications((current) =>
+        current.map((application) =>
+          application.id === applicationId ? { ...application, ...(updated || {}) } : application
+        )
+      );
+      setSuccessMessage(result?.message || 'Kandidat je uspješno označen za uži krug.');
+    } catch (err) {
+      setApplicationsError(err.message || 'Greška pri označavanju kandidata.');
+    } finally {
+      setProcessingId(null);
+    }
+  }
+
+  const selectedListing = activeListings.find(
+    (listing) => String(listing.id) === String(selectedListingId)
+  );
+
+  return (
+    <div className="cd-content">
+      <header className="cd-header">
+        <h1 className="cd-title">Prijave kandidata</h1>
+        <p className="cd-subtitle">Pregled kandidata po aktivnom oglasu i označavanje užeg kruga.</p>
+      </header>
+
+      <section className="cd-section">
+        <div className="cd-section-header cd-candidates-header">
+          <div>
+            <h2 className="cd-section-title">Kandidati po oglasu</h2>
+            {selectedListing && (
+              <p className="cd-candidates-selected">Odabrani oglas: {selectedListing.naziv}</p>
+            )}
+          </div>
+
+          {activeListings.length > 0 && (
+            <label className="cd-candidates-select-label">
+              <span>Oglas</span>
+              <select
+                className="cd-stat-status-select cd-candidates-select"
+                value={selectedListingId}
+                onChange={(e) => onSelectedListingIdChange?.(e.target.value)}
+              >
+                {activeListings.map((listing) => (
+                  <option key={listing.id} value={listing.id}>
+                    {listing.naziv}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+        </div>
+
+        {loading && <div className="cd-inline-message" role="status">Učitavanje oglasa...</div>}
+        {!loading && error && <div className="cd-inline-message cd-inline-message--error" role="alert">{error}</div>}
+
+        {!loading && !error && activeListings.length === 0 && (
+          <div className="cd-empty-state">
+            <div className="cd-empty-title">Nemate aktivnih oglasa.</div>
+            <p className="cd-empty-text">Kandidati se prikazuju za oglase koji su trenutno označeni kao aktivni.</p>
+          </div>
+        )}
+
+        {!loading && !error && activeListings.length > 0 && (
+          <>
+            {successMessage && (
+              <div className="cd-inline-message cd-inline-message--success" role="status">
+                {successMessage}
+              </div>
+            )}
+            {applicationsError && (
+              <div className="cd-inline-message cd-inline-message--error" role="alert">
+                {applicationsError}
+              </div>
+            )}
+            {applicationsLoading && (
+              <div className="cd-inline-message" role="status">Učitavanje prijava kandidata...</div>
+            )}
+
+            {!applicationsLoading && applications.length === 0 && !applicationsError && (
+              <div className="cd-empty-state">
+                <div className="cd-empty-title">Nema prijava za odabrani oglas.</div>
+                <p className="cd-empty-text">Kada se studenti prijave na ovaj oglas, pojavit će se u ovom pregledu.</p>
+              </div>
+            )}
+
+            {!applicationsLoading && applications.length > 0 && (
+              <div className="cd-candidates-table-wrap">
+                <table className="cd-candidates-table">
+                  <thead>
+                    <tr>
+                      <th>Kandidat</th>
+                      <th>Fakultet / odsjek</th>
+                      <th>Godina</th>
+                      <th>Datum prijave</th>
+                      <th>Status</th>
+                      <th>Akcija</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {applications.map((application) => {
+                      const student = application.student || {};
+                      const fullName = [student.ime, student.prezime].filter(Boolean).join(' ') || 'Nepoznat kandidat';
+                      const fakultet = student.fakultet?.naziv || 'Fakultet nije unesen';
+                      const odsjek = student.odsjek?.naziv || 'Odsjek nije unesen';
+                      const canShortlist = application.status === 'PODNESENA';
+                      const isProcessing = processingId === application.id;
+
+                      return (
+                        <tr key={application.id}>
+                          <td>
+                            <strong>{fullName}</strong>
+                            {student.email && <div className="cd-candidate-muted">{student.email}</div>}
+                          </td>
+                          <td>
+                            <div>{fakultet}</div>
+                            <div className="cd-candidate-muted">{odsjek}</div>
+                          </td>
+                          <td>{student.godinaStudija ? `${student.godinaStudija}. godina` : 'Nije uneseno'}</td>
+                          <td>{formatDate(application.datumPrijave)}</td>
+                          <td>{candidateStatusBadge(application.status)}</td>
+                          <td>
+                            {canShortlist ? (
+                              <button
+                                type="button"
+                                className="cd-btn cd-btn--primary cd-btn--sm"
+                                disabled={isProcessing}
+                                onClick={() => handleShortlist(application.id)}
+                              >
+                                {isProcessing ? 'Označavanje...' : 'Označi za uži krug'}
+                              </button>
+                            ) : (
+                              <span className="cd-candidate-muted">Nema dostupne akcije</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
+        )}
+      </section>
+    </div>
   );
 }
 
