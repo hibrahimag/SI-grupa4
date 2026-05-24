@@ -142,7 +142,11 @@ export default function KompanijaDashboard() {
 
   useEffect(() => {
     let active = true;
+    const lastRefreshRef = { ts: 0 };
     async function refreshCompanyProfile() {
+      const now = Date.now();
+      if (now - lastRefreshRef.ts < 2000) return;
+      lastRefreshRef.ts = now;
       try {
         const profile = await getCompanyProfile();
         if (active) setCompanyProfile(profile);

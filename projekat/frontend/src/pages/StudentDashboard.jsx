@@ -701,6 +701,12 @@ function ApplicationModal({
 function MyApplicationsPanel({ applications, prakse, onViewOglas }) {
   const [activeFilter, setActiveFilter] = useState(null);
 
+  const praksaById = useMemo(() => {
+    const m = new Map();
+    prakse.forEach(p => m.set(Number(p.id), p));
+    return m;
+  }, [prakse]);
+
   const total = applications.length;
   const waitingCoordinator = applications.filter(a =>
     a.status === APPLICATION_STATUS.WAITING_COORDINATOR ||
@@ -823,7 +829,7 @@ function MyApplicationsPanel({ applications, prakse, onViewOglas }) {
       ) : (
         <div className="sd-list">
           {visibleApplications.map(app => {
-          const oglas = prakse.find(p => Number(p.id) === Number(app.oglasID));
+          const oglas = praksaById.get(Number(app.oglasID));
           const kompNaziv = oglas?.kompanija || app.Oglas?.Kompanija?.naziv || 'Kompanija';
           const oglasNaziv = oglas?.naziv || app.Oglas?.naziv || 'Nepoznat oglas';
           const logoColor = deriveLogoColor(kompNaziv);
@@ -1231,6 +1237,7 @@ export default function StudentDashboard() {
   const [selectedPraksa, setSelectedPraksa] = useState(null);
   const [applicationPraksa, setApplicationPraksa] = useState(null);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [filterTehs, setFilterTehs] = useState([]);
   const [filterTips, setFilterTips] = useState([]);
   const [filterTrajanja, setFilterTrajanja] = useState([]);
@@ -1269,6 +1276,11 @@ export default function StudentDashboard() {
   const profileMenuRef = useRef(null);
 
   useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  useEffect(() => {
     let active = true;
     setPraksaLoading(true);
     getActiveListings()
@@ -1292,7 +1304,7 @@ export default function StudentDashboard() {
     const found = prakse.find(p => Number(p.id) === Number(openId));
     if (found) setSelectedPraksa(found);
     navigate('/dashboard/student', { replace: true, state: {} });
-  }, [location.state, prakse, navigate]);
+  }, [location.state, prakse]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!profileMenuOpen) return;
@@ -1440,8 +1452,8 @@ export default function StudentDashboard() {
     } else {
       r = [...prakse];
     }
-    if (search.trim()) {
-      const s = search.trim().toLowerCase();
+    if (debouncedSearch.trim()) {
+      const s = debouncedSearch.trim().toLowerCase();
       r = r.filter(p =>
         p.naziv.toLowerCase().includes(s) ||
         p.kompanija.toLowerCase().includes(s) ||
@@ -1464,12 +1476,12 @@ export default function StudentDashboard() {
     else if (sortBy === 'trajanje-asc') r.sort((a, b) => a.trajanje - b.trajanje);
     else if (sortBy === 'trajanje-desc') r.sort((a, b) => b.trajanje - a.trajanje);
     return r;
-  }, [prakse, search, filterTehs, filterTips, filterTrajanja, sortBy, activeTab, favourites, omiljeniShowAll, favouriteListings]);
+  }, [prakse, debouncedSearch, filterTehs, filterTips, filterTrajanja, sortBy, activeTab, favourites, omiljeniShowAll, favouriteListings]);
 
   const filteredZatvoreni = useMemo(() => {
     let r = [...zatvoreniOglasi];
-    if (search.trim()) {
-      const s = search.trim().toLowerCase();
+    if (debouncedSearch.trim()) {
+      const s = debouncedSearch.trim().toLowerCase();
       r = r.filter(p =>
         p.naziv.toLowerCase().includes(s) ||
         p.kompanija.toLowerCase().includes(s) ||
@@ -1488,7 +1500,7 @@ export default function StudentDashboard() {
       })
     );
     return r;
-  }, [zatvoreniOglasi, search, filterTehs, filterTips, filterTrajanja]);
+  }, [zatvoreniOglasi, debouncedSearch, filterTehs, filterTips, filterTrajanja]);
   const hasFilters = !!(search || filterTehs.length || filterTips.length || filterTrajanja.length);
 
   function toggleSection(key) {
@@ -1560,8 +1572,9 @@ export default function StudentDashboard() {
 
     try {
       const result = await createApplication(praksa.id);
-      const fresh = await getMyApplications();
-      setApplications(fresh || []);
+      if (result.application) {
+        setApplications(prev => [result.application, ...prev]);
+      }
       setApplySuccess(result.message || 'Prijava je uspješno podnesena.');
     } catch (err) {
       setApplyError(err.message || 'Greška pri podnošenju prijave.');
