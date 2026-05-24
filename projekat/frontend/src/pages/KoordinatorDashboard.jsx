@@ -274,15 +274,16 @@ export default function KoordinatorDashboard() {
       {/* ── Main ───────────────────────────────────────────── */}
       <main className="kd-main">
         <section className="kd-stats-strip">
-          <StatCard label="Na čekanju"     value={stats?.podnesene}     color="warning" loading={loadingStats} onClick={() => setAktivan('prijave')} clickable />
-          <StatCard label="Odobreno"       value={stats?.odobrene}      color="success" loading={loadingStats} />
+          <StatCard label="Čeka koordinatora" value={stats?.podnesene} color="warning" loading={loadingStats} onClick={() => setAktivan('prijave')} clickable />
+          <StatCard label="Proslijeđeno kompaniji" value={stats?.proslijedene} color="primary" loading={loadingStats} />
+          <StatCard label="Praksa odobrena" value={stats?.odobrene} color="success" loading={loadingStats} />
           <StatCard label="Odbijeno"       value={stats?.odbijene}      color="danger"  loading={loadingStats} />
           <StatCard label="Aktivne prakse" value={stats?.aktivnePrakse} color="primary" loading={loadingStats} onClick={() => setAktivan('prakse')} clickable />
           <StatCard label="Završene"       value={stats?.zavrsene}      color="purple"  loading={loadingStats} />
         </section>
 
         <div className="kd-content">
-          {aktivan === 'prijave'     && <PrijavePregled filterStatus="PODNESENA" onOdluka={ucitajStats} />}
+          {aktivan === 'prijave'     && <PrijavePregled filterStatus="CEKA_KOORDINATORA" onOdluka={ucitajStats} />}
           {aktivan === 'sve'         && <PrijavePregled filterStatus="" onOdluka={ucitajStats} />}
           {aktivan === 'prakse'      && <PraksePregled />}
           {aktivan === 'studenti'    && <StudentListaPregled />}

@@ -47,7 +47,7 @@ export default function PraksePregled() {
       </div>
 
       <div className="kd-info-banner">
-        <IconInfo /> Detaljan tok prakse (prisustvo, aktivnosti, evaluacija) bit će dostupan nakon Sprinta 10.
+        <IconInfo /> Detaljan tok prakse bit će dostupan nakon konačnog odobrenja.
       </div>
 
       {loading && <div className="kd-loading">Učitavanje praksi…</div>}
@@ -184,7 +184,7 @@ function PraksaDetaljiPanel({ praksa, onClose }) {
           <p className="kd-detail-section-title">Prisustvo</p>
           {prisustvo.length === 0 ? (
             <div className="kd-info-banner" style={{ fontSize: 'var(--font-size-xs)' }}>
-              Evidencija prisustva dostupna u Sprintu 10.
+              Evidencija prisustva još nije dostupna.
             </div>
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
@@ -202,7 +202,7 @@ function PraksaDetaljiPanel({ praksa, onClose }) {
           <p className="kd-detail-section-title">Nedavne aktivnosti ({aktivnosti.length})</p>
           {aktivnosti.length === 0 ? (
             <div className="kd-info-banner" style={{ fontSize: 'var(--font-size-xs)' }}>
-              Aktivnosti dostupne u Sprintu 10.
+              Aktivnosti još nisu unesene.
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', maxHeight: 220, overflowY: 'auto' }}>

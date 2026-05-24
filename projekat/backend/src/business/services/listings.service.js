@@ -2,6 +2,7 @@
 
 const { Op } = require('sequelize');
 const { Oglas, Kompanija, User, PrijavaNaPraksu } = require('../../infrastructure/database/models');
+const { APPLICATION_STATUS } = require('./applicationStatus.service');
 
 async function createListing(data, userId) {
   const user = await User.findByPk(userId);
@@ -149,7 +150,9 @@ async function updateListing(id, data, userId) {
       err.status = 400;
       throw err;
     }
-    const accepted = await PrijavaNaPraksu.count({ where: { oglasID: id, status: 'ODOBRENA' } });
+    const accepted = await PrijavaNaPraksu.count({
+      where: { oglasID: id, status: APPLICATION_STATUS.APPROVED },
+    });
     if (broj < accepted) {
       const err = new Error('Ne možete smanjiti broj mjesta ispod broja već odobrenih prijava.');
       err.status = 400;

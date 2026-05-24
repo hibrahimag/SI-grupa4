@@ -22,6 +22,15 @@ async function brevoSend({ to, subject, html }) {
   }
 }
 
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 async function sendPasswordResetEmail(to, resetLink) {
   await brevoSend({
     to,
@@ -385,10 +394,51 @@ async function sendPrijavaPodnesenaEmail(to, oglasNaziv, kompanijaNaziv) {
   });
 }
 
+async function sendPrijavaShortlistedEmail(to, oglasNaziv, kompanijaNaziv) {
+  const safeOglasNaziv = escapeHtml(oglasNaziv);
+  const safeKompanijaNaziv = escapeHtml(kompanijaNaziv);
+
+  await brevoSend({
+    to,
+    subject: 'Promjena statusa prijave',
+    html: `
+    <div style="margin:0;padding:40px 20px;background-color:#f4f7fb;font-family:Arial,sans-serif;">
+      <div style="max-width:600px;margin:0 auto;background:#ffffff;border-radius:18px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.08);">
+        <div style="background:linear-gradient(135deg,#071b4a,#0f52ba);padding:40px 32px;color:white;">
+          <h1 style="margin:0;font-size:34px;font-weight:700;">PraksaHub</h1>
+          <p style="margin-top:12px;font-size:16px;opacity:0.9;">Platforma za studentske prakse</p>
+        </div>
+        <div style="padding:40px 32px;">
+          <h2 style="margin-top:0;color:#071b4a;font-size:24px;">Promjena statusa prijave</h2>
+          <p style="color:#4b5563;font-size:15px;line-height:1.7;">
+            Vaša prijava na praksu <strong>${safeOglasNaziv}</strong> kod kompanije <strong>${safeKompanijaNaziv}</strong>
+            je ažurirana.
+          </p>
+          <p style="color:#4b5563;font-size:15px;line-height:1.7;">
+            Označeni ste za uži krug kandidata.
+          </p>
+        </div>
+        <div style="padding:24px;text-align:center;border-top:1px solid #e5e7eb;color:#9ca3af;font-size:12px;">
+          © 2026 PraksaHub. Sva prava zadržana.
+        </div>
+      </div>
+    </div>`,
+  });
+}
+
 async function sendPrijavaStatusEmail(to, oglasNaziv, kompanijaNaziv, status, razlog) {
-  const odobrena = status === 'ODOBRENA';
-  const statusTekst = odobrena ? 'odobrena' : 'odbijena';
-  const boja = odobrena ? '#0e9e6e' : '#dc2626';
+  const finalApproved = status === 'ODOBRENA';
+  const rejected = status === 'ODBIJENA_KOORDINATOR' || status === 'ODBIJENA_KOMPANIJA' || status === 'ODBIJENA';
+  const statusTekst = status === 'CEKA_KOMPANIJU'
+    ? 'proslijedjena kompaniji'
+    : status === 'ODBIJENA_KOMPANIJA'
+      ? 'odbijena od kompanije'
+      : status === 'ODBIJENA_KOORDINATOR' || status === 'ODBIJENA'
+        ? 'odbijena od koordinatora'
+        : finalApproved
+          ? 'odobrena'
+          : 'azurirana';
+  const boja = finalApproved ? '#0e9e6e' : rejected ? '#dc2626' : '#1a6fd4';
 
   await brevoSend({
     to,
@@ -406,8 +456,9 @@ async function sendPrijavaStatusEmail(to, oglasNaziv, kompanijaNaziv, status, ra
             Vaša prijava na praksu <strong>${oglasNaziv}</strong> kod kompanije <strong>${kompanijaNaziv}</strong>
             je <strong style="color:${boja};">${statusTekst}</strong>.
           </p>
-          ${!odobrena && razlog ? `<p style="color:#4b5563;font-size:15px;line-height:1.7;">Razlog odbijanja: <strong>${razlog}</strong></p>` : ''}
-          ${odobrena ? '<p style="color:#4b5563;font-size:15px;line-height:1.7;">Čestitamo! Koordinator će vam se uskoro javiti s daljnjim informacijama.</p>' : ''}
+          ${rejected && razlog ? `<p style="color:#4b5563;font-size:15px;line-height:1.7;">Razlog odbijanja: <strong>${razlog}</strong></p>` : ''}
+          ${status === 'CEKA_KOMPANIJU' ? '<p style="color:#4b5563;font-size:15px;line-height:1.7;">Kompanija sada moze pregledati prijavu i donijeti odluku.</p>' : ''}
+          ${finalApproved ? '<p style="color:#4b5563;font-size:15px;line-height:1.7;">Cestitamo! Vasa praksa je odobrena.</p>' : ''}
         </div>
         <div style="padding:24px;text-align:center;border-top:1px solid #e5e7eb;color:#9ca3af;font-size:12px;">
           © 2026 PraksaHub. Sva prava zadržana.
@@ -425,5 +476,6 @@ module.exports = {
   sendStudentDeactivationToCompany,
   sendStudentDeactivationToKoordinator,
   sendPrijavaPodnesenaEmail,
+  sendPrijavaShortlistedEmail,
   sendPrijavaStatusEmail,
 };

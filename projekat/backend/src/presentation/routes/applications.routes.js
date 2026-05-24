@@ -17,6 +17,34 @@ router.get(
   applicationsController.getApplicationStatistics
 );
 
+router.get(
+  '/company/:oglasId',
+  authenticate,
+  authorize('COMPANY'),
+  applicationsController.getCompanyApplicationsForListing
+);
+
+router.patch(
+  '/:id/shortlist',
+  authenticate,
+  authorize('COMPANY'),
+  applicationsController.shortlistApplication
+);
+
+router.patch(
+  '/:id/approve',
+  authenticate,
+  authorize('COMPANY'),
+  applicationsController.approveApplicationByCompany
+);
+
+router.patch(
+  '/:id/reject',
+  authenticate,
+  authorize('COMPANY'),
+  applicationsController.rejectApplicationByCompany
+);
+
 router.post(
   '/',
   authenticate,
