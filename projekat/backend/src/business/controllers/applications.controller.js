@@ -67,10 +67,42 @@ async function shortlistApplication(req, res) {
   }
 }
 
+async function approveApplicationByCompany(req, res) {
+  try {
+    const application = await applicationsService.approveApplicationByCompany(
+      req.user.id,
+      req.params.id
+    );
+    return res.json({
+      message: 'Kandidat je uspjesno odobren.',
+      application,
+    });
+  } catch (err) {
+    return handleApplicationError(res, err);
+  }
+}
+
+async function rejectApplicationByCompany(req, res) {
+  try {
+    const application = await applicationsService.rejectApplicationByCompany(
+      req.user.id,
+      req.params.id
+    );
+    return res.json({
+      message: 'Kandidat je uspjesno odbijen.',
+      application,
+    });
+  } catch (err) {
+    return handleApplicationError(res, err);
+  }
+}
+
 module.exports = {
   createApplication,
   getMyApplications,
   getApplicationStatistics,
   getCompanyApplicationsForListing,
   shortlistApplication,
+  approveApplicationByCompany,
+  rejectApplicationByCompany,
 };

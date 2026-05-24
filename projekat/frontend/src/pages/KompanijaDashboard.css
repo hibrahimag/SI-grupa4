@@ -831,6 +831,13 @@
   color: #5a7a9a;
 }
 
+.cd-candidate-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .cd-profile-grid {
   padding: 22px;
   display: grid;
@@ -1580,6 +1587,13 @@
 .cd-btn--danger {
   border: none;
   background: var(--color-danger);
+  color: #fff;
+  align-self: flex-start;
+}
+
+.cd-btn--success {
+  border: none;
+  background: var(--color-success);
   color: #fff;
   align-self: flex-start;
 }

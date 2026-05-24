@@ -4,12 +4,19 @@ import { koordinatorService } from '../../services/koordinatorService';
 import { formatDate } from '../../data/mockPrakse';
 
 const STATUS_MAP = {
-  PODNESENA:     { label: 'Podnesena',     cls: 'kd-status--cekanje'     },
-  U_RAZMATRANJU: { label: 'U razmatranju', cls: 'kd-status--razmatranje' },
-  ODOBRENA:      { label: 'Odobrena',      cls: 'kd-status--odobrena'    },
-  ODBIJENA:      { label: 'Odbijena',      cls: 'kd-status--odbijena'    },
-  ODUSTAO:       { label: 'Odustao',       cls: 'kd-status--odbijena'    },
+  CEKA_KOORDINATORA: { label: 'Čeka koordinatora', cls: 'kd-status--cekanje' },
+  CEKA_KOMPANIJU: { label: 'Proslijeđeno kompaniji', cls: 'kd-status--razmatranje' },
+  U_RAZMATRANJU: { label: 'Uži krug', cls: 'kd-status--razmatranje' },
+  ODOBRENA: { label: 'Praksa odobrena', cls: 'kd-status--odobrena' },
+  ODBIJENA_KOORDINATOR: { label: 'Odbijeno od koordinatora', cls: 'kd-status--odbijena' },
+  ODBIJENA_KOMPANIJA: { label: 'Odbijeno od kompanije', cls: 'kd-status--odbijena' },
+  PODNESENA: { label: 'Čeka koordinatora', cls: 'kd-status--cekanje' },
+  ODBIJENA: { label: 'Odbijeno', cls: 'kd-status--odbijena' },
+  ODUSTAO: { label: 'Odustao', cls: 'kd-status--odbijena' },
 };
+
+const AKTIVNI_STATUSI = ['CEKA_KOORDINATORA', 'CEKA_KOMPANIJU', 'U_RAZMATRANJU', 'ODOBRENA', 'PODNESENA'];
+const ZAVRSENI_STATUSI = ['ODUSTAO', 'ODBIJENA', 'ODBIJENA_KOORDINATOR', 'ODBIJENA_KOMPANIJA'];
 
 function StatusBadge({ status }) {
   const s = STATUS_MAP[status] || { label: status, cls: 'kd-status--default' };
@@ -142,7 +149,7 @@ export default function StudentListaPregled() {
               <tbody>
                 {studenti.map(s => {
                   const p = prijave(s);
-                  const aktivna = p.find(x => ['ODOBRENA', 'U_RAZMATRANJU', 'PODNESENA'].includes(x.status));
+                  const aktivna = p.find(x => AKTIVNI_STATUSI.includes(x.status));
                   return (
                     <tr key={s.id} className={odabraniId === s.id ? 'kd-row--selected' : ''}>
                       <td>
@@ -202,8 +209,8 @@ function StudentProfilPanel({ student: s, helpers, onClose }) {
   const [aktivniTab, setAktivniTab] = useState('profil');
   const p = helpers.prijave(s);
 
-  const aktivne  = p.filter(x => ['ODOBRENA', 'U_RAZMATRANJU', 'PODNESENA'].includes(x.status));
-  const zavrsene = p.filter(x => ['ODUSTAO', 'ODBIJENA'].includes(x.status));
+  const aktivne  = p.filter(x => AKTIVNI_STATUSI.includes(x.status));
+  const zavrsene = p.filter(x => ZAVRSENI_STATUSI.includes(x.status));
 
   const TABS = [
     { id: 'profil', label: 'Profil' },
@@ -266,8 +273,8 @@ function StudentProfilPanel({ student: s, helpers, onClose }) {
             <div style={{ display: 'flex', gap: 'var(--space-6)' }}>
               {[
                 { val: p.length, label: 'Ukupno', color: 'var(--color-primary)' },
-                { val: p.filter(x => x.status === 'ODOBRENA').length, label: 'Odobreno', color: 'var(--color-success)' },
-                { val: p.filter(x => x.status === 'PODNESENA').length, label: 'Na čekanju', color: 'var(--color-warning)' },
+                { val: p.filter(x => x.status === 'ODOBRENA').length, label: 'Praksa odobrena', color: 'var(--color-success)' },
+                { val: p.filter(x => x.status === 'CEKA_KOORDINATORA' || x.status === 'PODNESENA').length, label: 'Čeka koordinatora', color: 'var(--color-warning)' },
               ].map(({ val, label, color }) => (
                 <div key={label} style={{ textAlign: 'center' }}>
                   <div style={{ fontSize: 'var(--font-size-xl)', fontWeight: 700, color }}>{val}</div>
@@ -301,7 +308,7 @@ function StudentProfilPanel({ student: s, helpers, onClose }) {
                   </div>
                 )}
                 <div className="kd-info-banner" style={{ marginTop: 'var(--space-4)', fontSize: 'var(--font-size-xs)' }}>
-                  Detaljan tok prakse dostupan u Sprintu 10.
+                  Detaljan tok prakse bit će dostupan nakon konačnog odobrenja.
                 </div>
               </>
             )}
@@ -313,11 +320,7 @@ function StudentProfilPanel({ student: s, helpers, onClose }) {
 }
 
 function PrijavaKartica({ prijava, highlight }) {
-  const s = { label: (prijava.status || '').replace(/_/g, ' '), cls: `kd-status--${
-    prijava.status === 'ODOBRENA' ? 'odobrena' :
-    prijava.status === 'ODBIJENA' || prijava.status === 'ODUSTAO' ? 'odbijena' :
-    'cekanje'
-  }` };
+  const s = STATUS_MAP[prijava.status] || { label: (prijava.status || '').replace(/_/g, ' '), cls: 'kd-status--default' };
 
   const oglasNaziv = prijava?.Ogla?.naziv || prijava?.Oglas?.naziv || prijava?.oglas?.naziv || '—';
   const kompNaziv  = prijava?.Ogla?.Kompanija?.naziv || prijava?.Oglas?.Kompanija?.naziv || prijava?.oglas?.kompanija?.naziv || '';

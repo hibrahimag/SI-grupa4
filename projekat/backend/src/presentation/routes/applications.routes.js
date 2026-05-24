@@ -31,6 +31,20 @@ router.patch(
   applicationsController.shortlistApplication
 );
 
+router.patch(
+  '/:id/approve',
+  authenticate,
+  authorize('COMPANY'),
+  applicationsController.approveApplicationByCompany
+);
+
+router.patch(
+  '/:id/reject',
+  authenticate,
+  authorize('COMPANY'),
+  applicationsController.rejectApplicationByCompany
+);
+
 router.post(
   '/',
   authenticate,

@@ -669,7 +669,7 @@ export default function LandingPage() {
 
           <div className="lp-feature-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
             {[
-              { Icon: IconClipboard, title: "Status prijave",   val: "Na čekanju → Odobreno",   color: "#1a6fd4", bg: "#ddeeff" },
+              { Icon: IconClipboard, title: "Status prijave",   val: "Koordinator → Kompanija",   color: "#1a6fd4", bg: "#ddeeff" },
               { Icon: IconFile,      title: "Moji dokumenti",   val: "CV + Motivaciono pismo",  color: "#6d4ce1", bg: "#ede8ff" },
               { Icon: IconBell,      title: "Notifikacije",     val: "3 nove obavijesti",        color: "#0e9e6e", bg: "#e0f7ef" },
               { Icon: IconStar,      title: "Evaluacija",       val: "Ocijeni kompaniju",        color: "#e07b1a", bg: "#fef0dd" },

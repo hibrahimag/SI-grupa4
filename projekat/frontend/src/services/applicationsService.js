@@ -32,6 +32,18 @@ export async function shortlistApplication(id) {
   });
 }
 
+export async function approveApplicationByCompany(id) {
+  return apiRequest(`/applications/${id}/approve`, {
+    method: 'PATCH',
+  });
+}
+
+export async function rejectApplicationByCompany(id) {
+  return apiRequest(`/applications/${id}/reject`, {
+    method: 'PATCH',
+  });
+}
+
 export async function getCompanyApplicationDocumentDownloadUrl(id) {
   return apiRequest(`/dokumenti/${id}/company-download`);
 }

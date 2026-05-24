@@ -427,9 +427,18 @@ async function sendPrijavaShortlistedEmail(to, oglasNaziv, kompanijaNaziv) {
 }
 
 async function sendPrijavaStatusEmail(to, oglasNaziv, kompanijaNaziv, status, razlog) {
-  const odobrena = status === 'ODOBRENA';
-  const statusTekst = odobrena ? 'odobrena' : 'odbijena';
-  const boja = odobrena ? '#0e9e6e' : '#dc2626';
+  const finalApproved = status === 'ODOBRENA';
+  const rejected = status === 'ODBIJENA_KOORDINATOR' || status === 'ODBIJENA_KOMPANIJA' || status === 'ODBIJENA';
+  const statusTekst = status === 'CEKA_KOMPANIJU'
+    ? 'proslijedjena kompaniji'
+    : status === 'ODBIJENA_KOMPANIJA'
+      ? 'odbijena od kompanije'
+      : status === 'ODBIJENA_KOORDINATOR' || status === 'ODBIJENA'
+        ? 'odbijena od koordinatora'
+        : finalApproved
+          ? 'odobrena'
+          : 'azurirana';
+  const boja = finalApproved ? '#0e9e6e' : rejected ? '#dc2626' : '#1a6fd4';
 
   await brevoSend({
     to,
@@ -447,8 +456,9 @@ async function sendPrijavaStatusEmail(to, oglasNaziv, kompanijaNaziv, status, ra
             Vaša prijava na praksu <strong>${oglasNaziv}</strong> kod kompanije <strong>${kompanijaNaziv}</strong>
             je <strong style="color:${boja};">${statusTekst}</strong>.
           </p>
-          ${!odobrena && razlog ? `<p style="color:#4b5563;font-size:15px;line-height:1.7;">Razlog odbijanja: <strong>${razlog}</strong></p>` : ''}
-          ${odobrena ? '<p style="color:#4b5563;font-size:15px;line-height:1.7;">Čestitamo! Koordinator će vam se uskoro javiti s daljnjim informacijama.</p>' : ''}
+          ${rejected && razlog ? `<p style="color:#4b5563;font-size:15px;line-height:1.7;">Razlog odbijanja: <strong>${razlog}</strong></p>` : ''}
+          ${status === 'CEKA_KOMPANIJU' ? '<p style="color:#4b5563;font-size:15px;line-height:1.7;">Kompanija sada moze pregledati prijavu i donijeti odluku.</p>' : ''}
+          ${finalApproved ? '<p style="color:#4b5563;font-size:15px;line-height:1.7;">Cestitamo! Vasa praksa je odobrena.</p>' : ''}
         </div>
         <div style="padding:24px;text-align:center;border-top:1px solid #e5e7eb;color:#9ca3af;font-size:12px;">
           © 2026 PraksaHub. Sva prava zadržana.

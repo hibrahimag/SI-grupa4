@@ -15,11 +15,17 @@ import {
   restoreFromArchive
 } from '../services/listingsService';
 import {
+  approveApplicationByCompany,
   getApplicationStatistics,
   getCompanyApplicationDocumentDownloadUrl,
   getCompanyApplicationsForListing,
+  rejectApplicationByCompany,
   shortlistApplication,
 } from '../services/applicationsService';
+import {
+  APPLICATION_STATUS,
+  applicationStatusLabel,
+} from '../utils/applicationStatus';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts';
@@ -794,11 +800,11 @@ function ListingsShell({ listings = [], loading = false, error = '', onOpenView,
 }
 
 const CANDIDATE_STATUS_LABELS = {
-  PODNESENA: { label: 'Na čekanju', cls: 'cd-candidate-status--pending' },
-  U_RAZMATRANJU: { label: 'U razmatranju', cls: 'cd-candidate-status--shortlisted' },
-  ODOBRENA: { label: 'Odobreno', cls: 'cd-candidate-status--approved' },
-  ODBIJENA: { label: 'Odbijeno', cls: 'cd-candidate-status--rejected' },
-  ODUSTAO: { label: 'Odustao', cls: 'cd-candidate-status--rejected' },
+  CEKA_KOMPANIJU: { cls: 'cd-candidate-status--pending' },
+  U_RAZMATRANJU: { cls: 'cd-candidate-status--shortlisted' },
+  ODOBRENA: { cls: 'cd-candidate-status--approved' },
+  ODBIJENA_KOMPANIJA: { cls: 'cd-candidate-status--rejected' },
+  ODUSTAO: { cls: 'cd-candidate-status--rejected' },
 };
 
 const CANDIDATE_DOCUMENT_TYPE_LABELS = {
@@ -811,11 +817,10 @@ const CANDIDATE_DOCUMENT_TYPE_LABELS = {
 
 function candidateStatusBadge(status) {
   const mapped = CANDIDATE_STATUS_LABELS[status] || {
-    label: status || 'Nepoznat status',
     cls: 'cd-candidate-status--default',
   };
 
-  return <span className={`cd-candidate-status ${mapped.cls}`}>{mapped.label}</span>;
+  return <span className={`cd-candidate-status ${mapped.cls}`}>{applicationStatusLabel(status)}</span>;
 }
 
 function candidateDocumentTypeLabel(tip) {
@@ -906,6 +911,30 @@ function CandidatesShell({
     }
   }
 
+  async function handleCompanyDecision(applicationId, decision) {
+    setProcessingId(applicationId);
+    setApplicationsError('');
+    setSuccessMessage('');
+
+    try {
+      const action = decision === 'approve'
+        ? approveApplicationByCompany
+        : rejectApplicationByCompany;
+      const result = await action(applicationId);
+      const updated = result?.application;
+      setApplications((current) =>
+        current.map((application) =>
+          application.id === applicationId ? { ...application, ...(updated || {}) } : application
+        )
+      );
+      setSuccessMessage(result?.message || 'Status kandidata je ažuriran.');
+    } catch (err) {
+      setApplicationsError(err.message || 'Greška pri ažuriranju kandidata.');
+    } finally {
+      setProcessingId(null);
+    }
+  }
+
   async function handleOpenDocument(dokument) {
     if (!dokument?.id) return;
 
@@ -946,7 +975,7 @@ function CandidatesShell({
     <div className="cd-content">
       <header className="cd-header">
         <h1 className="cd-title">Prijave kandidata</h1>
-        <p className="cd-subtitle">Pregled kandidata po aktivnom oglasu i označavanje užeg kruga.</p>
+        <p className="cd-subtitle">Pregled kandidata po aktivnom oglasu, uži krug i konačna odluka kompanije.</p>
       </header>
 
       <section className="cd-section">
@@ -1030,7 +1059,11 @@ function CandidatesShell({
                       const fakultet = student.fakultet?.naziv || 'Fakultet nije unesen';
                       const odsjek = student.odsjek?.naziv || 'Odsjek nije unesen';
                       const dokumenti = Array.isArray(application.dokumenti) ? application.dokumenti : [];
-                      const canShortlist = application.status === 'PODNESENA';
+                      const canShortlist = application.status === APPLICATION_STATUS.WAITING_COMPANY;
+                      const canDecide = [
+                        APPLICATION_STATUS.WAITING_COMPANY,
+                        APPLICATION_STATUS.SHORTLISTED,
+                      ].includes(application.status);
                       const isProcessing = processingId === application.id;
 
                       return (
@@ -1074,15 +1107,39 @@ function CandidatesShell({
                           </td>
                           <td>{candidateStatusBadge(application.status)}</td>
                           <td>
-                            {canShortlist ? (
-                              <button
-                                type="button"
-                                className="cd-btn cd-btn--primary cd-btn--sm"
-                                disabled={isProcessing}
-                                onClick={() => handleShortlist(application.id)}
-                              >
-                                {isProcessing ? 'Označavanje...' : 'Označi za uži krug'}
-                              </button>
+                            {canShortlist || canDecide ? (
+                              <div className="cd-candidate-actions">
+                                {canShortlist && (
+                                  <button
+                                    type="button"
+                                    className="cd-btn cd-btn--primary cd-btn--sm"
+                                    disabled={isProcessing}
+                                    onClick={() => handleShortlist(application.id)}
+                                  >
+                                    {isProcessing ? 'Označavanje...' : 'Označi za uži krug'}
+                                  </button>
+                                )}
+                                {canDecide && (
+                                  <>
+                                    <button
+                                      type="button"
+                                      className="cd-btn cd-btn--success cd-btn--sm"
+                                      disabled={isProcessing}
+                                      onClick={() => handleCompanyDecision(application.id, 'approve')}
+                                    >
+                                      Odobri
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="cd-btn cd-btn--danger cd-btn--sm"
+                                      disabled={isProcessing}
+                                      onClick={() => handleCompanyDecision(application.id, 'reject')}
+                                    >
+                                      Odbij
+                                    </button>
+                                  </>
+                                )}
+                              </div>
                             ) : (
                               <span className="cd-candidate-muted">Nema dostupne akcije</span>
                             )}
@@ -1504,10 +1561,10 @@ function StatistikaShell() {
                 <span className="cd-stat-filter-label">Status</span>
                 <select className="cd-stat-status-select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
                   <option value="">Svi statusi</option>
-                  <option value="PODNESENA">Podnesena</option>
-                  <option value="U_RAZMATRANJU">U razmatranju</option>
-                  <option value="ODOBRENA">Odobrena</option>
-                  <option value="ODBIJENA">Odbijena</option>
+                  <option value="CEKA_KOMPANIJU">Čeka odgovor kompanije</option>
+                  <option value="U_RAZMATRANJU">Uži krug</option>
+                  <option value="ODOBRENA">Praksa odobrena</option>
+                  <option value="ODBIJENA_KOMPANIJA">Odbijeno od kompanije</option>
                   <option value="ODUSTAO">Odustao</option>
                 </select>
               </div>

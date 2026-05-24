@@ -53,9 +53,13 @@ function canSendInApp(preferences, tip) {
       return preferences.prijava_podnesena_in_app;
 
     case 'PRIJAVA_ODOBRENA':
+    case 'PRIJAVA_PROSLIJEDJENA_KOMPANIJI':
+    case 'PRIJAVA_UZI_KRUG':
+    case 'PRIJAVA_KOMPANIJA_ODOBRENA':
       return preferences.prijava_odobrena_in_app;
 
     case 'PRIJAVA_ODBIJENA':
+    case 'PRIJAVA_KOMPANIJA_ODBIJENA':
       return preferences.prijava_odbijena_in_app;
 
     default:
@@ -71,9 +75,13 @@ function canSendEmail(preferences, tip) {
       return preferences.prijava_podnesena_email;
 
     case 'PRIJAVA_ODOBRENA':
+    case 'PRIJAVA_PROSLIJEDJENA_KOMPANIJI':
+    case 'PRIJAVA_UZI_KRUG':
+    case 'PRIJAVA_KOMPANIJA_ODOBRENA':
       return preferences.prijava_odobrena_email;
 
     case 'PRIJAVA_ODBIJENA':
+    case 'PRIJAVA_KOMPANIJA_ODBIJENA':
       return preferences.prijava_odbijena_email;
 
     default:

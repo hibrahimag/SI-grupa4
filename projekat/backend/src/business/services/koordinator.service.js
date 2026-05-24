@@ -1,31 +1,61 @@
 'use strict';
 
+const { Op } = require('sequelize');
 const db = require('../../infrastructure/database/models');
+const {
+  sendAccountApprovedEmail,
+  sendAccountRejectedEmail,
+  sendPrijavaStatusEmail,
+} = require('./email.service');
+const { createNotification } = require('./notifications.service');
+const {
+  getOrCreatePreferences,
+  canSendInApp,
+  canSendEmail,
+} = require('./notificationPreferences.service');
+const {
+  APPLICATION_STATUS,
+  COORDINATOR_STATUS,
+  COMPANY_STATUS,
+  FINAL_REJECTED_STATUSES,
+  isCoordinatorPending,
+  normalizeStatusFilter,
+} = require('./applicationStatus.service');
 
-// ─── getDashboardStats ────────────────────────────────────────────────────────
 const getDashboardStats = async () => {
-  const [ukupno, podnesene, odobrene, odbijene] = await Promise.all([
+  const [ukupno, podnesene, proslijedene, odobrene, odbijene] = await Promise.all([
     db.PrijavaNaPraksu.count(),
-    db.PrijavaNaPraksu.count({ where: { status: 'PODNESENA' } }),
-    db.PrijavaNaPraksu.count({ where: { status: 'ODOBRENA'  } }),
-    db.PrijavaNaPraksu.count({ where: { status: 'ODBIJENA'  } }),
+    db.PrijavaNaPraksu.count({ where: { status: APPLICATION_STATUS.WAITING_COORDINATOR } }),
+    db.PrijavaNaPraksu.count({
+      where: {
+        status: {
+          [Op.in]: [
+            APPLICATION_STATUS.WAITING_COMPANY,
+            APPLICATION_STATUS.SHORTLISTED,
+          ],
+        },
+      },
+    }),
+    db.PrijavaNaPraksu.count({ where: { status: APPLICATION_STATUS.APPROVED } }),
+    db.PrijavaNaPraksu.count({ where: { status: { [Op.in]: FINAL_REJECTED_STATUSES } } }),
   ]);
 
-  let aktivnePrakse = 0, zavrsene = 0;
+  let aktivnePrakse = 0;
+  let zavrsene = 0;
   if (db.Praksa) {
     [aktivnePrakse, zavrsene] = await Promise.all([
       db.Praksa.count().catch(() => 0),
-      Promise.resolve(0), // nema status kolone još
+      Promise.resolve(0),
     ]);
   }
-  return { ukupno, podnesene, odobrene, odbijene, aktivnePrakse, zavrsene };
+  return { ukupno, podnesene, proslijedene, odobrene, odbijene, aktivnePrakse, zavrsene };
 };
 
-// ─── getPrijave ───────────────────────────────────────────────────────────────
 const getPrijave = async ({ status, stranica = 1, limit = 15, koordinatorUserId }) => {
   const offset = (parseInt(stranica) - 1) * parseInt(limit);
-  const where  = {};
-  if (status) where.status = status;
+  const where = {};
+  const normalizedStatus = normalizeStatusFilter(status);
+  if (normalizedStatus) where.status = normalizedStatus;
 
   const koordinator = await db.Koordinator.findOne({
     where: { userID: koordinatorUserId },
@@ -56,7 +86,7 @@ const getPrijave = async ({ status, stranica = 1, limit = 15, koordinatorUserId 
     ],
     order: [['datumPrijave', 'DESC']],
   });
-  
+
   return {
     prijave: rows,
     ukupno: count,
@@ -65,18 +95,21 @@ const getPrijave = async ({ status, stranica = 1, limit = 15, koordinatorUserId 
   };
 };
 
-// ─── getPrijavaById ───────────────────────────────────────────────────────────
 const getPrijavaById = async (id, koordinatorUserId) => {
   const koordinator = await db.Koordinator.findOne({
     where: { userID: koordinatorUserId },
     attributes: ['fakultetID'],
   });
   if (!koordinator) throw new Error('KOORDINATOR_NOT_FOUND');
+
   const prijava = await db.PrijavaNaPraksu.findByPk(id, {
     include: [
       {
         model: db.Student,
-        include: [{ model: db.User, attributes: ['ime', 'prezime', 'email'] }],
+        include: [
+          { model: db.User, attributes: ['ime', 'prezime', 'email'] },
+          { model: db.Odsjek, attributes: ['id', 'naziv'], required: false },
+        ],
         attributes: ['id', 'index_number', 'year_of_study', 'odsjekID', 'fakultetID'],
       },
       {
@@ -84,14 +117,14 @@ const getPrijavaById = async (id, koordinatorUserId) => {
         include: [{
           model: db.Kompanija,
           include: [{ model: db.User, attributes: ['ime', 'email'] }],
-          attributes: ['id', 'naziv', 'adresa'],
+          attributes: ['id', 'naziv', 'opisPoslovanja', 'djelatnost', 'adresa', 'telefon', 'kontaktOsoba'],
         }],
       },
       {
-      model: db.Dokument,
-      attributes: ['id', 'original_name', 'tip_dokumenta', 'mime_path', 'created_at'],
-      required: false,
-    },
+        model: db.Dokument,
+        attributes: ['id', 'original_name', 'tip_dokumenta', 'mime_path', 'created_at'],
+        required: false,
+      },
     ],
   });
   if (!prijava) throw new Error('NOT_FOUND');
@@ -101,7 +134,6 @@ const getPrijavaById = async (id, koordinatorUserId) => {
   return prijava;
 };
 
-// ─── odluciOPrijavi ───────────────────────────────────────────────────────────
 const odluciOPrijavi = async (id, odluka, razlog, koordinatorUserId) => {
   const koordinator = await db.Koordinator.findOne({
     where: { userID: koordinatorUserId },
@@ -132,80 +164,82 @@ const odluciOPrijavi = async (id, odluka, razlog, koordinatorUserId) => {
     throw new Error('NOT_FOUND');
   }
 
-  if (!['PODNESENA', 'U_RAZMATRANJU'].includes(prijava.status)) {
+  if (!isCoordinatorPending(prijava)) {
     throw new Error('INVALID_STATUS');
   }
 
-  const noviStatus = odluka === 'odobrena' ? 'ODOBRENA' : 'ODBIJENA';
+  const approved = odluka === 'odobrena';
+  const noviStatus = approved
+    ? APPLICATION_STATUS.WAITING_COMPANY
+    : APPLICATION_STATUS.REJECTED_COORDINATOR;
+
   await prijava.update({
     status: noviStatus,
-    razlogOdbijanja: odluka === 'odbijena' ? razlog.trim() : null,
+    koordinatorStatus: approved ? COORDINATOR_STATUS.APPROVED : COORDINATOR_STATUS.REJECTED,
+    kompanijaStatus: approved ? COMPANY_STATUS.PENDING : COMPANY_STATUS.UNAVAILABLE,
+    razlogOdbijanja: approved ? null : razlog.trim(),
     koordinatorID: koordinator.id,
   });
 
   const studentId = prijava.Student?.id;
   const studentEmail = prijava.Student?.User?.email;
+  const studentUserId = prijava.Student?.User?.id;
   const oglasNaziv = prijava.Oglas?.naziv || 'praksu';
   const kompanijaNaziv = prijava.Oglas?.Kompanija?.naziv || 'Kompanija';
-  const tip = noviStatus === 'ODOBRENA' ? 'PRIJAVA_ODOBRENA' : 'PRIJAVA_ODBIJENA';
-  const naslov = noviStatus === 'ODOBRENA' ? 'Prijava odobrena' : 'Prijava odbijena';
-  const poruka = noviStatus === 'ODOBRENA'
-    ? `Vaša prijava na praksu "${oglasNaziv}" kod kompanije ${kompanijaNaziv} je odobrena.`
-    : `Vaša prijava na praksu "${oglasNaziv}" kod kompanije ${kompanijaNaziv} je odbijena.${razlog ? ` Razlog: ${razlog}` : ''}`;
+  const tip = approved ? 'PRIJAVA_PROSLIJEDJENA_KOMPANIJI' : 'PRIJAVA_ODBIJENA';
+  const naslov = approved ? 'Prijava proslijedjena kompaniji' : 'Odbijeno od koordinatora';
+  const poruka = approved
+    ? `Vasa prijava na praksu "${oglasNaziv}" kod kompanije ${kompanijaNaziv} je odobrena od koordinatora i proslijedjena kompaniji.`
+    : `Vasa prijava na praksu "${oglasNaziv}" kod kompanije ${kompanijaNaziv} je odbijena od koordinatora.${razlog ? ` Razlog: ${razlog}` : ''}`;
 
-  const studentUserId = prijava.Student?.User?.id;
-const preferences = studentUserId ? await getOrCreatePreferences(studentUserId) : null;
+  const preferences = studentUserId ? await getOrCreatePreferences(studentUserId) : null;
 
-if (studentId && canSendInApp(preferences, tip)) {
-  createNotification(studentId, prijava.id, tip, naslov, poruka).catch(() => {});
-}
+  if (studentId && canSendInApp(preferences, tip)) {
+    createNotification(studentId, prijava.id, tip, naslov, poruka).catch(() => {});
+  }
 
-if (studentEmail && canSendEmail(preferences, tip)) {
-  sendPrijavaStatusEmail(studentEmail, oglasNaziv, kompanijaNaziv, noviStatus, razlog).catch(() => {});
-}
+  if (studentEmail && canSendEmail(preferences, tip)) {
+    sendPrijavaStatusEmail(studentEmail, oglasNaziv, kompanijaNaziv, noviStatus, razlog).catch(() => {});
+  }
 
-  return { id: prijava.id, status: noviStatus };
+  return {
+    id: prijava.id,
+    status: prijava.status,
+    koordinatorStatus: prijava.koordinatorStatus,
+    kompanijaStatus: prijava.kompanijaStatus,
+  };
 };
 
-// ─── getStudenti ──────────────────────────────────────────────────────────────
-// Returns only STUDENT role users from the same faculty as the coordinator
 const getStudenti = async (koordinatorUserId, pretraga = '') => {
-  const { Op } = require('sequelize');
-
-  // 1. Get coordinator's fakultetID
   const koordinator = await db.Koordinator.findOne({
     where: { userID: koordinatorUserId },
     attributes: ['id', 'fakultetID'],
   });
   if (!koordinator) throw new Error('KOORDINATOR_NOT_FOUND');
 
-  // 2. Build name search filter
   const userWhere = {
     role: 'STUDENT',
-    approvalStatus: 'APPROVED', // samo korisnici sa STUDENT rolom
+    approvalStatus: 'APPROVED',
   };
   if (pretraga) {
-  const dijelovi = pretraga.trim().split(/\s+/);
+    const dijelovi = pretraga.trim().split(/\s+/);
 
-  if (dijelovi.length === 1) {
-    // Samo jedna riječ — traži u ime ili prezime
-    userWhere[Op.or] = [
-      { ime:     { [Op.iLike]: `%${dijelovi[0]}%` } },
-      { prezime: { [Op.iLike]: `%${dijelovi[0]}%` } },
-    ];
-  } else {
-    // Više riječi — prva je ime, zadnja je prezime (ili obrnuto)
-    const [prva, ...ostatak] = dijelovi;
-    const zadnja = ostatak.join(' ');
-    userWhere[Op.or] = [
-      { [Op.and]: [{ ime: { [Op.iLike]: `%${prva}%` } },    { prezime: { [Op.iLike]: `%${zadnja}%` } }] },
-      { [Op.and]: [{ ime: { [Op.iLike]: `%${zadnja}%` } },  { prezime: { [Op.iLike]: `%${prva}%` } }] },
-    ];
+    if (dijelovi.length === 1) {
+      userWhere[Op.or] = [
+        { ime: { [Op.iLike]: `%${dijelovi[0]}%` } },
+        { prezime: { [Op.iLike]: `%${dijelovi[0]}%` } },
+      ];
+    } else {
+      const [prva, ...ostatak] = dijelovi;
+      const zadnja = ostatak.join(' ');
+      userWhere[Op.or] = [
+        { [Op.and]: [{ ime: { [Op.iLike]: `%${prva}%` } }, { prezime: { [Op.iLike]: `%${zadnja}%` } }] },
+        { [Op.and]: [{ ime: { [Op.iLike]: `%${zadnja}%` } }, { prezime: { [Op.iLike]: `%${prva}%` } }] },
+      ];
+    }
   }
-}
 
-  // 3. Find students from same faculty
-  const studenti = await db.Student.findAll({
+  return db.Student.findAll({
     where: { fakultetID: koordinator.fakultetID },
     include: [
       {
@@ -220,7 +254,7 @@ const getStudenti = async (koordinatorUserId, pretraga = '') => {
       {
         model: db.PrijavaNaPraksu,
         required: false,
-        attributes: ['id', 'status', 'datumPrijave'],
+        attributes: ['id', 'status', 'koordinatorStatus', 'kompanijaStatus', 'datumPrijave'],
         include: [{
           model: db.Oglas,
           attributes: ['id', 'naziv'],
@@ -233,15 +267,12 @@ const getStudenti = async (koordinatorUserId, pretraga = '') => {
     ],
     attributes: ['id', 'index_number', 'year_of_study', 'odsjekID', 'fakultetID'],
   });
-
-  return studenti;
 };
 
-// ─── getPrakse ────────────────────────────────────────────────────────────────
 const getPrakse = async (status = '', koordinatorUserId) => {
   if (!db.Praksa) return [];
   const where = {};
-  
+
   const koordinator = await db.Koordinator.findOne({
     where: { userID: koordinatorUserId },
     attributes: ['fakultetID'],
@@ -275,21 +306,12 @@ const getPrakse = async (status = '', koordinatorUserId) => {
   });
 };
 
-const { sendAccountApprovedEmail, sendAccountRejectedEmail, sendPrijavaStatusEmail } = require('./email.service');
-const { createNotification } = require('./notifications.service');
-const {
-  getOrCreatePreferences,
-  canSendInApp,
-  canSendEmail,
-} = require('./notificationPreferences.service');
-
 const approveStudent = async (studentUserId, koordinatorUserId) => {
-  // Provjeri da koordinator i student dijele isti fakultet
   const koordinator = await db.Koordinator.findOne({
     where: { userID: koordinatorUserId },
   });
   if (!koordinator) throw new Error('KOORDINATOR_NOT_FOUND');
-  
+
   const student = await db.Student.findOne({
     where: { userID: studentUserId, fakultetID: koordinator.fakultetID },
   });
