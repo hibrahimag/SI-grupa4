@@ -17,6 +17,7 @@ import {
   approveUserRequest,
   rejectUserRequest,
   deleteUser,
+  getAuditLogs,
 } from '../services/adminService';
 import { useTheme } from '../context/ThemeContext';
 import './AdminDashboard.css';
@@ -94,6 +95,10 @@ function reducer(state, action) {
       return { ...state, userApprovalRequests: action.payload };
     case 'SET_SELECTED_APPROVAL_REQUEST':
       return { ...state, selectedApprovalRequest: action.payload };
+    case 'SET_AUDIT_LOGS':
+      return { ...state, auditLogs: action.payload, auditLogsLoading: false };
+    case 'SET_AUDIT_LOGS_LOADING':
+      return { ...state, auditLogsLoading: action.payload };
     case 'SHOW_TOAST':
       return { ...state, toast: action.payload };
     case 'HIDE_TOAST':
@@ -115,6 +120,8 @@ const initialState = {
   faculties: [],
   userApprovalRequests: [],
   selectedApprovalRequest: null,
+  auditLogs: [],
+  auditLogsLoading: false,
 };
 const IconMoon = ({ size = 18, color = "currentColor" }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -134,6 +141,23 @@ const IconSun = ({ size = 18, color = "currentColor" }) => (
     <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
   </svg>
 );
+
+const AUDIT_ACTION_LABELS = {
+  USER_REGISTERED: 'Registracija',
+  APPLICATION_STATUS_CHANGED: 'Promjena statusa',
+  USER_DELETED: 'Brisanje naloga',
+  LISTING_UPDATED: 'Uredjivanje oglasa',
+  INTERNSHIP_WITHDRAWN: 'Odustajanje od prakse',
+};
+
+function formatAuditDetails(details = {}) {
+  const entries = Object.entries(details).filter(([, value]) => value !== null && value !== undefined && value !== '');
+  if (entries.length === 0) return '-';
+  return entries
+    .slice(0, 5)
+    .map(([key, value]) => `${key}: ${typeof value === 'object' ? JSON.stringify(value) : String(value)}`)
+    .join(' | ');
+}
 export default function AdminDashboard() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const {
@@ -148,6 +172,8 @@ export default function AdminDashboard() {
     faculties,
     userApprovalRequests,
     selectedApprovalRequest,
+    auditLogs,
+    auditLogsLoading,
   } = state;
   
   const { user, logout } = useAuth();
@@ -218,6 +244,18 @@ function handleLogout() { logout(); navigate('/'); }
   useEffect(() => {
     if (view === 'approvals') {
       refreshApprovalRequests();
+    }
+  }, [view]);
+
+  useEffect(() => {
+    if (view === 'audit') {
+      dispatch({ type: 'SET_AUDIT_LOGS_LOADING', payload: true });
+      getAuditLogs({ limit: 200 })
+        .then((data) => dispatch({ type: 'SET_AUDIT_LOGS', payload: data }))
+        .catch(() => {
+          dispatch({ type: 'SET_AUDIT_LOGS_LOADING', payload: false });
+          showToast('Greska pri ucitavanju historije aktivnosti.', 'error');
+        });
     }
   }, [view]);
 
@@ -417,6 +455,11 @@ function handleLogout() { logout(); navigate('/'); }
               <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
             </svg>
           </div>
+          <div className="ad-sb-tab-icon" title="Audit log" onClick={() => dispatch({ type: 'SET_VIEW', payload: 'audit' })}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/>
+            </svg>
+          </div>
 
           {/* Tab footer */}
           <div className="ad-sb-tab-footer">
@@ -471,6 +514,12 @@ function handleLogout() { logout(); navigate('/'); }
                   </svg>
                   Fakulteti i odsjeci
                 </button>
+                <button className={`ad-nav-item ${view === 'audit' ? 'active' : ''}`} onClick={() => dispatch({ type: 'SET_VIEW', payload: 'audit' })}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/>
+                  </svg>
+                  Audit log
+                </button>
               </nav>
             </div>
           </div>
@@ -508,6 +557,9 @@ function handleLogout() { logout(); navigate('/'); }
         </button>
         <button className={`ad-tab-item ${view === 'faculties' ? 'active' : ''}`} onClick={() => dispatch({ type: 'SET_VIEW', payload: 'faculties' })}>
           Fakulteti
+        </button>
+        <button className={`ad-tab-item ${view === 'audit' ? 'active' : ''}`} onClick={() => dispatch({ type: 'SET_VIEW', payload: 'audit' })}>
+          Audit
         </button>
       </nav>
 
@@ -549,6 +601,10 @@ function handleLogout() { logout(); navigate('/'); }
         {view === 'faculties' && (
           <FacultiesView faculties={faculties} onCreate={handleCreateFaculty} onUpdate={handleUpdateFaculty} onDelete={handleDeleteFaculty} />
         )}
+
+        {view === 'audit' && (
+          <AuditLogView logs={auditLogs} loading={auditLogsLoading} />
+        )}
       </main>
 
       {toast && <div className={`ad-toast ad-toast--${toast.type}`}>{toast.message}</div>}
@@ -589,6 +645,70 @@ function handleLogout() { logout(); navigate('/'); }
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function AuditLogView({ logs, loading }) {
+  return (
+    <div className="ad-content">
+      <div className="ad-header">
+        <h1 className="ad-title">Audit log</h1>
+        <div className="ad-subtitle">Historija kljucnih akcija u sistemu</div>
+      </div>
+
+      <div className="ad-section">
+        <div className="ad-section-header">
+          <h2 className="ad-section-title">Zadnje aktivnosti</h2>
+          {!loading && <span className="ad-section-count">{logs.length} zapisa</span>}
+        </div>
+        {loading ? (
+          <p className="ad-loading">Ucitavanje...</p>
+        ) : (
+          <>
+            <div className="ad-table-desktop" style={{ overflowX: 'auto' }}>
+              <table className="ad-table">
+                <thead>
+                  <tr>
+                    <th>Korisnik</th>
+                    <th>Tip akcije</th>
+                    <th>Vrijeme</th>
+                    <th>Detalji</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {logs.map((log) => (
+                    <tr key={log.id}>
+                      <td>
+                        <div className="ad-user-name">{log.user?.name || log.user?.email || 'Sistem'}</div>
+                        <div className="ad-user-email">{log.user?.email || '-'}</div>
+                      </td>
+                      <td>{AUDIT_ACTION_LABELS[log.actionType] || log.actionType}</td>
+                      <td>{log.createdAt ? new Date(log.createdAt).toLocaleString('bs-BA') : '-'}</td>
+                      <td style={{ maxWidth: 420, whiteSpace: 'normal' }}>{formatAuditDetails(log.details)}</td>
+                    </tr>
+                  ))}
+                  {logs.length === 0 && <tr><td colSpan={4} className="ad-empty">Nema zapisa u audit logu.</td></tr>}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="ad-mobile-cards">
+              {logs.map((log) => (
+                <div key={log.id} className="ad-mobile-card">
+                  <div className="ad-mobile-card-row">
+                    <div className="ad-mobile-card-name">{AUDIT_ACTION_LABELS[log.actionType] || log.actionType}</div>
+                    <span className="ad-mobile-card-date">{log.createdAt ? new Date(log.createdAt).toLocaleString('bs-BA') : '-'}</span>
+                  </div>
+                  <div className="ad-mobile-card-email">{log.user?.name || log.user?.email || 'Sistem'}</div>
+                  <div className="ad-mobile-card-meta">{formatAuditDetails(log.details)}</div>
+                </div>
+              ))}
+              {logs.length === 0 && <p className="ad-empty">Nema zapisa u audit logu.</p>}
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }

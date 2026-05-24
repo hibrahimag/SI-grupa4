@@ -2,6 +2,7 @@
 
 const { Op } = require('sequelize');
 const db = require('../../infrastructure/database/models');
+const { ACTION_TYPES, logAudit } = require('./audit.service');
 const {
   sendAccountApprovedEmail,
   sendAccountRejectedEmail,
@@ -168,6 +169,7 @@ const odluciOPrijavi = async (id, odluka, razlog, koordinatorUserId) => {
     throw new Error('INVALID_STATUS');
   }
 
+  const stariStatus = prijava.status;
   const approved = odluka === 'odobrena';
   const noviStatus = approved
     ? APPLICATION_STATUS.WAITING_COMPANY
@@ -179,6 +181,19 @@ const odluciOPrijavi = async (id, odluka, razlog, koordinatorUserId) => {
     kompanijaStatus: approved ? COMPANY_STATUS.PENDING : COMPANY_STATUS.UNAVAILABLE,
     razlogOdbijanja: approved ? null : razlog.trim(),
     koordinatorID: koordinator.id,
+  });
+
+  await logAudit({
+    userID: koordinatorUserId,
+    actionType: ACTION_TYPES.APPLICATION_STATUS_CHANGED,
+    details: {
+      entityType: 'PRAKSA_APPLICATION',
+      prijavaID: prijava.id,
+      studentID: prijava.Student?.id,
+      fromStatus: stariStatus,
+      toStatus: noviStatus,
+      reason: odluka === 'odbijena' ? razlog.trim() : null,
+    },
   });
 
   const studentId = prijava.Student?.id;
