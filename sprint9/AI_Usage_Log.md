@@ -189,3 +189,49 @@
 - React StrictMode u development modu poziva `useEffect` dvaput, što je uzrokovalo dvostruke API pozive - nije kritičan problem u produkciji
 
 ---
+## Unos 5 — Implementacija podešavanja tipova notifikacija (US-55)
+
+| Polje | Sadržaj |
+|---|---|
+| **Datum** | 23.05.2026 |
+| **Sprint broj** | 9 |
+| **Alat** | ChatGPT (GPT-5.5) |
+| **Ko je koristio** | Irma Lemeš |
+| **Svrha korištenja** | Implementacija US-55 — podešavanje tipova notifikacija za studente |
+
+**Kratak opis upita:**
+
+> Implementirati mogućnost da student bira koje vrste notifikacija želi primati (email i in-app) za podnesenu, odobrenu i odbijenu prijavu na praksu.
+
+**Šta je AI predložio ili generisao:**
+
+- `notification_preferences` tabelu i `NotificationPreference.js` Sequelize model
+- `notificationPreferences.service.js` i `notificationPreferences.routes.js`
+- API rute:
+  - `GET /api/notification-preferences`
+  - `PUT /api/notification-preferences`
+- Helper funkcije:
+  - `canSendInApp`
+  - `canSendEmail`
+- Integraciju preferenci u:
+  - `applications.service.js`
+  - `koordinator.service.js`
+- Frontend API funkcije:
+  - `getNotificationPreferences`
+  - `updateNotificationPreferences`
+- `NotificationPreferencesSection` komponentu unutar `ProfilePage.jsx`
+- Checkbox UI za uključivanje/isključivanje email i in-app notifikacija
+
+**Šta je tim prihvatio:**
+- Kompletnu backend i frontend implementaciju
+- Razdvajanje email i in-app preferenci
+- Immediate apply logiku bez potrebe za reloginom
+
+**Šta je tim izmijenio:**
+- `canSendInApp` i `canSendEmail` helperi su premješteni iz routes fajla u service sloj
+
+**Šta je tim odbacio:**
+- JSON kolonu za preference — korištene su eksplicitne boolean kolone
+
+**Rizici, problemi ili greške:**
+- `401 Unauthorized` pri testiranju zbog isteklog JWT tokena — riješeno novim loginom
