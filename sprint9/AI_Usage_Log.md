@@ -320,3 +320,87 @@ Uklonjeni su svi nekonzistentni inline stilovi sa dugmadi unutar kartica oglasa.
 
 **Rizici i napomene za stabilnost**
 - **Rizik od prekida mrežnog lanca:** Ako prvi API poziv (zatvaranje) uspije, a drugi (arhiviranje) padne uslijed mrežne greške, oglas će ostati u stanju `ZATVOREN` ali neće biti arhiviran. UI je osiguran tako da u tom slučaju ispravno osvježi stanje i ostavi oglas u tabu za zatvorene oglase, odakle ga korisnik može ponovo ručno arhivirati.
+
+---
+
+## Unos 8 — Pregled statistike prijava (US-50)
+
+| Polje | Sadržaj |
+|---|---|
+| **Datum** | 25.05.2026 |
+| **Sprint broj** | 9 |
+| **Alat** | Claude Code (claude-sonnet-4-6) |
+| **Ko je koristio** | lhodzic1 |
+| **Svrha korištenja** | Implementacija pregleda statistike prijava za kompaniju (US-50) — grafički prikaz po oglasima, godini studija i fakultetu, s filterima po statusu i oglasu |
+
+**Kratak opis upita:**
+
+> Kompanija treba imati pregled statistike prijava na vlastite oglase u formi grafikona. Traženo je: tab-based navigacija između prikaza po oglasima, po godini studija i po fakultetu; filter po statusu prijave (PODNESENA, U_RAZMATRANJU, ODOBRENA, ODBIJENA, ODUSTAO); filter po konkretnom oglasu (vidljiv samo kada nije aktivan tab "Po oglasima"). Backend treba da podržava sve kombinacije filtera.
+
+**Šta je AI predložio ili generisao:**
+
+- `StatistikaShell` komponenta unutar `KompanijaDashboard.jsx` — tab navigacija s tabovima: Po oglasima, Po godini studija, Po fakultetu
+- Recharts `BarChart` s `ResponsiveContainer`, `CartesianGrid`, `XAxis`, `YAxis`, `Tooltip`, `Cell` za svaki tab; odvojena logika za tab "Po odsjeku" (jedan chart po fakultetu)
+- `chartConfig` mapa koja za svaki tab definiše `data`, `nameKey`, `color` i `emptyMsg`
+- `statusFilter` i `oglasFilter` state varijable; `handleTabChange` koji resetira `oglasFilter` pri prelasku na tab "Po oglasima"
+- Filter traka stilizovana kao pill-shaped toolbar: klase `cd-stat-filter-group`, `cd-stat-filter-divider`, `cd-stat-filter-label` u `KompanijaDashboard.css`; oglas `<select>` prikazuje se samo kad `activeTab !== 'prijave'`
+- Backend `getApplicationStatistics(userId, { fakultetID, odsjekID, godina, status, oglasID })` — `status` dodan u WHERE klauzulu; lista svih kompanijnih oglasa (`oglasi`) vraćena u odgovoru za populaciju dropdown-a
+- `GET /applications/statistics` ruta s query parametrima `status` i `oglasID`
+
+**Šta je tim prihvatio:**
+- Kompletnu backend i frontend implementaciju statistike s filterima
+- `chartConfig` pristup za tab-based renderovanje jednim blokom JSX-a
+- Pill-shaped filter traku s grupiranim labelama i vertikalnim razdjelnikom između filtera
+- Oglas dropdown koji se dinamički popunjava listom kompanijnih oglasa s backenda
+
+**Šta je tim izmijenio:**
+- `current` varijabla (`chartConfig[activeTab]`) inicijalno je bila uklonjena tokom refaktorisanja — vraćena nakon što je uzrokovala runtime grešku
+
+**Šta je tim odbacio:**
+- Ništa
+
+**Rizici, problemi ili greške:**
+- `chartConfig` je bio obrisan tokom ranijeg refaktorisanja što je uzrokovalo `undefined` grešku za `current` — otkriveno i ispravljeno odmah
+
+---
+
+## Unos 9 — Historija aktivnosti (Audit log) (US-51)
+
+| Polje | Sadržaj |
+|---|---|
+| **Datum** | 25.05.2026 |
+| **Sprint broj** | 9 |
+| **Alat** | Claude Code (claude-sonnet-4-6) |
+| **Ko je koristio** | lhodzic1 |
+| **Svrha korištenja** | Implementacija US-51 — historija svih ključnih akcija u sistemu dostupna administratoru |
+
+**Kratak opis upita:**
+
+> Administrator treba imati uvid u historiju svih ključnih akcija u sistemu: registracije korisnika, promjene statusa prijava, brisanje naloga, uređivanje oglasa i odustajanje od prakse. Svaki zapis treba sadržavati korisnika, vrijeme i tip akcije. Pregled je dostupan samo administratoru.
+
+**Šta je AI predložio ili generisao:**
+
+- `AuditLog.js` Sequelize model — tabela `audit_logs` s kolonama: `userID`, `userName`, `userEmail`, `userRole`, `actionType` (STRING 80), `details` (JSONB), `createdAt`; bez Sequelize `timestamps`, s `constraints: false` asocijacijom prema `User`
+- `audit.service.js` — centralizovana servisna komponenta s: konstantama `ACTION_TYPES` (USER_REGISTERED, APPLICATION_STATUS_CHANGED, USER_DELETED, LISTING_UPDATED, INTERNSHIP_WITHDRAWN), `resolveUserSnapshot` koji dohvata ime/email/ulogu korisnika po ID-u, `logAudit` s try/catch koji ne prekida tok akcije ako bilježenje ne uspije, `getAuditLogs` s limitom (max 500, default 100)
+- Integracija `logAudit` poziva u: `auth.service.js` (registracija studenata, kompanija, koordinatora), `admin.service.js` (brisanje naloga, promjena statusa prijave, odustajanje od prakse), `approval.service.js` (odobravanje i odbijanje prijave od strane koordinatora), `listings.service.js` (uređivanje oglasa), `koordinator.service.js` (odluka o prijavi), `users.service.js` (odustajanje od prakse)
+- `GET /admin/audit-logs` ruta zaštićena `authorize('ADMIN')` middlewareom; query parametri `actionType` i `limit`
+- `getAuditLogs` funkcija u frontend `adminService.js`
+- `AuditLogView` komponenta unutar `AdminDashboard.jsx` — tabela s kolonama: korisnik, email, uloga, tip akcije (color-coded badge), opis akcije, datum/vrijeme; lazy loading (dohvat tek pri prvom kliknu na tab); `getAuditSummary` helper za čitljiv opis po tipu akcije; `getAuditTypeClass` za CSS klasu badge-a
+- Navigacijska stavka "Historija aktivnosti" u admin sidebaru
+
+**Šta je tim prihvatio:**
+- Centralizovani `audit.service.js` koji pozivaju svi moduli — konzistentno bilježenje bez dupliciranja logike
+- `resolveUserSnapshot` s fallback mehanizmom koji prima prethodno dohvaćene podatke ili sam dohvaća po `userID`
+- `try/catch` u `logAudit` koji osigurava da neuspjeh bilježenja ne prekida korisničku akciju
+- Color-coded badge za tip akcije i čitljiv opis putem `getAuditSummary`
+- Lazy loading audit logova u admin dashboardu
+
+**Šta je tim izmijenio:**
+- Ništa strukturalno
+
+**Šta je tim odbacio:**
+- Distribuirani pristup (svaki modul vlastita logika bilježenja) — zamijenjen centralizovanom komponentom
+
+**Rizici, problemi ili greške:**
+- Tabela `audit_logs` mora biti kreirana u Supabase dashboardu — nije automatizirano migracijom
+- `logAudit` tiho guta greške (catch vraća `null`) — neuspješna bilježenja nisu vidljiva u logovima servera osim ako se greška ne pojavi u aplikacijskom logu
