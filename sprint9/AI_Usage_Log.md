@@ -235,3 +235,39 @@
 
 **Rizici, problemi ili greške:**
 - `401 Unauthorized` pri testiranju zbog isteklog JWT tokena — riješeno novim loginom
+
+---
+
+## Unos 6 — Dvostepeno odobravanje prijave na praksu
+
+| Polje | Sadržaj |
+|---|---|
+| **Datum** | 25.05.2026 |
+| **Sprint broj** | 9 |
+| **Alat** | Codex (GPT-5) |
+| **Ko je koristio** | haristucakovic |
+| **Svrha korištenja** | Refaktorisanje toka prijave tako da koordinator prvo proslijedi prijavu kompaniji, a konačno odobrenje daje kompanija |
+
+**Kratak opis upita:**
+
+> Potrebno je razdvojiti odluku koordinatora od konačne odluke kompanije, sakriti prijave od kompanije dok ih koordinator ne odobri i jasno prikazati fazu prijave studentu.
+
+**Šta je AI predložio ili generisao:**
+
+- Dodani su statusi koordinatora i kompanije uz zadržavanje postojećeg ukupnog statusa prijave
+- Prilagođene su akcije koordinatora, kompanije i filtriranje vidljivih prijava
+- Dodane su company akcije za uži krug, odobravanje i odbijanje kandidata
+- Ažurirani su statusi i prikaz faza na student dashboardu te detalji prijave za koordinatora
+- Usklađene su notifikacije i pristup dokumentima sa novim tokom odobravanja
+
+**Šta je tim prihvatio:**
+- Dvostepeni tok odobravanja i jasne Bosnian statusne poruke u interfejsu
+
+**Šta je tim izmijenio:**
+- Uklonjeni su interni tekstovi o sprintovima iz korisničkog interfejsa i stabilizovan je raspored filter kartica u pregledu prijava
+
+**Šta je tim odbacio:**
+- Nije dodavana nova funkcionalnost izvan toka prijave i potrebnih UI korekcija
+
+**Rizici, problemi ili greške:**
+- Postojeće prijave zahtijevaju backfill statusa pri pokretanju aplikacije kako bi se pravilno uklopile u novi tok
