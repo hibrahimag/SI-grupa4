@@ -11,6 +11,12 @@ import { getFavourites, addFavourite, removeFavourite } from '../services/favour
 import {
   formatDate, relativeDate, trajanjeLabel, mjestLabel, deadlineInfo,
 } from '../data/mockPrakse';
+import {
+  APPLICATION_STATUS,
+  applicationStageSteps,
+  applicationStatusLabel,
+  applicationStatusTone,
+} from '../utils/applicationStatus';
 import './StudentDashboard.css';
 import { useApplicationLimit } from '../hooks/useApplicationLimit';
 
@@ -58,26 +64,22 @@ function isNovo(datumObjave) {
   return Date.now() - new Date(datumObjave).getTime() < 3 * 24 * 60 * 60 * 1000;
 }
 
-const APPLICATION_STATUS_LABELS = {
-  PODNESENA: 'Na čekanju',
-  U_RAZMATRANJU: 'Na čekanju',
-  ODOBRENA: 'Odobreno',
-  ODBIJENA: 'Odbijeno',
-  ODUSTAO: 'Odustao',
-};
-
-function applicationStatusLabel(status) {
-  return APPLICATION_STATUS_LABELS[status] || status || 'Na čekanju';
-}
-
-function applicationStatusTone(status) {
-  if (status === 'ODOBRENA') return 'success';
-  if (status === 'ODBIJENA' || status === 'ODUSTAO') return 'error';
-  return 'info';
-}
-
 function applicationOglasId(application) {
   return Number(application?.oglasID);
+}
+
+function ApplicationStageIndicator({ application }) {
+  const steps = applicationStageSteps(application);
+  return (
+    <div className="sd-application-stage" aria-label="Tok prijave">
+      {steps.map((step) => (
+        <div key={step.label} className={`sd-application-stage-step sd-application-stage-step--${step.state}`}>
+          <span className="sd-application-stage-dot" />
+          <span className="sd-application-stage-label">{step.label}</span>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 // ── PraksaCard ─────────────────────────────────────────────────────────────
@@ -437,7 +439,7 @@ function ApplicationModal({
   const hasApplication = Boolean(existingApplication);
   const alreadyApplied = hasApplication && !submitSuccess;
   const currentStatus = hasApplication || submitSuccess
-    ? applicationStatusLabel(existingApplication?.status || 'PODNESENA')
+    ? applicationStatusLabel(existingApplication?.status || APPLICATION_STATUS.WAITING_COORDINATOR)
     : 'Nije podnesena';
   const canSubmit = !hasApplication && !inactive && !submitSuccess;
   const docsDisabled = hasApplication || inactive || submitting || submitSuccess;
@@ -575,7 +577,7 @@ function ApplicationModal({
                 <h3 className="sd-application-title">{praksa.naziv}</h3>
                 <p className="sd-application-company">{praksa.kompanija}</p>
               </div>
-              <span className={`sd-application-status sd-application-status--${applicationStatusTone(existingApplication?.status || (submitSuccess ? 'PODNESENA' : ''))}`}>
+              <span className={`sd-application-status sd-application-status--${applicationStatusTone(existingApplication?.status || (submitSuccess ? APPLICATION_STATUS.WAITING_COORDINATOR : ''))}`}>
                 {currentStatus}
               </span>
             </div>
@@ -699,25 +701,53 @@ function ApplicationModal({
 function MyApplicationsPanel({ applications, prakse, onViewOglas }) {
   const [activeFilter, setActiveFilter] = useState(null);
 
+  const praksaById = useMemo(() => {
+    const m = new Map();
+    prakse.forEach(p => m.set(Number(p.id), p));
+    return m;
+  }, [prakse]);
+
   const total = applications.length;
-  const pending = applications.filter(a => a.status === 'PODNESENA' || a.status === 'U_RAZMATRANJU').length;
-  const approved = applications.filter(a => a.status === 'ODOBRENA').length;
-  const rejected = applications.filter(a => a.status === 'ODBIJENA' || a.status === 'ODUSTAO').length;
+  const waitingCoordinator = applications.filter(a =>
+    a.status === APPLICATION_STATUS.WAITING_COORDINATOR ||
+    a.status === APPLICATION_STATUS.LEGACY_SUBMITTED
+  ).length;
+  const waitingCompany = applications.filter(a => a.status === APPLICATION_STATUS.WAITING_COMPANY).length;
+  const shortlisted = applications.filter(a => a.status === APPLICATION_STATUS.SHORTLISTED).length;
+  const approved = applications.filter(a => a.status === APPLICATION_STATUS.APPROVED).length;
+  const rejected = applications.filter(a =>
+    a.status === APPLICATION_STATUS.REJECTED_COORDINATOR ||
+    a.status === APPLICATION_STATUS.REJECTED_COMPANY ||
+    a.status === APPLICATION_STATUS.LEGACY_REJECTED ||
+    a.status === APPLICATION_STATUS.WITHDRAWN
+  ).length;
 
   function toggleFilter(filter) {
     setActiveFilter(prev => prev === filter ? null : filter);
   }
 
-  const visibleApplications = activeFilter === 'pending'
-    ? applications.filter(a => a.status === 'PODNESENA' || a.status === 'U_RAZMATRANJU')
-    : activeFilter === 'approved'
-      ? applications.filter(a => a.status === 'ODOBRENA')
-      : activeFilter === 'rejected'
-        ? applications.filter(a => a.status === 'ODBIJENA' || a.status === 'ODUSTAO')
-        : applications;
+  const visibleApplications = activeFilter === 'coordinator'
+    ? applications.filter(a =>
+        a.status === APPLICATION_STATUS.WAITING_COORDINATOR ||
+        a.status === APPLICATION_STATUS.LEGACY_SUBMITTED
+      )
+    : activeFilter === 'company'
+      ? applications.filter(a => a.status === APPLICATION_STATUS.WAITING_COMPANY)
+      : activeFilter === 'shortlist'
+        ? applications.filter(a => a.status === APPLICATION_STATUS.SHORTLISTED)
+        : activeFilter === 'approved'
+          ? applications.filter(a => a.status === APPLICATION_STATUS.APPROVED)
+          : activeFilter === 'rejected'
+            ? applications.filter(a =>
+                a.status === APPLICATION_STATUS.REJECTED_COORDINATOR ||
+                a.status === APPLICATION_STATUS.REJECTED_COMPANY ||
+                a.status === APPLICATION_STATUS.LEGACY_REJECTED ||
+                a.status === APPLICATION_STATUS.WITHDRAWN
+              )
+            : applications;
 
   function isRecentChange(app) {
-    if (!app.updatedAt || app.status === 'PODNESENA') return false;
+    if (!app.updatedAt || app.status === APPLICATION_STATUS.WAITING_COORDINATOR) return false;
     return Date.now() - new Date(app.updatedAt).getTime() < 7 * 24 * 60 * 60 * 1000;
   }
 
@@ -738,22 +768,41 @@ function MyApplicationsPanel({ applications, prakse, onViewOglas }) {
 
   return (
     <div className="sd-apps-panel">
+      <div className="sd-apps-filter-top">
+        <button
+          type="button"
+          className={`sd-apps-total-btn${activeFilter === null ? ' active' : ''}`}
+          onClick={() => setActiveFilter(null)}
+        >
+          <span>Ukupno</span>
+          <strong>{total}</strong>
+        </button>
+      </div>
+
       <div className="sd-apps-stats">
         <div
-          className={`sd-apps-stat${activeFilter === null ? ' sd-apps-stat--all-active' : ''}`}
-          onClick={() => setActiveFilter(null)}
+          className={`sd-apps-stat sd-apps-stat--clickable${activeFilter === 'coordinator' ? ' sd-apps-stat--active-info' : ''}`}
+          onClick={() => toggleFilter('coordinator')}
           role="button" tabIndex={0}
         >
-          <span className="sd-apps-stat-value">{total}</span>
-          <span className="sd-apps-stat-label">Ukupno</span>
+          <span className="sd-apps-stat-value sd-apps-stat-value--info">{waitingCoordinator}</span>
+          <span className="sd-apps-stat-label">Čeka koordinatora</span>
         </div>
         <div
-          className={`sd-apps-stat sd-apps-stat--clickable${activeFilter === 'pending' ? ' sd-apps-stat--active-info' : ''}`}
-          onClick={() => toggleFilter('pending')}
+          className={`sd-apps-stat sd-apps-stat--clickable${activeFilter === 'company' ? ' sd-apps-stat--active-info' : ''}`}
+          onClick={() => toggleFilter('company')}
           role="button" tabIndex={0}
         >
-          <span className="sd-apps-stat-value sd-apps-stat-value--info">{pending}</span>
-          <span className="sd-apps-stat-label">Na čekanju</span>
+          <span className="sd-apps-stat-value sd-apps-stat-value--info">{waitingCompany}</span>
+          <span className="sd-apps-stat-label">Čeka kompaniju</span>
+        </div>
+        <div
+          className={`sd-apps-stat sd-apps-stat--clickable${activeFilter === 'shortlist' ? ' sd-apps-stat--active-info' : ''}`}
+          onClick={() => toggleFilter('shortlist')}
+          role="button" tabIndex={0}
+        >
+          <span className="sd-apps-stat-value sd-apps-stat-value--info">{shortlisted}</span>
+          <span className="sd-apps-stat-label">Uži krug</span>
         </div>
         <div
           className={`sd-apps-stat sd-apps-stat--clickable${activeFilter === 'approved' ? ' sd-apps-stat--active-success' : ''}`}
@@ -761,7 +810,7 @@ function MyApplicationsPanel({ applications, prakse, onViewOglas }) {
           role="button" tabIndex={0}
         >
           <span className="sd-apps-stat-value sd-apps-stat-value--success">{approved}</span>
-          <span className="sd-apps-stat-label">Odobreno</span>
+          <span className="sd-apps-stat-label">Praksa odobrena</span>
         </div>
         <div
           className={`sd-apps-stat sd-apps-stat--clickable${activeFilter === 'rejected' ? ' sd-apps-stat--active-error' : ''}`}
@@ -773,9 +822,14 @@ function MyApplicationsPanel({ applications, prakse, onViewOglas }) {
         </div>
       </div>
 
-      <div className="sd-list">
-        {visibleApplications.map(app => {
-          const oglas = prakse.find(p => Number(p.id) === Number(app.oglasID));
+      {visibleApplications.length === 0 ? (
+        <div className="sd-apps-filter-empty">
+          <p>Nema prijava za odabrani status.</p>
+        </div>
+      ) : (
+        <div className="sd-list">
+          {visibleApplications.map(app => {
+          const oglas = praksaById.get(Number(app.oglasID));
           const kompNaziv = oglas?.kompanija || app.Oglas?.Kompanija?.naziv || 'Kompanija';
           const oglasNaziv = oglas?.naziv || app.Oglas?.naziv || 'Nepoznat oglas';
           const logoColor = deriveLogoColor(kompNaziv);
@@ -836,6 +890,8 @@ function MyApplicationsPanel({ applications, prakse, onViewOglas }) {
                   </div>
                 )}
 
+                <ApplicationStageIndicator application={app} />
+
                 <div className="sd-card-foot">
                   <div className="sd-meta-row">
                     {oglas?.trajanje && (
@@ -877,8 +933,9 @@ function MyApplicationsPanel({ applications, prakse, onViewOglas }) {
               </article>
             </div>
           );
-        })}
-      </div>
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -1180,6 +1237,7 @@ export default function StudentDashboard() {
   const [selectedPraksa, setSelectedPraksa] = useState(null);
   const [applicationPraksa, setApplicationPraksa] = useState(null);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [filterTehs, setFilterTehs] = useState([]);
   const [filterTips, setFilterTips] = useState([]);
   const [filterTrajanja, setFilterTrajanja] = useState([]);
@@ -1218,6 +1276,11 @@ export default function StudentDashboard() {
   const profileMenuRef = useRef(null);
 
   useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  useEffect(() => {
     let active = true;
     setPraksaLoading(true);
     getActiveListings()
@@ -1241,7 +1304,7 @@ export default function StudentDashboard() {
     const found = prakse.find(p => Number(p.id) === Number(openId));
     if (found) setSelectedPraksa(found);
     navigate('/dashboard/student', { replace: true, state: {} });
-  }, [location.state, prakse, navigate]);
+  }, [location.state, prakse]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!profileMenuOpen) return;
@@ -1389,8 +1452,8 @@ export default function StudentDashboard() {
     } else {
       r = [...prakse];
     }
-    if (search.trim()) {
-      const s = search.trim().toLowerCase();
+    if (debouncedSearch.trim()) {
+      const s = debouncedSearch.trim().toLowerCase();
       r = r.filter(p =>
         p.naziv.toLowerCase().includes(s) ||
         p.kompanija.toLowerCase().includes(s) ||
@@ -1413,12 +1476,12 @@ export default function StudentDashboard() {
     else if (sortBy === 'trajanje-asc') r.sort((a, b) => a.trajanje - b.trajanje);
     else if (sortBy === 'trajanje-desc') r.sort((a, b) => b.trajanje - a.trajanje);
     return r;
-  }, [prakse, search, filterTehs, filterTips, filterTrajanja, sortBy, activeTab, favourites, omiljeniShowAll, favouriteListings]);
+  }, [prakse, debouncedSearch, filterTehs, filterTips, filterTrajanja, sortBy, activeTab, favourites, omiljeniShowAll, favouriteListings]);
 
   const filteredZatvoreni = useMemo(() => {
     let r = [...zatvoreniOglasi];
-    if (search.trim()) {
-      const s = search.trim().toLowerCase();
+    if (debouncedSearch.trim()) {
+      const s = debouncedSearch.trim().toLowerCase();
       r = r.filter(p =>
         p.naziv.toLowerCase().includes(s) ||
         p.kompanija.toLowerCase().includes(s) ||
@@ -1437,7 +1500,7 @@ export default function StudentDashboard() {
       })
     );
     return r;
-  }, [zatvoreniOglasi, search, filterTehs, filterTips, filterTrajanja]);
+  }, [zatvoreniOglasi, debouncedSearch, filterTehs, filterTips, filterTrajanja]);
   const hasFilters = !!(search || filterTehs.length || filterTips.length || filterTrajanja.length);
 
   function toggleSection(key) {
@@ -1509,8 +1572,9 @@ export default function StudentDashboard() {
 
     try {
       const result = await createApplication(praksa.id);
-      const fresh = await getMyApplications();
-      setApplications(fresh || []);
+      if (result.application) {
+        setApplications(prev => [result.application, ...prev]);
+      }
       setApplySuccess(result.message || 'Prijava je uspješno podnesena.');
     } catch (err) {
       setApplyError(err.message || 'Greška pri podnošenju prijave.');

@@ -3,6 +3,11 @@
 const { Op } = require('sequelize');
 const { sequelize, User, Fakultet, Koordinator, Student, Kompanija, Oglas, PrijavaNaPraksu, Praksa, Aktivnost, Prisustvo, Evaluacija, Ugovor, Izvjestaj, Odsjek } = require('../../infrastructure/database/models');
 const { ACTION_TYPES, logAudit, getAuditLogs } = require('./audit.service');
+const {
+  APPLICATION_STATUS,
+  ACTIVE_APPLICATION_STATUSES,
+  STUDENT_BLOCKING_STATUSES,
+} = require('./applicationStatus.service');
 
 const ALLOWED_ROLES = ['STUDENT', 'COMPANY', 'COORDINATOR', 'ADMIN'];
 
@@ -59,11 +64,11 @@ async function runDeactivationCleanup(user, actorId = null) {
         },
       });
       await PrijavaNaPraksu.update(
-        { status: 'ODUSTAO', datumOdustajanja: new Date() },
+        { status: APPLICATION_STATUS.WITHDRAWN, datumOdustajanja: new Date() },
         {
           where: {
             studentID: student.id,
-            status: { [Op.in]: ['PODNESENA', 'U_RAZMATRANJU', 'ODOBRENA'] },
+            status: { [Op.in]: STUDENT_BLOCKING_STATUSES },
           },
         }
       );
@@ -97,7 +102,7 @@ async function runDeactivationCleanup(user, actorId = null) {
         {
           where: {
             koordinatorID: koordinator.id,
-            status: { [Op.in]: ['PODNESENA', 'U_RAZMATRANJU', 'ODOBRENA'] },
+            status: { [Op.in]: ACTIVE_APPLICATION_STATUSES },
           },
         }
       );

@@ -65,8 +65,8 @@ export default function KoordinatorLimitPanel() {
           <h2 className="kd-limit-title">Limit prijava po studentu</h2>
           <p className="kd-limit-desc">
             Postavite maksimalan broj aktivnih prijava koje student može imati
-            istovremeno. Aktivne prijave su one sa statusom "Na čekanju" ili
-            "U razmatranju". Student neće moći podnijeti novu prijavu dok ne
+            istovremeno. Aktivne prijave su one koje čekaju koordinatora, čekaju
+            odgovor kompanije ili su označene za uži krug. Student neće moći podnijeti novu prijavu dok ne
             padne ispod ovog limita.
           </p>
         </div>

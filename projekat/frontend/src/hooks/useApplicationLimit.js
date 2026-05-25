@@ -11,6 +11,7 @@
 
 import { useState, useEffect } from 'react';
 import { apiRequest } from '../services/api';
+import { isActiveApplicationStatus } from '../utils/applicationStatus';
 
 export function useApplicationLimit(applications) {
   const [limit, setLimit] = useState(null);
@@ -22,7 +23,7 @@ export function useApplicationLimit(applications) {
   }, []);
 
   const activeCount = (applications || []).filter(
-    a => a.status === 'PODNESENA' || a.status === 'U_RAZMATRANJU'
+    a => isActiveApplicationStatus(a.status)
   ).length;
 
   const isAtLimit = limit !== null && activeCount >= limit;
