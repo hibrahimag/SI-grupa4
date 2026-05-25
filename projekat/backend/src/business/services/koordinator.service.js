@@ -294,6 +294,8 @@ const getPrakse = async (status = '', koordinatorUserId) => {
   });
   if (!koordinator) throw new Error('KOORDINATOR_NOT_FOUND');
 
+  if (status) where.status = status.toUpperCase();
+
   return db.Praksa.findAll({
     where,
     include: [
