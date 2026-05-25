@@ -6,7 +6,6 @@
 | SB-17 | Odobravanje prakse | Amna Glamoč | Done |
 | SB-18 | Odbijanje prakse | Amna Glamoč | Done |
 | SB-31 | Zatvaranje oglasa | Harun | Done |
-| SB-35 | Student dashboard | (realizovano u Sprintu 8) | Done |
 | SB-37 | Notifikacije o statusu prakse | Haris Husić | Done |
 | SB-49 | Arhiviranje oglasa | Harun | Done |
 | SB-50 | Pregled statistike prijava | Hana Hodžić | Done |
