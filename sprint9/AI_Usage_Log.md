@@ -271,3 +271,52 @@
 
 **Rizici, problemi ili greške:**
 - Postojeće prijave zahtijevaju backfill statusa pri pokretanju aplikacije kako bi se pravilno uklopile u novi tok
+
+---
+
+## Unos 7 — Implementacija logike zatvaranja i arhiviranja oglasa i pripadajućih UI komponenti
+
+| Polje | Sadržaj |
+|---|---|
+| **Datum** | 25.05.2026 |
+| **Sprint broj** | 9 |
+| **Alat** | Gemini (gemini-pro) |
+| **Ko je koristio** | hibrahimag1 |
+| **Svrha korištenja** | Implementacija i povezivanje akcija za ručno/automatsko zatvaranje oglasa, arhiviranje zatvorenih oglasa, te rješavanje kaskadnih validacija na backendu i frontend UI konzistentnosti. |
+
+**Kratak opis problema i zahtjeva**
+Unutar upravljačke ploče za kompanije (`KompanijaDashboard.jsx`), bilo je potrebno omogućiti kompanijama puni životni ciklus oglasa za prakse kroz dvije ključne akcije:
+1. Zatvaranje oglasa: Prekidanje aktivnog oglasa (bilo ručno, bilo automatski prepoznavanjem isteklog roka prijave) čime oglas prestaje biti aplicirljiv za studente.
+2. Arhiviranje oglasa: Sklanjanje već zatvorenog oglasa iz primarnih tabova u historijsku arhivu. 
+
+Glavni izazov bio je rigidni uslov na backendu: oglas se **ne može** direktno arhivirati ako je u bazi podataka još uvijek u stanju `AKTIVAN`, čak i ako je njegov `rokPrijave` hronološki prošao. Pokušaj arhiviranja takvog oglasa bacao je sistemsku grešku. Takođe, bilo je potrebno osigurati sigurne potvrde akcija od strane korisnika bez korištenja ružnih nativnih browser prozora.
+
+---
+
+**Šta je predloženo i implementirano**
+
+A. Ulančana logika "Zatvori pa arhiviraj" (Chain-Action Workflow)
+Kako bi se izbjegao prekid u radu i padanje backend validacije za oglase kojima je istekao rok, a vode se kao aktivni, na frontendu je implementiran pametni asinhroni lanac akcija:
+- Kada korisnik klikne na **"Arhiviraj"**, sistem prvo provjerava trenutno stanje i rok oglasa.
+- Ako je oglas istekli `AKTIVAN`, aplikacija pod haubom automatski prvo šalje tihi zahtjev na API endpoint za zatvaranje oglasa (`closeListing`).
+- Tek nakon što stigne uspješan odgovor (`200 OK`) i status u bazi pređe u `ZATVOREN`, skripta u istom koraku automatski šalje drugi zahtjev za arhiviranje (`archiveListing`).
+- Na ovaj način korisnik završava kompletan posao jednim klikom, a backend pravila su u potpunosti ispoštovana.
+
+B. Integracija `CustomConfirmModal` komponente
+Za eliminaciju nativnog `window.confirm()` dijaloga, implementiran je prilagođeni modalni prozor integrisan u React stanje dashboarda:
+- Prije izvršavanja funkcije `handleCloseListing` ili `handleArchiveListing`, aktivira se modal koji prima tekstualno upozorenje prilagođeno specifičnoj akciji (npr. *"Jeste li sigurni da želite zatvoriti ovaj oglas? Ova akcija je nepovratna."*).
+- Modal koristi `danger` stilske klase za destruktivne akcije (zatvaranje) i `warning` klase za premještanje podataka (arhiviranje), prateći cjelokupni vizuelni identitet i tamnu temu (dark mode) aplikacije.
+
+C. Unifikacija CSS-a za akciona dugmad (`.cd-listing-actions-wrapper`)
+Uklonjeni su svi nekonzistentni inline stilovi sa dugmadi unutar kartica oglasa. 
+- U `KompanijaDashboard.css` kreirana je nova klasa `.cd-listing-actions-wrapper`.
+- Ova klasa postavlja standardizovani flexbox raspored sa predefinisanim razmacima (`gap`) i fiksnom visinom elemenata (38px).
+- Time je osigurano da dugmad "Zatvori oglas", "Arhiviraj" i "Vrati iz arhive" imaju identične dimenzije, poravnanje i efekte prelaza (`transition`), bez obzira na to u kojem se tabu kartica oglas nalazi.
+
+**Prihvaćena rješenja i ishodi**
+- **Potpuno prihvaćeno:** Automatsko ulančavanje API poziva koje sprječava greške pri arhiviranju isteklih oglasa.
+- **Poboljšan UX:** Zamjena nativnih pop-up prozora elegantnim i sigurnim modalima.
+- **Čistiji kod:** Izbacivanje inline stilova iz JSX-a i centralizacija CSS pravila za upravljačke elemente oglasa.
+
+**Rizici i napomene za stabilnost**
+- **Rizik od prekida mrežnog lanca:** Ako prvi API poziv (zatvaranje) uspije, a drugi (arhiviranje) padne uslijed mrežne greške, oglas će ostati u stanju `ZATVOREN` ali neće biti arhiviran. UI je osiguran tako da u tom slučaju ispravno osvježi stanje i ostavi oglas u tabu za zatvorene oglase, odakle ga korisnik može ponovo ručno arhivirati.
