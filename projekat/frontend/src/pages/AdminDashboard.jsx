@@ -150,13 +150,74 @@ const AUDIT_ACTION_LABELS = {
   INTERNSHIP_WITHDRAWN: 'Odustajanje od prakse',
 };
 
-function formatAuditDetails(details = {}) {
-  const entries = Object.entries(details).filter(([, value]) => value !== null && value !== undefined && value !== '');
-  if (entries.length === 0) return '-';
-  return entries
-    .slice(0, 5)
-    .map(([key, value]) => `${key}: ${typeof value === 'object' ? JSON.stringify(value) : String(value)}`)
-    .join(' | ');
+const AUDIT_DETAIL_LABELS = {
+  role: 'Rola',
+  username: 'Korisnicko ime',
+  email: 'Email',
+  entityType: 'Tip zapisa',
+  targetUserID: 'ID korisnika',
+  targetEmail: 'Email korisnika',
+  fromStatus: 'Stari status',
+  toStatus: 'Novi status',
+  assignedRole: 'Dodijeljena rola',
+  rejectionReason: 'Razlog odbijanja',
+  reason: 'Razlog',
+  prijavaID: 'ID prijave',
+  studentID: 'ID studenta',
+  studentUserID: 'ID korisnickog naloga studenta',
+  oglasID: 'ID oglasa',
+  oglasNaziv: 'Oglas',
+  naziv: 'Naziv',
+  changedFields: 'Izmijenjena polja',
+  deletedBy: 'Obrisao',
+  deletedUserID: 'ID obrisanog korisnika',
+  deletedUser: 'Obrisani korisnik',
+  userName: 'Ime korisnika',
+  userEmail: 'Email korisnika',
+  userRole: 'Rola korisnika',
+ };
+
+function getAuditLabel(key) {
+  return AUDIT_DETAIL_LABELS[key] || key.replace(/([A-Z])/g, ' $1').replace(/^./, (char) => char.toUpperCase());
+}
+
+function formatAuditValue(value) {
+  if (value === null || value === undefined || value === '') return '-';
+  if (Array.isArray(value)) return value.length > 0 ? value.join(', ') : '-';
+  if (typeof value === 'object') {
+    return Object.entries(value)
+      .filter(([, nestedValue]) => nestedValue !== null && nestedValue !== undefined && nestedValue !== '')
+      .map(([nestedKey, nestedValue]) => `${getAuditLabel(nestedKey)}: ${formatAuditValue(nestedValue)}`)
+      .join(', ') || '-';
+  }
+  return String(value);
+}
+
+function getAuditSummary(log) {
+  const details = log.details || {};
+  if (log.actionType === 'APPLICATION_STATUS_CHANGED' && (details.fromStatus || details.toStatus)) {
+    return `${details.fromStatus || '-'} -> ${details.toStatus || '-'}`;
+  }
+  if (log.actionType === 'LISTING_UPDATED') {
+    const fields = Array.isArray(details.changedFields) ? details.changedFields.join(', ') : details.changedFields;
+    return fields ? `Polja: ${fields}` : details.naziv || `Oglas #${details.oglasID || '-'}`;
+  }
+  if (log.actionType === 'USER_REGISTERED') {
+    return `${details.role || log.user?.role || '-'} | ${details.email || log.user?.email || '-'}`;
+  }
+  if (log.actionType === 'USER_DELETED') {
+    return details.deletedUser?.userEmail || details.deletedUser?.userName || `Korisnik #${details.deletedUserID || '-'}`;
+  }
+  if (log.actionType === 'INTERNSHIP_WITHDRAWN') {
+    return details.oglasNaziv || `Prijava #${details.prijavaID || '-'}`;
+  }
+
+  const firstDetail = Object.entries(details).find(([, value]) => value !== null && value !== undefined && value !== '');
+  return firstDetail ? `${getAuditLabel(firstDetail[0])}: ${formatAuditValue(firstDetail[1])}` : '-';
+}
+
+function getAuditTypeClass(actionType) {
+  return String(actionType || '').toLowerCase().replace(/_/g, '-');
 }
 export default function AdminDashboard() {
   const [state, dispatch] = useReducer(reducer, initialState);
@@ -650,6 +711,17 @@ function handleLogout() { logout(); navigate('/'); }
 }
 
 function AuditLogView({ logs, loading }) {
+  const [selectedLog, setSelectedLog] = useState(null);
+
+  useEffect(() => {
+    if (!selectedLog) return undefined;
+    function onEscape(event) {
+      if (event.key === 'Escape') setSelectedLog(null);
+    }
+    window.addEventListener('keydown', onEscape);
+    return () => window.removeEventListener('keydown', onEscape);
+  }, [selectedLog]);
+
   return (
     <div className="ad-content">
       <div className="ad-header">
@@ -673,7 +745,8 @@ function AuditLogView({ logs, loading }) {
                     <th>Korisnik</th>
                     <th>Tip akcije</th>
                     <th>Vrijeme</th>
-                    <th>Detalji</th>
+                    <th>Sazetak</th>
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -683,12 +756,21 @@ function AuditLogView({ logs, loading }) {
                         <div className="ad-user-name">{log.user?.name || log.user?.email || 'Sistem'}</div>
                         <div className="ad-user-email">{log.user?.email || '-'}</div>
                       </td>
-                      <td>{AUDIT_ACTION_LABELS[log.actionType] || log.actionType}</td>
+                      <td>
+                        <span className={`ad-audit-type ad-audit-type--${getAuditTypeClass(log.actionType)}`}>
+                          {AUDIT_ACTION_LABELS[log.actionType] || log.actionType}
+                        </span>
+                      </td>
                       <td>{log.createdAt ? new Date(log.createdAt).toLocaleString('bs-BA') : '-'}</td>
-                      <td style={{ maxWidth: 420, whiteSpace: 'normal' }}>{formatAuditDetails(log.details)}</td>
+                      <td className="ad-audit-summary">{getAuditSummary(log)}</td>
+                      <td>
+                        <button className="ad-btn ad-btn--reject" onClick={() => setSelectedLog(log)}>
+                          Detalji
+                        </button>
+                      </td>
                     </tr>
                   ))}
-                  {logs.length === 0 && <tr><td colSpan={4} className="ad-empty">Nema zapisa u audit logu.</td></tr>}
+                  {logs.length === 0 && <tr><td colSpan={5} className="ad-empty">Nema zapisa u audit logu.</td></tr>}
                 </tbody>
               </table>
             </div>
@@ -697,17 +779,78 @@ function AuditLogView({ logs, loading }) {
               {logs.map((log) => (
                 <div key={log.id} className="ad-mobile-card">
                   <div className="ad-mobile-card-row">
-                    <div className="ad-mobile-card-name">{AUDIT_ACTION_LABELS[log.actionType] || log.actionType}</div>
+                    <span className={`ad-audit-type ad-audit-type--${getAuditTypeClass(log.actionType)}`}>
+                      {AUDIT_ACTION_LABELS[log.actionType] || log.actionType}
+                    </span>
                     <span className="ad-mobile-card-date">{log.createdAt ? new Date(log.createdAt).toLocaleString('bs-BA') : '-'}</span>
                   </div>
                   <div className="ad-mobile-card-email">{log.user?.name || log.user?.email || 'Sistem'}</div>
-                  <div className="ad-mobile-card-meta">{formatAuditDetails(log.details)}</div>
+                  <div className="ad-audit-summary ad-audit-summary--mobile">{getAuditSummary(log)}</div>
+                  <div className="ad-mobile-card-actions">
+                    <button className="ad-btn ad-btn--reject" onClick={() => setSelectedLog(log)}>
+                      Detalji
+                    </button>
+                  </div>
                 </div>
               ))}
               {logs.length === 0 && <p className="ad-empty">Nema zapisa u audit logu.</p>}
             </div>
           </>
         )}
+      </div>
+
+      {selectedLog && (
+        <AuditLogDetailsModal log={selectedLog} onClose={() => setSelectedLog(null)} />
+      )}
+    </div>
+  );
+}
+
+function AuditLogDetailsModal({ log, onClose }) {
+  const details = Object.entries(log.details || {}).filter(([, value]) => value !== null && value !== undefined && value !== '');
+
+  return (
+    <div className="ad-modal-backdrop" onClick={onClose}>
+      <div className="ad-modal ad-audit-modal" onClick={(event) => event.stopPropagation()}>
+        <button className="ad-modal-close" onClick={onClose} aria-label="Zatvori modal">x</button>
+        <div className="ad-audit-modal-header">
+          <span className={`ad-audit-type ad-audit-type--${getAuditTypeClass(log.actionType)}`}>
+            {AUDIT_ACTION_LABELS[log.actionType] || log.actionType}
+          </span>
+          <h2 className="ad-section-title">Detalji aktivnosti</h2>
+          <div className="ad-audit-modal-time">{log.createdAt ? new Date(log.createdAt).toLocaleString('bs-BA') : '-'}</div>
+        </div>
+
+        <div className="ad-modal-body">
+          <div className="ad-audit-meta-grid">
+            <div>
+              <span>Korisnik</span>
+              <strong>{log.user?.name || log.user?.email || 'Sistem'}</strong>
+            </div>
+            <div>
+              <span>Email</span>
+              <strong>{log.user?.email || '-'}</strong>
+            </div>
+            <div>
+              <span>Rola</span>
+              <strong>{log.user?.role || '-'}</strong>
+            </div>
+            <div>
+              <span>ID zapisa</span>
+              <strong>#{log.id}</strong>
+            </div>
+          </div>
+
+          <div className="ad-audit-detail-list">
+            {details.map(([key, value]) => (
+              <div key={key} className="ad-audit-detail-row">
+                <span>{getAuditLabel(key)}</span>
+                <strong>{formatAuditValue(value)}</strong>
+              </div>
+            ))}
+            {details.length === 0 && <p className="ad-empty">Nema dodatnih detalja za ovu aktivnost.</p>}
+          </div>
+        </div>
       </div>
     </div>
   );
