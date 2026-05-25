@@ -17,7 +17,7 @@ export function useApplicationLimit(applications) {
   const [limit, setLimit] = useState(null);
 
   useEffect(() => {
-    apiRequest('/admin/application-limit')
+    apiRequest('/koordinator/application-limit')
       .then(data => setLimit(data.limit))
       .catch(() => setLimit(null));
   }, []);
