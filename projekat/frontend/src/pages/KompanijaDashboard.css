@@ -725,8 +725,12 @@
 .cd-candidates-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 980px;
+  min-width: 1120px;
   font-size: 0.82rem;
+}
+
+.cd-practices-table {
+  min-width: 860px;
 }
 
 .cd-candidates-table th,

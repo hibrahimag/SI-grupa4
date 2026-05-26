@@ -19,12 +19,17 @@ const {
   APPLICATION_STATUS,
   COORDINATOR_STATUS,
   COMPANY_STATUS,
+  STUDENT_STATUS,
   FINAL_REJECTED_STATUSES,
   isCoordinatorPending,
   normalizeStatusFilter,
 } = require('./applicationStatus.service');
+const {
+  getCoordinatorPractices,
+  getCoordinatorPracticeSummary,
+} = require('./prakse.service');
 
-const getDashboardStats = async () => {
+const getDashboardStats = async (koordinatorUserId) => {
   const [ukupno, podnesene, proslijedene, odobrene, odbijene] = await Promise.all([
     db.PrijavaNaPraksu.count(),
     db.PrijavaNaPraksu.count({ where: { status: APPLICATION_STATUS.WAITING_COORDINATOR } }),
@@ -44,11 +49,14 @@ const getDashboardStats = async () => {
 
   let aktivnePrakse = 0;
   let zavrsene = 0;
-  if (db.Praksa) {
-    [aktivnePrakse, zavrsene] = await Promise.all([
-      db.Praksa.count().catch(() => 0),
-      Promise.resolve(0),
-    ]);
+  if (db.Praksa && koordinatorUserId) {
+    const practiceSummary = await getCoordinatorPracticeSummary(koordinatorUserId).catch(() => null);
+    if (practiceSummary) {
+      aktivnePrakse = practiceSummary.aktivnePrakse;
+      zavrsene = practiceSummary.zavrsene;
+    }
+  } else if (db.Praksa) {
+    aktivnePrakse = await db.Praksa.count().catch(() => 0);
   }
   return { ukupno, podnesene, proslijedene, odobrene, odbijene, aktivnePrakse, zavrsene };
 };
@@ -171,6 +179,8 @@ const odluciOPrijavi = async (id, odluka, razlog, koordinatorUserId) => {
     status: noviStatus,
     koordinatorStatus: approved ? COORDINATOR_STATUS.APPROVED : COORDINATOR_STATUS.REJECTED,
     kompanijaStatus: approved ? COMPANY_STATUS.PENDING : COMPANY_STATUS.UNAVAILABLE,
+    studentStatus: STUDENT_STATUS.UNAVAILABLE,
+    studentOdlucioAt: null,
     razlogOdbijanja: approved ? null : razlog.trim(),
     koordinatorID: koordinator.id,
   });
@@ -273,40 +283,10 @@ const getStudenti = async (koordinatorUserId, pretraga = '') => {
   });
 };
 
-const getPrakse = async (status = '', koordinatorUserId) => {
+const getPrakse = async (filter = 'all', koordinatorUserId) => {
   if (!db.Praksa) return [];
-  const where = {};
-
-  const koordinator = await resolveCoordinatorProfile(koordinatorUserId);
-  if (!koordinator) throw new Error('KOORDINATOR_NOT_FOUND');
-
-  if (status) where.status = status.toUpperCase();
-
-  return db.Praksa.findAll({
-    where,
-    include: [
-      {
-        model: db.PrijavaNaPraksu,
-        include: [
-          {
-            model: db.Student,
-            where: { fakultetID: koordinator.fakultetID },
-            attributes: ['id', 'index_number', 'year_of_study'],
-            include: [{ model: db.User, attributes: ['ime', 'prezime', 'email'] }],
-          },
-          {
-            model: db.Oglas,
-            attributes: ['id', 'naziv', 'trajanje'],
-            include: [{
-              model: db.Kompanija,
-              attributes: ['naziv'],
-            }],
-          },
-        ],
-      },
-    ],
-    order: [['datumPocetka', 'DESC']],
-  });
+  const result = await getCoordinatorPractices(koordinatorUserId, filter || 'all');
+  return result.prakse;
 };
 
 const approveStudent = async (studentUserId, koordinatorUserId) => {

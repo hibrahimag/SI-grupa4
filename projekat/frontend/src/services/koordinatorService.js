@@ -33,8 +33,8 @@ export const koordinatorService = {
     apiRequest(`${BASE}/studenti${pretraga ? `?pretraga=${encodeURIComponent(pretraga)}` : ''}`),
 
   // All internships
-  getPrakse: (status = '') =>
-    apiRequest(`${BASE}/prakse${status ? `?status=${status}` : ''}`),
+  getPrakse: (filter = 'all') =>
+    apiRequest(`${BASE}/prakse?filter=${encodeURIComponent(filter)}`),
 
   // ── Approval requests (uses existing /api/approval-requests endpoint) ──────
   getApprovalRequests: () =>

@@ -3,6 +3,16 @@ const applicationsController = require('../../business/controllers/applications.
 const { authenticate } = require('../../middleware/auth.middleware');
 const { authorize } = require('../../middleware/rbac.middleware');
 
+function authorizeStudentDecision(req, res, next) {
+  if (req.user?.role !== 'STUDENT') {
+    return res.status(403).json({
+      message: 'Samo studenti mogu odlučiti o učešću na praksi.',
+    });
+  }
+
+  return next();
+}
+
 router.get(
   '/mine',
   authenticate,
@@ -22,6 +32,20 @@ router.get(
   authenticate,
   authorize('COMPANY'),
   applicationsController.getCompanyApplicationsForListing
+);
+
+router.patch(
+  '/:id/accept',
+  authenticate,
+  authorizeStudentDecision,
+  applicationsController.acceptApplicationByStudent
+);
+
+router.patch(
+  '/:id/decline',
+  authenticate,
+  authorizeStudentDecision,
+  applicationsController.declineApplicationByStudent
 );
 
 router.patch(

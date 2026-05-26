@@ -151,7 +151,8 @@ describe('GET /api/koordinator/dashboard', () => {
       .mockResolvedValueOnce(2)   // proslijedene (CEKA_KOMPANIJU + U_RAZMATRANJU)
       .mockResolvedValueOnce(5)   // odobrene (ODOBRENA)
       .mockResolvedValueOnce(1);  // odbijene (FINAL_REJECTED_STATUSES)
-    db.Praksa.count.mockResolvedValueOnce(4);
+    db.Koordinator.findOne.mockResolvedValue(makeMockKoordinator());
+    db.Praksa.findAll.mockResolvedValue([]);
 
     const res = await request(app).get('/api/koordinator/dashboard');
 
@@ -163,7 +164,7 @@ describe('GET /api/koordinator/dashboard', () => {
       proslijedene: 2,
       odobrene: 5,
       odbijene: 1,
-      aktivnePrakse: 4,
+      aktivnePrakse: 0,
       zavrsene: 0,
     });
   });
@@ -667,10 +668,10 @@ describe('GET /api/koordinator/prakse', () => {
     expect(Array.isArray(res.body.data)).toBe(true);
   });
 
-  // Testira: endpoint filtrira prakse po ?status=AKTIVNA
+  // Testira: endpoint prihvata lifecycle filter bez pohranjene status kolone
   // Ulaz: GET /api/koordinator/prakse?status=AKTIVNA
-  // Očekivani izlaz: HTTP 200, Praksa.findAll pozvan s where: { status: 'AKTIVNA' }
-  test('200 — filtrira po ?status=AKTIVNA', async () => {
+  // Očekivani izlaz: HTTP 200, Praksa.findAll pozvan bez filtera nad Praksa.status
+  test('200 — filtrira po lifecycle stanju AKTIVNA', async () => {
     db.Koordinator.findOne.mockResolvedValue(makeMockKoordinator());
     db.Praksa.findAll.mockResolvedValue([]);
 
@@ -678,7 +679,7 @@ describe('GET /api/koordinator/prakse', () => {
 
     expect(res.status).toBe(200);
     expect(db.Praksa.findAll).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { status: 'AKTIVNA' } })
+      expect.objectContaining({ where: {} })
     );
   });
 

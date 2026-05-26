@@ -2379,6 +2379,11 @@
   color: var(--color-warning);
 }
 
+.sd-confirm-icon--success {
+  background: var(--color-success-subtle);
+  color: var(--color-success);
+}
+
 .sd-confirm-title {
   margin: 0;
   font-size: var(--font-size-md);
@@ -2842,6 +2847,90 @@
   margin-left: auto;
 }
 
+.sd-practices-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+}
+
+.sd-practices-title {
+  margin: 0 0 5px;
+  color: var(--color-text, #0d1f3c);
+  font-size: 1.28rem;
+}
+
+.sd-practices-subtitle {
+  margin: 0;
+  color: var(--color-muted, #5a7a9a);
+  font-size: 0.84rem;
+}
+
+.sd-practice-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.sd-practice-tab {
+  padding: 8px 13px;
+  border: 1px solid var(--color-border, #e0edf9);
+  border-radius: 999px;
+  background: var(--color-surface, #fff);
+  color: var(--color-muted, #5a7a9a);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.sd-practice-tab.active {
+  color: var(--color-primary, #1a6fd4);
+  border-color: rgba(26, 111, 212, 0.34);
+  background: var(--color-primary-subtle, #ddeeff);
+}
+
+.sd-confirmed-practice-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px 22px;
+  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-border, #e0edf9);
+  border-radius: 16px;
+}
+
+.sd-practice-badge {
+  display: inline-flex;
+  padding: 7px 12px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.sd-practice-badge--active {
+  background: var(--color-success-subtle);
+  color: var(--color-success);
+}
+
+.sd-practice-badge--pending {
+  background: var(--color-primary-subtle);
+  color: var(--color-primary);
+}
+
+.sd-practice-badge--finished {
+  background: rgba(124, 58, 237, 0.12);
+  color: #7c3aed;
+}
+
+.sd-practice-badge--withdrawn {
+  background: var(--color-danger-subtle);
+  color: var(--color-danger);
+}
+
 .sd-omiljeni-toggle {
   display: inline-flex;
   gap: 4px;
@@ -3055,6 +3144,40 @@
   margin: 0;
 }
 
+.sd-student-decision-feedback {
+  margin: 0;
+  padding: 11px 14px;
+  border: 1px solid;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.sd-student-decision-feedback--success {
+  border-color: rgba(21, 128, 61, 0.22);
+  background: var(--color-success-subtle);
+  color: var(--color-success);
+}
+
+.sd-student-decision-feedback--error {
+  border-color: rgba(220, 38, 38, 0.22);
+  background: var(--color-danger-subtle);
+  color: var(--color-danger);
+}
+
+.sd-student-decision-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.sd-student-decision-btn,
+.sd-student-confirm-btn {
+  padding: 9px 16px;
+  font-size: 0.82rem;
+}
+
 /* ── Application card list ─────────────────────────────────────────────── */
 .sd-apps-list {
   display: flex;
@@ -3258,6 +3381,10 @@
 .sd-page.dark .sd-apps-stat-value--success { color: #4ade80; }
 .sd-page.dark .sd-apps-stat-value--error { color: #f87171; }
 .sd-page.dark .sd-apps-stat-label { color: #64748b; }
+.sd-page.dark .sd-practices-title { color: #f1f5f9; }
+.sd-page.dark .sd-practice-tab,
+.sd-page.dark .sd-confirmed-practice-card { background: #111827; border-color: #1e2d40; }
+.sd-page.dark .sd-practice-tab.active { background: rgba(96,165,250,0.12); color: #60a5fa; }
 
 .sd-page.dark .sd-application-stage-step {
   color: #94a3b8;

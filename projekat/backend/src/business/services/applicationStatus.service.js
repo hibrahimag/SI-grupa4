@@ -1,6 +1,6 @@
 'use strict';
 
-const { Op } = require('sequelize');
+const { Op, cast, col, where } = require('sequelize');
 
 const APPLICATION_STATUS = {
   WAITING_COORDINATOR: 'CEKA_KOORDINATORA',
@@ -26,6 +26,13 @@ const COMPANY_STATUS = {
   SHORTLISTED: 'U_RAZMATRANJU',
   APPROVED: 'ODOBRENO',
   REJECTED: 'ODBIJENO',
+};
+
+const STUDENT_STATUS = {
+  UNAVAILABLE: 'NIJE_DOSTUPNO',
+  PENDING: 'NA_CEKANJU',
+  ACCEPTED: 'PRIHVACENO',
+  DECLINED: 'ODBIJENO',
 };
 
 const COORDINATOR_PENDING_STATUSES = [
@@ -160,10 +167,47 @@ async function backfillApplicationStatuses(PrijavaNaPraksu) {
   );
 }
 
+async function backfillStudentStatuses(PrijavaNaPraksu) {
+  const blankStatus = where(cast(col('studentStatus'), 'TEXT'), '');
+
+  await PrijavaNaPraksu.update(
+    {
+      studentStatus: STUDENT_STATUS.PENDING,
+    },
+    {
+      where: {
+        status: APPLICATION_STATUS.APPROVED,
+        koordinatorStatus: COORDINATOR_STATUS.APPROVED,
+        kompanijaStatus: COMPANY_STATUS.APPROVED,
+        [Op.or]: [
+          { studentStatus: null },
+          { studentStatus: STUDENT_STATUS.UNAVAILABLE },
+          blankStatus,
+        ],
+      },
+    }
+  );
+
+  await PrijavaNaPraksu.update(
+    {
+      studentStatus: STUDENT_STATUS.UNAVAILABLE,
+    },
+    {
+      where: {
+        [Op.or]: [
+          { studentStatus: null },
+          blankStatus,
+        ],
+      },
+    }
+  );
+}
+
 module.exports = {
   APPLICATION_STATUS,
   COORDINATOR_STATUS,
   COMPANY_STATUS,
+  STUDENT_STATUS,
   ACTIVE_APPLICATION_STATUSES,
   COMPANY_ACTIONABLE_STATUSES,
   COMPANY_BLOCKING_STATUSES,
@@ -171,6 +215,7 @@ module.exports = {
   FINAL_REJECTED_STATUSES,
   STUDENT_BLOCKING_STATUSES,
   backfillApplicationStatuses,
+  backfillStudentStatuses,
   canCompanyAct,
   canCompanyShortlist,
   isCoordinatorApproved,
