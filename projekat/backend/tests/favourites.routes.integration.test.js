@@ -21,6 +21,13 @@ let studentToken, companyToken;
 beforeAll(async () => {
   const passwordHash = await bcrypt.hash('Test@1234', 10);
 
+  // Čistimo ostavljene podatke iz prethodnog pokretanja
+  await OmiljeniOglas.destroy({ where: {} }).catch(() => {});
+  await Oglas.destroy({ where: { naziv: { [Op.like]: `${PREFIX}%` } } }).catch(() => {});
+  await Kompanija.destroy({ where: { naziv: { [Op.like]: `${PREFIX}%` } } }).catch(() => {});
+  await Student.destroy({ where: { index_number: { [Op.like]: `${PREFIX}%` } } }).catch(() => {});
+  await User.destroy({ where: { username: { [Op.like]: `${PREFIX}%` } } }).catch(() => {});
+
   companyUser = await User.create({
     ime: 'FavTest', prezime: 'Company',
     username: `${PREFIX}company`, email: `${PREFIX}company@test.com`,
@@ -58,11 +65,11 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await OmiljeniOglas.destroy({ where: { studentID: studentRec.id } }).catch(() => {});
+  await OmiljeniOglas.destroy({ where: {} }).catch(() => {});
   await Oglas.destroy({ where: { naziv: { [Op.like]: `${PREFIX}%` } } }).catch(() => {});
   await Kompanija.destroy({ where: { naziv: { [Op.like]: `${PREFIX}%` } } }).catch(() => {});
   await Student.destroy({ where: { index_number: { [Op.like]: `${PREFIX}%` } } }).catch(() => {});
-  await User.destroy({ where: { username: { [Op.like]: `${PREFIX}%` } } });
+  await User.destroy({ where: { username: { [Op.like]: `${PREFIX}%` } } }).catch(() => {});
   await sequelize.close();
 });
 
@@ -77,7 +84,7 @@ describe('GET /api/favourites', () => {
       .set('Authorization', `Bearer ${studentToken}`);
 
     expect(res.status).toBe(200);
-    expect(Array.isArray(res.body)).toBe(true);
+    expect(Array.isArray(res.body.ids)).toBe(true);
   });
 
   // Testira: kompanija ne može pristupiti omiljenim

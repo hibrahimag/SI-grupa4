@@ -48,6 +48,15 @@ let koordinatorToken;
 beforeAll(async () => {
   passwordHash = await bcrypt.hash(PASSWORD, 10);
 
+  // Čistimo ostavljene podatke iz prethodnog pokretanja
+  await PrijavaNaPraksu.destroy({ where: {}, truncate: false }).catch(() => {});
+  await Oglas.destroy({ where: { naziv: { [Op.like]: `${PREFIX}%` } } }).catch(() => {});
+  await Student.destroy({ where: { index_number: { [Op.like]: `${PREFIX}%` } } }).catch(() => {});
+  await Koordinator.destroy({ where: {} }).catch(() => {});
+  await User.destroy({ where: { username: { [Op.like]: `${PREFIX}%` } } }).catch(() => {});
+  await Odsjek.destroy({ where: { naziv: { [Op.like]: `${PREFIX}%` } } }).catch(() => {});
+  await Fakultet.destroy({ where: { naziv: { [Op.like]: `${PREFIX}%` } } }).catch(() => {});
+
   // Kreiranje fakulteta
   fakultet = await Fakultet.create({
     naziv: `${PREFIX}Elektrotehnički fakultet`,
@@ -146,9 +155,7 @@ afterAll(async () => {
     },
   }).catch(() => {});
 
-  await Koordinator.destroy({
-    where: { userID: koordinatorUser.id },
-  }).catch(() => {});
+  await Koordinator.destroy({ where: {} }).catch(() => {});
 
   await User.destroy({
     where: { username: { [Op.like]: `${PREFIX}%` } },

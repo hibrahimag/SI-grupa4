@@ -3,6 +3,7 @@
 const { Op } = require('sequelize');
 const db = require('../../infrastructure/database/models');
 const { ACTION_TYPES, logAudit } = require('./audit.service');
+const { resolveCoordinatorProfile } = require('./coordinatorProfile.service');
 const {
   sendAccountApprovedEmail,
   sendAccountRejectedEmail,
@@ -58,10 +59,7 @@ const getPrijave = async ({ status, stranica = 1, limit = 15, koordinatorUserId 
   const normalizedStatus = normalizeStatusFilter(status);
   if (normalizedStatus) where.status = normalizedStatus;
 
-  const koordinator = await db.Koordinator.findOne({
-    where: { userID: koordinatorUserId },
-    attributes: ['fakultetID'],
-  });
+  const koordinator = await resolveCoordinatorProfile(koordinatorUserId);
   if (!koordinator) throw new Error('KOORDINATOR_NOT_FOUND');
 
   const { count, rows } = await db.PrijavaNaPraksu.findAndCountAll({
@@ -97,10 +95,7 @@ const getPrijave = async ({ status, stranica = 1, limit = 15, koordinatorUserId 
 };
 
 const getPrijavaById = async (id, koordinatorUserId) => {
-  const koordinator = await db.Koordinator.findOne({
-    where: { userID: koordinatorUserId },
-    attributes: ['fakultetID'],
-  });
+  const koordinator = await resolveCoordinatorProfile(koordinatorUserId);
   if (!koordinator) throw new Error('KOORDINATOR_NOT_FOUND');
 
   const prijava = await db.PrijavaNaPraksu.findByPk(id, {
@@ -136,10 +131,7 @@ const getPrijavaById = async (id, koordinatorUserId) => {
 };
 
 const odluciOPrijavi = async (id, odluka, razlog, koordinatorUserId) => {
-  const koordinator = await db.Koordinator.findOne({
-    where: { userID: koordinatorUserId },
-    attributes: ['id', 'fakultetID'],
-  });
+  const koordinator = await resolveCoordinatorProfile(koordinatorUserId);
   if (!koordinator) throw new Error('KOORDINATOR_NOT_FOUND');
 
   if (odluka === 'odbijena' && !razlog?.trim()) {
@@ -226,10 +218,7 @@ const odluciOPrijavi = async (id, odluka, razlog, koordinatorUserId) => {
 };
 
 const getStudenti = async (koordinatorUserId, pretraga = '') => {
-  const koordinator = await db.Koordinator.findOne({
-    where: { userID: koordinatorUserId },
-    attributes: ['id', 'fakultetID'],
-  });
+  const koordinator = await resolveCoordinatorProfile(koordinatorUserId);
   if (!koordinator) throw new Error('KOORDINATOR_NOT_FOUND');
 
   const userWhere = {
@@ -288,11 +277,10 @@ const getPrakse = async (status = '', koordinatorUserId) => {
   if (!db.Praksa) return [];
   const where = {};
 
-  const koordinator = await db.Koordinator.findOne({
-    where: { userID: koordinatorUserId },
-    attributes: ['fakultetID'],
-  });
+  const koordinator = await resolveCoordinatorProfile(koordinatorUserId);
   if (!koordinator) throw new Error('KOORDINATOR_NOT_FOUND');
+
+  if (status) where.status = status.toUpperCase();
 
   return db.Praksa.findAll({
     where,
@@ -322,9 +310,7 @@ const getPrakse = async (status = '', koordinatorUserId) => {
 };
 
 const approveStudent = async (studentUserId, koordinatorUserId) => {
-  const koordinator = await db.Koordinator.findOne({
-    where: { userID: koordinatorUserId },
-  });
+  const koordinator = await resolveCoordinatorProfile(koordinatorUserId);
   if (!koordinator) throw new Error('KOORDINATOR_NOT_FOUND');
 
   const student = await db.Student.findOne({
@@ -350,9 +336,7 @@ const approveStudent = async (studentUserId, koordinatorUserId) => {
 const rejectStudent = async (studentUserId, razlog, koordinatorUserId) => {
   if (!razlog?.trim()) throw new Error('RAZLOG_REQUIRED');
 
-  const koordinator = await db.Koordinator.findOne({
-    where: { userID: koordinatorUserId },
-  });
+  const koordinator = await resolveCoordinatorProfile(koordinatorUserId);
   if (!koordinator) throw new Error('KOORDINATOR_NOT_FOUND');
 
   const student = await db.Student.findOne({

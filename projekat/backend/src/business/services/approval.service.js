@@ -1,8 +1,9 @@
 'use strict';
 
-const { User, Koordinator, Student  } = require('../../infrastructure/database/models');
+const { User, Student } = require('../../infrastructure/database/models');
 const { sendAccountApprovedEmail, sendAccountRejectedEmail } = require('./email.service');
 const { ACTION_TYPES, logAudit } = require('./audit.service');
+const { resolveCoordinatorProfile } = require('./coordinatorProfile.service');
 
 const ALLOWED_ASSIGN_ROLES = ['STUDENT', 'COMPANY', 'COORDINATOR'];
 const OVERDUE_HOURS = 48;
@@ -160,10 +161,7 @@ async function rejectUserRequest(id, rejectionReason, actorId) {
 }
 
 async function getStudentApprovalRequestsForKoordinator(koordinatorUserId) {
-  const koordinator = await Koordinator.findOne({
-    where: { userID: koordinatorUserId },
-    attributes: ['fakultetID'],
-  });
+  const koordinator = await resolveCoordinatorProfile(koordinatorUserId);
   if (!koordinator) {
     const err = new Error('Koordinatorski profil nije pronađen.');
     err.status = 404;
