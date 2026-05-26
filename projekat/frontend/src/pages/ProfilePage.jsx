@@ -354,15 +354,7 @@ function NotificationPreferencesSection() {
     );
   }
 
-  if (!preferences) {
-    if (error) return (
-      <div className="pf-card">
-        <h2 className="pf-section-title">Postavke notifikacija</h2>
-        <p className="pf-docs-msg pf-docs-msg--error">{error}</p>
-      </div>
-    );
-    return null;
-  }
+  if (!preferences) return null;
 
   return (
     <div className="pf-card">

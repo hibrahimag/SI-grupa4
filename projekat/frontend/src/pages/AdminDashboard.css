@@ -502,63 +502,6 @@
 .ad-status--pending     { background: #fef0dd; color: #e07b1a; }
 .ad-status--deactivated { background: #f0f5fb; color: #9aabbc; }
 
-.ad-audit-type {
-  display: inline-flex;
-  align-items: center;
-  min-height: 26px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 0.72rem;
-  font-weight: 800;
-  line-height: 1.1;
-  color: #0d1f3c;
-  background: #eef5ff;
-  border: 1px solid #d9e9fb;
-  white-space: nowrap;
-}
-
-.ad-audit-type--user-registered {
-  background: #e0f7ef;
-  border-color: #b8ead8;
-  color: #0b7d58;
-}
-
-.ad-audit-type--application-status-changed {
-  background: #fef0dd;
-  border-color: #f7d6a7;
-  color: #b85f09;
-}
-
-.ad-audit-type--user-deleted {
-  background: #fde8e8;
-  border-color: #f4bbbb;
-  color: #b42318;
-}
-
-.ad-audit-type--listing-updated {
-  background: #e6f0ff;
-  border-color: #c7dcff;
-  color: #1a5fb4;
-}
-
-.ad-audit-type--internship-withdrawn {
-  background: #f1e9ff;
-  border-color: #d9c7ff;
-  color: #6741c7;
-}
-
-.ad-audit-summary {
-  max-width: 360px;
-  color: #3a5a7a;
-  font-size: 0.82rem;
-  line-height: 1.35;
-  white-space: normal;
-}
-
-.ad-audit-summary--mobile {
-  margin-top: 8px;
-}
-
 /* Buttons */
 .ad-btn {
   padding: 7px 16px;
@@ -959,71 +902,6 @@
   padding: 14px 22px 22px;
 }
 
-.ad-audit-modal {
-  width: min(820px, 100%);
-}
-
-.ad-audit-modal-header {
-  padding: 24px 56px 16px 22px;
-  border-bottom: 1px solid #e8f1fb;
-}
-
-.ad-audit-modal-header .ad-section-title {
-  margin: 12px 0 4px;
-}
-
-.ad-audit-modal-time {
-  color: #7a9ab8;
-  font-size: 0.82rem;
-  font-weight: 600;
-}
-
-.ad-audit-meta-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-  margin-bottom: 18px;
-}
-
-.ad-audit-meta-grid > div {
-  background: #f8fbff;
-  border: 1px solid #e0edf9;
-  border-radius: 8px;
-  padding: 10px 12px;
-  min-width: 0;
-}
-
-.ad-audit-meta-grid span,
-.ad-audit-detail-row span {
-  display: block;
-  color: #7a9ab8;
-  font-size: 0.72rem;
-  font-weight: 800;
-  margin-bottom: 4px;
-}
-
-.ad-audit-meta-grid strong,
-.ad-audit-detail-row strong {
-  display: block;
-  color: #0d1f3c;
-  font-size: 0.86rem;
-  line-height: 1.35;
-  overflow-wrap: anywhere;
-}
-
-.ad-audit-detail-list {
-  display: grid;
-  gap: 8px;
-}
-
-.ad-audit-detail-row {
-  display: grid;
-  grid-template-columns: minmax(140px, 0.35fr) minmax(0, 1fr);
-  gap: 12px;
-  padding: 12px 0;
-  border-top: 1px solid #edf4fb;
-}
-
 .dark .ad-btn--neutral {
   background: #1e2d40;
   color: #cdd8e8;
@@ -1036,28 +914,6 @@
 .dark .ad-modal {
   background: #111827;
   border-color: #1e2d40;
-}
-
-.dark .ad-audit-summary {
-  color: #9fb5cc;
-}
-
-.dark .ad-audit-modal-header {
-  border-color: #1e2d40;
-}
-
-.dark .ad-audit-meta-grid > div {
-  background: #161f2e;
-  border-color: #1e2d40;
-}
-
-.dark .ad-audit-meta-grid strong,
-.dark .ad-audit-detail-row strong {
-  color: #e2e8f0;
-}
-
-.dark .ad-audit-detail-row {
-  border-color: #1a2535;
 }
 
 .dark .ad-modal-close {
@@ -1312,15 +1168,12 @@
   .ad-filter-btn { padding: 5px 10px; font-size: 0.72rem; }
   .ad-modal-backdrop { align-items: flex-end; padding: 0; }
   .ad-modal { border-radius: 14px 14px 0 0; max-height: 92vh; }
-  .ad-audit-meta-grid { grid-template-columns: 1fr; }
 }
 .ad-mobile-cards { display: none; }
 
 @media (max-width: 768px) {
   .ad-table-desktop { display: none; }
   .ad-mobile-cards { display: block; }
-  .ad-audit-meta-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .ad-audit-detail-row { grid-template-columns: 1fr; gap: 4px; }
 
   .ad-mobile-card {
     padding: 14px 18px;

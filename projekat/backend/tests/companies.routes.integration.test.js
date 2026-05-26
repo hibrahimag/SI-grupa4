@@ -19,10 +19,6 @@ let inactiveCompanyUser, inactiveCompanyRec;
 beforeAll(async () => {
   const passwordHash = await bcrypt.hash('Test@1234', 10);
 
-  // Čistimo ostavljene podatke iz prethodnog pokretanja
-  await Kompanija.destroy({ where: { naziv: { [Op.like]: `${PREFIX}%` } } }).catch(() => {});
-  await User.destroy({ where: { username: { [Op.like]: `${PREFIX}%` } } }).catch(() => {});
-
   studentUser = await User.create({
     ime: 'CompTest', prezime: 'Student',
     username: `${PREFIX}student`, email: `${PREFIX}student@test.com`,
