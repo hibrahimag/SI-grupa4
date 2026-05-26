@@ -28,22 +28,6 @@ jest.mock('../../src/infrastructure/database/models', () => ({
 jest.mock('../../src/business/services/email.service', () => ({
   sendAccountApprovedEmail: jest.fn().mockResolvedValue(undefined),
   sendAccountRejectedEmail: jest.fn().mockResolvedValue(undefined),
-  sendPrijavaStatusEmail: jest.fn().mockResolvedValue(undefined),
-}));
-
-jest.mock('../../src/business/services/audit.service', () => ({
-  logAudit: jest.fn().mockResolvedValue(null),
-  ACTION_TYPES: { APPLICATION_STATUS_CHANGED: 'APPLICATION_STATUS_CHANGED' },
-}));
-
-jest.mock('../../src/business/services/notifications.service', () => ({
-  createNotification: jest.fn().mockResolvedValue(undefined),
-}));
-
-jest.mock('../../src/business/services/notificationPreferences.service', () => ({
-  getOrCreatePreferences: jest.fn().mockResolvedValue({}),
-  canSendInApp: jest.fn().mockReturnValue(false),
-  canSendEmail: jest.fn().mockReturnValue(false),
 }));
 
 const db = require('../../src/infrastructure/database/models');
@@ -95,14 +79,13 @@ function makeMockStudent(overrides = {}) {
 }
 
 function makeMockPrijava(overrides = {}) {
-  const prijava = {
+  return {
     id: 100,
     status: 'PODNESENA',
     Student: makeMockStudent(),
+    update: jest.fn().mockResolvedValue(undefined),
     ...overrides,
   };
-  prijava.update = jest.fn(async (data) => Object.assign(prijava, data));
-  return prijava;
 }
 
 beforeEach(() => jest.clearAllMocks());
@@ -111,23 +94,23 @@ beforeEach(() => jest.clearAllMocks());
 describe('getDashboardStats', () => {
   test('vraća ispravne statistike', async () => {
     db.PrijavaNaPraksu.count
-      .mockResolvedValueOnce(10)  // ukupno
-      .mockResolvedValueOnce(3)   // podnesene (CEKA_KOORDINATORA)
-      .mockResolvedValueOnce(2)   // proslijedene (CEKA_KOMPANIJU + U_RAZMATRANJU)
-      .mockResolvedValueOnce(4)   // odobrene (ODOBRENA)
-      .mockResolvedValueOnce(1);  // odbijene (FINAL_REJECTED_STATUSES)
-    db.Praksa.count.mockResolvedValueOnce(5);
+      .mockResolvedValueOnce(10)
+      .mockResolvedValueOnce(3)
+      .mockResolvedValueOnce(5)
+      .mockResolvedValueOnce(2);
+    db.Praksa.count
+      .mockResolvedValueOnce(4)
+      .mockResolvedValueOnce(1);
 
     const result = await getDashboardStats();
 
     expect(result).toEqual({
       ukupno: 10,
       podnesene: 3,
-      proslijedene: 2,
-      odobrene: 4,
-      odbijene: 1,
-      aktivnePrakse: 5,
-      zavrsene: 0,
+      odobrene: 5,
+      odbijene: 2,
+      aktivnePrakse: 4,
+      zavrsene: 1,
     });
   });
 
@@ -137,9 +120,10 @@ describe('getDashboardStats', () => {
 
     await getDashboardStats();
 
-    expect(db.PrijavaNaPraksu.count).toHaveBeenCalledTimes(5);
-    expect(db.PrijavaNaPraksu.count).toHaveBeenCalledWith({ where: { status: 'CEKA_KOORDINATORA' } });
+    expect(db.PrijavaNaPraksu.count).toHaveBeenCalledTimes(4);
+    expect(db.PrijavaNaPraksu.count).toHaveBeenCalledWith({ where: { status: 'PODNESENA' } });
     expect(db.PrijavaNaPraksu.count).toHaveBeenCalledWith({ where: { status: 'ODOBRENA' } });
+    expect(db.PrijavaNaPraksu.count).toHaveBeenCalledWith({ where: { status: 'ODBIJENA' } });
   });
 
   test('propagira grešku iz baze', async () => {
@@ -169,17 +153,17 @@ describe('getPrijave', () => {
     expect(result.prijave).toHaveLength(15);
   });
 
-  // Testira: funkcija normalizuje legacy status PODNESENA u CEKA_KOORDINATORA
+  // Testira: funkcija prosljeđuje status filter u where klauzulu
   // Ulaz: { status: 'PODNESENA', stranica: 1, limit: 15, koordinatorUserId: 1 }
-  // Očekivani izlaz: findAndCountAll pozvan s where: { status: 'CEKA_KOORDINATORA' }
-  test('normalizuje legacy status PODNESENA u CEKA_KOORDINATORA', async () => {
+  // Očekivani izlaz: findAndCountAll pozvan s where: { status: 'PODNESENA' }
+  test('prosljeđuje status filter u where klauzulu', async () => {
     db.Koordinator.findOne.mockResolvedValue(makeMockKoordinator());
     db.PrijavaNaPraksu.findAndCountAll.mockResolvedValue({ count: 0, rows: [] });
 
     await getPrijave({ status: 'PODNESENA', stranica: 1, limit: 15, koordinatorUserId: 1 });
 
     expect(db.PrijavaNaPraksu.findAndCountAll).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { status: 'CEKA_KOORDINATORA' } })
+      expect.objectContaining({ where: { status: 'PODNESENA' } })
     );
   });
 
@@ -276,26 +260,15 @@ describe('odluciOPrijavi', () => {
     db.Koordinator.findOne.mockResolvedValue(makeMockKoordinator());
   });
 
-  test('odobrava prijavu i postavlja status CEKA_KOMPANIJU', async () => {
+  test('odobrava prijavu i postavlja status ODOBRENA', async () => {
     const prijava = makeMockPrijava();
     db.PrijavaNaPraksu.findByPk.mockResolvedValue(prijava);
 
     const result = await odluciOPrijavi(100, 'odobrena', '', 1);
 
-    expect(result).toEqual({
-      id: 100,
-      status: 'CEKA_KOMPANIJU',
-      koordinatorStatus: 'ODOBRENO',
-      kompanijaStatus: 'NA_CEKANJU',
-    });
+    expect(result).toEqual({ id: 100, status: 'ODOBRENA' });
     expect(prijava.update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        status: 'CEKA_KOMPANIJU',
-        koordinatorStatus: 'ODOBRENO',
-        kompanijaStatus: 'NA_CEKANJU',
-        razlogOdbijanja: null,
-        koordinatorID: 1,
-      })
+      expect.objectContaining({ status: 'ODOBRENA', razlogOdbijanja: null, koordinatorID: 1 })
     );
   });
 
@@ -305,15 +278,10 @@ describe('odluciOPrijavi', () => {
 
     const result = await odluciOPrijavi(100, 'odbijena', 'Nepotpuna dokumentacija', 1);
 
-    expect(result).toEqual({
-      id: 100,
-      status: 'ODBIJENA_KOORDINATOR',
-      koordinatorStatus: 'ODBIJENO',
-      kompanijaStatus: 'NIJE_DOSTUPNO',
-    });
+    expect(result).toEqual({ id: 100, status: 'ODBIJENA' });
     expect(prijava.update).toHaveBeenCalledWith(
       expect.objectContaining({
-        status: 'ODBIJENA_KOORDINATOR',
+        status: 'ODBIJENA',
         razlogOdbijanja: 'Nepotpuna dokumentacija',
         koordinatorID: 1,
       })
@@ -345,21 +313,13 @@ describe('odluciOPrijavi', () => {
     await expect(odluciOPrijavi(100, 'odobrena', '', 1)).rejects.toThrow('INVALID_STATUS');
   });
 
-  // CEKA_KOMPANIJU nije na čekanju koordinatora — koordinator ne može ponovo djelovati
-  test('baca INVALID_STATUS za prijavu sa statusom CEKA_KOMPANIJU', async () => {
-    db.PrijavaNaPraksu.findByPk.mockResolvedValue(makeMockPrijava({ status: 'CEKA_KOMPANIJU' }));
-
-    await expect(odluciOPrijavi(100, 'odobrena', '', 1)).rejects.toThrow('INVALID_STATUS');
-  });
-
-  // CEKA_KOORDINATORA je noviji naziv za isti pending status (nasuprot legacy PODNESENA)
-  test('prihvata prijavu sa statusom CEKA_KOORDINATORA', async () => {
-    const prijava = makeMockPrijava({ status: 'CEKA_KOORDINATORA' });
+  test('prihvata prijavu sa statusom U_RAZMATRANJU', async () => {
+    const prijava = makeMockPrijava({ status: 'U_RAZMATRANJU' });
     db.PrijavaNaPraksu.findByPk.mockResolvedValue(prijava);
 
     const result = await odluciOPrijavi(100, 'odobrena', '', 1);
 
-    expect(result.status).toBe('CEKA_KOMPANIJU');
+    expect(result.status).toBe('ODOBRENA');
   });
 });
 

@@ -8,7 +8,7 @@ const bcrypt = require('bcrypt');
 const { Op } = require('sequelize');
 const app = require('../src/app');
 const {
-  User, Student, Kompanija, Oglas, PrijavaNaPraksu, Fakultet, SystemSetting, sequelize,
+  User, Student, Kompanija, Oglas, PrijavaNaPraksu, Fakultet, sequelize,
 } = require('../src/infrastructure/database/models');
 
 const PREFIX = 'test_app_int_';
@@ -20,15 +20,6 @@ let companyUser, companyRec, oglas;
 let studentToken, otherStudentToken;
 
 beforeAll(async () => {
-  // Čistimo ostavljene podatke iz prethodnog pokretanja
-  await PrijavaNaPraksu.destroy({ where: {}, truncate: false }).catch(() => {});
-  await Oglas.destroy({ where: { naziv: { [Op.like]: `${PREFIX}%` } } }).catch(() => {});
-  await Kompanija.destroy({ where: { naziv: { [Op.like]: `${PREFIX}%` } } }).catch(() => {});
-  await Student.destroy({ where: { index_number: { [Op.like]: `${PREFIX}%` } } }).catch(() => {});
-  await User.destroy({ where: { username: { [Op.like]: `${PREFIX}%` } } }).catch(() => {});
-  await Fakultet.destroy({ where: { naziv: { [Op.like]: `${PREFIX}%` } } }).catch(() => {});
-  await SystemSetting.destroy({ where: { key: 'max_active_applications' } }).catch(() => {});
-
   const passwordHash = await bcrypt.hash('Test@1234', 10);
 
   fakultet = await Fakultet.create({ naziv: `${PREFIX}ETF`, email: `${PREFIX}etf@test.com` });
@@ -78,13 +69,12 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await PrijavaNaPraksu.destroy({ where: {}, truncate: false }).catch(() => {});
+  await PrijavaNaPraksu.destroy({ where: { studentID: studentRec.id } }).catch(() => {});
   await Oglas.destroy({ where: { naziv: { [Op.like]: `${PREFIX}%` } } }).catch(() => {});
   await Kompanija.destroy({ where: { naziv: { [Op.like]: `${PREFIX}%` } } }).catch(() => {});
   await Student.destroy({ where: { index_number: { [Op.like]: `${PREFIX}%` } } }).catch(() => {});
-  await User.destroy({ where: { username: { [Op.like]: `${PREFIX}%` } } }).catch(() => {});
+  await User.destroy({ where: { username: { [Op.like]: `${PREFIX}%` } } });
   await Fakultet.destroy({ where: { naziv: { [Op.like]: `${PREFIX}%` } } }).catch(() => {});
-  await SystemSetting.destroy({ where: { key: 'max_active_applications' } }).catch(() => {});
   await sequelize.close();
 });
 
@@ -138,7 +128,7 @@ describe('POST /api/applications', () => {
     expect(res.body.application).toMatchObject({
       oglasID: oglas.id,
       studentID: studentRec.id,
-      status: 'CEKA_KOORDINATORA',
+      status: 'PODNESENA',
     });
   });
 
@@ -152,7 +142,7 @@ describe('POST /api/applications', () => {
       .send({ oglasID: oglas.id });
 
     expect(res.status).toBe(409);
-    expect(res.body.message).toMatch(/prijavili na ovaj oglas/i);
+    expect(res.body.message).toMatch(/već ste se prijavili/i);
   });
 
   // Testira: prijava na nepostojeći oglas vraća 404

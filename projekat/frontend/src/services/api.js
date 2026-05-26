@@ -66,12 +66,36 @@ export async function markAllNotificationsRead() {
  
 
 export async function getNotificationPreferences() {
-  return apiRequest('/notification-preferences');
+  const token = sessionStorage.getItem('token');
+
+  const response = await fetch('/api/notification-preferences', {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Greška pri učitavanju postavki notifikacija.');
+  }
+
+  return response.json();
 }
 
 export async function updateNotificationPreferences(data) {
-  return apiRequest('/notification-preferences', {
+  const token = sessionStorage.getItem('token');
+
+  const response = await fetch('/api/notification-preferences', {
     method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
     body: JSON.stringify(data),
   });
+
+  if (!response.ok) {
+    throw new Error('Greška pri spremanju postavki notifikacija.');
+  }
+
+  return response.json();
 }

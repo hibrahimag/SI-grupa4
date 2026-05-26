@@ -146,12 +146,13 @@ describe('GET /api/koordinator/dashboard', () => {
   // Očekivani izlaz: HTTP 200, objekat sa ukupno, podnesene, odobrene, odbijene, aktivnePrakse, zavrsene
   test('200 — vraća dashboard statistike', async () => {
     db.PrijavaNaPraksu.count
-      .mockResolvedValueOnce(10)  // ukupno
-      .mockResolvedValueOnce(3)   // podnesene (CEKA_KOORDINATORA)
-      .mockResolvedValueOnce(2)   // proslijedene (CEKA_KOMPANIJU + U_RAZMATRANJU)
-      .mockResolvedValueOnce(5)   // odobrene (ODOBRENA)
-      .mockResolvedValueOnce(1);  // odbijene (FINAL_REJECTED_STATUSES)
-    db.Praksa.count.mockResolvedValueOnce(4);
+      .mockResolvedValueOnce(10)
+      .mockResolvedValueOnce(3)
+      .mockResolvedValueOnce(5)
+      .mockResolvedValueOnce(2);
+    db.Praksa.count
+      .mockResolvedValueOnce(4)
+      .mockResolvedValueOnce(1);
 
     const res = await request(app).get('/api/koordinator/dashboard');
 
@@ -160,11 +161,10 @@ describe('GET /api/koordinator/dashboard', () => {
     expect(res.body.data).toMatchObject({
       ukupno: 10,
       podnesene: 3,
-      proslijedene: 2,
       odobrene: 5,
-      odbijene: 1,
+      odbijene: 2,
       aktivnePrakse: 4,
-      zavrsene: 0,
+      zavrsene: 1,
     });
   });
 
@@ -204,7 +204,7 @@ describe('GET /api/koordinator/prijave', () => {
   // Testira: endpoint prosljeđuje ?status filter u DB upit
   // Ulaz: GET /api/koordinator/prijave?status=PODNESENA
   // Očekivani izlaz: HTTP 200, findAndCountAll pozvan s where: { status: 'PODNESENA' }
-  test('200 — normalizuje ?status=PODNESENA u CEKA_KOORDINATORA', async () => {
+  test('200 — filtrira po ?status=PODNESENA', async () => {
     db.Koordinator.findOne.mockResolvedValue(makeMockKoordinator());
     db.PrijavaNaPraksu.findAndCountAll.mockResolvedValue({ count: 0, rows: [] });
 
@@ -212,7 +212,7 @@ describe('GET /api/koordinator/prijave', () => {
 
     expect(res.status).toBe(200);
     expect(db.PrijavaNaPraksu.findAndCountAll).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { status: 'CEKA_KOORDINATORA' } })
+      expect.objectContaining({ where: { status: 'PODNESENA' } })
     );
   });
 
@@ -315,13 +315,13 @@ describe('PATCH /api/koordinator/prijave/:id/odluka', () => {
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
     expect(mockPrijava.update).toHaveBeenCalledWith(
-      expect.objectContaining({ status: 'CEKA_KOMPANIJU', koordinatorStatus: 'ODOBRENO' })
+      expect.objectContaining({ status: 'ODOBRENA' })
     );
   });
 
   // Testira: koordinator uspješno odbija prijavu s razlogom
   // Ulaz: PATCH /api/koordinator/prijave/100/odluka, body { odluka: 'odbijena', razlog: 'Nepotpuna dokumentacija' }
-  // Očekivani izlaz: HTTP 200, update pozvan s ODBIJENA_KOORDINATOR
+  // Očekivani izlaz: HTTP 200, data.status = 'ODBIJENA'
   test('200 — uspješno odbija prijavu s razlogom', async () => {
     const mockPrijava = makeMockPrijava();
     db.Koordinator.findOne.mockResolvedValue(makeMockKoordinator());
@@ -334,7 +334,7 @@ describe('PATCH /api/koordinator/prijave/:id/odluka', () => {
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
     expect(mockPrijava.update).toHaveBeenCalledWith(
-      expect.objectContaining({ status: 'ODBIJENA_KOORDINATOR', razlogOdbijanja: 'Nepotpuna dokumentacija' })
+      expect.objectContaining({ status: 'ODBIJENA', razlogOdbijanja: 'Nepotpuna dokumentacija' })
     );
   });
 
