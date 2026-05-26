@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { getCompanyProfile } from '../services/companyProfile.service';
-import { getCompanyPractices } from '../services/prakseService';
+import { downloadPracticeContract, generatePracticeContract, getCompanyPractices } from '../services/prakseService';
 import { checkCompanyDeactivation, deactivateCompanyAccount, deleteMyCompanyAccount } from '../services/userService';
 import './KompanijaDashboard.css';
 import { 
@@ -878,6 +878,9 @@ function PracticesShell() {
   const [prakse, setPrakse] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [contract, setContract] = useState(null);
+  const [contractError, setContractError] = useState('');
+  const [openingContractId, setOpeningContractId] = useState(null);
 
   useEffect(() => {
     let active = true;
@@ -895,6 +898,19 @@ function PracticesShell() {
       });
     return () => { active = false; };
   }, [filter]);
+
+  async function openContract(praksa) {
+    setOpeningContractId(praksa.id);
+    setContractError('');
+    try {
+      const generated = await generatePracticeContract(praksa.id);
+      setContract(generated);
+    } catch (err) {
+      setContractError(err.message || 'Greška pri generisanju ugovora.');
+    } finally {
+      setOpeningContractId(null);
+    }
+  }
 
   return (
     <div className="cd-content">
@@ -916,6 +932,7 @@ function PracticesShell() {
           ))}
         </div>
         {error && <div className="cd-inline-message cd-inline-message--error">{error}</div>}
+        {contractError && <div className="cd-inline-message cd-inline-message--error">{contractError}</div>}
         {loading && <p className="cd-candidate-muted">Učitavanje praksi...</p>}
         {!loading && !error && prakse.length === 0 && (
           <div className="cd-empty-state cd-empty-state--inline">
@@ -933,6 +950,7 @@ function PracticesShell() {
                   <th>Datum završetka</th>
                   <th>Status prakse</th>
                   <th>Odluka studenta</th>
+                  <th>Ugovor</th>
                 </tr>
               </thead>
               <tbody>
@@ -952,6 +970,16 @@ function PracticesShell() {
                     <td>{formatDate(praksa.datumKraja)}</td>
                     <td>{practiceLifecycleBadge(praksa.lifecycleStatus)}</td>
                     <td>{studentDecisionBadge(praksa.studentStatus)}</td>
+                    <td>
+                      <button
+                        type="button"
+                        className="cd-candidate-doc-btn"
+                        disabled={openingContractId === praksa.id}
+                        onClick={() => openContract(praksa)}
+                      >
+                        {openingContractId === praksa.id ? 'Generisanje...' : 'Ugovor'}
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -959,6 +987,25 @@ function PracticesShell() {
           </div>
         )}
       </section>
+      {contract && (
+        <div className="cd-modal-overlay" role="dialog" aria-modal="true" onClick={() => setContract(null)}>
+          <div className="cd-modal-sheet cd-contract-modal" onClick={(event) => event.stopPropagation()}>
+            <button type="button" className="cd-modal-close" onClick={() => setContract(null)} aria-label="Zatvori">
+              &times;
+            </button>
+            <h2 className="cd-contract-title">Ugovor o praksi</h2>
+            <pre className="cd-contract-content">{contract.sadrzaj}</pre>
+            <div className="cd-contract-actions">
+              <button type="button" className="cd-btn cd-btn--secondary" onClick={() => setContract(null)}>
+                Zatvori
+              </button>
+              <button type="button" className="cd-btn cd-btn--primary" onClick={() => downloadPracticeContract(contract)}>
+                Preuzmi ugovor
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

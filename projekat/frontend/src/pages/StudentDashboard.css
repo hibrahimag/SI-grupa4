@@ -2931,6 +2931,40 @@
   color: var(--color-danger);
 }
 
+.sd-practice-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sd-practice-contract-btn {
+  padding: 8px 14px;
+  white-space: nowrap;
+}
+
+.sd-contract-modal {
+  max-width: 720px;
+}
+
+.sd-contract-content {
+  margin: 0;
+  padding: 20px;
+  border: 1px solid var(--color-border, #e0edf9);
+  border-radius: 12px;
+  background: var(--color-bg, #f0f6ff);
+  color: var(--color-text, #0d1f3c);
+  font-family: inherit;
+  font-size: 0.88rem;
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+
+.sd-contract-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
 .sd-omiljeni-toggle {
   display: inline-flex;
   gap: 4px;
@@ -3385,6 +3419,7 @@
 .sd-page.dark .sd-practice-tab,
 .sd-page.dark .sd-confirmed-practice-card { background: #111827; border-color: #1e2d40; }
 .sd-page.dark .sd-practice-tab.active { background: rgba(96,165,250,0.12); color: #60a5fa; }
+.sd-page.dark .sd-contract-content { background: #161f2e; border-color: #1e2d40; color: #cbd5e1; }
 
 .sd-page.dark .sd-application-stage-step {
   color: #94a3b8;

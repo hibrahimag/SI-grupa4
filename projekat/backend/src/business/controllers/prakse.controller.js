@@ -35,8 +35,18 @@ async function getCoordinator(req, res) {
   }
 }
 
+async function generateContract(req, res) {
+  try {
+    const result = await prakseService.getPracticeContract(req.user.id, req.user.role, req.params.id);
+    return res.status(result.created ? 201 : 200).json(result);
+  } catch (error) {
+    return handleError(res, error);
+  }
+}
+
 module.exports = {
   getMine,
   getCompany,
   getCoordinator,
+  generateContract,
 };

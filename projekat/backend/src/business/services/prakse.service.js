@@ -9,6 +9,7 @@ const {
   Oglas,
   PrijavaNaPraksu,
   Praksa,
+  Ugovor,
 } = require('../../infrastructure/database/models');
 const { resolveCoordinatorProfile } = require('./coordinatorProfile.service');
 const {
@@ -215,6 +216,53 @@ function mapPractice(praksa) {
   };
 }
 
+function displayContractDate(value) {
+  const date = dateOnly(value);
+  if (!date) return '-';
+  const [year, month, day] = date.split('-');
+  return `${day}.${month}.${year}.`;
+}
+
+function contractNumber(ugovor, praksa) {
+  return `UG-${ugovor.id || praksa.id}`;
+}
+
+function renderContract(praksa, ugovor) {
+  const studentName = [praksa.student?.ime, praksa.student?.prezime].filter(Boolean).join(' ') || '-';
+  const companyName = praksa.kompanija?.naziv || '-';
+  const practiceName = praksa.oglas?.naziv || 'stručna praksa';
+
+  return [
+    'UGOVOR O OBAVLJANJU STRUČNE PRAKSE',
+    '',
+    `Broj ugovora: ${contractNumber(ugovor, praksa)}`,
+    `Datum kreiranja: ${displayContractDate(ugovor.datumKreiranja)}`,
+    '',
+    '1. UGOVORNE STRANE',
+    `Kompanija: ${companyName}`,
+    `Student: ${studentName}`,
+    `Broj indeksa: ${praksa.student?.index_number || '-'}`,
+    '',
+    '2. PREDMET UGOVORA',
+    `Predmet ovog ugovora je obavljanje stručne prakse na poziciji "${practiceName}" kod kompanije ${companyName}.`,
+    '',
+    '3. TRAJANJE PRAKSE',
+    `Praksa se obavlja u periodu od ${displayContractDate(praksa.datumPocetka)} do ${displayContractDate(praksa.datumKraja)}.`,
+    '',
+    '4. OBAVEZE KOMPANIJE',
+    'Kompanija se obavezuje studentu omogućiti obavljanje dogovorene prakse, stručno usmjeravanje i uslove potrebne za rad.',
+    '',
+    '5. OBAVEZE STUDENTA',
+    'Student se obavezuje uredno izvršavati zadatke prakse, poštovati pravila kompanije i odgovorno postupati s povjerenim informacijama.',
+    '',
+    '6. ZAVRŠNE ODREDBE',
+    'Ovaj digitalno generisani ugovor dostupan je studentu i kompaniji putem sistema PraksaHub.',
+    '',
+    'Potpis studenta: ____________________',
+    'Potpis ovlaštene osobe kompanije: ____________________',
+  ].join('\n');
+}
+
 async function loadPractices({ practiceWhere = {}, studentWhere = {}, oglasWhere = {}, filter = 'all' }) {
   const lifecycleFilter = normalizePracticeFilter(filter);
   const rows = await Praksa.findAll({
@@ -296,6 +344,59 @@ async function getCompanyPractices(userId, filter = 'all') {
   return { prakse };
 }
 
+async function getCompanyPracticeById(userId, practiceId) {
+  const kompanija = await resolveCompany(userId);
+  const prakse = await loadPractices({
+    practiceWhere: { id: practiceId },
+    oglasWhere: { kompanijaID: kompanija.id },
+    filter: 'all',
+  });
+  return prakse[0] || null;
+}
+
+async function getPracticeContract(userId, role, practiceId) {
+  const parsedPracticeId = Number(practiceId);
+  if (!Number.isInteger(parsedPracticeId) || parsedPracticeId <= 0) {
+    throw makeError('Praksa nije pronađena.', 404);
+  }
+
+  let praksa;
+  if (role === 'STUDENT') {
+    praksa = await getStudentPracticeById(userId, parsedPracticeId);
+  } else if (role === 'COMPANY') {
+    praksa = await getCompanyPracticeById(userId, parsedPracticeId);
+  } else {
+    throw makeError('Nemate dozvolu za pristup ovom resursu.', 403);
+  }
+
+  if (!praksa) {
+    throw makeError('Praksa nije pronađena.', 404);
+  }
+
+  let ugovor = await Ugovor.findOne({ where: { praksaID: praksa.id } });
+  let created = false;
+  if (!ugovor) {
+    ugovor = await Ugovor.create({
+      praksaID: praksa.id,
+      status: 'KREIRAN',
+      dokumentUrl: null,
+    });
+    created = true;
+  }
+
+  return {
+    created,
+    ugovor: {
+      id: ugovor.id,
+      praksaID: ugovor.praksaID,
+      status: ugovor.status,
+      datumKreiranja: dateOnly(ugovor.datumKreiranja),
+      broj: contractNumber(ugovor, praksa),
+    },
+    sadrzaj: renderContract(praksa, ugovor),
+  };
+}
+
 async function getCoordinatorPractices(userId, filter = 'all') {
   const koordinator = await resolveCoordinatorProfile(userId);
   if (!koordinator) throw new Error('KOORDINATOR_NOT_FOUND');
@@ -338,6 +439,8 @@ module.exports = {
   getStudentPractices,
   getStudentPracticeById,
   getCompanyPractices,
+  getCompanyPracticeById,
+  getPracticeContract,
   getCoordinatorPractices,
   getCoordinatorPracticeSummary,
   backfillAcceptedPractices,

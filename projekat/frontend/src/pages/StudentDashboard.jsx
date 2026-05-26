@@ -13,7 +13,7 @@ import {
 } from '../services/applicationsService';
 import { getMyDocuments, attachDocumentsToOglas, getNotifications, markNotificationRead, markAllNotificationsRead } from '../services/api';
 import { getFavourites, addFavourite, removeFavourite } from '../services/favouritesService';
-import { getMyPractices } from '../services/prakseService';
+import { downloadPracticeContract, generatePracticeContract, getMyPractices } from '../services/prakseService';
 import {
   formatDate, relativeDate, trajanjeLabel, mjestLabel, deadlineInfo,
 } from '../data/mockPrakse';
@@ -1065,6 +1065,23 @@ function MyApplicationsPanel({
 }
 
 function MyPracticesPanel({ practices, loading, error, filter, onFilterChange }) {
+  const [contract, setContract] = useState(null);
+  const [contractError, setContractError] = useState('');
+  const [openingContractId, setOpeningContractId] = useState(null);
+
+  async function openContract(praksa) {
+    setOpeningContractId(praksa.id);
+    setContractError('');
+    try {
+      const generated = await generatePracticeContract(praksa.id);
+      setContract(generated);
+    } catch (err) {
+      setContractError(err.message || 'Greška pri generisanju ugovora.');
+    } finally {
+      setOpeningContractId(null);
+    }
+  }
+
   return (
     <div className="sd-apps-panel">
       <div className="sd-practices-header">
@@ -1088,6 +1105,7 @@ function MyPracticesPanel({ practices, loading, error, filter, onFilterChange })
 
       {loading && <p className="sd-results-info">Učitavanje praksi...</p>}
       {error && <p className="sd-results-info" style={{ color: 'var(--color-danger)' }}>{error}</p>}
+      {contractError && <p className="sd-results-info" style={{ color: 'var(--color-danger)' }}>{contractError}</p>}
       {!loading && !error && practices.length === 0 && (
         <div className="sd-apps-filter-empty"><p>Nema praksi za odabrani filter.</p></div>
       )}
@@ -1102,11 +1120,44 @@ function MyPracticesPanel({ practices, loading, error, filter, onFilterChange })
                   {formatDate(praksa.datumPocetka)} - {formatDate(praksa.datumKraja)}
                 </p>
               </div>
-              <span className={`sd-practice-badge sd-practice-badge--${practiceLifecycleTone(praksa.lifecycleStatus)}`}>
-                {practiceLifecycleLabel(praksa.lifecycleStatus)}
-              </span>
+              <div className="sd-practice-actions">
+                <span className={`sd-practice-badge sd-practice-badge--${practiceLifecycleTone(praksa.lifecycleStatus)}`}>
+                  {practiceLifecycleLabel(praksa.lifecycleStatus)}
+                </span>
+                <button
+                  type="button"
+                  className="sd-btn-detail sd-practice-contract-btn"
+                  disabled={openingContractId === praksa.id}
+                  onClick={() => openContract(praksa)}
+                >
+                  {openingContractId === praksa.id ? 'Generisanje...' : 'Ugovor'}
+                </button>
+              </div>
             </article>
           ))}
+        </div>
+      )}
+      {contract && (
+        <div className="sd-modal-overlay" onClick={() => setContract(null)}>
+          <div className="sd-modal sd-contract-modal" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
+            <div className="sd-modal-header">
+              <h2 className="sd-modal-title">Ugovor o praksi</h2>
+              <button type="button" className="sd-modal-close" onClick={() => setContract(null)} aria-label="Zatvori">
+                &times;
+              </button>
+            </div>
+            <div className="sd-modal-body">
+              <pre className="sd-contract-content">{contract.sadrzaj}</pre>
+              <div className="sd-contract-actions">
+                <button type="button" className="sd-btn-modal-cancel" onClick={() => setContract(null)}>
+                  Zatvori
+                </button>
+                <button type="button" className="sd-btn-apply" onClick={() => downloadPracticeContract(contract)}>
+                  Preuzmi ugovor
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

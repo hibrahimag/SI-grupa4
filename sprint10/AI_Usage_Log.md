@@ -1866,3 +1866,43 @@ Uklonjeni su svi nekonzistentni inline stilovi sa dugmadi unutar kartica oglasa.
 
 - Postojeći prihvaćeni legacy redovi bez validnog `datumPocetka` ili `trajanje` ne mogu automatski dobiti `Praksa` zapis i preskaču se uz upozorenje
 - Testovi koji su ranije očekivali pohranjeni `Praksa.status` moraju koristiti novu datumsku lifecycle logiku
+
+---
+
+## Unos 2 — Generisanje i preuzimanje ugovora o praksi (PB17, PB18)
+
+| Polje | Sadržaj |
+|---|---|
+| **Datum** | 26.05.2026 |
+| **Sprint broj** | 10 |
+| **Alat** | Codex (GPT-5) |
+| **Ko je koristio** | haristucakovic |
+| **Svrha korištenja** | Implementacija pregleda i preuzimanja ugovora o praksi za studenta i kompaniju |
+
+**Kratak opis upita:**
+
+> Dodati generisanje ugovora za potvrđene prakse, prikaz ugovora studentu i kompaniji te preuzimanje digitalne kopije na bosanskom jeziku.
+
+**Šta je AI predložio ili generisao:**
+
+- API i korisnički prikaz ugovora zasnovan na postojećem `Ugovor` modelu i potvrđenim praksama
+- Dugme za ugovor u pregledima studenta i kompanije, sa opcijom preuzimanja PDF digitalne kopije
+- Testove generisanja i autorizovanog pristupa ugovoru
+
+**Šta je tim prihvatio:**
+
+- Korištenje postojećeg `Ugovor` modela i prikaz ugovora studentu i kompaniji
+- Generisanje ugovora na bosanskom jeziku i preuzimanje PDF kopije
+
+**Šta je tim izmijenio:**
+
+- Naziv sistema u tekstu ugovora usklađen je na `PraksaHub`
+- Tekstualno preuzimanje zamijenjeno je PDF dokumentom
+
+**Šta je tim odbacio:**
+
+- Preuzimanje ugovora u `.txt` formatu
+
+**Rizici, problemi ili greške:**
+
+- PDF se generiše na klijentskoj strani iz prikazanog sadržaja ugovora, pa buduća složenija formatiranja mogu zahtijevati dodatnu PDF biblioteku
