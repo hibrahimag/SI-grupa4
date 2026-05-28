@@ -10,6 +10,7 @@ export default function CreateListingPage() {
     opis: "",
     brojMjesta: "",
     rokPrijave: "",
+    datumPocetka: "",
     trajanje: "",
     oblast: "",
     placenaPraksa: false,
@@ -48,7 +49,8 @@ export default function CreateListingPage() {
         <textarea name="opis" placeholder="Opis" onChange={handleChange} required />
         <input type="number" name="brojMjesta" placeholder="Broj mjesta" onChange={handleChange} required />
         <input type="date" name="rokPrijave" onChange={handleChange} required />
-        <input name="trajanje" placeholder="Trajanje" onChange={handleChange} />
+        <input type="date" name="datumPocetka" onChange={handleChange} required />
+        <input type="number" min="1" step="1" name="trajanje" placeholder="Trajanje (mjeseci)" onChange={handleChange} required />
         <input name="oblast" placeholder="Oblast" onChange={handleChange} />
 
         <label>

@@ -36,6 +36,18 @@ export default function EditOglas({ initial, onCancel, onUpdated }) {
       setError('Naziv, opis, broj mjesta i rok prijave su obavezni.');
       return;
     }
+    if (!formData.datumPocetka) {
+      setError('Datum početka prakse je obavezan.');
+      return;
+    }
+    if (!formData.trajanje) {
+      setError('Trajanje prakse je obavezno.');
+      return;
+    }
+    if (!Number.isInteger(Number(formData.trajanje)) || Number(formData.trajanje) <= 0) {
+      setError('Nije moguće odrediti datum završetka prakse iz unesenog trajanja.');
+      return;
+    }
     const broj = Number(formData.brojMjesta);
     if (!Number.isInteger(broj) || broj <= 0) {
       setError('Broj mjesta mora biti pozitivan cijeli broj.');
@@ -45,7 +57,7 @@ export default function EditOglas({ initial, onCancel, onUpdated }) {
       setError('Rok prijave ne može biti u prošlosti.');
       return;
     }
-    if (formData.datumPocetka && formData.datumPocetka <= formData.rokPrijave) {
+    if (formData.datumPocetka <= formData.rokPrijave) {
       setError('Datum početka prakse mora biti nakon isteka roka prijave.');
       return;
     }
@@ -59,8 +71,8 @@ export default function EditOglas({ initial, onCancel, onUpdated }) {
         opis: formData.opis,
         brojMjesta: broj,
         rokPrijave: formData.rokPrijave,
-        datumPocetka: formData.datumPocetka || null,
-        trajanje: formData.trajanje || null,
+        datumPocetka: formData.datumPocetka,
+        trajanje: formData.trajanje,
         oblast: formData.oblast || null,
         lokacija: formData.lokacija || null,
         tip: formData.tip,
@@ -131,7 +143,7 @@ export default function EditOglas({ initial, onCancel, onUpdated }) {
             />
           </div>
           <div className="cd-form-field">
-            <label className="cd-form-label">Datum početka prakse</label>
+            <label className="cd-form-label">Datum početka prakse *</label>
             <DatePicker
               className="cd-input"
               dateFormat="dd.MM.yyyy"
@@ -161,7 +173,7 @@ export default function EditOglas({ initial, onCancel, onUpdated }) {
 
         <div className="cd-form-row">
           <div className="cd-form-field">
-            <label className="cd-form-label">Trajanje (u mjesecima)</label>
+            <label className="cd-form-label">Trajanje (u mjesecima) *</label>
             <input className="cd-input" type="number" min="1" placeholder="npr. 3" value={formData.trajanje} onChange={(e) => handleChange('trajanje', e.target.value)} />
           </div>
           <div className="cd-form-field">

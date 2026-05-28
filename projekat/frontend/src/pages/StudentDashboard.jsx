@@ -5,18 +5,30 @@ import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { checkDeactivation, deactivateAccount, deleteMyAccount } from '../services/userService';
 import { getActiveListings, getClosedListings } from '../services/listingsService';
-import { getMyApplications, createApplication } from '../services/applicationsService';
+import {
+  acceptApplicationByStudent,
+  createApplication,
+  declineApplicationByStudent,
+  getMyApplications,
+} from '../services/applicationsService';
 import { getMyDocuments, attachDocumentsToOglas, getNotifications, markNotificationRead, markAllNotificationsRead } from '../services/api';
 import { getFavourites, addFavourite, removeFavourite } from '../services/favouritesService';
+import { downloadPracticeContract, generatePracticeContract, getMyPractices } from '../services/prakseService';
 import {
   formatDate, relativeDate, trajanjeLabel, mjestLabel, deadlineInfo,
 } from '../data/mockPrakse';
 import {
   APPLICATION_STATUS,
   applicationStageSteps,
-  applicationStatusLabel,
-  applicationStatusTone,
+  isStudentDecisionPending,
+  studentApplicationStatusLabel,
+  studentApplicationStatusTone,
 } from '../utils/applicationStatus';
+import {
+  PRACTICE_FILTERS,
+  practiceLifecycleLabel,
+  practiceLifecycleTone,
+} from '../utils/practiceLifecycle';
 import './StudentDashboard.css';
 import { useApplicationLimit } from '../hooks/useApplicationLimit';
 
@@ -126,8 +138,8 @@ function PraksaCard({ praksa, onSelect, isFavourite, onToggleFavourite, applicat
             <div className="sd-head-badges">
               {inactive && <span className="sd-inactive-badge">Istekao</span>}
               {application && (
-                <span className={`sd-application-card-badge sd-application-card-badge--${applicationStatusTone(application.status)}`}>
-                  {applicationStatusLabel(application.status)}
+                <span className={`sd-application-card-badge sd-application-card-badge--${studentApplicationStatusTone(application)}`}>
+                  {studentApplicationStatusLabel(application)}
                 </span>
               )}
               <span className={`sd-tip-badge sd-tip--${praksa.tip.toLowerCase()}`}>
@@ -213,11 +225,11 @@ function PraksaModal({
   const statusMessage = inactive
     ? 'Nije moguće prijaviti se na neaktivan oglas.'
     : alreadyApplied
-      ? `Već ste se prijavili na ovaj oglas. Status prijave: ${applicationStatusLabel(existingApplication.status)}.`
+      ? `Već ste se prijavili na ovaj oglas. Status prijave: ${studentApplicationStatusLabel(existingApplication)}.`
       : isAtLimit && limitInfo
         ? `Dostigli ste maksimalan broj aktivnih prijava (${limitInfo.current}/${limitInfo.max}). Pričekajte da neka prijava bude riješena prije nego se prijavite ponovo.`
         : '';
-  const statusTone = inactive ? 'error' : alreadyApplied ? applicationStatusTone(existingApplication.status) : isAtLimit ? 'error' : 'info';
+  const statusTone = inactive ? 'error' : alreadyApplied ? studentApplicationStatusTone(existingApplication) : isAtLimit ? 'error' : 'info';
 
   useEffect(() => {
     function onKey(e) { if (e.key === 'Escape') onClose(); }
@@ -438,8 +450,9 @@ function ApplicationModal({
   const inactive = !praksa.aktivan;
   const hasApplication = Boolean(existingApplication);
   const alreadyApplied = hasApplication && !submitSuccess;
-  const currentStatus = hasApplication || submitSuccess
-    ? applicationStatusLabel(existingApplication?.status || APPLICATION_STATUS.WAITING_COORDINATOR)
+  const currentStatusApplication = existingApplication || (submitSuccess ? { status: APPLICATION_STATUS.WAITING_COORDINATOR } : null);
+  const currentStatus = currentStatusApplication
+    ? studentApplicationStatusLabel(currentStatusApplication)
     : 'Nije podnesena';
   const canSubmit = !hasApplication && !inactive && !submitSuccess;
   const docsDisabled = hasApplication || inactive || submitting || submitSuccess;
@@ -577,7 +590,7 @@ function ApplicationModal({
                 <h3 className="sd-application-title">{praksa.naziv}</h3>
                 <p className="sd-application-company">{praksa.kompanija}</p>
               </div>
-              <span className={`sd-application-status sd-application-status--${applicationStatusTone(existingApplication?.status || (submitSuccess ? APPLICATION_STATUS.WAITING_COORDINATOR : ''))}`}>
+              <span className={`sd-application-status sd-application-status--${studentApplicationStatusTone(currentStatusApplication)}`}>
                 {currentStatus}
               </span>
             </div>
@@ -698,8 +711,17 @@ function ApplicationModal({
 }
 
 // ── MyApplicationsPanel ───────────────────────────────────────────────────
-function MyApplicationsPanel({ applications, prakse, onViewOglas }) {
+function MyApplicationsPanel({
+  applications,
+  prakse,
+  onViewOglas,
+  onStudentDecision,
+  decisionProcessingId,
+  decisionSuccess,
+}) {
   const [activeFilter, setActiveFilter] = useState(null);
+  const [decisionModal, setDecisionModal] = useState(null);
+  const [decisionError, setDecisionError] = useState('');
 
   const praksaById = useMemo(() => {
     const m = new Map();
@@ -749,6 +771,24 @@ function MyApplicationsPanel({ applications, prakse, onViewOglas }) {
   function isRecentChange(app) {
     if (!app.updatedAt || app.status === APPLICATION_STATUS.WAITING_COORDINATOR) return false;
     return Date.now() - new Date(app.updatedAt).getTime() < 7 * 24 * 60 * 60 * 1000;
+  }
+
+  function openDecisionModal(application, decision) {
+    setDecisionError('');
+    setDecisionModal({ application, decision });
+  }
+
+  async function confirmDecision() {
+    if (!decisionModal) return;
+
+    const result = await onStudentDecision(decisionModal.application.id, decisionModal.decision);
+    if (result.ok) {
+      setDecisionModal(null);
+      setDecisionError('');
+      return;
+    }
+
+    setDecisionError(result.message);
   }
 
   if (total === 0) {
@@ -822,6 +862,12 @@ function MyApplicationsPanel({ applications, prakse, onViewOglas }) {
         </div>
       </div>
 
+      {decisionSuccess && (
+        <p className="sd-student-decision-feedback sd-student-decision-feedback--success" role="status">
+          {decisionSuccess}
+        </p>
+      )}
+
       {visibleApplications.length === 0 ? (
         <div className="sd-apps-filter-empty">
           <p>Nema prijava za odabrani status.</p>
@@ -830,12 +876,14 @@ function MyApplicationsPanel({ applications, prakse, onViewOglas }) {
         <div className="sd-list">
           {visibleApplications.map(app => {
           const oglas = praksaById.get(Number(app.oglasID));
-          const kompNaziv = oglas?.kompanija || app.Oglas?.Kompanija?.naziv || 'Kompanija';
-          const oglasNaziv = oglas?.naziv || app.Oglas?.naziv || 'Nepoznat oglas';
+          const applicationOglas = app.Oglas || app.Ogla;
+          const kompNaziv = oglas?.kompanija || applicationOglas?.Kompanija?.naziv || 'Kompanija';
+          const oglasNaziv = oglas?.naziv || applicationOglas?.naziv || 'Nepoznat oglas';
           const logoColor = deriveLogoColor(kompNaziv);
           const logo = deriveLogo(kompNaziv);
           const recent = isRecentChange(app);
           const inactive = !oglas;
+          const canDecide = isStudentDecisionPending(app);
 
           return (
             <div
@@ -862,8 +910,8 @@ function MyApplicationsPanel({ applications, prakse, onViewOglas }) {
                     </div>
                     <div className="sd-head-badges">
                       {inactive && <span className="sd-inactive-badge">Istekao</span>}
-                      <span className={`sd-application-card-badge sd-application-card-badge--${applicationStatusTone(app.status)}`}>
-                        {applicationStatusLabel(app.status)}
+                      <span className={`sd-application-card-badge sd-application-card-badge--${studentApplicationStatusTone(app)}`}>
+                        {studentApplicationStatusLabel(app)}
                       </span>
                       {oglas?.tip && (
                         <span className={`sd-tip-badge sd-tip--${oglas.tip.toLowerCase()}`}>
@@ -891,6 +939,27 @@ function MyApplicationsPanel({ applications, prakse, onViewOglas }) {
                 )}
 
                 <ApplicationStageIndicator application={app} />
+
+                {canDecide && (
+                  <div className="sd-student-decision-actions" onClick={e => e.stopPropagation()}>
+                    <button
+                      type="button"
+                      className="sd-btn-apply sd-student-decision-btn"
+                      disabled={decisionProcessingId === app.id}
+                      onClick={() => openDecisionModal(app, 'accept')}
+                    >
+                      Prihvati praksu
+                    </button>
+                    <button
+                      type="button"
+                      className="sd-btn-danger sd-student-decision-btn"
+                      disabled={decisionProcessingId === app.id}
+                      onClick={() => openDecisionModal(app, 'decline')}
+                    >
+                      Odbij praksu
+                    </button>
+                  </div>
+                )}
 
                 <div className="sd-card-foot">
                   <div className="sd-meta-row">
@@ -934,6 +1003,161 @@ function MyApplicationsPanel({ applications, prakse, onViewOglas }) {
             </div>
           );
           })}
+        </div>
+      )}
+
+      {decisionModal && (
+        <div className="sd-modal-overlay sd-modal-overlay--top" onClick={() => {
+          if (decisionProcessingId !== decisionModal.application.id) setDecisionModal(null);
+        }}>
+          <div className="sd-confirm-modal" onClick={e => e.stopPropagation()}>
+            <div className={`sd-confirm-icon sd-confirm-icon--${decisionModal.decision === 'accept' ? 'success' : 'danger'}`}>
+              {decisionModal.decision === 'accept' ? (
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              ) : (
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="15" y1="9" x2="9" y2="15" />
+                  <line x1="9" y1="9" x2="15" y2="15" />
+                </svg>
+              )}
+            </div>
+            <h3 className="sd-confirm-title">
+              {decisionModal.decision === 'accept' ? 'Potvrda učešća' : 'Odbijanje prakse'}
+            </h3>
+            <p className="sd-confirm-text">
+              {decisionModal.decision === 'accept'
+                ? 'Da li želite prihvatiti učešće na ovoj praksi?'
+                : 'Da li želite odbiti učešće na ovoj praksi?'}
+            </p>
+            {decisionError && (
+              <p className="sd-student-decision-feedback sd-student-decision-feedback--error" role="alert">
+                {decisionError}
+              </p>
+            )}
+            <div className="sd-confirm-actions">
+              <button
+                type="button"
+                className="sd-btn-secondary"
+                disabled={decisionProcessingId === decisionModal.application.id}
+                onClick={() => setDecisionModal(null)}
+              >
+                Odustani
+              </button>
+              <button
+                type="button"
+                className={decisionModal.decision === 'accept' ? 'sd-btn-apply sd-student-confirm-btn' : 'sd-btn-danger'}
+                disabled={decisionProcessingId === decisionModal.application.id}
+                onClick={confirmDecision}
+              >
+                {decisionProcessingId === decisionModal.application.id
+                  ? 'Spremanje...'
+                  : decisionModal.decision === 'accept' ? 'Prihvati praksu' : 'Odbij praksu'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MyPracticesPanel({ practices, loading, error, filter, onFilterChange }) {
+  const [contract, setContract] = useState(null);
+  const [contractError, setContractError] = useState('');
+  const [openingContractId, setOpeningContractId] = useState(null);
+
+  async function openContract(praksa) {
+    setOpeningContractId(praksa.id);
+    setContractError('');
+    try {
+      const generated = await generatePracticeContract(praksa.id);
+      setContract(generated);
+    } catch (err) {
+      setContractError(err.message || 'Greška pri generisanju ugovora.');
+    } finally {
+      setOpeningContractId(null);
+    }
+  }
+
+  return (
+    <div className="sd-apps-panel">
+      <div className="sd-practices-header">
+        <div>
+          <h2 className="sd-practices-title">Moje prakse</h2>
+          <p className="sd-practices-subtitle">Potvrđene prakse prikazane prema periodu realizacije.</p>
+        </div>
+        <div className="sd-practice-tabs" aria-label="Filter praksi">
+          {PRACTICE_FILTERS.map((item) => (
+            <button
+              key={item.value}
+              type="button"
+              className={`sd-practice-tab${filter === item.value ? ' active' : ''}`}
+              onClick={() => onFilterChange(item.value)}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {loading && <p className="sd-results-info">Učitavanje praksi...</p>}
+      {error && <p className="sd-results-info" style={{ color: 'var(--color-danger)' }}>{error}</p>}
+      {contractError && <p className="sd-results-info" style={{ color: 'var(--color-danger)' }}>{contractError}</p>}
+      {!loading && !error && practices.length === 0 && (
+        <div className="sd-apps-filter-empty"><p>Nema praksi za odabrani filter.</p></div>
+      )}
+      {!loading && !error && practices.length > 0 && (
+        <div className="sd-apps-list">
+          {practices.map((praksa) => (
+            <article key={praksa.id} className="sd-confirmed-practice-card">
+              <div>
+                <p className="sd-app-card-company">{praksa.kompanija?.naziv || 'Kompanija'}</p>
+                <h3 className="sd-app-card-naziv">{praksa.oglas?.naziv || 'Praksa'}</h3>
+                <p className="sd-app-card-date">
+                  {formatDate(praksa.datumPocetka)} - {formatDate(praksa.datumKraja)}
+                </p>
+              </div>
+              <div className="sd-practice-actions">
+                <span className={`sd-practice-badge sd-practice-badge--${practiceLifecycleTone(praksa.lifecycleStatus)}`}>
+                  {practiceLifecycleLabel(praksa.lifecycleStatus)}
+                </span>
+                <button
+                  type="button"
+                  className="sd-btn-detail sd-practice-contract-btn"
+                  disabled={openingContractId === praksa.id}
+                  onClick={() => openContract(praksa)}
+                >
+                  {openingContractId === praksa.id ? 'Generisanje...' : 'Ugovor'}
+                </button>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+      {contract && (
+        <div className="sd-modal-overlay" onClick={() => setContract(null)}>
+          <div className="sd-modal sd-contract-modal" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
+            <div className="sd-modal-header">
+              <h2 className="sd-modal-title">Ugovor o praksi</h2>
+              <button type="button" className="sd-modal-close" onClick={() => setContract(null)} aria-label="Zatvori">
+                &times;
+              </button>
+            </div>
+            <div className="sd-modal-body">
+              <pre className="sd-contract-content">{contract.sadrzaj}</pre>
+              <div className="sd-contract-actions">
+                <button type="button" className="sd-btn-modal-cancel" onClick={() => setContract(null)}>
+                  Zatvori
+                </button>
+                <button type="button" className="sd-btn-apply" onClick={() => downloadPracticeContract(contract)}>
+                  Preuzmi ugovor
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -1250,6 +1474,12 @@ export default function StudentDashboard() {
   const [omiljeniShowAll, setOmiljeniShowAll] = useState(false);
   const [applications, setApplications] = useState([]);
   const { limit: applicationLimit, activeCount: activeApplicationCount, isAtLimit } = useApplicationLimit(applications);
+  const [decisionProcessingId, setDecisionProcessingId] = useState(null);
+  const [decisionSuccess, setDecisionSuccess] = useState('');
+  const [myPractices, setMyPractices] = useState([]);
+  const [myPracticesLoading, setMyPracticesLoading] = useState(false);
+  const [myPracticesError, setMyPracticesError] = useState('');
+  const [myPracticesFilter, setMyPracticesFilter] = useState('all');
   const vidljiviOmiljeni = useMemo(
     () => prakse.filter(p => favourites.has(p.id)),
     [prakse, favourites]
@@ -1354,6 +1584,24 @@ export default function StudentDashboard() {
       .finally(() => { if (active) setZatvoreniLoading(false); });
     return () => { active = false; };
   }, [activeTab, zatvoreniLoaded]);
+
+  useEffect(() => {
+    if (activeTab !== 'moje-prakse') return;
+    let active = true;
+    setMyPracticesLoading(true);
+    setMyPracticesError('');
+    getMyPractices(myPracticesFilter)
+      .then((data) => {
+        if (active) setMyPractices(Array.isArray(data?.prakse) ? data.prakse : []);
+      })
+      .catch((err) => {
+        if (active) setMyPracticesError(err.message || 'Greška pri učitavanju praksi.');
+      })
+      .finally(() => {
+        if (active) setMyPracticesLoading(false);
+      });
+    return () => { active = false; };
+  }, [activeTab, myPracticesFilter]);
 
   useEffect(() => {
     let active = true;
@@ -1583,6 +1831,45 @@ export default function StudentDashboard() {
     }
   }
 
+  async function handleStudentDecision(applicationId, decision) {
+    setDecisionProcessingId(applicationId);
+    setDecisionSuccess('');
+
+    try {
+      const action = decision === 'accept'
+        ? acceptApplicationByStudent
+        : declineApplicationByStudent;
+      const result = await action(applicationId);
+
+      if (result.application) {
+        setApplications(current =>
+          current.map(application =>
+            application.id === applicationId
+              ? { ...application, ...result.application }
+              : application
+          )
+        );
+      }
+
+      if (result.practice) {
+        setMyPractices(current => [
+          result.practice,
+          ...current.filter(practice => practice.id !== result.practice.id),
+        ]);
+      }
+
+      setDecisionSuccess(result.message || 'Odluka je uspješno evidentirana.');
+      return { ok: true };
+    } catch (err) {
+      return {
+        ok: false,
+        message: err.message || 'Greška pri evidentiranju odluke.',
+      };
+    } finally {
+      setDecisionProcessingId(null);
+    }
+  }
+
   return (
     <div className={`sd-page${darkMode ? ' dark' : ''}`}>
       {/* Navbar */}
@@ -1691,6 +1978,14 @@ export default function StudentDashboard() {
             </svg>
             {applications.length > 0 && <span className="sd-sb-badge">{applications.length}</span>}
           </div>
+          <div className={`sd-sb-tab-icon${activeTab === 'moje-prakse' ? ' sd-sb-tab-icon--apps' : ''}`}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="7" width="20" height="14" rx="2" />
+              <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
+              <path d="M2 12h20" />
+            </svg>
+            {myPractices.length > 0 && <span className="sd-sb-badge">{myPractices.length}</span>}
+          </div>
           <div className="sd-sb-tab-icon">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" />
@@ -1788,6 +2083,18 @@ export default function StudentDashboard() {
                 {applications.length > 0 && <span className="sd-sb-count">{applications.length}</span>}
               </button>
               <button
+                className={`sd-sb-tab-btn sd-sb-tab-btn--prijave${activeTab === 'moje-prakse' ? ' active' : ''}`}
+                onClick={() => setActiveTab('moje-prakse')}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="7" width="20" height="14" rx="2" />
+                  <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
+                  <path d="M2 12h20" />
+                </svg>
+                Moje prakse
+                {myPractices.length > 0 && <span className="sd-sb-count">{myPractices.length}</span>}
+              </button>
+              <button
                 className={`sd-sb-tab-btn sd-sb-tab-btn--zatvoreni${activeTab === 'zatvoreni' ? ' active' : ''}`}
                 onClick={() => setActiveTab('zatvoreni')}
               >
@@ -1799,7 +2106,7 @@ export default function StudentDashboard() {
               </button>
             </div>
 
-            {activeTab !== 'prijave' && (<>
+            {activeTab !== 'prijave' && activeTab !== 'moje-prakse' && (<>
               {/* VS Code-style collapsible sections */}
               <div className="sd-sidebar-filters">
 
@@ -2023,6 +2330,18 @@ export default function StudentDashboard() {
               applications={applications}
               prakse={prakse}
               onViewOglas={sel => setSelectedPraksa(sel)}
+              onStudentDecision={handleStudentDecision}
+              decisionProcessingId={decisionProcessingId}
+              decisionSuccess={decisionSuccess}
+            />
+
+          ) : activeTab === 'moje-prakse' ? (
+            <MyPracticesPanel
+              practices={myPractices}
+              loading={myPracticesLoading}
+              error={myPracticesError}
+              filter={myPracticesFilter}
+              onFilterChange={setMyPracticesFilter}
             />
 
           ) : activeTab === 'zatvoreni' ? (

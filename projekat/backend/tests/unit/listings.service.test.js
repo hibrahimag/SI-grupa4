@@ -46,6 +46,7 @@ function makeKompanija(overrides = {}) {
 function makeOglas(overrides = {}) {
   const oglas = {
     id: 10, naziv: 'Test oglas', status: 'AKTIVAN', kompanijaID: 5,
+    datumPocetka: '2099-02-01', trajanje: 3,
     ...overrides,
   };
   oglas.update = jest.fn(async (data) => Object.assign(oglas, data));
@@ -61,7 +62,7 @@ describe('createListing', () => {
   });
 
   test('uspješno kreira oglas', async () => {
-    const result = await createListing({ naziv: 'X', opis: 'Y', brojMjesta: 2, rokPrijave: '2099-01-01' }, 1);
+    const result = await createListing({ naziv: 'X', opis: 'Y', brojMjesta: 2, rokPrijave: '2099-01-01', datumPocetka: '2099-02-01', trajanje: 3 }, 1);
     expect(db.Oglas.create).toHaveBeenCalledWith(expect.objectContaining({ status: 'AKTIVAN', kompanijaID: 5 }));
     expect(result).toBeDefined();
   });
@@ -97,8 +98,20 @@ describe('createListing', () => {
   });
 
   test('kreira oglas s tehnologijama i uslovima', async () => {
-    await createListing({ naziv: 'X', opis: 'Y', brojMjesta: 1, rokPrijave: '2099-01-01', tehnologije: ['JS', null], uslovi: ['Node'] }, 1);
+    await createListing({ naziv: 'X', opis: 'Y', brojMjesta: 1, rokPrijave: '2099-01-01', datumPocetka: '2099-02-01', trajanje: 3, tehnologije: ['JS', null], uslovi: ['Node'] }, 1);
     expect(db.Oglas.create).toHaveBeenCalledWith(expect.objectContaining({ tehnologije: ['JS'], uslovi: ['Node'] }));
+  });
+
+  test('baca 400 kada datum početka prakse nije unesen', async () => {
+    const err = await createListing({ naziv: 'X', opis: 'Y', brojMjesta: 1, rokPrijave: '2099-01-01', trajanje: 3 }, 1).catch(e => e);
+    expect(err.status).toBe(400);
+    expect(err.message).toBe('Datum početka prakse je obavezan.');
+  });
+
+  test('baca 400 kada trajanje nije pozitivan broj mjeseci', async () => {
+    const err = await createListing({ naziv: 'X', opis: 'Y', brojMjesta: 1, rokPrijave: '2099-01-01', datumPocetka: '2099-02-01', trajanje: 0 }, 1).catch(e => e);
+    expect(err.status).toBe(400);
+    expect(err.message).toBe('Nije moguće odrediti datum završetka prakse iz unesenog trajanja.');
   });
 });
 
@@ -166,7 +179,7 @@ describe('updateListing', () => {
   });
 
   test('uspješno ažurira oglas', async () => {
-    const result = await updateListing(10, { naziv: 'Novi', opis: 'Opis', brojMjesta: 3, rokPrijave: '2099-01-01' }, 1);
+    const result = await updateListing(10, { naziv: 'Novi', opis: 'Opis', brojMjesta: 3, rokPrijave: '2099-01-01', datumPocetka: '2099-02-01', trajanje: 3 }, 1);
     expect(result).toBeDefined();
   });
 

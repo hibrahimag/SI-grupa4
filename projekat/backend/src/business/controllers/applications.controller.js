@@ -97,6 +97,38 @@ async function rejectApplicationByCompany(req, res) {
   }
 }
 
+function sendStudentDecisionResponse(res, result) {
+  const application = result.application;
+  return res.json({
+    message: result.message,
+    application,
+    status: application.status,
+    koordinatorStatus: application.koordinatorStatus,
+    kompanijaStatus: application.kompanijaStatus,
+    studentStatus: application.studentStatus,
+    studentOdlucioAt: application.studentOdlucioAt,
+    practice: result.practice || null,
+  });
+}
+
+async function acceptApplicationByStudent(req, res) {
+  try {
+    const result = await applicationsService.acceptApplicationByStudent(req.user.id, req.params.id);
+    return sendStudentDecisionResponse(res, result);
+  } catch (err) {
+    return handleApplicationError(res, err);
+  }
+}
+
+async function declineApplicationByStudent(req, res) {
+  try {
+    const result = await applicationsService.declineApplicationByStudent(req.user.id, req.params.id);
+    return sendStudentDecisionResponse(res, result);
+  } catch (err) {
+    return handleApplicationError(res, err);
+  }
+}
+
 module.exports = {
   createApplication,
   getMyApplications,
@@ -105,4 +137,6 @@ module.exports = {
   shortlistApplication,
   approveApplicationByCompany,
   rejectApplicationByCompany,
+  acceptApplicationByStudent,
+  declineApplicationByStudent,
 };
