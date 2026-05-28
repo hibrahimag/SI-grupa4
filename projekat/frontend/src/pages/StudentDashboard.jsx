@@ -19,6 +19,8 @@ import {
 } from '../utils/applicationStatus';
 import './StudentDashboard.css';
 import { useApplicationLimit } from '../hooks/useApplicationLimit';
+import { EvaluacijaKompanijeModal } from '../modules/evaluations/EvaluacijaKompanije';
+import { getMyStudentEvaluations, getMyReceivedEvaluations } from '../services/evaluationService';
 
 const LOGO_COLORS = ['#1a6fd4', '#0e9e6e', '#6d4ce1', '#e07b1a', '#0891b2', '#be185d', '#7c3aed', '#c0392b'];
 function deriveLogoColor(str) {
@@ -698,7 +700,7 @@ function ApplicationModal({
 }
 
 // ── MyApplicationsPanel ───────────────────────────────────────────────────
-function MyApplicationsPanel({ applications, prakse, onViewOglas }) {
+function MyApplicationsPanel({ applications, prakse, onViewOglas, evaluatedAppIds = new Set(), onEvaluate, receivedEvaluations = [] }) {
   const [activeFilter, setActiveFilter] = useState(null);
 
   const praksaById = useMemo(() => {
@@ -728,9 +730,9 @@ function MyApplicationsPanel({ applications, prakse, onViewOglas }) {
 
   const visibleApplications = activeFilter === 'coordinator'
     ? applications.filter(a =>
-        a.status === APPLICATION_STATUS.WAITING_COORDINATOR ||
-        a.status === APPLICATION_STATUS.LEGACY_SUBMITTED
-      )
+      a.status === APPLICATION_STATUS.WAITING_COORDINATOR ||
+      a.status === APPLICATION_STATUS.LEGACY_SUBMITTED
+    )
     : activeFilter === 'company'
       ? applications.filter(a => a.status === APPLICATION_STATUS.WAITING_COMPANY)
       : activeFilter === 'shortlist'
@@ -739,11 +741,11 @@ function MyApplicationsPanel({ applications, prakse, onViewOglas }) {
           ? applications.filter(a => a.status === APPLICATION_STATUS.APPROVED)
           : activeFilter === 'rejected'
             ? applications.filter(a =>
-                a.status === APPLICATION_STATUS.REJECTED_COORDINATOR ||
-                a.status === APPLICATION_STATUS.REJECTED_COMPANY ||
-                a.status === APPLICATION_STATUS.LEGACY_REJECTED ||
-                a.status === APPLICATION_STATUS.WITHDRAWN
-              )
+              a.status === APPLICATION_STATUS.REJECTED_COORDINATOR ||
+              a.status === APPLICATION_STATUS.REJECTED_COMPANY ||
+              a.status === APPLICATION_STATUS.LEGACY_REJECTED ||
+              a.status === APPLICATION_STATUS.WITHDRAWN
+            )
             : applications;
 
   function isRecentChange(app) {
@@ -829,110 +831,161 @@ function MyApplicationsPanel({ applications, prakse, onViewOglas }) {
       ) : (
         <div className="sd-list">
           {visibleApplications.map(app => {
-          const oglas = praksaById.get(Number(app.oglasID));
-          const kompNaziv = oglas?.kompanija || app.Oglas?.Kompanija?.naziv || 'Kompanija';
-          const oglasNaziv = oglas?.naziv || app.Oglas?.naziv || 'Nepoznat oglas';
-          const logoColor = deriveLogoColor(kompNaziv);
-          const logo = deriveLogo(kompNaziv);
-          const recent = isRecentChange(app);
-          const inactive = !oglas;
+            const oglas = praksaById.get(Number(app.oglasID));
+            const kompNaziv = oglas?.kompanija || app.Oglas?.Kompanija?.naziv || 'Kompanija';
+            const oglasNaziv = oglas?.naziv || app.Oglas?.naziv || 'Nepoznat oglas';
+            const logoColor = deriveLogoColor(kompNaziv);
+            const logo = deriveLogo(kompNaziv);
+            const recent = isRecentChange(app);
+            const inactive = !oglas;
 
-          return (
-            <div
-              key={app.id}
-              className={`sd-card-wrap${inactive ? ' sd-card-wrap--inactive' : ''}`}
-              onClick={() => oglas && onViewOglas(oglas)}
-            >
-              <article className="sd-card" tabIndex={inactive ? -1 : 0} role="button" aria-label={`${oglasNaziv} — ${kompNaziv}`}>
-                <div className="sd-card-head">
-                  {recent && <span className="sd-novo-badge sd-novo-badge--update">Promjena statusa</span>}
-                  <div className="sd-company-row">
-                    <div className="sd-logo" style={{ background: logoColor }}>{logo}</div>
-                    <div className="sd-company-info">
-                      <span className="sd-company-name">{kompNaziv}</span>
-                      {oglas?.lokacija && (
-                        <span className="sd-location">
-                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                            <circle cx="12" cy="10" r="3" />
-                          </svg>
-                          {oglas.lokacija}
-                        </span>
-                      )}
-                    </div>
-                    <div className="sd-head-badges">
-                      {inactive && <span className="sd-inactive-badge">Istekao</span>}
-                      <span className={`sd-application-card-badge sd-application-card-badge--${applicationStatusTone(app.status)}`}>
-                        {applicationStatusLabel(app.status)}
-                      </span>
-                      {oglas?.tip && (
-                        <span className={`sd-tip-badge sd-tip--${oglas.tip.toLowerCase()}`}>
-                          {!oglas.lokacija && (
-                            <svg style={{ marginRight: '4px' }} width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
+            return (
+              <div
+                key={app.id}
+                className={`sd-card-wrap${inactive ? ' sd-card-wrap--inactive' : ''}`}
+                onClick={() => oglas && onViewOglas(oglas)}
+              >
+                <article className="sd-card" tabIndex={inactive ? -1 : 0} role="button" aria-label={`${oglasNaziv} — ${kompNaziv}`}>
+                  <div className="sd-card-head">
+                    {recent && <span className="sd-novo-badge sd-novo-badge--update">Promjena statusa</span>}
+                    <div className="sd-company-row">
+                      <div className="sd-logo" style={{ background: logoColor }}>{logo}</div>
+                      <div className="sd-company-info">
+                        <span className="sd-company-name">{kompNaziv}</span>
+                        {oglas?.lokacija && (
+                          <span className="sd-location">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                              <circle cx="12" cy="10" r="3" />
                             </svg>
-                          )}
-                          {oglas.tip}
+                            {oglas.lokacija}
+                          </span>
+                        )}
+                      </div>
+                      <div className="sd-head-badges">
+                        {inactive && <span className="sd-inactive-badge">Istekao</span>}
+                        <span className={`sd-application-card-badge sd-application-card-badge--${applicationStatusTone(app.status)}`}>
+                          {applicationStatusLabel(app.status)}
                         </span>
+                        {oglas?.tip && (
+                          <span className={`sd-tip-badge sd-tip--${oglas.tip.toLowerCase()}`}>
+                            {!oglas.lokacija && (
+                              <svg style={{ marginRight: '4px' }} width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
+                              </svg>
+                            )}
+                            {oglas.tip}
+                          </span>
+                        )}
+                        {oglas?.stipendija && <span className="sd-stip-badge">Stipendija</span>}
+                      </div>
+                    </div>
+                    <h2 className="sd-card-title">{oglasNaziv}</h2>
+                    {oglas?.opis && <p className="sd-card-opis">{oglas.opis}</p>}
+                  </div>
+
+                  {oglas?.tehnologije?.length > 0 && (
+                    <div className="sd-tech-row">
+                      {oglas.tehnologije.map(t => (
+                        <span key={t} className="sd-tech-tag">{t}</span>
+                      ))}
+                    </div>
+                  )}
+
+                  <ApplicationStageIndicator application={app} />
+
+                  <div className="sd-card-foot">
+                    <div className="sd-meta-row">
+                      {oglas?.trajanje && (
+                        <>
+                          <span className="sd-meta-item">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+                            </svg>
+                            {trajanjeLabel(oglas.trajanje)}
+                          </span>
+                          <span className="sd-meta-dot" />
+                        </>
                       )}
-                      {oglas?.stipendija && <span className="sd-stip-badge">Stipendija</span>}
+                      <span className="sd-meta-item">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                          <line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" />
+                          <line x1="3" y1="10" x2="21" y2="10" />
+                        </svg>
+                        Prijavljeno {formatDate(app.datumPrijave?.slice(0, 10))}
+                      </span>
+                    </div>
+                    <div className="sd-foot-right">
+                      <button
+                        className="sd-btn-detail"
+                        disabled={inactive}
+                        onClick={e => { e.stopPropagation(); if (oglas) onViewOglas(oglas); }}
+                        tabIndex={-1}
+                      >
+                        {inactive ? 'Oglas istekao' : 'Pogledaj oglas'}
+                        {!inactive && (
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
+                          </svg>
+                        )}
+                      </button>
                     </div>
                   </div>
-                  <h2 className="sd-card-title">{oglasNaziv}</h2>
-                  {oglas?.opis && <p className="sd-card-opis">{oglas.opis}</p>}
-                </div>
-
-                {oglas?.tehnologije?.length > 0 && (
-                  <div className="sd-tech-row">
-                    {oglas.tehnologije.map(t => (
-                      <span key={t} className="sd-tech-tag">{t}</span>
-                    ))}
-                  </div>
-                )}
-
-                <ApplicationStageIndicator application={app} />
-
-                <div className="sd-card-foot">
-                  <div className="sd-meta-row">
-                    {oglas?.trajanje && (
-                      <>
-                        <span className="sd-meta-item">
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+                  {app.status === APPLICATION_STATUS.APPROVED && (
+                    <div className="sd-eval-section">
+                      {evaluatedAppIds.has(app.id) ? (
+                        <span className="sd-eval-done-badge">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12" />
                           </svg>
-                          {trajanjeLabel(oglas.trajanje)}
+                          Evaluacija poslana
                         </span>
-                        <span className="sd-meta-dot" />
-                      </>
-                    )}
-                    <span className="sd-meta-item">
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                        <line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" />
-                        <line x1="3" y1="10" x2="21" y2="10" />
-                      </svg>
-                      Prijavljeno {formatDate(app.datumPrijave?.slice(0, 10))}
-                    </span>
-                  </div>
-                  <div className="sd-foot-right">
-                    <button
-                      className="sd-btn-detail"
-                      disabled={inactive}
-                      onClick={e => { e.stopPropagation(); if (oglas) onViewOglas(oglas); }}
-                      tabIndex={-1}
-                    >
-                      {inactive ? 'Oglas istekao' : 'Pogledaj oglas'}
-                      {!inactive && (
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
-                        </svg>
+                      ) : (
+                        <button
+                          className="sd-eval-btn"
+                          type="button"
+                          onClick={e => { e.stopPropagation(); onEvaluate(app); }}
+                        >
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                          </svg>
+                          Evaluiraj kompaniju
+                        </button>
                       )}
-                    </button>
-                  </div>
-                </div>
-              </article>
-            </div>
-          );
+                    </div>
+                  )}
+                  {app.status === APPLICATION_STATUS.APPROVED && (() => {
+                    const myEval = receivedEvaluations.find(e => e.prijavaID === app.id);
+                    if (!myEval) return null;
+                    return (
+                      <div className="sd-eval-section" style={{ marginTop: 8 }}>
+                        <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--color-muted,#6b7fa3)', display: 'block', marginBottom: 4 }}>
+                          Ocjena kompanije za vas:
+                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          {[1, 2, 3, 4, 5].map(n => (
+                            <svg key={n} width="14" height="14" viewBox="0 0 24 24"
+                              fill={n <= myEval.ukupnaOcjena ? '#f59e0b' : 'none'}
+                              stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                            </svg>
+                          ))}
+                          <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--color-dark,#0d1f3c)' }}>
+                            {myEval.ukupnaOcjena}/5
+                          </span>
+                        </div>
+                        {myEval.komentar && (
+                          <p style={{ fontSize: '0.78rem', color: 'var(--color-muted,#6b7fa3)', fontStyle: 'italic', margin: '4px 0 0' }}>
+                            "{myEval.komentar}"
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </article>
+              </div>
+            );
           })}
         </div>
       )}
@@ -1258,6 +1311,10 @@ export default function StudentDashboard() {
   const [applyError, setApplyError] = useState('');
   const [applySuccess, setApplySuccess] = useState('');
 
+  const [evalModalApp, setEvalModalApp] = useState(null);
+  const [evaluatedAppIds, setEvaluatedAppIds] = useState(new Set());
+  const [receivedEvaluations, setReceivedEvaluations] = useState([]);
+
   const [notifications, setNotifications] = useState([]);
   const [notifOpen, setNotifOpen] = useState(false);
   const notifRef = useRef(null);
@@ -1378,6 +1435,26 @@ export default function StudentDashboard() {
     setApplyError('');
     setApplySuccess('');
   }, [selectedPraksa?.id, applicationPraksa?.id]);
+
+  useEffect(() => {
+    let active = true;
+    getMyStudentEvaluations()
+      .then(data => {
+        if (active && Array.isArray(data)) {
+          setEvaluatedAppIds(new Set(data.map(ev => ev.applicationId)));
+        }
+      })
+      .catch(() => { });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    getMyReceivedEvaluations()
+      .then(data => { if (active) setReceivedEvaluations(data || []); })
+      .catch(() => { });
+    return () => { active = false; };
+  }, []);
 
   function handleLogout() {
     logout();
@@ -2023,6 +2100,16 @@ export default function StudentDashboard() {
               applications={applications}
               prakse={prakse}
               onViewOglas={sel => setSelectedPraksa(sel)}
+              evaluatedAppIds={evaluatedAppIds}
+              onEvaluate={app => {
+                const oglas = prakse.find(p => Number(p.id) === Number(app.oglasID));
+                setEvalModalApp({
+                  id: app.id,
+                  kompanijaNaziv: oglas?.kompanija || app.Oglas?.Kompanija?.naziv || 'Kompanija',
+                  oglasNaziv: oglas?.naziv || app.Oglas?.naziv || 'Oglas',
+                });
+              }}
+              receivedEvaluations={receivedEvaluations}
             />
 
           ) : activeTab === 'zatvoreni' ? (
@@ -2267,6 +2354,16 @@ export default function StudentDashboard() {
             )}
           </div>
         </div>
+      )}
+      {evalModalApp && (
+        <EvaluacijaKompanijeModal
+          application={evalModalApp}
+          onClose={() => setEvalModalApp(null)}
+          onSubmitted={app => {
+            setEvaluatedAppIds(prev => new Set([...prev, app.id]));
+            setEvalModalApp(null);
+          }}
+        />
       )}
     </div>
   );

@@ -12,6 +12,8 @@ const PraksaModel = require('./Praksa');
 const AktivnostModel = require('./Aktivnost');
 const PrisustvoModel = require('./Prisustvo');
 const EvaluacijaModel = require('./Evaluacija');
+const EvaluacijaStudentaModel = require('./EvaluacijaStudenta');
+const EvaluacijaKompanijeModel = require('./EvaluacijaKompanije');
 const UgovorModel = require('./Ugovor');
 const IzvjestajModel = require('./Izvjestaj');
 const OdsjekModel = require('./Odsjek');
@@ -42,6 +44,8 @@ const SystemSetting = SystemSettingModel(sequelize);
 const Notifikacija = NotifikacijaModel(sequelize);
 const NotificationPreference = NotificationPreferenceModel(sequelize);
 const AuditLog = AuditLogModel(sequelize);
+const EvaluacijaStudenta = EvaluacijaStudentaModel(sequelize);
+const EvaluacijaKompanije = EvaluacijaKompanijeModel(sequelize);
 
 //relacije
 User.hasOne(Student, { foreignKey: 'userID' });
@@ -129,6 +133,12 @@ NotificationPreference.belongsTo(Student, { foreignKey: 'student_id' });
 User.hasMany(AuditLog, { foreignKey: 'userID', constraints: false });
 AuditLog.belongsTo(User, { foreignKey: 'userID', constraints: false });
 
+PrijavaNaPraksu.hasOne(EvaluacijaStudenta, { foreignKey: 'prijavaID' });
+EvaluacijaStudenta.belongsTo(PrijavaNaPraksu, { foreignKey: 'prijavaID' });
+
+PrijavaNaPraksu.hasOne(EvaluacijaKompanije, { foreignKey: 'prijavaID' });
+EvaluacijaKompanije.belongsTo(PrijavaNaPraksu, { foreignKey: 'prijavaID' });
+
 //eksport
 module.exports = { sequelize, User, Student, Kompanija, Fakultet, Koordinator, Odsjek, Oglas, PrijavaNaPraksu, Praksa,
-     Aktivnost, Prisustvo, Evaluacija, Ugovor, Izvjestaj, Dokument, OmiljeniOglas, Notifikacija, SystemSetting, NotificationPreference, AuditLog};
+     Aktivnost, Prisustvo, Evaluacija, Ugovor, Izvjestaj, Dokument, OmiljeniOglas, Notifikacija, SystemSetting, NotificationPreference, AuditLog, EvaluacijaStudenta, EvaluacijaKompanije};

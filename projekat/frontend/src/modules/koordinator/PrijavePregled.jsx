@@ -117,7 +117,7 @@ export default function PrijavePregled({ filterStatus = 'CEKA_KOORDINATORA', onO
                 {prijave.map(p => {
                   const student = p.Student;
                   const user    = student?.User;
-                  const oglas   = p.Oglas;
+                  const oglas   = p.Ogla;
                   const komp    = oglas?.Kompanija;
                   const mozeOdluciti = p.status === 'CEKA_KOORDINATORA' || p.status === 'PODNESENA';
                   return (
