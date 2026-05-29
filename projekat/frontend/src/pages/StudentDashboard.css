@@ -3783,3 +3783,37 @@
 .sd-page.dark .sd-notif-poruka { color: #94a3b8; }
 .sd-page.dark .sd-notif-empty { color: #475569; }
 
+.sd-error-banner {
+  margin-bottom: 1rem;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: #fff4e5;
+  color: #9a6700;
+  border: 1px solid #f0c36d;
+  font-weight: 500;
+}
+
+.sd-activity-textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 14px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  resize: vertical;
+  margin-bottom: 1rem;
+  transition: all 0.2s ease;
+}
+
+.sd-activity-textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12);
+}
+
+.sd-activity-textarea::placeholder {
+  color: var(--color-text-muted);
+}

@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react';
-import { getCoordinatorPractices } from '../../services/prakseService';
+import {
+  getCoordinatorPractices,
+  getPracticeActivities,
+} from '../../services/prakseService';
 import { formatDate } from '../../data/mockPrakse';
 import {
   PRACTICE_FILTERS,
@@ -28,6 +31,10 @@ export default function PraksePregled() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [filter, setFilter] = useState('all');
+  const [activitiesModal, setActivitiesModal] = useState(null);
+  const [activities, setActivities] = useState([]);
+  const [activitiesLoading, setActivitiesLoading] = useState(false);
+
 
   useEffect(() => {
     let mounted = true;
@@ -49,6 +56,21 @@ export default function PraksePregled() {
       mounted = false;
     };
   }, [filter]);
+
+
+  async function openActivities(praksa) {
+  setActivitiesModal(praksa);
+  setActivitiesLoading(true);
+
+  try {
+    const data = await getPracticeActivities(praksa.id);
+    setActivities(data);
+  } catch {
+    setActivities([]);
+  } finally {
+    setActivitiesLoading(false);
+  }
+}
 
   return (
     <div>
@@ -92,6 +114,7 @@ export default function PraksePregled() {
                 <th>Datum početka</th>
                 <th>Datum završetka</th>
                 <th>Status</th>
+                <th>Aktivnosti</th>
               </tr>
             </thead>
             <tbody>
@@ -118,12 +141,46 @@ export default function PraksePregled() {
                   <td>{formatDate(praksa.datumPocetka)}</td>
                   <td>{formatDate(praksa.datumKraja)}</td>
                   <td>{lifecycleBadge(praksa.lifecycleStatus)}</td>
+                  <td>
+  <button
+    type="button"
+    className="kd-select"
+    onClick={() => openActivities(praksa)}
+  >
+    Aktivnosti
+  </button>
+</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       )}
+
+      {activitiesModal && (
+  <div className="cd-modal-overlay" onClick={() => setActivitiesModal(null)}>
+    <div className="cd-modal-sheet" onClick={(e) => e.stopPropagation()}>
+      <h2>Aktivnosti studenta</h2>
+
+      {activitiesLoading ? (
+        <p>Učitavanje aktivnosti...</p>
+      ) : activities.length === 0 ? (
+        <p>Nema evidentiranih aktivnosti.</p>
+      ) : (
+        activities.map((a) => (
+          <div key={a.id} style={{ padding: '12px 0', borderBottom: '1px solid #ddd' }}>
+            <strong>{new Date(a.datum).toLocaleDateString()}</strong>
+            <p>{a.opis}</p>
+          </div>
+        ))
+      )}
+
+      <button className="kd-select" onClick={() => setActivitiesModal(null)}>
+        Zatvori
+      </button>
+    </div>
+  </div>
+)}
     </div>
   );
 }

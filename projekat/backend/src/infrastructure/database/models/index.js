@@ -129,6 +129,9 @@ NotificationPreference.belongsTo(Student, { foreignKey: 'student_id' });
 User.hasMany(AuditLog, { foreignKey: 'userID', constraints: false });
 AuditLog.belongsTo(User, { foreignKey: 'userID', constraints: false });
 
+
+
+
 //eksport
 module.exports = { sequelize, User, Student, Kompanija, Fakultet, Koordinator, Odsjek, Oglas, PrijavaNaPraksu, Praksa,
      Aktivnost, Prisustvo, Evaluacija, Ugovor, Izvjestaj, Dokument, OmiljeniOglas, Notifikacija, SystemSetting, NotificationPreference, AuditLog};
