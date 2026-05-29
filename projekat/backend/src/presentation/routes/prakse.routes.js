@@ -16,12 +16,25 @@ router.get(
   authorize('STUDENT', 'COMPANY', 'COORDINATOR'),
   prakseController.getActivities
 );
+router.get(
+  '/:id/izvjestaj',
+  authenticate,
+  authorize('STUDENT', 'COMPANY'),
+  prakseController.getReport
+);
 
 router.post(
   '/:id/aktivnosti',
   authenticate,
   authorize('STUDENT'),
   prakseController.createActivity
+);
+
+router.post(
+  '/:id/izvjestaj',
+  authenticate,
+  authorize('COMPANY'),
+  prakseController.generateReport
 );
 
 module.exports = router;

@@ -10,6 +10,8 @@ const {
   PrijavaNaPraksu,
   Praksa,
   Ugovor,
+  Izvjestaj,
+  Evaluacija,
 } = require('../../infrastructure/database/models');
 const { resolveCoordinatorProfile } = require('./coordinatorProfile.service');
 const {
@@ -480,6 +482,132 @@ async function getPracticeActivities(userId, role, practiceId) {
   });
 }
 
+
+async function generatePracticeReport(userId, practiceId, data = {}) {
+  const praksa = await getCompanyPracticeById(userId, practiceId);
+
+  if (!praksa) {
+    throw makeError('Praksa nije pronađena.', 404);
+  }
+
+  const ocjena = Number(data.ocjena);
+  if (!Number.isInteger(ocjena) || ocjena < 1 || ocjena > 5) {
+    throw makeError('Ocjena mora biti broj od 1 do 5.');
+  }
+
+  const komentar = String(data.komentar || '').trim();
+  if (!komentar) {
+    throw makeError('Komentar je obavezan.');
+  }
+
+  const [evaluacija] = await Evaluacija.findOrCreate({
+    where: {
+      praksaID: praksa.id,
+      tipEvaluacije: 'KOMPANIJA_OCJENJUJE_STUDENTA',
+    },
+    defaults: {
+      praksaID: praksa.id,
+      ocjena,
+      komentar,
+      tipEvaluacije: 'KOMPANIJA_OCJENJUJE_STUDENTA',
+      datumEvaluacije: new Date(),
+    },
+  });
+
+  if (!evaluacija.isNewRecord) {
+    await evaluacija.update({
+      ocjena,
+      komentar,
+      datumEvaluacije: new Date(),
+    });
+  }
+
+  const studentName = [praksa.student?.ime, praksa.student?.prezime].filter(Boolean).join(' ') || '-';
+  const companyName = praksa.kompanija?.naziv || '-';
+  const practiceName = praksa.oglas?.naziv || 'Praksa';
+
+  const sadrzaj = [
+    'IZVJEŠTAJ O OBAVLJENOJ PRAKSI',
+    '',
+    `Student: ${studentName}`,
+    `Broj indeksa: ${praksa.student?.index_number || '-'}`,
+    `Kompanija: ${companyName}`,
+    `Praksa: ${practiceName}`,
+    `Period: ${displayContractDate(praksa.datumPocetka)} - ${displayContractDate(praksa.datumKraja)}`,
+    '',
+    'EVALUACIJA STUDENTA',
+    `Ocjena: ${ocjena}/5`,
+    `Komentar kompanije: ${komentar}`,
+    '',
+    `Datum generisanja: ${displayContractDate(new Date())}`,
+    '',
+    'Ovaj izvještaj služi kao potvrda o pohađanju studentske prakse.',
+  ].join('\n');
+
+  const [izvjestaj, created] = await Izvjestaj.findOrCreate({
+    where: { praksaID: praksa.id },
+    defaults: {
+      praksaID: praksa.id,
+      koordinatorID: null,
+      sadrzaj,
+      dokumentUrl: null,
+      datumGenerisanja: new Date(),
+    },
+  });
+
+  if (!created) {
+    await izvjestaj.update({
+      sadrzaj,
+      datumGenerisanja: new Date(),
+    });
+  }
+
+  return {
+    created,
+    izvjestaj,
+    evaluacija,
+    sadrzaj,
+  };
+}
+
+
+async function getPracticeReport(userId, role, practiceId) {
+  let praksa = null;
+
+  if (role === 'STUDENT') {
+    praksa = await getStudentPracticeById(userId, practiceId);
+  }
+
+  if (role === 'COMPANY') {
+    praksa = await getCompanyPracticeById(userId, practiceId);
+  }
+
+  if (!praksa) {
+    throw makeError('Praksa nije pronađena.', 404);
+  }
+
+  const izvjestaj = await Izvjestaj.findOne({
+    where: { praksaID: Number(practiceId) },
+  });
+
+  if (!izvjestaj) {
+    throw makeError('Izvještaj još nije generisan.', 404);
+  }
+
+  const evaluacija = await Evaluacija.findOne({
+    where: {
+      praksaID: Number(practiceId),
+      tipEvaluacije: 'KOMPANIJA_OCJENJUJE_STUDENTA',
+    },
+  });
+
+  return {
+    izvjestaj,
+    evaluacija,
+    sadrzaj: izvjestaj.sadrzaj,
+  };
+}
+
 module.exports = {
   PRACTICE_LIFECYCLE,
   calculatePracticeDates,
@@ -495,4 +623,6 @@ module.exports = {
   backfillAcceptedPractices,
   createActivity,
   getPracticeActivities,
+  generatePracticeReport,
+  getPracticeReport,
 };
