@@ -36,6 +36,8 @@ const FILTER_LIFECYCLE = {
   zavrsena: PRACTICE_LIFECYCLE.FINISHED,
 };
 
+const Aktivnost = require('../../infrastructure/database/models').Aktivnost;
+
 function makeError(message, status = 400) {
   const error = new Error(message);
   error.status = status;
@@ -431,6 +433,53 @@ async function backfillAcceptedPractices() {
   }
 }
 
+async function createActivity(userId, practiceId, opis) {
+  const praksa = await getStudentPracticeById(userId, practiceId);
+
+  if (!praksa) {
+    throw makeError('Praksa nije pronađena.', 404);
+  }
+
+  if (praksa.lifecycleStatus !== PRACTICE_LIFECYCLE.ACTIVE) {
+    throw makeError('Aktivnosti se mogu unositi samo tokom aktivne prakse.');
+  }
+
+  return Aktivnost.create({
+    praksaID: practiceId,
+    opis,
+    datum: new Date(),
+  });
+} 
+
+
+async function getPracticeActivities(userId, role, practiceId) {
+  let praksa = null;
+
+  if (role === 'STUDENT') {
+    praksa = await getStudentPracticeById(userId, practiceId);
+  }
+
+  if (role === 'COMPANY') {
+    praksa = await getCompanyPracticeById(userId, practiceId);
+  }
+
+  if (role === 'COORDINATOR') {
+    const { prakse } = await getCoordinatorPractices(userId);
+    praksa = prakse.find(p => p.id === Number(practiceId));
+  }
+
+  if (!praksa) {
+    throw makeError('Praksa nije pronađena.', 404);
+  }
+
+  return Aktivnost.findAll({
+    where: {
+      praksaID: practiceId,
+    },
+    order: [['datum', 'DESC']],
+  });
+}
+
 module.exports = {
   PRACTICE_LIFECYCLE,
   calculatePracticeDates,
@@ -444,4 +493,6 @@ module.exports = {
   getCoordinatorPractices,
   getCoordinatorPracticeSummary,
   backfillAcceptedPractices,
+  createActivity,
+  getPracticeActivities,
 };

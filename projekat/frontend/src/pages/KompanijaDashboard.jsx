@@ -40,6 +40,7 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import EditOglas from '../modules/listings/EditOglas';
 import { formatDate } from '../data/mockPrakse';
+import { getPracticeActivities } from '../services/prakseService';
 
 const VIEWS = {
   DASHBOARD: 'dashboard',
@@ -879,6 +880,9 @@ function PracticesShell() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [contract, setContract] = useState(null);
+  const [activitiesModal, setActivitiesModal] = useState(null);
+  const [activities, setActivities] = useState([]);
+  const [activitiesLoading, setActivitiesLoading] = useState(false);
   const [contractError, setContractError] = useState('');
   const [openingContractId, setOpeningContractId] = useState(null);
 
@@ -911,6 +915,21 @@ function PracticesShell() {
       setOpeningContractId(null);
     }
   }
+
+
+  async function openActivities(praksa) {
+  setActivitiesModal(praksa);
+  setActivitiesLoading(true);
+
+  try {
+    const data = await getPracticeActivities(praksa.id);
+    setActivities(data);
+  } catch {
+    setActivities([]);
+  } finally {
+    setActivitiesLoading(false);
+  }
+}
 
   return (
     <div className="cd-content">
@@ -951,6 +970,7 @@ function PracticesShell() {
                   <th>Status prakse</th>
                   <th>Odluka studenta</th>
                   <th>Ugovor</th>
+                  <th>Aktivnosti</th>
                 </tr>
               </thead>
               <tbody>
@@ -980,6 +1000,15 @@ function PracticesShell() {
                         {openingContractId === praksa.id ? 'Generisanje...' : 'Ugovor'}
                       </button>
                     </td>
+                    <td>
+                    <button
+                      type="button"
+                      className="cd-candidate-doc-btn"
+                      onClick={() => openActivities(praksa)}
+                    >
+                      Aktivnosti
+                    </button>
+                  </td>
                   </tr>
                 ))}
               </tbody>
@@ -1006,6 +1035,52 @@ function PracticesShell() {
           </div>
         </div>
       )}
+      {activitiesModal && (
+  <div
+    className="cd-modal-overlay"
+    onClick={() => setActivitiesModal(null)}
+  >
+    <div
+      className="cd-modal-sheet"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <h2>Aktivnosti studenta</h2>
+
+      {activitiesLoading ? (
+        <p>Učitavanje...</p>
+      ) : activities.length === 0 ? (
+        <p>Nema evidentiranih aktivnosti.</p>
+      ) : (
+        activities.map((a) => (
+          <div
+            key={a.id}
+            style={{
+              padding: '12px 0',
+              borderBottom: '1px solid var(--border-color,#ddd)'
+            }}
+          >
+            <strong>
+              {new Date(a.datum).toLocaleDateString()}
+            </strong>
+
+            <p style={{ marginTop: 6 }}>
+              {a.opis}
+            </p>
+          </div>
+        ))
+      )}
+
+      <div style={{ marginTop: 16 }}>
+        <button
+          className="cd-btn cd-btn--secondary"
+          onClick={() => setActivitiesModal(null)}
+        >
+          Zatvori
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 }

@@ -13,7 +13,13 @@ import {
 } from '../services/applicationsService';
 import { getMyDocuments, attachDocumentsToOglas, getNotifications, markNotificationRead, markAllNotificationsRead } from '../services/api';
 import { getFavourites, addFavourite, removeFavourite } from '../services/favouritesService';
-import { downloadPracticeContract, generatePracticeContract, getMyPractices } from '../services/prakseService';
+import {
+  downloadPracticeContract,
+  generatePracticeContract,
+  getMyPractices,
+  getPracticeActivities,
+  createPracticeActivity,
+} from '../services/prakseService';
 import {
   formatDate, relativeDate, trajanjeLabel, mjestLabel, deadlineInfo,
 } from '../data/mockPrakse';
@@ -1068,6 +1074,11 @@ function MyPracticesPanel({ practices, loading, error, filter, onFilterChange })
   const [contract, setContract] = useState(null);
   const [contractError, setContractError] = useState('');
   const [openingContractId, setOpeningContractId] = useState(null);
+  const [activitiesModal, setActivitiesModal] = useState(null);
+  const [activityText, setActivityText] = useState('');
+  const [activities, setActivities] = useState([]);
+  const [activitiesLoading, setActivitiesLoading] = useState(false);
+  const [activitiesError, setActivitiesError] = useState('');
 
   async function openContract(praksa) {
     setOpeningContractId(praksa.id);
@@ -1081,6 +1092,39 @@ function MyPracticesPanel({ practices, loading, error, filter, onFilterChange })
       setOpeningContractId(null);
     }
   }
+
+  async function openActivities(praksa) {
+  setActivitiesModal(praksa);
+  setActivitiesLoading(true);
+
+  try {
+    const data = await getPracticeActivities(praksa.id);
+    setActivities(data);
+  } catch (err) {
+    console.error(err);
+    setActivities([]);
+  } finally {
+    setActivitiesLoading(false);
+  }
+}
+
+async function submitActivity() {
+  if (!activitiesModal || !activityText.trim()) return;
+
+  try {
+    const created = await createPracticeActivity(
+      activitiesModal.id,
+      activityText.trim()
+    );
+
+    setActivities(prev => [created, ...prev]);
+    setActivityText('');
+  } catch (err) {
+  setActivitiesError(
+    err.message || 'Greška pri dodavanju aktivnosti.'
+  );
+}
+}
 
   return (
     <div className="sd-apps-panel">
@@ -1132,6 +1176,13 @@ function MyPracticesPanel({ practices, loading, error, filter, onFilterChange })
                 >
                   {openingContractId === praksa.id ? 'Generisanje...' : 'Ugovor'}
                 </button>
+                <button
+                  type="button"
+                  className="sd-btn-detail sd-practice-contract-btn"
+                  onClick={() => openActivities(praksa)}
+                >
+                  Aktivnosti
+                </button>
               </div>
             </article>
           ))}
@@ -1160,9 +1211,87 @@ function MyPracticesPanel({ practices, loading, error, filter, onFilterChange })
           </div>
         </div>
       )}
+
+      {activitiesModal && (
+  <div
+    className="sd-modal-overlay"
+    onClick={() => setActivitiesModal(null)}
+  >
+    <div
+      className="sd-modal"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="sd-modal-header">
+        <h2 className="sd-modal-title">
+          Aktivnosti na praksi
+        </h2>
+
+        <button
+          type="button"
+          className="sd-modal-close"
+          onClick={() => setActivitiesModal(null)}
+        >
+          &times;
+        </button>
+      </div>
+
+      <div className="sd-modal-body">
+
+  {activitiesError && (
+    <div className="sd-error-banner">
+      {activitiesError}
+    </div>
+  )}
+
+        <textarea
+  className="sd-activity-textarea"
+  value={activityText}
+  onChange={(e) => setActivityText(e.target.value)}
+  placeholder="Opišite aktivnosti koje ste obavljali tokom prakse..."
+  rows={5}
+/>
+
+        <button
+          type="button"
+          className="sd-btn-apply"
+          onClick={submitActivity}
+        >
+          Dodaj aktivnost
+        </button>
+
+        <hr style={{ margin: '1rem 0' }} />
+
+        {activitiesLoading ? (
+          <p>Učitavanje aktivnosti...</p>
+        ) : activities.length === 0 ? (
+          <p>Nema evidentiranih aktivnosti.</p>
+        ) : (
+          activities.map((a) => (
+            <div
+              key={a.id}
+              style={{
+                marginBottom: '1rem',
+                paddingBottom: '1rem',
+                borderBottom: '1px solid #ddd',
+              }}
+            >
+              <strong>
+                {new Date(a.datum).toLocaleDateString()}
+              </strong>
+
+              <p>{a.opis}</p>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  </div>
+)}
+      
     </div>
   );
 }
+
 
 // ── ClosedListingsPanel ───────────────────────────────────────────────────
 function ClosedListingsPanel({ oglasi, loading, error, hasFilters, onResetFilters, search, onSearchChange }) {

@@ -6,6 +6,9 @@ const preferencesService = require('../../business/services/notificationPreferen
 
 // GET /api/notification-preferences
 router.get('/', authenticate, async (req, res) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
   try {
     const preferences = await preferencesService.getOrCreatePreferences(req.user.id);
 

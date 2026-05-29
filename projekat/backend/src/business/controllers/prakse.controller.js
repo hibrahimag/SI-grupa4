@@ -44,9 +44,41 @@ async function generateContract(req, res) {
   }
 }
 
+
+async function createActivity(req, res) {
+  try {
+    const aktivnost = await prakseService.createActivity(
+      req.user.id,
+      req.params.id,
+      req.body.opis
+    );
+
+    return res.status(201).json(aktivnost);
+  } catch (error) {
+    return handleError(res, error);
+  }
+}
+
+async function getActivities(req, res) {
+  try {
+    const aktivnosti = await prakseService.getPracticeActivities(
+      req.user.id,
+      req.user.role,
+      req.params.id
+    );
+
+    return res.json(aktivnosti);
+  } catch (error) {
+    return handleError(res, error);
+  }
+} 
+
+
 module.exports = {
   getMine,
   getCompany,
   getCoordinator,
   generateContract,
+  createActivity,
+  getActivities,
 };
