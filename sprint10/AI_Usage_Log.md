@@ -1906,3 +1906,54 @@ Uklonjeni su svi nekonzistentni inline stilovi sa dugmadi unutar kartica oglasa.
 **Rizici, problemi ili greške:**
 
 - PDF se generiše na klijentskoj strani iz prikazanog sadržaja ugovora, pa buduća složenija formatiranja mogu zahtijevati dodatnu PDF biblioteku
+
+---
+
+## Unos 3 — Automatsko završavanje prakse (US-54, PB19)
+
+| Polje | Sadržaj |
+|---|---|
+| **Datum** | 30.05.2026 |
+| **Sprint broj** | 10 |
+| **Alat** | Cursor (Composer) |
+| **Ko je koristio** | aglamoc1 |
+| **Svrha korištenja** | Implementacija US-54 — automatsko završavanje prakse nakon isteka trajanja i obavještavanje studenta i kompanije |
+
+**Kratak opis upita:**
+
+> Implementirati user story 54 (PB19): sistem treba pratiti datum početka i trajanje prakse, nakon isteka trajanja automatski označiti praksu završenom i obavijestiti studenta i kompaniju.
+
+**Šta je AI predložio ili generisao:**
+
+- Analizu postojeće arhitekture: status `ZAVRSENA` se već izračunava u `practiceLifecycleStatus()` na osnovu `datumPocetka` i `datumKraja`, bez persistiranog statusa u bazi
+- Dodavanje polja `datumObavijestiZavrsetka` u model `Praksa.js` radi idempotentnosti obavijesti
+- Funkcije `completeExpiredPractices()` i `notifyPracticeCompletion()` u `prakse.service.js` — pronalazak praksi s isteklim `datumKraja`, slanje in-app notifikacije studentu (`PRAKSA_ZAVRSENA`) i email obavijesti studentu i kompaniji, uz poštivanje korisničkih preferenci (`canSendInApp`, `canSendEmail`)
+- Nove email funkcije `sendPraksaZavrsenaStudentEmail()` i `sendPraksaZavrsenaCompanyEmail()` u `email.service.js`, usklađene s postojećim Brevo HTML templateom
+- Novi periodički job `practiceCompletion.job.js` — prvo pokretanje ~1 min nakon starta servera, zatim svakih 24 sata
+- Integraciju joba u `server.js` nakon `sequelize.sync`
+- Unit testove u `prakse.service.test.js`, `email.service.test.js` i novom `practiceCompletion.job.test.js`
+- Upute za lokalno i UI testiranje (tab „Moje prakse“, filter „Završene“, zvono za in-app notifikacije)
+
+**Šta je tim prihvatio:**
+
+- Korištenje postojeće date-based lifecycle logike umjesto dodavanja novog status polja u bazu
+- Periodički job sa `setInterval` umjesto uvođenja dodatne cron biblioteke
+- Idempotentnost obavijesti putem `datumObavijestiZavrsetka`
+- Integraciju s postojećim servisima za notifikacije, email i preference korisnika
+- Odluku da frontend ne treba mijenjati jer badge „Završena praksa“ već postoji u dashboardu
+
+**Šta je tim izmijenio:**
+
+- Ništa strukturalno — implementacija prihvaćena kako je generisana
+
+**Šta je tim odbacio:**
+
+- Persistiranje statusa `ZAVRSENA` u bazi — odbačeno jer se status već pouzdano izračunava iz datuma
+- Uvođenje `node-cron` ili slične biblioteke — odbačeno radi minimalnog diff-a
+
+**Rizici, problemi ili greške:**
+
+- Kolona `datumObavijestiZavrsetka` zahtijeva jednom pokrenuti `sequelize.sync({ alter: true })` prije testiranja
+- Integration test `koordinator.routes.integration.test.js` može vratiti 500 dok se shema ne sync-uje s novom kolonom
+- Email obavijesti zavise od ispravno postavljenih `BREVO_*` env varijabli u `.env`
+- Ako prvi API poziv u lancu uspije a drugi padne zbog mrežne greške, obavijest se ne bi ponovila automatski jer je `datumObavijestiZavrsetka` već postavljen
