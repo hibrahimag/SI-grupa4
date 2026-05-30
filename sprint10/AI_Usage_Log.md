@@ -1927,9 +1927,9 @@ Uklonjeni su svi nekonzistentni inline stilovi sa dugmadi unutar kartica oglasa.
 
 - Analizu postojeće arhitekture: status `ZAVRSENA` se već izračunava u `practiceLifecycleStatus()` na osnovu `datumPocetka` i `datumKraja`, bez persistiranog statusa u bazi
 - Dodavanje polja `datumObavijestiZavrsetka` u model `Praksa.js` radi idempotentnosti obavijesti
-- Funkcije `completeExpiredPractices()` i `notifyPracticeCompletion()` u `prakse.service.js` — pronalazak praksi s isteklim `datumKraja`, slanje in-app notifikacije studentu (`PRAKSA_ZAVRSENA`) i email obavijesti studentu i kompaniji, uz poštivanje korisničkih preferenci (`canSendInApp`, `canSendEmail`)
+- Funkcije `completeExpiredPractices()` i `notifyPracticeCompletion()` u `prakse.service.js` - pronalazak praksi s isteklim `datumKraja`, slanje in-app notifikacije studentu (`PRAKSA_ZAVRSENA`) i email obavijesti studentu i kompaniji, uz poštivanje korisničkih preferenci (`canSendInApp`, `canSendEmail`)
 - Nove email funkcije `sendPraksaZavrsenaStudentEmail()` i `sendPraksaZavrsenaCompanyEmail()` u `email.service.js`, usklađene s postojećim Brevo HTML templateom
-- Novi periodički job `practiceCompletion.job.js` — prvo pokretanje ~1 min nakon starta servera, zatim svakih 24 sata
+- Novi periodički job `practiceCompletion.job.js` - prvo pokretanje ~1 min nakon starta servera, zatim svakih 24 sata
 - Integraciju joba u `server.js` nakon `sequelize.sync`
 - Unit testove u `prakse.service.test.js`, `email.service.test.js` i novom `practiceCompletion.job.test.js`
 - Upute za lokalno i UI testiranje (tab „Moje prakse“, filter „Završene“, zvono za in-app notifikacije)
@@ -1944,12 +1944,12 @@ Uklonjeni su svi nekonzistentni inline stilovi sa dugmadi unutar kartica oglasa.
 
 **Šta je tim izmijenio:**
 
-- Ništa strukturalno — implementacija prihvaćena kako je generisana
+- Ništa 
 
 **Šta je tim odbacio:**
 
-- Persistiranje statusa `ZAVRSENA` u bazi — odbačeno jer se status već pouzdano izračunava iz datuma
-- Uvođenje `node-cron` ili slične biblioteke — odbačeno radi minimalnog diff-a
+- Persistiranje statusa `ZAVRSENA` u bazi - odbačeno jer se status već pouzdano izračunava iz datuma
+- Uvođenje `node-cron` ili slične biblioteke - odbačeno radi minimalnog diff-a
 
 **Rizici, problemi ili greške:**
 
@@ -1957,3 +1957,127 @@ Uklonjeni su svi nekonzistentni inline stilovi sa dugmadi unutar kartica oglasa.
 - Integration test `koordinator.routes.integration.test.js` može vratiti 500 dok se shema ne sync-uje s novom kolonom
 - Email obavijesti zavise od ispravno postavljenih `BREVO_*` env varijabli u `.env`
 - Ako prvi API poziv u lancu uspije a drugi padne zbog mrežne greške, obavijest se ne bi ponovila automatski jer je `datumObavijestiZavrsetka` već postavljen
+
+---
+
+## Unos 4 — Implementacija evaluacije studenta i kompanije (US-26, US-27)
+
+| Polje | Sadržaj |
+|---|---|
+| **Datum** | 30.05.2026 |
+| **Sprint broj** | 10 |
+| **Alat** | Claude (claude-sonnet-4-6, claude.ai) |
+| **Ko je koristio** | alukovac1 |
+| **Svrha korištenja** | Implementacija US-26 (Evaluacija studenta) i US-27 (Evaluacija kompanije) |
+
+**Kratak opis upita:**
+
+> Potrebno je implementirati user storije US-26 i US-27 - evaluaciju studenta od strane kompanije i evaluaciju kompanije od strane studenta. Implementacija treba biti funkcionalna i intuitivna, uz poštivanje acceptance criteria koji nalažu da evaluacije budu dostupne tek nakon završetka prakse. Stil implementacije treba biti usklađen s postojećim kodom. Postojeće fajlove koji zahtijevaju izmjene nije potrebno pisati u cijelosti - dovoljno je navesti gdje i šta se mijenja. Nove fajlove treba napisati u potpunosti.
+
+**Šta je AI predložio ili generisao:**
+
+- Novi fajl `frontend/src/modules/evaluations/EvaluacijaStudenta.jsx` - komponenta za kompaniju s tab navigacijom (Na čekanju / Poslane evaluacije), star-rating komponentom, formom s kriterijima (tehničke vještine, komunikacija, radna etika, inicijativa, timski rad), automatski izračunatom ukupnom ocjenom kao prosjekom i opcionim komentarom
+- Novi fajl `frontend/src/modules/evaluations/EvaluacijaKompanije.jsx` - komponenta za studenta s istom strukturom, kriteriji prilagođeni kompaniji (organizacija, mentorstvo, radno okruženje, relevantnost, preporuka); exportuje i `EvaluacijaKompanijeModal` za prikaz unutar StudentDashboard-a
+- Novi fajl `frontend/src/modules/evaluations/Evaluacija.css` - stilovi za obje evaluacijske komponente
+- Novi fajl `frontend/src/services/evaluationService.js` - frontend API wrapper funkcije za sve evaluacijske endpointe
+- `backend/src/business/services/evaluation.service.js` - kompletna backend logika: `getPendingStudentEvaluations`, `submitStudentEvaluation`, `getSubmittedStudentEvaluations`, `getPendingCompanyEvaluations`, `submitCompanyEvaluation`, `getStudentSubmittedCompanyEvaluations`, `getStudentReceivedEvaluations`, `getCompanyReceivedEvaluations`; evaluacija dostupna samo nakon što je `datumKraja` prakse prošao, kroz `Praksa` tabelu s filterom `datumKraja < NOW()`
+- `backend/src/business/controllers/evaluation.controller.js` - HTTP sloj za sve evaluacijske endpointe
+- `backend/src/presentation/routes/evaluation.routes.js` - rute za kompaniju i studenta, zaštićene `authenticate` middlewareom
+- Integracija u `KompanijaDashboard.jsx` - novi tab "Evaluacije studenata" i "Primljene evaluacije" u sidebaru i navigaciji
+- Integracija u `StudentDashboard.jsx` - tab "Primljene evaluacije" u sidebaru, `EvaluacijaKompanijeModal` pozivan iz "Moje prakse" taba, `MojeEvaluacijePanel` komponenta
+
+**Šta je tim prihvatio:**
+
+- Kompletnu backend i frontend arhitekturu evaluacija
+- Logiku dostupnosti evaluacije tek nakon isteka `datumKraja` prakse kroz `Praksa` tabelu
+- Star-rating komponentu s hover efektom
+- Automatski izračun ukupne ocjene kao prosjeka svih kriterija
+- Tabove Na čekanju / Poslane evaluacije u obje komponente
+- In-app notifikaciju i email studentu nakon što kompanija pošalje evaluaciju
+
+**Šta je tim izmijenio:**
+
+- Ništa 
+
+**Šta je tim odbacio:**
+
+**Rizici, problemi ili greške:**
+
+- Evaluacija se ne može testirati dok se ručno u bazi ne izmijeni period trajanja prakse - potrebno stvaiti neki u datum u prošlosti da bi se moglo testirati, jer sve prakse imaju period trajanja nekoliko mjeseci
+
+---
+
+## Unos 5 — Tabovi za prijave kandidata na kompanija dashboardu
+
+| Polje | Sadržaj |
+|---|---|
+| **Datum** | 30.05.2026 |
+| **Sprint broj** | 10 |
+| **Alat** | Claude (claude-sonnet-4-6, claude.ai) |
+| **Ko je koristio** | alukovac1 |
+| **Svrha korištenja** | Dodavanje tab filtera na pregledu prijava kandidata u kompanija dashboardu |
+
+**Kratak opis upita:**
+
+> Potrebno je dodati tab-based filtriranje prijava kandidata unutar sekcije "Prijave kandidata" na kompanija dashboardu. Tabovi trebaju omogućiti filtriranje po kategorijama: sve prijave, uži krug, odobrene prijave i odbijene prijave, vizuelno usklađeno s postojećim tab komponentama u aplikaciji.
+
+**Šta je AI predložio ili generisao:**
+
+- `APPLICATION_TABS` niz s tabovima: Sve prijave, Uži krug, Odobrene, Odbijene unutar `CandidatesShell` komponente u `KompanijaDashboard.jsx`
+- `activeTab` state varijablu i reset na `'all'` pri promjeni odabranog oglasa
+- `filteredApplications` useMemo koji filtrira prijave prema aktivnom tabu koristeći `APPLICATION_STATUS` konstante
+- Badge s brojem prijava po tabu, stilizovan konzistentno s postojećim `cd-stat-tab` klasama
+- Prazno stanje prilagođeno aktivnom tabu ("Nema prijava u ovoj kategoriji")
+
+**Šta je tim prihvatio:**
+
+- Kompletnu implementaciju tabova s filteiranjem i badge-evima
+- Reset aktivnog taba pri promjeni oglasa
+
+**Šta je tim izmijenio:**
+
+- Uklonjen tab "Na čekanju koordinatora" jer kompanija ne treba vidjeti prijave koje koordinator još nije odobrio
+
+**Šta je tim odbacio:**
+
+**Rizici, problemi ili greške:**
+
+- Tab "Uži krug" koristi `APPLICATION_STATUS.SHORTLISTED` - potrebno provjeriti da li vrijednost odgovara stringu koji backend vraća (`U_RAZMATRANJU`)
+
+---
+
+## Unos 6 — Osposobljavanje notifikacija za evaluacije (US-26, US-27)
+
+| Polje | Sadržaj |
+|---|---|
+| **Datum** | 30.05.2026 |
+| **Sprint broj** | 10 |
+| **Alat** | Claude (claude-sonnet-4-6, claude.ai) |
+| **Ko je koristio** | alukovac1 |
+| **Svrha korištenja** | Dodavanje in-app i email notifikacija studentu nakon što kompanija pošalje evaluaciju |
+
+**Kratak opis upita:**
+
+> Potrebno je osposobiti notifikacijski sistem za evaluacije - student treba primiti in-app notifikaciju na dashboardu i email obavijest u trenutku kada kompanija pošalje evaluaciju njegova rada. Implementacija treba koristiti postojeće notifikacijske servise i poštivati korisničke preference za tipove notifikacija.
+
+**Šta je AI predložio ili generisao:**
+
+- Integraciju `createNotification` iz `notifications.service.js` u `submitStudentEvaluation` - kreira in-app notifikaciju tipa `EVALUACIJA` s naslovom "Kompanija vas je evaluirala"
+- Novu email funkciju `sendEvaluacijaStudentaEmail` u `email.service.js` - HTML template usklađen s postojećim Brevo templateom, prikazuje ukupnu ocjenu
+- Pozivanje email i notifikacijske funkcije unutar `try/catch` bloka koji ne prekida tok evaluacije pri grešci
+- Poštivanje korisničkih preferenci iz `notificationPreferences.service.js` (`canSendInApp`, `canSendEmail`)
+
+**Šta je tim prihvatio:**
+
+- Kompletnu implementaciju notifikacija i emaila za evaluacije
+- `try/catch` koji osigurava da greška pri slanju notifikacije ne prekida kreiranje evaluacije
+
+**Šta je tim izmijenio:**
+
+- Ništa 
+
+**Šta je tim odbacio:**
+
+**Rizici, problemi ili greške:**
+
+- Notifikacija se kreira s `studentUserID` koji dolazi iz ugniježđene asocijacije `Student.id` - treba provjeriti da li `notifications.service.js` prima `studentID` ili `userID` (razlika u modelu)
