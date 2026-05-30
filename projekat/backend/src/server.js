@@ -5,6 +5,7 @@ const {
   backfillStudentStatuses,
 } = require('./business/services/applicationStatus.service');
 const { backfillAcceptedPractices } = require('./business/services/prakse.service');
+const { startPracticeCompletionJob } = require('./jobs/practiceCompletion.job');
 
 const PORT = process.env.PORT || 3000;
 
@@ -14,6 +15,7 @@ sequelize
     await backfillApplicationStatuses(PrijavaNaPraksu);
     await backfillStudentStatuses(PrijavaNaPraksu);
     await backfillAcceptedPractices();
+    startPracticeCompletionJob();
     console.log('Baza spojena');
     app.listen(PORT, () => {
       console.log(`Server listening on port ${PORT}`);

@@ -1,5 +1,6 @@
 'use strict';
 
+const { Op } = require('sequelize');
 const {
   User,
   Student,
@@ -14,6 +15,16 @@ const {
   Evaluacija,
 } = require('../../infrastructure/database/models');
 const { resolveCoordinatorProfile } = require('./coordinatorProfile.service');
+const { createNotification } = require('./notifications.service');
+const {
+  getOrCreatePreferences,
+  canSendInApp,
+  canSendEmail,
+} = require('./notificationPreferences.service');
+const {
+  sendPraksaZavrsenaStudentEmail,
+  sendPraksaZavrsenaCompanyEmail,
+} = require('./email.service');
 const {
   APPLICATION_STATUS,
   COORDINATOR_STATUS,
@@ -39,6 +50,8 @@ const FILTER_LIFECYCLE = {
 };
 
 const Aktivnost = require('../../infrastructure/database/models').Aktivnost;
+
+const PRACTICE_COMPLETION_NOTIFICATION_TIP = 'PRAKSA_ZAVRSENA';
 
 function makeError(message, status = 400) {
   const error = new Error(message);
@@ -435,6 +448,109 @@ async function backfillAcceptedPractices() {
   }
 }
 
+async function notifyPracticeCompletion(praksa) {
+  const prijava = praksa.PrijavaNaPraksu;
+  const student = prijava?.Student;
+  const studentUser = student?.User;
+  const oglas = prijava?.Oglas || prijava?.Ogla;
+  const kompanija = oglas?.Kompanija;
+  const oglasNaziv = oglas?.naziv || 'praksu';
+  const kompanijaNaziv = kompanija?.naziv || 'Kompanija';
+  const studentName = [studentUser?.ime, studentUser?.prezime].filter(Boolean).join(' ') || 'Student';
+  const datumKraja = displayContractDate(praksa.datumKraja);
+  const naslov = 'Praksa je završena';
+  const poruka = `Vaša praksa "${oglasNaziv}" kod kompanije ${kompanijaNaziv} je završena dana ${datumKraja}.`;
+
+  const preferences = studentUser?.id ? await getOrCreatePreferences(studentUser.id) : null;
+
+  if (student?.id && canSendInApp(preferences, PRACTICE_COMPLETION_NOTIFICATION_TIP)) {
+    await createNotification(
+      student.id,
+      prijava.id,
+      PRACTICE_COMPLETION_NOTIFICATION_TIP,
+      naslov,
+      poruka
+    );
+  }
+
+  const emailPromises = [];
+
+  if (studentUser?.email && canSendEmail(preferences, PRACTICE_COMPLETION_NOTIFICATION_TIP)) {
+    emailPromises.push(
+      sendPraksaZavrsenaStudentEmail(
+        studentUser.email,
+        oglasNaziv,
+        kompanijaNaziv,
+        datumKraja
+      )
+    );
+  }
+
+  const companyEmail = kompanija?.User?.email;
+  if (companyEmail) {
+    emailPromises.push(
+      sendPraksaZavrsenaCompanyEmail(companyEmail, studentName, oglasNaziv, datumKraja)
+    );
+  }
+
+  await Promise.all(emailPromises);
+}
+
+async function completeExpiredPractices(now = new Date()) {
+  const today = todayDateOnly(now);
+  const todayDate = toUtcDate(today);
+
+  const rows = await Praksa.findAll({
+    where: {
+      datumOdustajanja: null,
+      datumObavijestiZavrsetka: null,
+      datumKraja: { [Op.lt]: todayDate },
+    },
+    include: [{
+      model: PrijavaNaPraksu,
+      required: true,
+      where: approvedAcceptedWhere(),
+      include: [
+        {
+          model: Student,
+          required: true,
+          include: [{ model: User, attributes: ['id', 'ime', 'prezime', 'email'] }],
+        },
+        {
+          model: Oglas,
+          required: true,
+          attributes: ['id', 'naziv'],
+          include: [{
+            model: Kompanija,
+            attributes: ['id', 'naziv'],
+            include: [{ model: User, attributes: ['email'] }],
+          }],
+        },
+      ],
+    }],
+  });
+
+  let processed = 0;
+  const errors = [];
+
+  for (const praksa of rows) {
+    if (practiceLifecycleStatus(praksa, today) !== PRACTICE_LIFECYCLE.FINISHED) {
+      continue;
+    }
+
+    try {
+      await notifyPracticeCompletion(praksa);
+      await praksa.update({ datumObavijestiZavrsetka: new Date() });
+      processed += 1;
+    } catch (error) {
+      errors.push({ praksaId: praksa.id, message: error.message });
+      console.warn(`[prakse] Greška pri automatskom završetku prakse ${praksa.id}: ${error.message}`);
+    }
+  }
+
+  return { processed, errors };
+}
+
 async function createActivity(userId, practiceId, opis) {
   const praksa = await getStudentPracticeById(userId, practiceId);
 
@@ -621,6 +737,7 @@ module.exports = {
   getCoordinatorPractices,
   getCoordinatorPracticeSummary,
   backfillAcceptedPractices,
+  completeExpiredPractices,
   createActivity,
   getPracticeActivities,
   generatePracticeReport,

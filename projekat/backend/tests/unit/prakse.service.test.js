@@ -16,11 +16,30 @@ jest.mock('../../src/business/services/coordinatorProfile.service', () => ({
   resolveCoordinatorProfile: jest.fn(),
 }));
 
+jest.mock('../../src/business/services/notifications.service', () => ({
+  createNotification: jest.fn(),
+}));
+
+jest.mock('../../src/business/services/notificationPreferences.service', () => ({
+  getOrCreatePreferences: jest.fn(),
+  canSendInApp: jest.fn(),
+  canSendEmail: jest.fn(),
+}));
+
+jest.mock('../../src/business/services/email.service', () => ({
+  sendPraksaZavrsenaStudentEmail: jest.fn(),
+  sendPraksaZavrsenaCompanyEmail: jest.fn(),
+}));
+
 const db = require('../../src/infrastructure/database/models');
+const notifications = require('../../src/business/services/notifications.service');
+const notificationPreferences = require('../../src/business/services/notificationPreferences.service');
+const emailService = require('../../src/business/services/email.service');
 const {
   calculatePracticeDates,
   practiceLifecycleStatus,
   ensurePracticeForApplication,
+  completeExpiredPractices,
   getStudentPractices,
   getPracticeContract,
 } = require('../../src/business/services/prakse.service');
@@ -66,6 +85,13 @@ describe('practiceLifecycleStatus', () => {
       '2026-05-26'
     )).toBe('ODUSTAO');
   });
+
+  test('praksa čiji je kraj jučer je završena', () => {
+    expect(practiceLifecycleStatus(
+      { datumPocetka: '2026-05-01', datumKraja: '2026-05-25' },
+      '2026-05-26'
+    )).toBe('ZAVRSENA');
+  });
 });
 
 // ── ensurePracticeForApplication ──────────────────────────────────────────────
@@ -100,6 +126,115 @@ describe('ensurePracticeForApplication', () => {
       }),
       { transaction: undefined }
     );
+  });
+});
+
+function makeExpiredPracticeRow(overrides = {}) {
+  return {
+    id: 1,
+    prijavaID: 100,
+    datumPocetka: new Date('2026-05-01T00:00:00.000Z'),
+    datumKraja: new Date('2026-05-25T00:00:00.000Z'),
+    datumOdustajanja: null,
+    datumObavijestiZavrsetka: null,
+    update: jest.fn().mockResolvedValue(undefined),
+    PrijavaNaPraksu: {
+      id: 100,
+      status: 'ODOBRENA',
+      koordinatorStatus: 'ODOBRENO',
+      kompanijaStatus: 'ODOBRENO',
+      studentStatus: 'PRIHVACENO',
+      Student: {
+        id: 20,
+        User: { id: 3, ime: 'Amina', prezime: 'Begić', email: 'student@test.com' },
+      },
+      Oglas: {
+        id: 10,
+        naziv: 'Backend praksa',
+        Kompanija: {
+          id: 5,
+          naziv: 'Firma d.o.o.',
+          User: { email: 'company@test.com' },
+        },
+      },
+    },
+    ...overrides,
+  };
+}
+
+// ── completeExpiredPractices ──────────────────────────────────────────────────
+describe('completeExpiredPractices', () => {
+  beforeEach(() => {
+    notificationPreferences.getOrCreatePreferences.mockResolvedValue({});
+    notificationPreferences.canSendInApp.mockReturnValue(true);
+    notificationPreferences.canSendEmail.mockReturnValue(true);
+    notifications.createNotification.mockResolvedValue({});
+    emailService.sendPraksaZavrsenaStudentEmail.mockResolvedValue(undefined);
+    emailService.sendPraksaZavrsenaCompanyEmail.mockResolvedValue(undefined);
+  });
+
+  test('šalje obavijesti i označava praksu kao obaviještenu', async () => {
+    const row = makeExpiredPracticeRow();
+    db.Praksa.findAll.mockResolvedValue([row]);
+
+    const result = await completeExpiredPractices(new Date('2026-05-26T12:00:00.000Z'));
+
+    expect(result).toEqual({ processed: 1, errors: [] });
+    expect(notifications.createNotification).toHaveBeenCalledWith(
+      20,
+      100,
+      'PRAKSA_ZAVRSENA',
+      'Praksa je završena',
+      expect.stringContaining('Backend praksa')
+    );
+    expect(emailService.sendPraksaZavrsenaStudentEmail).toHaveBeenCalledWith(
+      'student@test.com',
+      'Backend praksa',
+      'Firma d.o.o.',
+      '25.05.2026.'
+    );
+    expect(emailService.sendPraksaZavrsenaCompanyEmail).toHaveBeenCalledWith(
+      'company@test.com',
+      'Amina Begić',
+      'Backend praksa',
+      '25.05.2026.'
+    );
+    expect(row.update).toHaveBeenCalledWith({ datumObavijestiZavrsetka: expect.any(Date) });
+  });
+
+  test('ne obrađuje praksu kada nema isteklih zapisa', async () => {
+    db.Praksa.findAll.mockResolvedValue([]);
+
+    const result = await completeExpiredPractices(new Date('2026-05-26T12:00:00.000Z'));
+
+    expect(result).toEqual({ processed: 0, errors: [] });
+    expect(notifications.createNotification).not.toHaveBeenCalled();
+    expect(emailService.sendPraksaZavrsenaStudentEmail).not.toHaveBeenCalled();
+  });
+
+  test('preskače praksu koja još nije završena prema lifecycle statusu', async () => {
+    const row = makeExpiredPracticeRow({
+      datumKraja: new Date('2026-05-26T00:00:00.000Z'),
+    });
+    db.Praksa.findAll.mockResolvedValue([row]);
+
+    const result = await completeExpiredPractices(new Date('2026-05-26T12:00:00.000Z'));
+
+    expect(result).toEqual({ processed: 0, errors: [] });
+    expect(row.update).not.toHaveBeenCalled();
+  });
+
+  test('vraća grešku bez prekida ostalih praksi', async () => {
+    const failingRow = makeExpiredPracticeRow({ id: 1 });
+    const successRow = makeExpiredPracticeRow({ id: 2 });
+    failingRow.update.mockRejectedValue(new Error('DB greška'));
+    db.Praksa.findAll.mockResolvedValue([failingRow, successRow]);
+
+    const result = await completeExpiredPractices(new Date('2026-05-26T12:00:00.000Z'));
+
+    expect(result.processed).toBe(1);
+    expect(result.errors).toEqual([{ praksaId: 1, message: 'DB greška' }]);
+    expect(successRow.update).toHaveBeenCalled();
   });
 });
 
