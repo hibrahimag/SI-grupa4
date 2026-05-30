@@ -249,7 +249,7 @@ export default function EvaluacijaStudenta() {
                                 >
                                     {pending.map(a => (
                                         <option key={a.id} value={a.id}>
-                                            {a.studentIme} {a.studentPrezime}{a.oglasNaziv ? ` — ${a.oglasNaziv}` : ''}
+                                            {a.studentIme} {a.studentPrezime}{a.oglasNaziv ? ` - ${a.oglasNaziv}` : ''}
                                         </option>
                                     ))}
                                 </select>

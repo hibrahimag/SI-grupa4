@@ -624,66 +624,112 @@ export default function KompanijaDashboard() {
         )}
         {view === VIEWS.RECEIVED_EVALUATIONS && (
           <div className="cd-content">
-              {receivedEvals.length === 0 ? (
-                <div className="cd-empty-state" style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  minHeight: '300px',
-                  background: 'var(--color-surface)',
-                  borderRadius: '16px',
-                  margin: '40px auto',
-                  maxWidth: '540px',
-                  padding: '48px 32px',
-                  boxShadow: 'var(--shadow-card)',
-                }}>
-                  <div className="cd-empty-title" style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: 8 }}>
-                    Nema primljenih evaluacija.
-                  </div>
-                  <p style={{ color: 'var(--color-muted)', fontSize: '0.9rem', textAlign: 'center', margin: 0 }}>
-                    Evaluacije od studenata će se pojaviti ovdje nakon završetka prakse.
-                  </p>
-                </div>
-              ) : (
-                <div className="cd-candidates-table-wrap">
-                  <table className="cd-candidates-table">
-                    <thead>
-                      <tr>
-                        <th>Student</th>
-                        <th>Oglas</th>
-                        <th>Organizacija</th>
-                        <th>Mentorstvo</th>
-                        <th>Radno okruženje</th>
-                        <th>Relevantnost</th>
-                        <th>Preporuka</th>
-                        <th>Ukupna ocjena</th>
-                        <th>Komentar</th>
-                        <th>Datum</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {receivedEvals.map(ev => (
-                        <tr key={ev.id}>
-                          <td>{ev.studentIme} {ev.studentPrezime}</td>
-                          <td>{ev.oglasNaziv}</td>
-                          <td>{ev.organizacija}/5</td>
-                          <td>{ev.mentorstvo}/5</td>
-                          <td>{ev.radnoOkruzenje}/5</td>
-                          <td>{ev.relevantnoPosla}/5</td>
-                          <td>{ev.preporukaKompanija}/5</td>
-                          <td><strong>{ev.ukupnaOcjena}/5</strong></td>
-                          <td>{ev.komentar || '-'}</td>
-                          <td>
-                            {new Date(ev.datumEvaluacije)
-                              .toLocaleDateString('bs-BA')}
-                          </td>
-                        </tr>
+            <header className="cd-header">
+              <h1 className="cd-title">Primljene evaluacije</h1>
+              <p className="cd-subtitle">Ocjene i komentari koje su studenti ostavili nakon završetka prakse.</p>
+            </header>
+            {receivedEvals.length === 0 ? (
+              <div className="cd-empty-state" style={{
+                background: 'var(--color-surface)',
+                borderRadius: '16px',
+                border: '1px solid var(--color-border)',
+                maxWidth: '540px',
+              }}>
+                <div className="cd-empty-title">Nema primljenih evaluacija.</div>
+                <p className="cd-empty-text">
+                  Evaluacije od studenata će se pojaviti ovdje nakon završetka prakse.
+                </p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {receivedEvals.map(ev => (
+                  <article key={ev.id} style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 14,
+                    padding: '20px 24px',
+                    background: 'var(--color-surface)',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 16,
+                  }}>
+                    {/* Header */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                        <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--color-muted)' }}>
+                          {ev.studentIme} {ev.studentPrezime}
+                        </span>
+                        <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: 'var(--color-dark)' }}>
+                          {ev.oglasNaziv}
+                        </h3>
+                        <span style={{ fontSize: '0.74rem', color: 'var(--color-muted)' }}>
+                          {new Date(ev.datumEvaluacije).toLocaleDateString('bs-BA')}
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 3, flexShrink: 0 }}>
+                        {[1, 2, 3, 4, 5].map(n => (
+                          <svg key={n} width="18" height="18" viewBox="0 0 24 24"
+                            fill={n <= ev.ukupnaOcjena ? '#f59e0b' : 'none'}
+                            stroke="#f59e0b" strokeWidth="2">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                          </svg>
+                        ))}
+                        <span style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--color-dark)', marginLeft: 6 }}>
+                          {ev.ukupnaOcjena}/5
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Kriteriji */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0,1fr))', gap: 10 }}>
+                      {[
+                        { key: 'organizacija', label: 'Organizacija' },
+                        { key: 'mentorstvo', label: 'Mentorstvo' },
+                        { key: 'radnoOkruzenje', label: 'Radno okruženje' },
+                        { key: 'relevantnoPosla', label: 'Relevantnost' },
+                        { key: 'preporukaKompanija', label: 'Preporuka' },
+                      ].map(({ key, label }) => (
+                        <div key={key} style={{
+                          display: 'flex', flexDirection: 'column', gap: 5,
+                          padding: '10px 12px',
+                          background: 'var(--color-bg)',
+                          border: '1px solid var(--color-border)',
+                          borderRadius: 10,
+                        }}>
+                          <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            {label}
+                          </span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <span style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--color-dark)' }}>{ev[key]}</span>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--color-muted)', fontWeight: 600 }}>/5</span>
+                            {[1, 2, 3, 4, 5].map(n => (
+                              <svg key={n} width="11" height="11" viewBox="0 0 24 24"
+                                fill={n <= ev[key] ? '#f59e0b' : 'none'}
+                                stroke="#f59e0b" strokeWidth="2">
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                              </svg>
+                            ))}
+                          </div>
+                        </div>
                       ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+                    </div>
+
+                    {/* Komentar */}
+                    {ev.komentar && (
+                      <p style={{
+                        margin: 0, padding: '10px 14px',
+                        background: 'var(--color-bg)',
+                        borderLeft: '3px solid var(--color-border)',
+                        borderRadius: '0 8px 8px 0',
+                        fontSize: '0.85rem', fontStyle: 'italic',
+                        color: 'var(--color-muted)', lineHeight: 1.6,
+                      }}>
+                        "{ev.komentar}"
+                      </p>
+                    )}
+                  </article>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </main>

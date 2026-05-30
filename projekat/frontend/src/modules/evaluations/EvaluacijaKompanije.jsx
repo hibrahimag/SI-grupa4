@@ -17,7 +17,7 @@ const CRITERIA = [
     { key: 'mentorstvo', label: 'Mentorstvo i podrška' },
     { key: 'radnoOkruzenje', label: 'Radno okruženje' },
     { key: 'relevantnoPosla', label: 'Relevantnost zadataka' },
-    { key: 'preporukaKompanija', label: 'Preporuka kompaniji' },
+    { key: 'preporukaKompanija', label: 'Preporuka kompanije' },
 ];
 
 const EMPTY_SCORES = Object.fromEntries(CRITERIA.map(c => [c.key, 0]));

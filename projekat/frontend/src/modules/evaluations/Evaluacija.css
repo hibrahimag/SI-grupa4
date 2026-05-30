@@ -35,17 +35,18 @@
 }
 
 .ev-tab-btn {
-  padding: 8px 18px;
-  font-size: 0.82rem;
+  padding: var(--space-2) var(--space-5);
+  font-size: 0.82rem;      /* ← umjesto 0.82rem */
   font-weight: 600;
+  font-family: var(--font-sans);       /* ← dodaj ovo */
   color: var(--color-muted, #6b7fa3);
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
   cursor: pointer;
-  transition: color 0.15s, border-color 0.15s;
-  margin-bottom: -1px;
-  border-radius: 0;
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+  margin-bottom: -2px;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
 }
 
 .ev-tab-btn:hover {

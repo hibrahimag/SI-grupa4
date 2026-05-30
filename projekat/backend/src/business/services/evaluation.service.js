@@ -12,7 +12,7 @@ const {
     User,
 } = require('../../infrastructure/database/models');
 const notifService = require('./notifications.service');
-const { sendEvaluacijaStudentaEmail, sendEvaluacijaKompanijiEmail } = require('./email.service');
+const { sendEvaluacijaStudentaEmail} = require('./email.service');
 
 // ── Helper: dohvati kompanijaID iz userID ─────────────────────────────────
 
@@ -333,47 +333,6 @@ async function submitCompanyEvaluation(userID, prijavaID, data) {
         komentar: data.komentar || null,
         datumEvaluacije: new Date(),
     });
-
-    try {
-        const prijavaData = await PrijavaNaPraksu.findOne({
-            where: { id: prijavaID },
-            include: [{
-                model: Oglas,
-                attributes: ['naziv', 'kompanijaID'],
-                include: [{
-                    model: Kompanija,
-                    attributes: ['id', 'userID', 'naziv', 'email'] // dodaj naziv i email
-                }],
-            }],
-        });
-
-        const oglas = prijavaData?.Oglas;
-        const oglasNaziv = oglas?.naziv || 'praksu';
-        const kompanija = oglas?.Kompanija;
-
-        // In-app notifikacija kompaniji nije moguća trenutnom arhitekturom
-        // (Notifikacija model vezan za student_id)
-        // Email kompaniji
-        if (kompanija?.email) {
-            await sendEvaluacijaKompanijiEmail(
-                kompanija.email,
-                kompanija.naziv || 'Kompanija',
-                oglasNaziv,
-                data.ukupnaOcjena
-            );
-        }
-        if (kompanija?.id) {
-            await notifService.createKompanijaNotification(
-                kompanija.id,
-                prijavaID,
-                'EVALUACIJA',
-                'Student vas je evaluirao',
-                `Student je popunio evaluaciju za praksu: ${oglasNaziv}.`
-            );
-        }
-    } catch (err) {
-        console.error('Greška pri notifikaciji kompanije:', err.message);
-    }
 
     return evaluacija;
 }

@@ -2893,13 +2893,19 @@
 
 .sd-confirmed-practice-card {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
+  flex-direction: column;
+  gap: 14px;
   padding: 18px 22px;
   background: var(--color-surface, #fff);
   border: 1px solid var(--color-border, #e0edf9);
   border-radius: 16px;
+}
+
+.sd-confirmed-practice-card-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
 }
 
 .sd-practice-badge {
@@ -3817,4 +3823,193 @@
 
 .sd-activity-textarea::placeholder {
   color: var(--color-text-muted);
+}
+
+/* ── Evaluacija kartice ─────────────────────────────────────────── */
+.sd-eval-section {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border, #e0edf9);
+}
+
+.sd-eval-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  background: rgba(245, 158, 11, 0.08);
+  color: #b45309;
+  font-size: 0.83rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.sd-eval-btn:hover {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.55);
+}
+
+.sd-eval-done-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border-radius: 10px;
+  background: rgba(34, 197, 94, 0.09);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  color: #15803d;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+/* ── Evaluacija kartica (MojeEvaluacijePanel i KompanijaDashboard) ── */
+.sd-eval-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px 24px;
+  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-border, #e0edf9);
+  border-radius: 16px;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+.sd-eval-card:hover {
+  box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+  transform: translateY(-2px);
+}
+
+.sd-eval-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.sd-eval-card-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.sd-eval-card-company {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-muted, #5a7a9a);
+}
+
+.sd-eval-card-oglas {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--color-text, #0d1f3c);
+  margin: 0;
+}
+
+.sd-eval-card-date {
+  font-size: 0.74rem;
+  color: var(--color-faint, #9aabbc);
+  margin-top: 2px;
+}
+
+.sd-eval-stars {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.sd-eval-stars-score {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--color-text, #0d1f3c);
+  margin-left: 6px;
+}
+
+.sd-eval-criteria {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.sd-eval-criteria-item {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 10px 12px;
+  background: var(--color-bg, #f0f6ff);
+  border: 1px solid var(--color-border, #e0edf9);
+  border-radius: 10px;
+}
+
+.sd-eval-criteria-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--color-muted, #5a7a9a);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.sd-eval-criteria-value {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.sd-eval-criteria-num {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--color-text, #0d1f3c);
+}
+
+.sd-eval-criteria-max {
+  font-size: 0.75rem;
+  color: var(--color-muted, #5a7a9a);
+  font-weight: 600;
+}
+
+.sd-eval-comment {
+  padding: 10px 14px;
+  background: var(--color-bg, #f0f6ff);
+  border-left: 3px solid var(--color-border, #e0edf9);
+  border-radius: 0 8px 8px 0;
+  font-size: 0.85rem;
+  font-style: italic;
+  color: var(--color-muted, #5a7a9a);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Dark mode */
+.sd-page.dark .sd-eval-btn {
+  background: rgba(245,158,11,0.1);
+  border-color: rgba(245,158,11,0.3);
+  color: #fbbf24;
+}
+.sd-page.dark .sd-eval-done-badge {
+  background: rgba(74,222,128,0.1);
+  border-color: rgba(74,222,128,0.25);
+  color: #4ade80;
+}
+.sd-page.dark .sd-eval-card {
+  background: #111827;
+  border-color: #1e2d40;
+}
+.sd-page.dark .sd-eval-card-company { color: #64748b; }
+.sd-page.dark .sd-eval-card-oglas { color: #f1f5f9; }
+.sd-page.dark .sd-eval-card-date { color: #475569; }
+.sd-page.dark .sd-eval-stars-score { color: #f1f5f9; }
+.sd-page.dark .sd-eval-criteria-item {
+  background: #161f2e;
+  border-color: #1e2d40;
+}
+.sd-page.dark .sd-eval-criteria-label { color: #64748b; }
+.sd-page.dark .sd-eval-criteria-num { color: #e2e8f0; }
+.sd-page.dark .sd-eval-criteria-max { color: #475569; }
+.sd-page.dark .sd-eval-comment {
+  background: #161f2e;
+  border-color: #334155;
+  color: #94a3b8;
 }

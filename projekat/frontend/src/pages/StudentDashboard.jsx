@@ -977,61 +977,6 @@ function MyApplicationsPanel({
                     </div>
                   )}
 
-                  {/* Student evaluates company */}
-                  {finishedPracticeAppIds.has(app.id) && (
-                    <div className="sd-eval-section">
-                      {evaluatedAppIds.has(app.id) ? (
-                        <span className="sd-eval-done-badge">
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="20 6 9 17 4 12" />
-                          </svg>
-                          Evaluacija poslana
-                        </span>
-                      ) : (
-                        <button
-                          className="sd-eval-btn"
-                          type="button"
-                          onClick={e => { e.stopPropagation(); onEvaluate(app); }}
-                        >
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                          </svg>
-                          Evaluiraj kompaniju
-                        </button>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Company evaluates student */}
-                  {finishedPracticeAppIds.has(app.id) && (() => {
-                    const myEval = receivedEvaluations.find(e => e.prijavaID === app.id);
-                    if (!myEval) return null;
-                    return (
-                      <div className="sd-eval-section" style={{ marginTop: 8 }}>
-                        <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--color-muted,#6b7fa3)', display: 'block', marginBottom: 4 }}>
-                          Ocjena kompanije za vas:
-                        </span>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          {[1, 2, 3, 4, 5].map(n => (
-                            <svg key={n} width="14" height="14" viewBox="0 0 24 24"
-                              fill={n <= myEval.ukupnaOcjena ? '#f59e0b' : 'none'}
-                              stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                            </svg>
-                          ))}
-                          <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--color-dark,#0d1f3c)' }}>
-                            {myEval.ukupnaOcjena}/5
-                          </span>
-                        </div>
-                        {myEval.komentar && (
-                          <p style={{ fontSize: '0.78rem', color: 'var(--color-muted,#6b7fa3)', fontStyle: 'italic', margin: '4px 0 0' }}>
-                            "{myEval.komentar}"
-                          </p>
-                        )}
-                      </div>
-                    );
-                  })()}
-
                   {/* FOOTER */}
                   <div className="sd-card-foot">
                     <div className="sd-meta-row">
@@ -1137,7 +1082,7 @@ function MyApplicationsPanel({
   );
 }
 
-function MyPracticesPanel({ practices, loading, error, filter, onFilterChange }) {
+function MyPracticesPanel({ practices, loading, error, filter, onFilterChange, evaluatedAppIds, onEvaluate }) {
   const [contract, setContract] = useState(null);
   const [contractError, setContractError] = useState('');
   const [openingContractId, setOpeningContractId] = useState(null);
@@ -1224,6 +1169,7 @@ function MyPracticesPanel({ practices, loading, error, filter, onFilterChange })
         <div className="sd-apps-list">
           {practices.map((praksa) => (
             <article key={praksa.id} className="sd-confirmed-practice-card">
+              <div className="sd-confirmed-practice-card-row">
               <div>
                 <p className="sd-app-card-company">{praksa.kompanija?.naziv || 'Kompanija'}</p>
                 <h3 className="sd-app-card-naziv">{praksa.oglas?.naziv || 'Praksa'}</h3>
@@ -1251,6 +1197,30 @@ function MyPracticesPanel({ practices, loading, error, filter, onFilterChange })
                   Aktivnosti
                 </button>
               </div>
+              </div>
+              {(praksa.lifecycleStatus === 'ZAVRSENA' || new Date(praksa.datumKraja) < new Date()) && (
+                  <div className="sd-eval-section" style={{ marginTop: 0 }}>
+                    {evaluatedAppIds.has(praksa.prijavaID) ? (
+                      <span className="sd-eval-done-badge">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                        Evaluacija poslana
+                      </span>
+                    ) : (
+                      <button
+                        className="sd-eval-btn"
+                        type="button"
+                        onClick={() => onEvaluate(praksa)}
+                      >
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                        </svg>
+                        Evaluiraj kompaniju
+                      </button>
+                    )}
+                  </div>
+                )}
             </article>
           ))}
         </div>
@@ -2213,6 +2183,17 @@ export default function StudentDashboard() {
           </div>
           <div className="sd-sb-tab-icon">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+          </div>
+          <div className="sd-sb-tab-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+            </svg>
+          </div>
+          <div className="sd-sb-tab-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" />
             </svg>
             {filterTehs.length > 0 && <span className="sd-sb-badge">{filterTehs.length}</span>}
@@ -2568,20 +2549,9 @@ export default function StudentDashboard() {
               prakse={prakse}
               myPractices={myPractices}
               onViewOglas={sel => setSelectedPraksa(sel)}
-              evaluatedAppIds={evaluatedAppIds}
-              onEvaluate={app => {
-                const oglas = prakse.find(p => Number(p.id) === Number(app.oglasID));
-                setEvalModalApp({
-                  id: app.id,
-                  kompanijaNaziv: oglas?.kompanija || app.Oglas?.Kompanija?.naziv || 'Kompanija',
-                  oglasNaziv: oglas?.naziv || app.Oglas?.naziv || 'Oglas',
-                });
-              }}
-              receivedEvaluations={receivedEvaluations}
               onStudentDecision={handleStudentDecision}
               decisionProcessingId={decisionProcessingId}
               decisionSuccess={decisionSuccess}
-              finishedPracticeAppIds={finishedPracticeAppIds}
             />
 
           ) : activeTab === 'moje-prakse' ? (
@@ -2591,6 +2561,14 @@ export default function StudentDashboard() {
               error={myPracticesError}
               filter={myPracticesFilter}
               onFilterChange={setMyPracticesFilter}
+              evaluatedAppIds={evaluatedAppIds}
+              onEvaluate={praksa => {
+                setEvalModalApp({
+                  id: praksa.prijavaID,
+                  kompanijaNaziv: praksa.kompanija?.naziv || 'Kompanija',
+                  oglasNaziv: praksa.oglas?.naziv || 'Oglas',
+                });
+              }}
             />
 
           ) : activeTab === 'zatvoreni' ? (
@@ -2852,6 +2830,63 @@ export default function StudentDashboard() {
   );
 }
 
+function EvalCard({ ev, kriteriji }) {
+  return (
+    <article className="sd-eval-card">
+      <div className="sd-eval-card-header">
+        <div className="sd-eval-card-meta">
+          <span className="sd-eval-card-company">{ev.kompanijaNaziv}</span>
+          <h3 className="sd-eval-card-oglas">{ev.oglasNaziv}</h3>
+          <span className="sd-eval-card-date">
+            {new Date(ev.datumEvaluacije).toLocaleDateString('bs-BA')}
+          </span>
+        </div>
+        <div className="sd-eval-stars">
+          {[1, 2, 3, 4, 5].map(n => (
+            <svg key={n} width="18" height="18" viewBox="0 0 24 24"
+              fill={n <= ev.ukupnaOcjena ? '#f59e0b' : 'none'}
+              stroke="#f59e0b" strokeWidth="2">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+            </svg>
+          ))}
+          <span className="sd-eval-stars-score">{ev.ukupnaOcjena}/5</span>
+        </div>
+      </div>
+
+      <div className="sd-eval-criteria" style={{ gridTemplateColumns: 'repeat(5, minmax(0, 1fr))' }}>
+        {kriteriji.map(({ key, label }) => (
+          <div key={key} className="sd-eval-criteria-item">
+            <span className="sd-eval-criteria-label">{label}</span>
+            <div className="sd-eval-criteria-value">
+              <span className="sd-eval-criteria-num">{ev[key]}</span>
+              <span className="sd-eval-criteria-max">/5</span>
+              {[1, 2, 3, 4, 5].map(n => (
+                <svg key={n} width="11" height="11" viewBox="0 0 24 24"
+                  fill={n <= ev[key] ? '#f59e0b' : 'none'}
+                  stroke="#f59e0b" strokeWidth="2">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                </svg>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {ev.komentar && (
+        <p className="sd-eval-comment">"{ev.komentar}"</p>
+      )}
+    </article>
+  );
+}
+
+const STUDENT_EVAL_KRITERIJI = [
+  { key: 'tehnickeVjestine', label: 'Tehničke vještine' },
+  { key: 'komunikacija', label: 'Komunikacija' },
+  { key: 'radnaEtika', label: 'Radna etika' },
+  { key: 'inicijativa', label: 'Inicijativa' },
+  { key: 'timskiRad', label: 'Timski rad' },
+];
+
 function MojeEvaluacijePanel({ evaluacije }) {
   if (evaluacije.length === 0) {
     return (
@@ -2866,40 +2901,15 @@ function MojeEvaluacijePanel({ evaluacije }) {
 
   return (
     <div className="sd-apps-panel">
-      <h2 style={{ marginBottom: 16 }}>Evaluacije kompanija za mene</h2>
+      <h2 style={{ margin: '0 0 4px', fontSize: '1.28rem', color: 'var(--color-text)' }}>
+        Evaluacije kompanija za mene
+      </h2>
+      <p style={{ margin: '0 0 20px', fontSize: '0.84rem', color: 'var(--color-muted)' }}>
+        Ocjene i komentari koje su kompanije ostavile nakon završetka prakse.
+      </p>
       <div className="sd-apps-list">
         {evaluacije.map(ev => (
-          <article key={ev.id} className="sd-confirmed-practice-card">
-            <div>
-              <p className="sd-app-card-company">{ev.kompanijaNaziv}</p>
-              <h3 className="sd-app-card-naziv">{ev.oglasNaziv}</h3>
-              <p className="sd-app-card-date">
-                {new Date(ev.datumEvaluacije).toLocaleDateString('bs-BA')}
-              </p>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <div style={{ display: 'flex', gap: 4 }}>
-                {[1, 2, 3, 4, 5].map(n => (
-                  <svg key={n} width="16" height="16" viewBox="0 0 24 24"
-                    fill={n <= ev.ukupnaOcjena ? '#f59e0b' : 'none'}
-                    stroke="#f59e0b" strokeWidth="2">
-                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                  </svg>
-                ))}
-                <span style={{ fontWeight: 700 }}>{ev.ukupnaOcjena}/5</span>
-              </div>
-              <div style={{ fontSize: '0.8rem', color: 'var(--color-muted)' }}>
-                <span>Tehničke vještine: {ev.tehnickeVjestine}/5</span> ·{' '}
-                <span>Komunikacija: {ev.komunikacija}/5</span> ·{' '}
-                <span>Radna etika: {ev.radnaEtika}/5</span>
-              </div>
-              {ev.komentar && (
-                <p style={{ fontStyle: 'italic', fontSize: '0.82rem' }}>
-                  "{ev.komentar}"
-                </p>
-              )}
-            </div>
-          </article>
+          <EvalCard key={ev.id} ev={ev} kriteriji={STUDENT_EVAL_KRITERIJI} />
         ))}
       </div>
     </div>
