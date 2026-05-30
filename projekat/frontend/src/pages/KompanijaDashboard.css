@@ -512,6 +512,17 @@
   gap: 8px;
 }
 
+.cd-listing-actions-wrapper {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.cd-listing-actions-wrapper .cd-btn {
+  white-space: nowrap;
+}
+
 .cd-listing-status {
   background: #e9fbf4;
   color: #0e9e6e;
@@ -1554,10 +1565,6 @@
   font-size: var(--font-size-sm);
   color: var(--color-muted);
   margin-top: 3px;
-}
-
-.cd-danger-section {
-  /* gap handled by cd-settings-account */
 }
 
 .cd-danger-section-title {

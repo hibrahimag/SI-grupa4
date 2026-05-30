@@ -6,10 +6,12 @@ import { useTheme } from '../context/ThemeContext';
 import { getCompanyProfile } from '../services/companyProfile.service';
 import { downloadPracticeContract, generatePracticeContract, getCompanyPractices } from '../services/prakseService';
 import { checkCompanyDeactivation, deactivateCompanyAccount, deleteMyCompanyAccount } from '../services/userService';
+import { getCompanyReceivedEvaluations } from '../services/evaluationService';
+import EvaluacijaStudenta from '../modules/evaluations/EvaluacijaStudenta';
 import './KompanijaDashboard.css';
-import { 
-  createListing, 
-  getCompanyListings, 
+import {
+  createListing,
+  getCompanyListings,
   getCompanyClosedListings,
   closeListing,
   archiveListing,
@@ -51,6 +53,8 @@ const VIEWS = {
   CLOSED_LISTINGS: 'zatvoreni-oglasi',
   ARCHIVED_LISTINGS: 'arhivirani-oglasi',
   STATISTICS: 'statistika',
+  EVALUATIONS: 'evaluacije',
+  RECEIVED_EVALUATIONS: 'primljene-evaluacije',
 };
 
 const COMPANY_PROFILE_UPDATED_EVENT = 'company-profile-updated';
@@ -59,17 +63,17 @@ function ThemeIcon({ darkMode }) {
   if (darkMode) {
     return (
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="5"/>
-        <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
-        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-        <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
-        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        <circle cx="12" cy="12" r="5" />
+        <line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" />
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+        <line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" />
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
       </svg>
     );
   }
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/>
+      <path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z" />
     </svg>
   );
 }
@@ -82,8 +86,8 @@ function CustomConfirmModal({ isOpen, title, message, onConfirm, onCancel, confi
       <div className="cd-confirm-modal" onClick={(e) => e.stopPropagation()}>
         <div className={`cd-confirm-icon cd-confirm-icon--${type}`}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10"/>
-            <line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
           </svg>
         </div>
         <h3 className="cd-confirm-title">{title}</h3>
@@ -124,7 +128,15 @@ export default function KompanijaDashboard() {
   const [candidateListingId, setCandidateListingId] = useState('');
 
   // States handling the page-style custom confirmation popups
-  const [confirmConfig, setConfirmConfig] = useState({ isOpen: false, title: '', message: '', onConfirm: () => {}, type: 'danger' });
+  const [confirmConfig, setConfirmConfig] = useState({ isOpen: false, title: '', message: '', onConfirm: () => { }, type: 'danger' });
+  const [receivedEvals, setReceivedEvals] = useState([]);
+
+  useEffect(() => {
+    if (view !== VIEWS.RECEIVED_EVALUATIONS) return;
+    getCompanyReceivedEvaluations()
+      .then(data => setReceivedEvals(data || []))
+      .catch(() => { });
+  }, [view]);
 
   const companyName = companyProfile?.naziv || user?.institution || user?.ime || 'Kompanija';
 
@@ -159,7 +171,7 @@ export default function KompanijaDashboard() {
       try {
         const profile = await getCompanyProfile();
         if (active) setCompanyProfile(profile);
-      } catch {}
+      } catch { }
     }
     function handleVisibilityChange() {
       if (document.visibilityState === 'visible') refreshCompanyProfile();
@@ -361,48 +373,58 @@ export default function KompanijaDashboard() {
         <div className="cd-sidebar-tab">
           <button type="button" className="cd-sb-tab-icon" onClick={() => openView(VIEWS.DASHBOARD)} title="Dashboard">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+              <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" />
             </svg>
           </button>
           <button type="button" className="cd-sb-tab-icon" onClick={() => openView(VIEWS.LISTINGS)} title="Oglasi">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+              <rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
             </svg>
           </button>
           <button type="button" className="cd-sb-tab-icon" onClick={() => openView(VIEWS.CANDIDATES)} title="Prijave kandidata">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-              <circle cx="9" cy="7" r="4"/>
-              <polyline points="17 11 19 13 23 9"/>
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <polyline points="17 11 19 13 23 9" />
             </svg>
           </button>
           <button type="button" className="cd-sb-tab-icon" onClick={() => openView(VIEWS.PRACTICES)} title="Prakse">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
-              <path d="M2 12h20"/>
+              <rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
+              <path d="M2 12h20" />
             </svg>
           </button>
           <button type="button" className="cd-sb-tab-icon" onClick={() => openView(VIEWS.CREATE_LISTING)} title="Kreiraj oglas">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="5" width="18" height="16" rx="2"/>
-              <line x1="12" y1="10" x2="12" y2="16"/>
-              <line x1="9" y1="13" x2="15" y2="13"/>
+              <rect x="3" y="5" width="18" height="16" rx="2" />
+              <line x1="12" y1="10" x2="12" y2="16" />
+              <line x1="9" y1="13" x2="15" y2="13" />
             </svg>
           </button>
           <button type="button" className="cd-sb-tab-icon" onClick={() => openView(VIEWS.CLOSED_LISTINGS)} title="Zatvoreni oglasi">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
             </svg>
           </button>
           <button type="button" className="cd-sb-tab-icon" onClick={() => openView(VIEWS.ARCHIVED_LISTINGS)} title="Arhivirani oglasi">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
             </svg>
           </button>
           <button type="button" className="cd-sb-tab-icon" onClick={() => openView(VIEWS.STATISTICS)} title="Statistika prijava">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+              <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" />
+            </svg>
+          </button>
+          <button type="button" className="cd-sb-tab-icon" onClick={() => openView(VIEWS.EVALUATIONS)} title="Evaluacije studenata">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </svg>
+          </button>
+          <button type="button" className="cd-sb-tab-icon" onClick={() => openView(VIEWS.RECEIVED_EVALUATIONS)} title="Primljene evaluacije">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
             </svg>
           </button>
           <div className="cd-sb-tab-footer">
@@ -411,9 +433,9 @@ export default function KompanijaDashboard() {
             </button>
             <button type="button" className="cd-sb-tab-icon" onClick={handleLogout} title="Odjava">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                <polyline points="16 17 21 12 16 7"/>
-                <line x1="21" y1="12" x2="9" y2="12"/>
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
               </svg>
             </button>
           </div>
@@ -426,57 +448,69 @@ export default function KompanijaDashboard() {
               <nav className="cd-nav">
                 <button type="button" className={`cd-nav-item ${view === VIEWS.DASHBOARD ? 'active' : ''}`} onClick={() => openView(VIEWS.DASHBOARD)}>
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+                    <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" />
                   </svg>
                   Dashboard
                 </button>
                 <button type="button" className={`cd-nav-item ${view === VIEWS.LISTINGS ? 'active' : ''}`} onClick={() => openView(VIEWS.LISTINGS)}>
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+                    <rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
                   </svg>
                   Oglasi
                 </button>
                 <button type="button" className={`cd-nav-item ${view === VIEWS.CANDIDATES ? 'active' : ''}`} onClick={() => openView(VIEWS.CANDIDATES)}>
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-                    <circle cx="9" cy="7" r="4"/>
-                    <polyline points="17 11 19 13 23 9"/>
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <polyline points="17 11 19 13 23 9" />
                   </svg>
                   Prijave kandidata
                 </button>
                 <button type="button" className={`cd-nav-item ${view === VIEWS.PRACTICES ? 'active' : ''}`} onClick={() => openView(VIEWS.PRACTICES)}>
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
-                    <path d="M2 12h20"/>
+                    <rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
+                    <path d="M2 12h20" />
                   </svg>
                   Prakse
                 </button>
                 <button type="button" className={`cd-nav-item ${view === VIEWS.CREATE_LISTING ? 'active' : ''}`} onClick={() => openView(VIEWS.CREATE_LISTING)}>
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="5" width="18" height="16" rx="2"/>
-                    <line x1="12" y1="10" x2="12" y2="16"/>
-                    <line x1="9" y1="13" x2="15" y2="13"/>
+                    <rect x="3" y="5" width="18" height="16" rx="2" />
+                    <line x1="12" y1="10" x2="12" y2="16" />
+                    <line x1="9" y1="13" x2="15" y2="13" />
                   </svg>
                   Kreiraj oglas
                 </button>
                 <button type="button" className={`cd-nav-item ${view === VIEWS.CLOSED_LISTINGS ? 'active' : ''}`} onClick={() => openView(VIEWS.CLOSED_LISTINGS)}>
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                   </svg>
                   Zatvoreni oglasi
                 </button>
                 <button type="button" className={`cd-nav-item ${view === VIEWS.ARCHIVED_LISTINGS ? 'active' : ''}`} onClick={() => openView(VIEWS.ARCHIVED_LISTINGS)}>
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
                   </svg>
                   Arhivirani oglasi
                 </button>
                 <button type="button" className={`cd-nav-item ${view === VIEWS.STATISTICS ? 'active' : ''}`} onClick={() => openView(VIEWS.STATISTICS)}>
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+                    <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" />
                   </svg>
                   Statistika prijava
+                </button>
+                <button type="button" className={`cd-nav-item ${view === VIEWS.EVALUATIONS ? 'active' : ''}`} onClick={() => openView(VIEWS.EVALUATIONS)}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                  </svg>
+                  Evaluacije studenata
+                </button>
+                <button type="button" className={`cd-nav-item ${view === VIEWS.RECEIVED_EVALUATIONS ? 'active' : ''}`} onClick={() => openView(VIEWS.RECEIVED_EVALUATIONS)}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                  </svg>
+                  Primljene evaluacije
                 </button>
               </nav>
             </div>
@@ -487,14 +521,14 @@ export default function KompanijaDashboard() {
               <div className="cd-profile-menu">
                 <button className="cd-profile-menu-item" onClick={() => { setProfileMenuOpen(false); openProfilePage(); }}>
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
                   </svg>
                   <span>Moj profil</span>
                 </button>
                 <button className="cd-profile-menu-item" onClick={() => { setProfileMenuOpen(false); openSettings(); }}>
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="3"/>
-                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
                   </svg>
                   <span>Postavke</span>
                 </button>
@@ -506,9 +540,9 @@ export default function KompanijaDashboard() {
             </button>
             <button type="button" className="cd-sb-footer-row cd-sb-logout-row" onClick={handleLogout}>
               <svg className="cd-sb-footer-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                <polyline points="16 17 21 12 16 7"/>
-                <line x1="21" y1="12" x2="9" y2="12"/>
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
               </svg>
               <span className="cd-sb-footer-text">Odjava</span>
             </button>
@@ -530,11 +564,11 @@ export default function KompanijaDashboard() {
           />
         )}
         {view === VIEWS.LISTINGS && (
-          <ListingsShell 
-            listings={listings} 
-            loading={listingsLoading} 
-            error={listingsError} 
-            onOpenView={openView} 
+          <ListingsShell
+            listings={listings}
+            loading={listingsLoading}
+            error={listingsError}
+            onOpenView={openView}
             onEdit={(l) => setEditingListing(l)}
             onCloseListing={handleCloseListingAction}
             onOpenCandidates={openCandidatesForListing}
@@ -563,14 +597,21 @@ export default function KompanijaDashboard() {
         )}
         {view === VIEWS.PRACTICES && <PracticesShell />}
         {view === VIEWS.STATISTICS && <StatistikaShell />}
+        {view === VIEWS.EVALUATIONS && (
+          <div className="cd-content">
+            <section className="cd-section">
+              <EvaluacijaStudenta />
+            </section>
+          </div>
+        )}
         {view === VIEWS.CLOSED_LISTINGS && (
-         <ClosedListingsShell
-           listings={locallyDerivedClosed}
-           loading={listingsLoading}
-           error={listingsError}
-           onArchiveListing={handleArchiveListingAction}
-           actionProcessingId={actionProcessingId}
-         />
+          <ClosedListingsShell
+            listings={locallyDerivedClosed}
+            loading={listingsLoading}
+            error={listingsError}
+            onArchiveListing={handleArchiveListingAction}
+            actionProcessingId={actionProcessingId}
+          />
         )}
         {view === VIEWS.ARCHIVED_LISTINGS && (
           <ArchivedListingsShell
@@ -581,6 +622,116 @@ export default function KompanijaDashboard() {
             actionProcessingId={actionProcessingId}
           />
         )}
+        {view === VIEWS.RECEIVED_EVALUATIONS && (
+          <div className="cd-content">
+            <header className="cd-header">
+              <h1 className="cd-title">Primljene evaluacije</h1>
+              <p className="cd-subtitle">Ocjene i komentari koje su studenti ostavili nakon završetka prakse.</p>
+            </header>
+            {receivedEvals.length === 0 ? (
+              <div className="cd-empty-state" style={{
+                background: 'var(--color-surface)',
+                borderRadius: '16px',
+                border: '1px solid var(--color-border)',
+                maxWidth: '540px',
+              }}>
+                <div className="cd-empty-title">Nema primljenih evaluacija.</div>
+                <p className="cd-empty-text">
+                  Evaluacije od studenata će se pojaviti ovdje nakon završetka prakse.
+                </p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {receivedEvals.map(ev => (
+                  <article key={ev.id} style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 14,
+                    padding: '20px 24px',
+                    background: 'var(--color-surface)',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 16,
+                  }}>
+                    {/* Header */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                        <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--color-muted)' }}>
+                          {ev.studentIme} {ev.studentPrezime}
+                        </span>
+                        <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: 'var(--color-dark)' }}>
+                          {ev.oglasNaziv}
+                        </h3>
+                        <span style={{ fontSize: '0.74rem', color: 'var(--color-muted)' }}>
+                          {new Date(ev.datumEvaluacije).toLocaleDateString('bs-BA')}
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 3, flexShrink: 0 }}>
+                        {[1, 2, 3, 4, 5].map(n => (
+                          <svg key={n} width="18" height="18" viewBox="0 0 24 24"
+                            fill={n <= ev.ukupnaOcjena ? '#f59e0b' : 'none'}
+                            stroke="#f59e0b" strokeWidth="2">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                          </svg>
+                        ))}
+                        <span style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--color-dark)', marginLeft: 6 }}>
+                          {ev.ukupnaOcjena}/5
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Kriteriji */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0,1fr))', gap: 10 }}>
+                      {[
+                        { key: 'organizacija', label: 'Organizacija' },
+                        { key: 'mentorstvo', label: 'Mentorstvo' },
+                        { key: 'radnoOkruzenje', label: 'Radno okruženje' },
+                        { key: 'relevantnoPosla', label: 'Relevantnost' },
+                        { key: 'preporukaKompanija', label: 'Preporuka' },
+                      ].map(({ key, label }) => (
+                        <div key={key} style={{
+                          display: 'flex', flexDirection: 'column', gap: 5,
+                          padding: '10px 12px',
+                          background: 'var(--color-bg)',
+                          border: '1px solid var(--color-border)',
+                          borderRadius: 10,
+                        }}>
+                          <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            {label}
+                          </span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <span style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--color-dark)' }}>{ev[key]}</span>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--color-muted)', fontWeight: 600 }}>/5</span>
+                            {[1, 2, 3, 4, 5].map(n => (
+                              <svg key={n} width="11" height="11" viewBox="0 0 24 24"
+                                fill={n <= ev[key] ? '#f59e0b' : 'none'}
+                                stroke="#f59e0b" strokeWidth="2">
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                              </svg>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Komentar */}
+                    {ev.komentar && (
+                      <p style={{
+                        margin: 0, padding: '10px 14px',
+                        background: 'var(--color-bg)',
+                        borderLeft: '3px solid var(--color-border)',
+                        borderRadius: '0 8px 8px 0',
+                        fontSize: '0.85rem', fontStyle: 'italic',
+                        color: 'var(--color-muted)', lineHeight: 1.6,
+                      }}>
+                        "{ev.komentar}"
+                      </p>
+                    )}
+                  </article>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </main>
 
       {settingsOpen && (
@@ -589,7 +740,7 @@ export default function KompanijaDashboard() {
             <div className="cd-settings-sidebar-top">
               <button className="cd-settings-back" onClick={() => setSettingsOpen(false)}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="15 18 9 12 15 6"/>
+                  <polyline points="15 18 9 12 15 6" />
                 </svg>
                 Nazad
               </button>
@@ -602,8 +753,8 @@ export default function KompanijaDashboard() {
                 onClick={() => setSettingsTab('account')}
               >
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                  <circle cx="12" cy="7" r="4"/>
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
                 </svg>
                 <span>Račun</span>
               </button>
@@ -680,7 +831,7 @@ export default function KompanijaDashboard() {
           <div className="cd-modal-sheet" onClick={(e) => e.stopPropagation()}>
             <button className="cd-modal-close" onClick={() => setEditingListing(null)} aria-label="Zatvori">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
               </svg>
             </button>
             <EditOglas
@@ -712,10 +863,10 @@ export default function KompanijaDashboard() {
 }
 
 function DashboardShell({ listings, listingsLoading, listingsError, onOpenView, onEdit, onCloseListing, onOpenCandidates, actionProcessingId }) {
-  const activeListings = listings.filter((l) => 
+  const activeListings = listings.filter((l) =>
     l.status === 'AKTIVAN' && new Date(l.rokPrijave) > new Date()
   ).length;
-  
+
   const stats = [
     {
       label: 'Aktivni oglasi',
@@ -743,12 +894,12 @@ function DashboardShell({ listings, listingsLoading, listingsError, onOpenView, 
         ))}
       </section>
 
-      <ListingsShell 
-        listings={listings} 
-        loading={listingsLoading} 
-        error={listingsError} 
-        onOpenView={onOpenView} 
-        onEdit={onEdit} 
+      <ListingsShell
+        listings={listings}
+        loading={listingsLoading}
+        error={listingsError}
+        onOpenView={onOpenView}
+        onEdit={onEdit}
         onCloseListing={onCloseListing}
         onOpenCandidates={onOpenCandidates}
         actionProcessingId={actionProcessingId}
@@ -795,15 +946,15 @@ function ListingsShell({ listings = [], loading = false, error = '', onOpenView,
                   >
                     Vidi prijavljene
                   </button>
-                  <button 
-                    className="cd-btn cd-btn--secondary" 
+                  <button
+                    className="cd-btn cd-btn--secondary"
                     onClick={(e) => { e.stopPropagation(); if (onEdit) onEdit(listing); }}
                     disabled={actionProcessingId === listing.id}
                   >
                     Uredi
                   </button>
-                  <button 
-                    className="cd-btn cd-btn--danger" 
+                  <button
+                    className="cd-btn cd-btn--danger"
                     onClick={(e) => { e.stopPropagation(); onCloseListing(listing.id); }}
                     disabled={actionProcessingId === listing.id}
                   >
@@ -918,18 +1069,18 @@ function PracticesShell() {
 
 
   async function openActivities(praksa) {
-  setActivitiesModal(praksa);
-  setActivitiesLoading(true);
+    setActivitiesModal(praksa);
+    setActivitiesLoading(true);
 
-  try {
-    const data = await getPracticeActivities(praksa.id);
-    setActivities(data);
-  } catch {
-    setActivities([]);
-  } finally {
-    setActivitiesLoading(false);
+    try {
+      const data = await getPracticeActivities(praksa.id);
+      setActivities(data);
+    } catch {
+      setActivities([]);
+    } finally {
+      setActivitiesLoading(false);
+    }
   }
-}
 
   return (
     <div className="cd-content">
@@ -1001,14 +1152,14 @@ function PracticesShell() {
                       </button>
                     </td>
                     <td>
-                    <button
-                      type="button"
-                      className="cd-candidate-doc-btn"
-                      onClick={() => openActivities(praksa)}
-                    >
-                      Aktivnosti
-                    </button>
-                  </td>
+                      <button
+                        type="button"
+                        className="cd-candidate-doc-btn"
+                        onClick={() => openActivities(praksa)}
+                      >
+                        Aktivnosti
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -1036,51 +1187,51 @@ function PracticesShell() {
         </div>
       )}
       {activitiesModal && (
-  <div
-    className="cd-modal-overlay"
-    onClick={() => setActivitiesModal(null)}
-  >
-    <div
-      className="cd-modal-sheet"
-      onClick={(e) => e.stopPropagation()}
-    >
-      <h2>Aktivnosti studenta</h2>
-
-      {activitiesLoading ? (
-        <p>Učitavanje...</p>
-      ) : activities.length === 0 ? (
-        <p>Nema evidentiranih aktivnosti.</p>
-      ) : (
-        activities.map((a) => (
-          <div
-            key={a.id}
-            style={{
-              padding: '12px 0',
-              borderBottom: '1px solid var(--border-color,#ddd)'
-            }}
-          >
-            <strong>
-              {new Date(a.datum).toLocaleDateString()}
-            </strong>
-
-            <p style={{ marginTop: 6 }}>
-              {a.opis}
-            </p>
-          </div>
-        ))
-      )}
-
-      <div style={{ marginTop: 16 }}>
-        <button
-          className="cd-btn cd-btn--secondary"
+        <div
+          className="cd-modal-overlay"
           onClick={() => setActivitiesModal(null)}
         >
-          Zatvori
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+          <div
+            className="cd-modal-sheet"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2>Aktivnosti studenta</h2>
+
+            {activitiesLoading ? (
+              <p>Učitavanje...</p>
+            ) : activities.length === 0 ? (
+              <p>Nema evidentiranih aktivnosti.</p>
+            ) : (
+              activities.map((a) => (
+                <div
+                  key={a.id}
+                  style={{
+                    padding: '12px 0',
+                    borderBottom: '1px solid var(--border-color,#ddd)'
+                  }}
+                >
+                  <strong>
+                    {new Date(a.datum).toLocaleDateString()}
+                  </strong>
+
+                  <p style={{ marginTop: 6 }}>
+                    {a.opis}
+                  </p>
+                </div>
+              ))
+            )}
+
+            <div style={{ marginTop: 16 }}>
+              <button
+                className="cd-btn cd-btn--secondary"
+                onClick={() => setActivitiesModal(null)}
+              >
+                Zatvori
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1106,6 +1257,14 @@ function CandidatesShell({
   const [successMessage, setSuccessMessage] = useState('');
   const [processingId, setProcessingId] = useState(null);
   const [openingDocumentId, setOpeningDocumentId] = useState(null);
+  const [activeTab, setActiveTab] = useState('all')
+
+  const APPLICATION_TABS = [
+    { key: 'all', label: 'Sve prijave' },
+    { key: 'shortlisted', label: 'Uži krug' },
+    { key: 'approved', label: 'Odobrene' },
+    { key: 'rejected', label: 'Odbijene' },
+  ];
 
   useEffect(() => {
     if (loading) return;
@@ -1151,6 +1310,19 @@ function CandidatesShell({
       active = false;
     };
   }, [selectedListingId]);
+
+  const filteredApplications = useMemo(() => {
+    switch (activeTab) {
+      case 'shortlisted': return applications.filter(a => a.status === APPLICATION_STATUS.SHORTLISTED);
+      case 'approved': return applications.filter(a => a.status === APPLICATION_STATUS.APPROVED || a.status === 'ODOBRENA');
+      case 'rejected': return applications.filter(a =>
+        a.status === APPLICATION_STATUS.REJECTED_COMPANY ||
+        a.status === 'ODBIJENA_KOMPANIJA' ||
+        a.status === 'ODUSTAO'
+      );
+      default: return applications;
+    }
+  }, [applications, activeTab]);
 
   async function handleShortlist(applicationId) {
     setProcessingId(applicationId);
@@ -1284,6 +1456,45 @@ function CandidatesShell({
                 {successMessage}
               </div>
             )}
+            {/* Tabovi — idu ovdje, između success poruke i loading indikatora */}
+            {!applicationsLoading && applications.length > 0 && (
+              <div className="cd-stat-tabs" style={{ marginBottom: '16px' }}>
+                {APPLICATION_TABS.map(tab => {
+                  const count = tab.key === 'all' ? applications.length : (() => {
+                    switch (tab.key) {
+                      case 'shortlisted': return applications.filter(a => a.status === APPLICATION_STATUS.SHORTLISTED).length;
+                      case 'pending': return applications.filter(a => a.status === 'CEKA_KOORDINATORA').length;
+                      case 'approved': return applications.filter(a => a.status === APPLICATION_STATUS.APPROVED || a.status === 'ODOBRENA').length;
+                      case 'rejected': return applications.filter(a => a.status === APPLICATION_STATUS.REJECTED_COMPANY || a.status === 'ODBIJENA_KOMPANIJA' || a.status === 'ODUSTAO').length;
+                      default: return 0;
+                    }
+                  })();
+                  return (
+                    <button
+                      key={tab.key}
+                      type="button"
+                      className={`cd-stat-tab${activeTab === tab.key ? ' active' : ''}`}
+                      onClick={() => setActiveTab(tab.key)}
+                    >
+                      {tab.label}
+                      {count > 0 && (
+                        <span style={{
+                          marginLeft: '6px',
+                          background: activeTab === tab.key ? 'var(--color-primary)' : 'var(--color-border)',
+                          color: activeTab === tab.key ? '#fff' : 'var(--color-muted)',
+                          borderRadius: '10px',
+                          padding: '1px 7px',
+                          fontSize: '11px',
+                          fontWeight: 600,
+                        }}>
+                          {count}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
             {applicationsError && (
               <div className="cd-inline-message cd-inline-message--error" role="alert">
                 {applicationsError}
@@ -1293,14 +1504,18 @@ function CandidatesShell({
               <div className="cd-inline-message" role="status">Učitavanje prijava kandidata...</div>
             )}
 
-            {!applicationsLoading && applications.length === 0 && !applicationsError && (
+            {!applicationsLoading && filteredApplications.length === 0 && !applicationsError && (
               <div className="cd-empty-state">
-                <div className="cd-empty-title">Nema prijava za odabrani oglas.</div>
+                <div className="cd-empty-title">
+                  {activeTab === 'all'
+                    ? 'Nema prijava za odabrani oglas.'
+                    : 'Nema prijava u ovoj kategoriji.'}
+                </div>
                 <p className="cd-empty-text">Kada se studenti prijave na ovaj oglas, pojavit će se u ovom pregledu.</p>
               </div>
             )}
 
-            {!applicationsLoading && applications.length > 0 && (
+            {!applicationsLoading && filteredApplications.length > 0 && (
               <div className="cd-candidates-table-wrap">
                 <table className="cd-candidates-table">
                   <thead>
@@ -1316,7 +1531,7 @@ function CandidatesShell({
                     </tr>
                   </thead>
                   <tbody>
-                    {applications.map((application) => {
+                    {filteredApplications.map((application) => {
                       const student = application.student || {};
                       const fullName = [student.ime, student.prezime].filter(Boolean).join(' ') || 'Nepoznat kandidat';
                       const fakultet = student.fakultet?.naziv || 'Fakultet nije unesen';
@@ -1614,8 +1829,8 @@ function DeactivateModal({ check, deactivating, onConfirm, onCancel }) {
           <>
             <div className="cd-confirm-icon cd-confirm-icon--warn">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
               </svg>
             </div>
             <h3 className="cd-confirm-title">Deaktivacija nije moguća</h3>
@@ -1631,8 +1846,8 @@ function DeactivateModal({ check, deactivating, onConfirm, onCancel }) {
           <>
             <div className="cd-confirm-icon cd-confirm-icon--danger">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
               </svg>
             </div>
             <h3 className="cd-confirm-title">Deaktivirajte račun</h3>
@@ -1668,8 +1883,8 @@ function DeleteModal({ check, deleting, deleteError, onConfirm, onCancel }) {
           <>
             <div className="cd-confirm-icon cd-confirm-icon--warn">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
               </svg>
             </div>
             <h3 className="cd-confirm-title">Brisanje nije moguće</h3>
@@ -1685,10 +1900,10 @@ function DeleteModal({ check, deleting, deleteError, onConfirm, onCancel }) {
           <>
             <div className="cd-confirm-icon cd-confirm-icon--danger">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="3 6 5 6 21 6"/>
-                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                <path d="M10 11v6"/><path d="M14 11v6"/>
-                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                <path d="M10 11v6" /><path d="M14 11v6" />
+                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
               </svg>
             </div>
             <h3 className="cd-confirm-title">Obriši nalog</h3>
@@ -1755,9 +1970,9 @@ function StatChart({ data, dataKey, nameKey, color, height = 260, tickFormatter 
 }
 
 const STAT_TABS = [
-  { key: 'prijave',  label: 'Sve prijave' },
-  { key: 'odsjek',  label: 'Po odsjeku' },
-  { key: 'godina',  label: 'Po godini' },
+  { key: 'prijave', label: 'Sve prijave' },
+  { key: 'odsjek', label: 'Po odsjeku' },
+  { key: 'godina', label: 'Po godini' },
   { key: 'fakultet', label: 'Po fakultetu' },
 ];
 
@@ -1790,15 +2005,15 @@ function StatistikaShell() {
 
   const truncate = (str, n = 18) => str?.length > n ? str.slice(0, n) + '…' : str;
 
-  const perListingData  = (stats?.perListing  || []).map((l) => ({ naziv: l.naziv, 'Broj prijava': l.count }));
-  const byYearData     = (stats?.byYear      || []).map((y) => ({ godina: `${y.year}. godina`, 'Broj prijava': y.count }));
-  const byFakultetData = (stats?.byFakultet  || []).map((f) => ({ fakultet: f.naziv, 'Broj prijava': f.count }));
+  const perListingData = (stats?.perListing || []).map((l) => ({ naziv: l.naziv, 'Broj prijava': l.count }));
+  const byYearData = (stats?.byYear || []).map((y) => ({ godina: `${y.year}. godina`, 'Broj prijava': y.count }));
+  const byFakultetData = (stats?.byFakultet || []).map((f) => ({ fakultet: f.naziv, 'Broj prijava': f.count }));
   const byOdsjekGroups = stats?.byOdsjek || [];
 
   const chartConfig = {
-    prijave:  { data: perListingData,  nameKey: 'naziv',    color: CHART_COLORS.blue,   tickN: 14, emptyMsg: 'Nema prijava na oglase.' },
-    godina:   { data: byYearData,      nameKey: 'godina',   color: CHART_COLORS.purple, tickN: 14, emptyMsg: 'Nema podataka o godini studija.' },
-    fakultet: { data: byFakultetData,  nameKey: 'fakultet', color: CHART_COLORS.green,  tickN: 14, emptyMsg: 'Nema podataka o fakultetu.' },
+    prijave: { data: perListingData, nameKey: 'naziv', color: CHART_COLORS.blue, tickN: 14, emptyMsg: 'Nema prijava na oglase.' },
+    godina: { data: byYearData, nameKey: 'godina', color: CHART_COLORS.purple, tickN: 14, emptyMsg: 'Nema podataka o godini studija.' },
+    fakultet: { data: byFakultetData, nameKey: 'fakultet', color: CHART_COLORS.green, tickN: 14, emptyMsg: 'Nema podataka o fakultetu.' },
   };
   const current = chartConfig[activeTab];
 
@@ -1970,9 +2185,9 @@ function ClosedListingsShell({ listings, loading, error, onArchiveListing, actio
                     <span className="cd-listing-status cd-listing-status--zatvoren">{displayStatus}</span>
                     <span className="cd-listing-date">Rok: {formatDate(listing.rokPrijave)}</span>
                     <span className="cd-listing-date">Objava: {formatDate(listing.datumObjave)}</span>
-                    
+
                     <div className="cd-listing-actions-wrapper">
-                      <button 
+                      <button
                         className="cd-btn cd-btn--secondary"
                         onClick={(e) => { e.stopPropagation(); onArchiveListing(listing); }}
                         disabled={actionProcessingId === listing.id}
@@ -2032,9 +2247,9 @@ function ArchivedListingsShell({ listings, loading, error, onRestoreListing, act
                 <div className="cd-listing-side">
                   <span className="cd-listing-status cd-listing-status--arhiviran" style={{ backgroundColor: 'var(--color-muted)', color: '#fff' }}>Arhivirano</span>
                   <span className="cd-listing-date">Rok: {formatDate(listing.rokPrijave)}</span>
-                  
+
                   <div className="cd-listing-actions-wrapper">
-                    <button 
+                    <button
                       className="cd-btn cd-btn--secondary"
                       onClick={(e) => { e.stopPropagation(); onRestoreListing(listing.id); }}
                       disabled={actionProcessingId === listing.id}

@@ -50,4 +50,4 @@ async function markAllAsRead(userId) {
   );
 }
 
-module.exports = { createNotification, getMyNotifications, markAsRead, markAllAsRead };
+module.exports = { createNotification, getMyNotifications, markAsRead, markAllAsRead};
