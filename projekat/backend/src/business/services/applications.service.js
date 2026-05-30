@@ -12,12 +12,19 @@ const {
   Dokument,
   Odsjek,
   Fakultet,
+  Koordinator,
 } = require('../../infrastructure/database/models');
-const { createNotification } = require('./notifications.service');
+const {
+  createNotification,
+  createNotificationForKompanija,
+  createNotificationForKoordinator,
+} = require('./notifications.service');
 const {
   sendPrijavaPodnesenaEmail,
   sendPrijavaShortlistedEmail,
   sendPrijavaStatusEmail,
+  sendOdustajanjeKompaniji,
+  sendOdustajanjeKoordinatoru,
 } = require('./email.service');
 const {
   getOrCreatePreferences,
@@ -812,6 +819,98 @@ async function getApplicationStatistics(userId, { fakultetID, odsjekID, godina, 
   };
 }
 
+const WITHDRAWABLE_STATUSES = [
+  APPLICATION_STATUS.WAITING_COORDINATOR,
+  APPLICATION_STATUS.WAITING_COMPANY,
+  APPLICATION_STATUS.SHORTLISTED,
+  APPLICATION_STATUS.APPROVED,
+  APPLICATION_STATUS.LEGACY_SUBMITTED,
+];
+
+async function withdrawApplication(userId, applicationId) {
+  const user = await User.findByPk(userId);
+  if (!user || user.role !== 'STUDENT') {
+    throw makeError('Samo studenti mogu odustati od prijave.', 403);
+  }
+
+  const student = await Student.findOne({ where: { userID: user.id } });
+  if (!student) {
+    throw makeError('Nemate pravo upravljati ovom prijavom.', 403);
+  }
+
+  const prijavaId = normalizeId(applicationId, 'Prijava nije pronađena.');
+
+  return sequelize.transaction(async (transaction) => {
+    const prijava = await PrijavaNaPraksu.findByPk(prijavaId, {
+      transaction,
+      lock: transaction.LOCK.UPDATE,
+    });
+
+    if (!prijava) {
+      throw makeError('Prijava nije pronađena.', 404);
+    }
+
+    if (Number(prijava.studentID) !== Number(student.id)) {
+      throw makeError('Nemate pravo upravljati ovom prijavom.', 403);
+    }
+
+    if (prijava.status === APPLICATION_STATUS.WITHDRAWN) {
+      return { message: 'Već ste odustali od ove prijave.', application: prijava };
+    }
+
+    if (!WITHDRAWABLE_STATUSES.includes(prijava.status)) {
+      throw makeError('Nije moguće odustati od ove prijave.', 400);
+    }
+
+    if (prijava.status === APPLICATION_STATUS.APPROVED) {
+      const praksa = await Praksa.findOne({ where: { prijavaID: prijava.id }, transaction });
+      if (praksa && praksa.datumKraja && new Date(praksa.datumKraja) < new Date()) {
+        throw makeError('Nije moguće odustati od prakse koja je već završena.', 400);
+      }
+    }
+
+    await prijava.update(
+      { status: APPLICATION_STATUS.WITHDRAWN, datumOdustajanja: new Date() },
+      { transaction }
+    );
+
+    const oglas = await Oglas.findByPk(prijava.oglasID, {
+      attributes: ['id', 'naziv', 'kompanijaID'],
+      include: [{ model: Kompanija, attributes: ['id', 'naziv'], include: [{ model: User, attributes: ['email'] }] }],
+    });
+
+    const studentName = `${user.ime || ''} ${user.prezime || ''}`.trim() || 'Student';
+    const oglasNaziv = oglas?.naziv || 'praksu';
+    const kompanijaId = oglas?.Kompanija?.id;
+    const companyEmail = oglas?.Kompanija?.User?.email;
+    const tip = 'PRIJAVA_ODUSTAJANJE';
+    const naslov = 'Student odustao od prijave';
+    const poruka = `Student ${studentName} je odustao/la od prijave na praksu "${oglasNaziv}".`;
+
+    if (kompanijaId) {
+      createNotificationForKompanija(kompanijaId, prijava.id, tip, naslov, poruka).catch(() => {});
+    }
+    if (companyEmail) {
+      sendOdustajanjeKompaniji(companyEmail, studentName, oglasNaziv).catch(() => {});
+    }
+
+    if (prijava.koordinatorID) {
+      const koordinator = await Koordinator.findByPk(prijava.koordinatorID, {
+        include: [{ model: User, attributes: ['email'] }],
+      });
+      createNotificationForKoordinator(
+        prijava.koordinatorID, prijava.id, tip, naslov, poruka
+      ).catch(() => {});
+      const coordEmail = koordinator?.User?.email;
+      if (coordEmail) {
+        sendOdustajanjeKoordinatoru(coordEmail, studentName, oglasNaziv).catch(() => {});
+      }
+    }
+
+    return { message: 'Uspješno ste odustali od prijave.', application: prijava };
+  });
+}
+
 module.exports = {
   createApplication,
   getMyApplications,
@@ -822,4 +921,5 @@ module.exports = {
   rejectApplicationByCompany,
   acceptApplicationByStudent,
   declineApplicationByStudent,
+  withdrawApplication,
 };

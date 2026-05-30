@@ -129,6 +129,18 @@ async function declineApplicationByStudent(req, res) {
   }
 }
 
+async function withdrawApplication(req, res) {
+  try {
+    const result = await applicationsService.withdrawApplication(req.user.id, req.params.id);
+    return res.json({
+      message: result.message,
+      application: result.application,
+    });
+  } catch (err) {
+    return handleApplicationError(res, err);
+  }
+}
+
 module.exports = {
   createApplication,
   getMyApplications,
@@ -139,4 +151,5 @@ module.exports = {
   rejectApplicationByCompany,
   acceptApplicationByStudent,
   declineApplicationByStudent,
+  withdrawApplication,
 };
