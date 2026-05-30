@@ -2081,3 +2081,51 @@ Uklonjeni su svi nekonzistentni inline stilovi sa dugmadi unutar kartica oglasa.
 **Rizici, problemi ili greške:**
 
 - Notifikacija se kreira s `studentUserID` koji dolazi iz ugniježđene asocijacije `Student.id` - treba provjeriti da li `notifications.service.js` prima `studentID` ili `userID` (razlika u modelu)
+
+---
+
+## Unos 7 — Implementacija odustajanja od prakse i obavještenja (PB27)
+
+| Polje | Sadržaj |
+|---|---|
+| **Datum** | 31.05.2026 |
+| **Sprint broj** | 10 |
+| **Alat** | Claude Code (claude-sonnet-4-6) |
+| **Ko je koristio** | hhusic1 |
+| **Svrha korištenja** | Implementacija US-33 (PB27) — odustajanje studenta od prijavljene ili odobrene prakse, obavještenja kompaniji i koordinatoru, te in-app notifikacije za kompanije i koordinatore |
+
+**Kratak opis upita:**
+
+> Implementirati funkcionalnost odustajanja studenta od prijave na praksu. Student treba moći odustati od prijave koja je u statusu "na čekanju" ili "odobrena", ali ne i od završene prakse. Sistem treba ažurirati status prijave na `ODUSTAO`, obavijestiti kompaniju i koordinatora emailom, te prikazati "Odustani od prijave" dugme u "Moje prijave" tabu na student dashboardu. Pored toga, proširiti notifikacijski sistem da podržava in-app notifikacije i za kompanije i koordinatore (do tada je postojao samo za studente), i dodati zvono na njihove dashboarde.
+
+**Šta je AI predložio ili generisao:**
+
+- `withdrawApplication(userId, applicationId)` u `applications.service.js` — validacija vlasništva, provjera dozvoljenig statusa (`CEKA_KOORDINATORA`, `CEKA_KOMPANIJU`, `U_RAZMATRANJU`, `ODOBRENA`, `PODNESENA`), provjera da li je praksa završena (`datumKraja < today`), UPDATE na `ODUSTAO` + `datumOdustajanja`, fire-and-forget email i in-app notifikacije kompaniji i koordinatoru
+- `withdrawApplication` u `applications.controller.js` i `PATCH /:id/withdraw` rutu u `applications.routes.js`
+- `withdrawApplication(id)` frontend servis poziv u `applicationsService.js`
+- `canWithdraw(app)` helper i `WITHDRAWABLE_STATUSES` skup u `StudentDashboard.jsx` — "Odustani od prijave" danger dugme na svakoj aktivnoj prijavi u `MyApplicationsPanel`, confirmation modal s porukom upozorenja, `handleWithdrawApplication` handler koji optimistično ažurira status u listi prijava
+- Ispravku `applicationStageSteps` u `applicationStatus.js` — za `ODUSTAO` status: "Koordinator" = `pending`, "Konačan ishod" = `error` (crveno), "Prijava podnesena" ostaje zelena
+- `sendOdustajanjeKompaniji` i `sendOdustajanjeKoordinatoru` email funkcije u `email.service.js` (HTML template usklađen s Brevo stilom)
+- Proširenje `Notifikacija.js` modela: `student_id` nullable, dodano `koordinator_id` polje
+- `createNotificationForKompanija` i `createNotificationForKoordinator` u `notifications.service.js`; `getMyNotifications`, `markAsRead`, `markAllAsRead` učinjeni role-aware (STUDENT/COMPANY/KOORDINATOR)
+- Notifikacijsko zvono s dropdown panelom i badge brojevnikom u navbaru `KompanijaDashboard.jsx` i `KoordinatorDashboard.jsx`
+- `cd-notif-*` i `kd-notif-*` CSS stilovi s dark mode podrškom u odgovarajućim CSS fajlovima
+
+**Šta je tim prihvatio:**
+
+- Kompletnu backend logiku odustajanja s provjerom završenosti prakse
+- Email notifikacije kompaniji i koordinatoru pri odustajanju
+- In-app notifikacije za kompanije i koordinatore (proširenje postojećeg sistema)
+- Confirmation modal i dugme na student dashboardu
+- Ispravku stage indikatora za `ODUSTAO` status
+
+**Šta je tim izmijenio:**
+
+- Ništa
+
+**Šta je tim odbacio:**
+
+**Rizici, problemi ili greške:**
+
+- `Notifikacija.student_id` je bio `NOT NULL` — promjena na `nullable` zahtijeva `ALTER TABLE` koji se izvršava automatski pri `sync({ alter: true })` pri sljedećem pokretanju servera; postoji rizik od kratkog downtime-a na prvom pokretu
+- `cd-listing-actions-wrapper .cd-btn` klasa pojavljuje se dva puta u `KoordinatorDashboard.css` (importovani stil iz drugog modula) — nije uzrokovalo funkcionalni problem, ali treba očistiti
