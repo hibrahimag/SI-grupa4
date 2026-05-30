@@ -17,7 +17,7 @@ module.exports = (sequelize) => {
       },
       koordinatorID: {
         type: DataTypes.INTEGER,
-        allowNull: false,
+        allowNull: true,
       },
       datumGenerisanja: {
         type: DataTypes.DATE,
