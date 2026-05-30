@@ -15,6 +15,7 @@ const dokumentRoutes = require('./presentation/routes/dokument.routes');
 const favouritesRoutes = require('./presentation/routes/favourites.routes');
 const notificationPreferencesRoutes = require('./presentation/routes/notificationPreferences.routes');
 const evaluationRoutes = require('./presentation/routes/evaluation.routes');
+const prakseRoutes = require('./presentation/routes/prakse.routes');
 
 const app = express();
 const path = require('path');
@@ -37,5 +38,6 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 app.use('/api/favourites', favouritesRoutes);
 app.use('/api/notification-preferences', notificationPreferencesRoutes);
 app.use('/api/evaluations', evaluationRoutes);
+app.use('/api/prakse', prakseRoutes);
 
 module.exports = app;

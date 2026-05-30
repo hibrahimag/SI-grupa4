@@ -54,6 +54,20 @@ module.exports = (sequelize) => {
         allowNull: false,
         defaultValue: 'NIJE_DOSTUPNO',
       },
+      studentStatus: {
+        type: DataTypes.ENUM(
+          'NIJE_DOSTUPNO',
+          'NA_CEKANJU',
+          'PRIHVACENO',
+          'ODBIJENO'
+        ),
+        allowNull: false,
+        defaultValue: 'NIJE_DOSTUPNO',
+      },
+      studentOdlucioAt: {
+        type: DataTypes.DATE,
+        allowNull: true,
+      },
       datumPrijave: {
         type: DataTypes.DATE,
         allowNull: false,

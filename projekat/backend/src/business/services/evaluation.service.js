@@ -12,7 +12,7 @@ const {
     User,
 } = require('../../infrastructure/database/models');
 const notifService = require('./notifications.service');
-const { sendEvaluacijaStudentaEmail } = require('./email.service');
+const { sendEvaluacijaStudentaEmail, sendEvaluacijaKompanijiEmail } = require('./email.service');
 
 // ── Helper: dohvati kompanijaID iz userID ─────────────────────────────────
 
@@ -46,10 +46,17 @@ async function getPendingStudentEvaluations(userID) {
     const prakse = await Praksa.findAll({
         where: {
             datumKraja: { [Op.lt]: new Date() },
+            datumOdustajanja: null,
         },
         include: [{
             model: PrijavaNaPraksu,
             required: true,
+            where: {
+                status: 'ODOBRENA',
+                koordinatorStatus: 'ODOBRENO',
+                kompanijaStatus: 'ODOBRENO',
+                studentStatus: 'PRIHVACENO',
+            },
             include: [
                 {
                     model: Oglas,
@@ -96,7 +103,18 @@ async function submitStudentEvaluation(userID, prijavaID, data) {
         where: {
             prijavaID,
             datumKraja: { [Op.lt]: new Date() },
+            datumOdustajanja: null,
         },
+        include: [{
+            model: PrijavaNaPraksu,
+            required: true,
+            where: {
+                status: 'ODOBRENA',
+                koordinatorStatus: 'ODOBRENO',
+                kompanijaStatus: 'ODOBRENO',
+                studentStatus: 'PRIHVACENO',
+            },
+        }],
     });
 
     if (!praksa) {
@@ -234,7 +252,13 @@ async function getPendingCompanyEvaluations(userID) {
         include: [{
             model: PrijavaNaPraksu,
             required: true,
-            where: { studentID },
+            where: {
+                studentID,
+                status: 'ODOBRENA',
+                koordinatorStatus: 'ODOBRENO',
+                kompanijaStatus: 'ODOBRENO',
+                studentStatus: 'PRIHVACENO',
+            },
             include: [{
                 model: Oglas,
                 attributes: ['id', 'naziv'],
@@ -271,11 +295,17 @@ async function submitCompanyEvaluation(userID, prijavaID, data) {
         where: {
             prijavaID,
             datumKraja: { [Op.lt]: new Date() },
+            datumOdustajanja: null,
         },
         include: [{
             model: PrijavaNaPraksu,
             required: true,
-            where: { studentID },
+            where: {
+                status: 'ODOBRENA',
+                koordinatorStatus: 'ODOBRENO',
+                kompanijaStatus: 'ODOBRENO',
+                studentStatus: 'PRIHVACENO',
+            },
         }],
     });
 
@@ -303,6 +333,47 @@ async function submitCompanyEvaluation(userID, prijavaID, data) {
         komentar: data.komentar || null,
         datumEvaluacije: new Date(),
     });
+
+    try {
+        const prijavaData = await PrijavaNaPraksu.findOne({
+            where: { id: prijavaID },
+            include: [{
+                model: Oglas,
+                attributes: ['naziv', 'kompanijaID'],
+                include: [{
+                    model: Kompanija,
+                    attributes: ['id', 'userID', 'naziv', 'email'] // dodaj naziv i email
+                }],
+            }],
+        });
+
+        const oglas = prijavaData?.Oglas;
+        const oglasNaziv = oglas?.naziv || 'praksu';
+        const kompanija = oglas?.Kompanija;
+
+        // In-app notifikacija kompaniji nije moguća trenutnom arhitekturom
+        // (Notifikacija model vezan za student_id)
+        // Email kompaniji
+        if (kompanija?.email) {
+            await sendEvaluacijaKompanijiEmail(
+                kompanija.email,
+                kompanija.naziv || 'Kompanija',
+                oglasNaziv,
+                data.ukupnaOcjena
+            );
+        }
+        if (kompanija?.id) {
+            await notifService.createKompanijaNotification(
+                kompanija.id,
+                prijavaID,
+                'EVALUACIJA',
+                'Student vas je evaluirao',
+                `Student je popunio evaluaciju za praksu: ${oglasNaziv}.`
+            );
+        }
+    } catch (err) {
+        console.error('Greška pri notifikaciji kompanije:', err.message);
+    }
 
     return evaluacija;
 }
@@ -391,6 +462,44 @@ async function getStudentReceivedEvaluations(userID) {
     }));
 }
 
+async function getCompanyReceivedEvaluations(userID) {
+    const kompanijaID = await getKompanijaID(userID);
+
+    const evaluacije = await EvaluacijaKompanije.findAll({
+        include: [{
+            model: PrijavaNaPraksu,
+            required: true,
+            include: [{
+                model: Oglas,
+                where: { kompanijaID },
+                attributes: ['id', 'naziv'],
+                include: [{ model: Kompanija, attributes: ['id', 'naziv'] }],
+            }, {
+                model: Student,
+                attributes: ['id'],
+                include: [{ model: User, attributes: ['ime', 'prezime'] }],
+            }],
+        }],
+        order: [['datumEvaluacije', 'DESC']],
+    });
+
+    return evaluacije.map(ev => ({
+        id: ev.id,
+        prijavaID: ev.prijavaID,
+        studentIme: ev.PrijavaNaPraksu?.Student?.User?.ime || '',
+        studentPrezime: ev.PrijavaNaPraksu?.Student?.User?.prezime || '',
+        oglasNaziv: ev.PrijavaNaPraksu?.Oglas?.naziv || '',
+        organizacija: ev.organizacija,
+        mentorstvo: ev.mentorstvo,
+        radnoOkruzenje: ev.radnoOkruzenje,
+        relevantnoPosla: ev.relevantnoPosla,
+        preporukaKompanija: ev.preporukaKompanija,
+        ukupnaOcjena: ev.ukupnaOcjena,
+        komentar: ev.komentar,
+        datumEvaluacije: ev.datumEvaluacije,
+    }));
+}
+
 module.exports = {
     getPendingStudentEvaluations,
     submitStudentEvaluation,
@@ -399,4 +508,5 @@ module.exports = {
     submitCompanyEvaluation,
     getStudentSubmittedCompanyEvaluations,
     getStudentReceivedEvaluations,
+    getCompanyReceivedEvaluations,
 };

@@ -50,4 +50,17 @@ async function markAllAsRead(userId) {
   );
 }
 
-module.exports = { createNotification, getMyNotifications, markAsRead, markAllAsRead };
+async function createKompanijaNotification(kompanijaId, prijavaId, tip, naslov, poruka) {
+  return Notifikacija.create({
+    kompanija_id: kompanijaId,
+    student_id: null, // null jer je za kompaniju
+    prijava_id: prijavaId || null,
+    tip,
+    naslov,
+    poruka,
+    procitana: false,
+    created_at: new Date(),
+  });
+}
+
+module.exports = { createNotification, getMyNotifications, markAsRead, markAllAsRead, createKompanijaNotification};

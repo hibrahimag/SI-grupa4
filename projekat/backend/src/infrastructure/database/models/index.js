@@ -139,6 +139,8 @@ EvaluacijaStudenta.belongsTo(PrijavaNaPraksu, { foreignKey: 'prijavaID' });
 PrijavaNaPraksu.hasOne(EvaluacijaKompanije, { foreignKey: 'prijavaID' });
 EvaluacijaKompanije.belongsTo(PrijavaNaPraksu, { foreignKey: 'prijavaID' });
 
+
+
 //eksport
 module.exports = { sequelize, User, Student, Kompanija, Fakultet, Koordinator, Odsjek, Oglas, PrijavaNaPraksu, Praksa,
      Aktivnost, Prisustvo, Evaluacija, Ugovor, Izvjestaj, Dokument, OmiljeniOglas, Notifikacija, SystemSetting, NotificationPreference, AuditLog, EvaluacijaStudenta, EvaluacijaKompanije};

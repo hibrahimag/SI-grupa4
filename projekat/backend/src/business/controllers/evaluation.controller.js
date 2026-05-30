@@ -91,6 +91,15 @@ async function getStudentReceivedEvaluations(req, res) {
   }
 }
 
+async function getCompanyReceivedEvaluations(req, res) {
+    try {
+        const data = await evaluationService.getCompanyReceivedEvaluations(req.user.id);
+        res.json(data);
+    } catch (err) {
+        res.status(err.status || 500).json({ message: err.message });
+    }
+}
+
 module.exports = {
   getCompanyPendingEvaluations,
   postStudentEvaluation,
@@ -99,4 +108,5 @@ module.exports = {
   postCompanyEvaluation,
   getStudentSubmittedEvaluations,
   getStudentReceivedEvaluations,
+  getCompanyReceivedEvaluations,
 };

@@ -49,6 +49,8 @@ beforeAll(async () => {
     opis: 'Opis prakse za testiranje',
     brojMjesta: 3,
     rokPrijave: FUTURE,
+    datumPocetka: '2099-02-01',
+    trajanje: 3,
     status: 'AKTIVAN',
     kompanijaID: companyRec.id,
     tehnologije: ['JavaScript'],
@@ -107,6 +109,7 @@ describe('POST /api/listings', () => {
         opis: 'Detaljan opis prakse',
         brojMjesta: 2,
         rokPrijave: '2099-06-01',
+        datumPocetka: '2099-07-01',
         trajanje: 3,
         tip: 'Remote',
       });
@@ -127,6 +130,25 @@ describe('POST /api/listings', () => {
 
     expect(res.status).toBe(400);
     expect(res.body).toHaveProperty('message');
+  });
+
+  // Testira: kreiranje oglasa bez datuma početka prakse nije dozvoljeno
+  // Ulaz: POST /api/listings s trajanjem, ali bez datumPocetka
+  // Očekivani izlaz: HTTP 400 i jasna poruka validacije
+  test('400 — datum početka prakse je obavezan', async () => {
+    const res = await request(app)
+      .post('/api/listings')
+      .set('Authorization', `Bearer ${companyToken}`)
+      .send({
+        naziv: `${PREFIX}Bez početka`,
+        opis: 'Opis',
+        brojMjesta: 1,
+        rokPrijave: '2099-06-01',
+        trajanje: 3,
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe('Datum početka prakse je obavezan.');
   });
 
   // Testira: kreiranje oglasa s rokom prijave u prošlosti vraća 400
@@ -198,7 +220,7 @@ describe('PUT /api/listings/:id', () => {
     const res = await request(app)
       .put(`/api/listings/${oglas.id}`)
       .set('Authorization', `Bearer ${companyToken}`)
-      .send({ naziv: `${PREFIX}Ažurirani`, opis: 'Novi opis', brojMjesta: 5, rokPrijave: '2099-11-01' });
+      .send({ naziv: `${PREFIX}Ažurirani`, opis: 'Novi opis', brojMjesta: 5, rokPrijave: '2099-11-01', datumPocetka: '2099-12-01', trajanje: 3 });
 
     expect(res.status).toBe(200);
     expect(res.body.oglas.naziv).toBe(`${PREFIX}Ažurirani`);

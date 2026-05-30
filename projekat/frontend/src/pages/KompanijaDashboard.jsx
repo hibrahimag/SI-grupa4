@@ -4,7 +4,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { getCompanyProfile } from '../services/companyProfile.service';
+import { downloadPracticeContract, generatePracticeContract, getCompanyPractices } from '../services/prakseService';
 import { checkCompanyDeactivation, deactivateCompanyAccount, deleteMyCompanyAccount } from '../services/userService';
+import { getCompanyReceivedEvaluations } from '../services/evaluationService';
 import EvaluacijaStudenta from '../modules/evaluations/EvaluacijaStudenta';
 import './KompanijaDashboard.css';
 import {
@@ -26,7 +28,13 @@ import {
 import {
   APPLICATION_STATUS,
   applicationStatusLabel,
+  studentDecisionLabel,
 } from '../utils/applicationStatus';
+import {
+  PRACTICE_FILTERS,
+  practiceLifecycleLabel,
+  practiceLifecycleTone,
+} from '../utils/practiceLifecycle';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts';
@@ -34,16 +42,19 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import EditOglas from '../modules/listings/EditOglas';
 import { formatDate } from '../data/mockPrakse';
+import { getPracticeActivities } from '../services/prakseService';
 
 const VIEWS = {
   DASHBOARD: 'dashboard',
   LISTINGS: 'oglasi',
   CREATE_LISTING: 'create-oglas',
   CANDIDATES: 'kandidati',
+  PRACTICES: 'prakse',
   CLOSED_LISTINGS: 'zatvoreni-oglasi',
   ARCHIVED_LISTINGS: 'arhivirani-oglasi',
   STATISTICS: 'statistika',
   EVALUATIONS: 'evaluacije',
+  RECEIVED_EVALUATIONS: 'primljene-evaluacije',
 };
 
 const COMPANY_PROFILE_UPDATED_EVENT = 'company-profile-updated';
@@ -118,6 +129,14 @@ export default function KompanijaDashboard() {
 
   // States handling the page-style custom confirmation popups
   const [confirmConfig, setConfirmConfig] = useState({ isOpen: false, title: '', message: '', onConfirm: () => { }, type: 'danger' });
+  const [receivedEvals, setReceivedEvals] = useState([]);
+
+  useEffect(() => {
+    if (view !== VIEWS.RECEIVED_EVALUATIONS) return;
+    getCompanyReceivedEvaluations()
+      .then(data => setReceivedEvals(data || []))
+      .catch(() => { });
+  }, [view]);
 
   const companyName = companyProfile?.naziv || user?.institution || user?.ime || 'Kompanija';
 
@@ -369,6 +388,12 @@ export default function KompanijaDashboard() {
               <polyline points="17 11 19 13 23 9" />
             </svg>
           </button>
+          <button type="button" className="cd-sb-tab-icon" onClick={() => openView(VIEWS.PRACTICES)} title="Prakse">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
+              <path d="M2 12h20" />
+            </svg>
+          </button>
           <button type="button" className="cd-sb-tab-icon" onClick={() => openView(VIEWS.CREATE_LISTING)} title="Kreiraj oglas">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="5" width="18" height="16" rx="2" />
@@ -395,6 +420,11 @@ export default function KompanijaDashboard() {
           <button type="button" className="cd-sb-tab-icon" onClick={() => openView(VIEWS.EVALUATIONS)} title="Evaluacije studenata">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </svg>
+          </button>
+          <button type="button" className="cd-sb-tab-icon" onClick={() => openView(VIEWS.RECEIVED_EVALUATIONS)} title="Primljene evaluacije">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
             </svg>
           </button>
           <div className="cd-sb-tab-footer">
@@ -436,6 +466,13 @@ export default function KompanijaDashboard() {
                   </svg>
                   Prijave kandidata
                 </button>
+                <button type="button" className={`cd-nav-item ${view === VIEWS.PRACTICES ? 'active' : ''}`} onClick={() => openView(VIEWS.PRACTICES)}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
+                    <path d="M2 12h20" />
+                  </svg>
+                  Prakse
+                </button>
                 <button type="button" className={`cd-nav-item ${view === VIEWS.CREATE_LISTING ? 'active' : ''}`} onClick={() => openView(VIEWS.CREATE_LISTING)}>
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="3" y="5" width="18" height="16" rx="2" />
@@ -468,6 +505,12 @@ export default function KompanijaDashboard() {
                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                   </svg>
                   Evaluacije studenata
+                </button>
+                <button type="button" className={`cd-nav-item ${view === VIEWS.RECEIVED_EVALUATIONS ? 'active' : ''}`} onClick={() => openView(VIEWS.RECEIVED_EVALUATIONS)}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                  </svg>
+                  Primljene evaluacije
                 </button>
               </nav>
             </div>
@@ -552,6 +595,7 @@ export default function KompanijaDashboard() {
             onSelectedListingIdChange={setCandidateListingId}
           />
         )}
+        {view === VIEWS.PRACTICES && <PracticesShell />}
         {view === VIEWS.STATISTICS && <StatistikaShell />}
         {view === VIEWS.EVALUATIONS && (
           <div className="cd-content">
@@ -577,6 +621,70 @@ export default function KompanijaDashboard() {
             onRestoreListing={handleRestoreListingAction}
             actionProcessingId={actionProcessingId}
           />
+        )}
+        {view === VIEWS.RECEIVED_EVALUATIONS && (
+          <div className="cd-content">
+              {receivedEvals.length === 0 ? (
+                <div className="cd-empty-state" style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minHeight: '300px',
+                  background: 'var(--color-surface)',
+                  borderRadius: '16px',
+                  margin: '40px auto',
+                  maxWidth: '540px',
+                  padding: '48px 32px',
+                  boxShadow: 'var(--shadow-card)',
+                }}>
+                  <div className="cd-empty-title" style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: 8 }}>
+                    Nema primljenih evaluacija.
+                  </div>
+                  <p style={{ color: 'var(--color-muted)', fontSize: '0.9rem', textAlign: 'center', margin: 0 }}>
+                    Evaluacije od studenata će se pojaviti ovdje nakon završetka prakse.
+                  </p>
+                </div>
+              ) : (
+                <div className="cd-candidates-table-wrap">
+                  <table className="cd-candidates-table">
+                    <thead>
+                      <tr>
+                        <th>Student</th>
+                        <th>Oglas</th>
+                        <th>Organizacija</th>
+                        <th>Mentorstvo</th>
+                        <th>Radno okruženje</th>
+                        <th>Relevantnost</th>
+                        <th>Preporuka</th>
+                        <th>Ukupna ocjena</th>
+                        <th>Komentar</th>
+                        <th>Datum</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {receivedEvals.map(ev => (
+                        <tr key={ev.id}>
+                          <td>{ev.studentIme} {ev.studentPrezime}</td>
+                          <td>{ev.oglasNaziv}</td>
+                          <td>{ev.organizacija}/5</td>
+                          <td>{ev.mentorstvo}/5</td>
+                          <td>{ev.radnoOkruzenje}/5</td>
+                          <td>{ev.relevantnoPosla}/5</td>
+                          <td>{ev.preporukaKompanija}/5</td>
+                          <td><strong>{ev.ukupnaOcjena}/5</strong></td>
+                          <td>{ev.komentar || '-'}</td>
+                          <td>
+                            {new Date(ev.datumEvaluacije)
+                              .toLocaleDateString('bs-BA')}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+          </div>
         )}
       </main>
 
@@ -845,6 +953,241 @@ function candidateStatusBadge(status) {
   };
 
   return <span className={`cd-candidate-status ${mapped.cls}`}>{applicationStatusLabel(status)}</span>;
+}
+
+function studentDecisionBadge(status) {
+  const cls = status === 'PRIHVACENO'
+    ? 'cd-candidate-status--approved'
+    : status === 'ODBIJENO'
+      ? 'cd-candidate-status--rejected'
+      : status === 'NA_CEKANJU'
+        ? 'cd-candidate-status--pending'
+        : 'cd-candidate-status--default';
+
+  return <span className={`cd-candidate-status ${cls}`}>{studentDecisionLabel(status)}</span>;
+}
+
+function practiceLifecycleBadge(status) {
+  const tone = practiceLifecycleTone(status);
+  const cls = tone === 'active'
+    ? 'cd-candidate-status--approved'
+    : tone === 'pending'
+      ? 'cd-candidate-status--pending'
+      : tone === 'finished'
+        ? 'cd-candidate-status--default'
+        : 'cd-candidate-status--rejected';
+  return <span className={`cd-candidate-status ${cls}`}>{practiceLifecycleLabel(status)}</span>;
+}
+
+function PracticesShell() {
+  const [filter, setFilter] = useState('all');
+  const [prakse, setPrakse] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [contract, setContract] = useState(null);
+  const [activitiesModal, setActivitiesModal] = useState(null);
+  const [activities, setActivities] = useState([]);
+  const [activitiesLoading, setActivitiesLoading] = useState(false);
+  const [contractError, setContractError] = useState('');
+  const [openingContractId, setOpeningContractId] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setError('');
+    getCompanyPractices(filter)
+      .then((data) => {
+        if (active) setPrakse(Array.isArray(data?.prakse) ? data.prakse : []);
+      })
+      .catch((err) => {
+        if (active) setError(err.message || 'Greška pri učitavanju praksi.');
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => { active = false; };
+  }, [filter]);
+
+  async function openContract(praksa) {
+    setOpeningContractId(praksa.id);
+    setContractError('');
+    try {
+      const generated = await generatePracticeContract(praksa.id);
+      setContract(generated);
+    } catch (err) {
+      setContractError(err.message || 'Greška pri generisanju ugovora.');
+    } finally {
+      setOpeningContractId(null);
+    }
+  }
+
+
+  async function openActivities(praksa) {
+    setActivitiesModal(praksa);
+    setActivitiesLoading(true);
+
+    try {
+      const data = await getPracticeActivities(praksa.id);
+      setActivities(data);
+    } catch {
+      setActivities([]);
+    } finally {
+      setActivitiesLoading(false);
+    }
+  }
+
+  return (
+    <div className="cd-content">
+      <header className="cd-header">
+        <h1 className="cd-title">Prakse</h1>
+        <p className="cd-subtitle">Pregled potvrđenih praksi studenata na vašim oglasima.</p>
+      </header>
+      <section className="cd-section">
+        <div className="cd-stat-tabs" aria-label="Filter praksi">
+          {PRACTICE_FILTERS.map((item) => (
+            <button
+              key={item.value}
+              type="button"
+              className={`cd-stat-tab${filter === item.value ? ' active' : ''}`}
+              onClick={() => setFilter(item.value)}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+        {error && <div className="cd-inline-message cd-inline-message--error">{error}</div>}
+        {contractError && <div className="cd-inline-message cd-inline-message--error">{contractError}</div>}
+        {loading && <p className="cd-candidate-muted">Učitavanje praksi...</p>}
+        {!loading && !error && prakse.length === 0 && (
+          <div className="cd-empty-state cd-empty-state--inline">
+            <div className="cd-empty-title">Nema praksi za odabrani filter.</div>
+          </div>
+        )}
+        {!loading && !error && prakse.length > 0 && (
+          <div className="cd-candidates-table-wrap">
+            <table className="cd-candidates-table cd-practices-table">
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>Praksa / oglas</th>
+                  <th>Datum početka</th>
+                  <th>Datum završetka</th>
+                  <th>Status prakse</th>
+                  <th>Odluka studenta</th>
+                  <th>Ugovor</th>
+                  <th>Aktivnosti</th>
+                </tr>
+              </thead>
+              <tbody>
+                {prakse.map((praksa) => (
+                  <tr key={praksa.id}>
+                    <td>
+                      <strong>{praksa.student?.ime} {praksa.student?.prezime}</strong>
+                      {praksa.student?.index_number && (
+                        <div className="cd-candidate-muted">{praksa.student.index_number}</div>
+                      )}
+                    </td>
+                    <td>
+                      <div>{praksa.oglas?.naziv || '-'}</div>
+                      <div className="cd-candidate-muted">{praksa.kompanija?.naziv || '-'}</div>
+                    </td>
+                    <td>{formatDate(praksa.datumPocetka)}</td>
+                    <td>{formatDate(praksa.datumKraja)}</td>
+                    <td>{practiceLifecycleBadge(praksa.lifecycleStatus)}</td>
+                    <td>{studentDecisionBadge(praksa.studentStatus)}</td>
+                    <td>
+                      <button
+                        type="button"
+                        className="cd-candidate-doc-btn"
+                        disabled={openingContractId === praksa.id}
+                        onClick={() => openContract(praksa)}
+                      >
+                        {openingContractId === praksa.id ? 'Generisanje...' : 'Ugovor'}
+                      </button>
+                    </td>
+                    <td>
+                      <button
+                        type="button"
+                        className="cd-candidate-doc-btn"
+                        onClick={() => openActivities(praksa)}
+                      >
+                        Aktivnosti
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+      {contract && (
+        <div className="cd-modal-overlay" role="dialog" aria-modal="true" onClick={() => setContract(null)}>
+          <div className="cd-modal-sheet cd-contract-modal" onClick={(event) => event.stopPropagation()}>
+            <button type="button" className="cd-modal-close" onClick={() => setContract(null)} aria-label="Zatvori">
+              &times;
+            </button>
+            <h2 className="cd-contract-title">Ugovor o praksi</h2>
+            <pre className="cd-contract-content">{contract.sadrzaj}</pre>
+            <div className="cd-contract-actions">
+              <button type="button" className="cd-btn cd-btn--secondary" onClick={() => setContract(null)}>
+                Zatvori
+              </button>
+              <button type="button" className="cd-btn cd-btn--primary" onClick={() => downloadPracticeContract(contract)}>
+                Preuzmi ugovor
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {activitiesModal && (
+        <div
+          className="cd-modal-overlay"
+          onClick={() => setActivitiesModal(null)}
+        >
+          <div
+            className="cd-modal-sheet"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2>Aktivnosti studenta</h2>
+
+            {activitiesLoading ? (
+              <p>Učitavanje...</p>
+            ) : activities.length === 0 ? (
+              <p>Nema evidentiranih aktivnosti.</p>
+            ) : (
+              activities.map((a) => (
+                <div
+                  key={a.id}
+                  style={{
+                    padding: '12px 0',
+                    borderBottom: '1px solid var(--border-color,#ddd)'
+                  }}
+                >
+                  <strong>
+                    {new Date(a.datum).toLocaleDateString()}
+                  </strong>
+
+                  <p style={{ marginTop: 6 }}>
+                    {a.opis}
+                  </p>
+                </div>
+              ))
+            )}
+
+            <div style={{ marginTop: 16 }}>
+              <button
+                className="cd-btn cd-btn--secondary"
+                onClick={() => setActivitiesModal(null)}
+              >
+                Zatvori
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 function candidateDocumentTypeLabel(tip) {
@@ -1137,6 +1480,7 @@ function CandidatesShell({
                       <th>Datum prijave</th>
                       <th>Dokumenti</th>
                       <th>Status</th>
+                      <th>Odluka studenta</th>
                       <th>Akcija</th>
                     </tr>
                   </thead>
@@ -1194,6 +1538,7 @@ function CandidatesShell({
                             )}
                           </td>
                           <td>{candidateStatusBadge(application.status)}</td>
+                          <td>{studentDecisionBadge(application.studentStatus)}</td>
                           <td>
                             {canShortlist || canDecide ? (
                               <div className="cd-candidate-actions">
@@ -1272,11 +1617,23 @@ function CreateListingShell({ onCancel, onCreated }) {
       setError('Naziv, opis, broj mjesta i rok prijave su obavezni.');
       return;
     }
+    if (!formData.datumPocetka) {
+      setError('Datum početka prakse je obavezan.');
+      return;
+    }
+    if (!formData.trajanje) {
+      setError('Trajanje prakse je obavezno.');
+      return;
+    }
+    if (!Number.isInteger(Number(formData.trajanje)) || Number(formData.trajanje) <= 0) {
+      setError('Nije moguće odrediti datum završetka prakse iz unesenog trajanja.');
+      return;
+    }
     if (formData.rokPrijave < today) {
       setError('Rok prijave ne može biti u prošlosti.');
       return;
     }
-    if (formData.datumPocetka && formData.datumPocetka <= formData.rokPrijave) {
+    if (formData.datumPocetka <= formData.rokPrijave) {
       setError('Datum početka prakse mora biti nakon isteka roka prijave.');
       return;
     }
@@ -1289,8 +1646,8 @@ function CreateListingShell({ onCancel, onCreated }) {
         opis: formData.opis,
         brojMjesta: Number(formData.brojMjesta),
         rokPrijave: formData.rokPrijave,
-        datumPocetka: formData.datumPocetka || null,
-        trajanje: formData.trajanje || null,
+        datumPocetka: formData.datumPocetka,
+        trajanje: formData.trajanje,
         oblast: formData.oblast || null,
         lokacija: formData.lokacija || null,
         tip: formData.tip,
@@ -1349,7 +1706,7 @@ function CreateListingShell({ onCancel, onCreated }) {
               />
             </div>
             <div className="cd-form-field">
-              <label className="cd-form-label">Datum početka prakse</label>
+              <label className="cd-form-label">Datum početka prakse *</label>
               <DatePicker
                 className="cd-input"
                 dateFormat="dd.MM.yyyy"
@@ -1379,7 +1736,7 @@ function CreateListingShell({ onCancel, onCreated }) {
 
           <div className="cd-form-row">
             <div className="cd-form-field">
-              <label className="cd-form-label">Trajanje (u mjesecima)</label>
+              <label className="cd-form-label">Trajanje (u mjesecima) *</label>
               <input className="cd-input" type="number" min="1" placeholder="npr. 3" value={formData.trajanje} onChange={(e) => handleChange('trajanje', e.target.value)} />
             </div>
             <div className="cd-form-field">

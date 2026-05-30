@@ -4,7 +4,7 @@ const koordinatorService = require('../services/koordinator.service');
 
 const getDashboardStats = async (req, res) => {
   try {
-    const data = await koordinatorService.getDashboardStats();
+    const data = await koordinatorService.getDashboardStats(req.user.id);
     res.json({ success: true, data });
   } catch (err) {
     console.error('[koordinator] getDashboardStats:', err);
@@ -103,9 +103,12 @@ const getStudenti = async (req, res) => {
 
 const getPrakse = async (req, res) => {
   try {
-    const data = await koordinatorService.getPrakse(req.query.status || '', req.user.id);
+    const data = await koordinatorService.getPrakse(req.query.filter || req.query.status || 'all', req.user.id);
     res.json({ success: true, data });
   } catch (err) {
+    if (err.status) {
+      return res.status(err.status).json({ success: false, message: err.message });
+    }
     console.error('[koordinator] getPrakse:', err);
     res.status(500).json({ success: false, message: 'Greska na serveru.' });
   }

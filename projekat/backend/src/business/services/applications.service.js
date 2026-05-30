@@ -2,10 +2,12 @@
 
 const { Op } = require('sequelize');
 const {
+  sequelize,
   User,
   Student,
   Oglas,
   PrijavaNaPraksu,
+  Praksa,
   Kompanija,
   Dokument,
   Odsjek,
@@ -27,11 +29,17 @@ const {
   APPLICATION_STATUS,
   COORDINATOR_STATUS,
   COMPANY_STATUS,
+  STUDENT_STATUS,
   canCompanyAct,
   canCompanyShortlist,
   isCoordinatorApproved,
   normalizeStatusFilter,
 } = require('./applicationStatus.service');
+const {
+  calculatePracticeDates,
+  ensurePracticeForApplication,
+  getStudentPracticeById,
+} = require('./prakse.service');
 
 function makeError(message, status) {
   const err = new Error(message);
@@ -99,6 +107,8 @@ function mapCompanyApplication(prijava) {
     status: prijava.status,
     koordinatorStatus: prijava.koordinatorStatus,
     kompanijaStatus: prijava.kompanijaStatus,
+    studentStatus: prijava.studentStatus,
+    studentOdlucioAt: prijava.studentOdlucioAt,
     datumPrijave: prijava.datumPrijave,
     oglas: oglas
       ? {
@@ -151,6 +161,20 @@ async function resolveStudentForListing(userId) {
   const student = await Student.findOne({ where: { userID: user.id } });
   if (!student || !isStudentProfileComplete(user, student)) {
     return null;
+  }
+
+  return student;
+}
+
+async function resolveStudentForDecision(userId) {
+  const user = await User.findByPk(userId);
+  if (!user || user.role !== 'STUDENT') {
+    throw makeError('Samo studenti mogu odlučiti o učešću na praksi.', 403);
+  }
+
+  const student = await Student.findOne({ where: { userID: user.id } });
+  if (!student) {
+    throw makeError('Nemate pravo odlučivati o ovoj prijavi.', 403);
   }
 
   return student;
@@ -222,6 +246,8 @@ async function createApplication(userId, data = {}) {
     status: APPLICATION_STATUS.WAITING_COORDINATOR,
     koordinatorStatus: COORDINATOR_STATUS.PENDING,
     kompanijaStatus: COMPANY_STATUS.UNAVAILABLE,
+    studentStatus: STUDENT_STATUS.UNAVAILABLE,
+    studentOdlucioAt: null,
   });
 
   await Dokument.update(
@@ -313,6 +339,8 @@ async function getCompanyApplicationsForListing(userId, oglasId) {
       'status',
       'koordinatorStatus',
       'kompanijaStatus',
+      'studentStatus',
+      'studentOdlucioAt',
       'datumPrijave',
     ],
     include: [
@@ -359,6 +387,8 @@ async function loadCompanyActionContext(userId, applicationId) {
       'status',
       'koordinatorStatus',
       'kompanijaStatus',
+      'studentStatus',
+      'studentOdlucioAt',
       'datumPrijave',
     ],
     include: [
@@ -450,6 +480,8 @@ async function shortlistApplication(userId, applicationId) {
     {
       status: APPLICATION_STATUS.SHORTLISTED,
       kompanijaStatus: COMPANY_STATUS.SHORTLISTED,
+      studentStatus: STUDENT_STATUS.UNAVAILABLE,
+      studentOdlucioAt: null,
     },
     {
       where: {
@@ -505,6 +537,8 @@ async function decideApplicationByCompany(userId, applicationId, odluka) {
     {
       status: nextStatus,
       kompanijaStatus: nextCompanyStatus,
+      studentStatus: approved ? STUDENT_STATUS.PENDING : STUDENT_STATUS.UNAVAILABLE,
+      studentOdlucioAt: null,
     },
     {
       where: {
@@ -521,6 +555,8 @@ async function decideApplicationByCompany(userId, applicationId, odluka) {
 
   prijava.status = nextStatus;
   prijava.kompanijaStatus = nextCompanyStatus;
+  prijava.studentStatus = approved ? STUDENT_STATUS.PENDING : STUDENT_STATUS.UNAVAILABLE;
+  prijava.studentOdlucioAt = null;
 
   await notifyStudent({
     prijava,
@@ -543,6 +579,105 @@ async function approveApplicationByCompany(userId, applicationId) {
 
 async function rejectApplicationByCompany(userId, applicationId) {
   return decideApplicationByCompany(userId, applicationId, 'odbijena');
+}
+
+async function decideApplicationByStudent(userId, applicationId, decision) {
+  const student = await resolveStudentForDecision(userId);
+  const prijavaId = normalizeId(applicationId, 'Prijava nije pronađena.');
+  const accepted = decision === 'accept';
+  const nextStudentStatus = accepted ? STUDENT_STATUS.ACCEPTED : STUDENT_STATUS.DECLINED;
+  const successMessage = accepted
+    ? 'Učešće na praksi je uspješno prihvaćeno.'
+    : 'Učešće na praksi je uspješno odbijeno.';
+  const alreadyMessage = accepted
+    ? 'Učešće na praksi je već prihvaćeno.'
+    : 'Učešće na praksi je već odbijeno.';
+
+  return sequelize.transaction(async (transaction) => {
+    const prijava = await PrijavaNaPraksu.findByPk(prijavaId, {
+      transaction,
+      lock: transaction.LOCK.UPDATE,
+    });
+
+    if (!prijava) {
+      throw makeError('Prijava nije pronađena.', 404);
+    }
+
+    if (Number(prijava.studentID) !== Number(student.id)) {
+      throw makeError('Nemate pravo odlučivati o ovoj prijavi.', 403);
+    }
+
+    const oglas = await Oglas.findByPk(prijava.oglasID, {
+      attributes: ['id', 'datumPocetka', 'trajanje'],
+      transaction,
+    });
+    if (!oglas) {
+      throw makeError('Oglas nije pronađen.', 404);
+    }
+
+    if (prijava.studentStatus === nextStudentStatus) {
+      const existingPractice = accepted
+        ? await ensurePracticeForApplication(prijava, oglas, { transaction })
+        : null;
+      return { message: alreadyMessage, application: prijava, practice: existingPractice };
+    }
+
+    if (
+      prijava.studentStatus === STUDENT_STATUS.ACCEPTED ||
+      prijava.studentStatus === STUDENT_STATUS.DECLINED
+    ) {
+      throw makeError('Odluka o učešću je već evidentirana i nije je moguće promijeniti.', 409);
+    }
+
+    if (
+      prijava.status !== APPLICATION_STATUS.APPROVED ||
+      prijava.koordinatorStatus !== COORDINATOR_STATUS.APPROVED ||
+      prijava.kompanijaStatus !== COMPANY_STATUS.APPROVED ||
+      prijava.studentStatus !== STUDENT_STATUS.PENDING
+    ) {
+      throw makeError(
+        'Praksu nije moguće prihvatiti ili odbiti jer još nije odobrena od koordinatora i kompanije.',
+        400
+      );
+    }
+
+    let practice = null;
+    if (accepted) {
+      // Validacija datuma se izvršava prije odluke, pa greška ne ostavlja prijavu potvrđenom bez prakse.
+      calculatePracticeDates(oglas.datumPocetka, oglas.trajanje);
+      await ensurePracticeForApplication(
+        { ...prijava.get({ plain: true }), studentStatus: STUDENT_STATUS.ACCEPTED },
+        oglas,
+        { transaction }
+      );
+    }
+
+    await prijava.update(
+      {
+        studentStatus: nextStudentStatus,
+        studentOdlucioAt: new Date(),
+      },
+      { transaction }
+    );
+
+    if (accepted) {
+      practice = await Praksa.findOne({ where: { prijavaID: prijava.id }, transaction });
+    }
+
+    return { message: successMessage, application: prijava, practice };
+  });
+}
+
+async function acceptApplicationByStudent(userId, applicationId) {
+  const result = await decideApplicationByStudent(userId, applicationId, 'accept');
+  if (result.practice) {
+    result.practice = await getStudentPracticeById(userId, result.practice.id);
+  }
+  return result;
+}
+
+async function declineApplicationByStudent(userId, applicationId) {
+  return decideApplicationByStudent(userId, applicationId, 'decline');
 }
 
 async function getApplicationStatistics(userId, { fakultetID, odsjekID, godina, status, oglasID } = {}) {
@@ -685,4 +820,6 @@ module.exports = {
   shortlistApplication,
   approveApplicationByCompany,
   rejectApplicationByCompany,
+  acceptApplicationByStudent,
+  declineApplicationByStudent,
 };
