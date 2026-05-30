@@ -1,5 +1,6 @@
 'use strict';
 
+const { Op } = require('sequelize');
 const {
   User,
   Student,
@@ -10,8 +11,20 @@ const {
   PrijavaNaPraksu,
   Praksa,
   Ugovor,
+  Izvjestaj,
+  Evaluacija,
 } = require('../../infrastructure/database/models');
 const { resolveCoordinatorProfile } = require('./coordinatorProfile.service');
+const { createNotification } = require('./notifications.service');
+const {
+  getOrCreatePreferences,
+  canSendInApp,
+  canSendEmail,
+} = require('./notificationPreferences.service');
+const {
+  sendPraksaZavrsenaStudentEmail,
+  sendPraksaZavrsenaCompanyEmail,
+} = require('./email.service');
 const {
   APPLICATION_STATUS,
   COORDINATOR_STATUS,
@@ -37,6 +50,8 @@ const FILTER_LIFECYCLE = {
 };
 
 const Aktivnost = require('../../infrastructure/database/models').Aktivnost;
+
+const PRACTICE_COMPLETION_NOTIFICATION_TIP = 'PRAKSA_ZAVRSENA';
 
 function makeError(message, status = 400) {
   const error = new Error(message);
@@ -433,6 +448,109 @@ async function backfillAcceptedPractices() {
   }
 }
 
+async function notifyPracticeCompletion(praksa) {
+  const prijava = praksa.PrijavaNaPraksu;
+  const student = prijava?.Student;
+  const studentUser = student?.User;
+  const oglas = prijava?.Oglas || prijava?.Ogla;
+  const kompanija = oglas?.Kompanija;
+  const oglasNaziv = oglas?.naziv || 'praksu';
+  const kompanijaNaziv = kompanija?.naziv || 'Kompanija';
+  const studentName = [studentUser?.ime, studentUser?.prezime].filter(Boolean).join(' ') || 'Student';
+  const datumKraja = displayContractDate(praksa.datumKraja);
+  const naslov = 'Praksa je završena';
+  const poruka = `Vaša praksa "${oglasNaziv}" kod kompanije ${kompanijaNaziv} je završena dana ${datumKraja}.`;
+
+  const preferences = studentUser?.id ? await getOrCreatePreferences(studentUser.id) : null;
+
+  if (student?.id && canSendInApp(preferences, PRACTICE_COMPLETION_NOTIFICATION_TIP)) {
+    await createNotification(
+      student.id,
+      prijava.id,
+      PRACTICE_COMPLETION_NOTIFICATION_TIP,
+      naslov,
+      poruka
+    );
+  }
+
+  const emailPromises = [];
+
+  if (studentUser?.email && canSendEmail(preferences, PRACTICE_COMPLETION_NOTIFICATION_TIP)) {
+    emailPromises.push(
+      sendPraksaZavrsenaStudentEmail(
+        studentUser.email,
+        oglasNaziv,
+        kompanijaNaziv,
+        datumKraja
+      )
+    );
+  }
+
+  const companyEmail = kompanija?.User?.email;
+  if (companyEmail) {
+    emailPromises.push(
+      sendPraksaZavrsenaCompanyEmail(companyEmail, studentName, oglasNaziv, datumKraja)
+    );
+  }
+
+  await Promise.all(emailPromises);
+}
+
+async function completeExpiredPractices(now = new Date()) {
+  const today = todayDateOnly(now);
+  const todayDate = toUtcDate(today);
+
+  const rows = await Praksa.findAll({
+    where: {
+      datumOdustajanja: null,
+      datumObavijestiZavrsetka: null,
+      datumKraja: { [Op.lt]: todayDate },
+    },
+    include: [{
+      model: PrijavaNaPraksu,
+      required: true,
+      where: approvedAcceptedWhere(),
+      include: [
+        {
+          model: Student,
+          required: true,
+          include: [{ model: User, attributes: ['id', 'ime', 'prezime', 'email'] }],
+        },
+        {
+          model: Oglas,
+          required: true,
+          attributes: ['id', 'naziv'],
+          include: [{
+            model: Kompanija,
+            attributes: ['id', 'naziv'],
+            include: [{ model: User, attributes: ['email'] }],
+          }],
+        },
+      ],
+    }],
+  });
+
+  let processed = 0;
+  const errors = [];
+
+  for (const praksa of rows) {
+    if (practiceLifecycleStatus(praksa, today) !== PRACTICE_LIFECYCLE.FINISHED) {
+      continue;
+    }
+
+    try {
+      await notifyPracticeCompletion(praksa);
+      await praksa.update({ datumObavijestiZavrsetka: new Date() });
+      processed += 1;
+    } catch (error) {
+      errors.push({ praksaId: praksa.id, message: error.message });
+      console.warn(`[prakse] Greška pri automatskom završetku prakse ${praksa.id}: ${error.message}`);
+    }
+  }
+
+  return { processed, errors };
+}
+
 async function createActivity(userId, practiceId, opis) {
   const praksa = await getStudentPracticeById(userId, practiceId);
 
@@ -480,6 +598,132 @@ async function getPracticeActivities(userId, role, practiceId) {
   });
 }
 
+
+async function generatePracticeReport(userId, practiceId, data = {}) {
+  const praksa = await getCompanyPracticeById(userId, practiceId);
+
+  if (!praksa) {
+    throw makeError('Praksa nije pronađena.', 404);
+  }
+
+  const ocjena = Number(data.ocjena);
+  if (!Number.isInteger(ocjena) || ocjena < 1 || ocjena > 5) {
+    throw makeError('Ocjena mora biti broj od 1 do 5.');
+  }
+
+  const komentar = String(data.komentar || '').trim();
+  if (!komentar) {
+    throw makeError('Komentar je obavezan.');
+  }
+
+  const [evaluacija] = await Evaluacija.findOrCreate({
+    where: {
+      praksaID: praksa.id,
+      tipEvaluacije: 'KOMPANIJA_OCJENJUJE_STUDENTA',
+    },
+    defaults: {
+      praksaID: praksa.id,
+      ocjena,
+      komentar,
+      tipEvaluacije: 'KOMPANIJA_OCJENJUJE_STUDENTA',
+      datumEvaluacije: new Date(),
+    },
+  });
+
+  if (!evaluacija.isNewRecord) {
+    await evaluacija.update({
+      ocjena,
+      komentar,
+      datumEvaluacije: new Date(),
+    });
+  }
+
+  const studentName = [praksa.student?.ime, praksa.student?.prezime].filter(Boolean).join(' ') || '-';
+  const companyName = praksa.kompanija?.naziv || '-';
+  const practiceName = praksa.oglas?.naziv || 'Praksa';
+
+  const sadrzaj = [
+    'IZVJEŠTAJ O OBAVLJENOJ PRAKSI',
+    '',
+    `Student: ${studentName}`,
+    `Broj indeksa: ${praksa.student?.index_number || '-'}`,
+    `Kompanija: ${companyName}`,
+    `Praksa: ${practiceName}`,
+    `Period: ${displayContractDate(praksa.datumPocetka)} - ${displayContractDate(praksa.datumKraja)}`,
+    '',
+    'EVALUACIJA STUDENTA',
+    `Ocjena: ${ocjena}/5`,
+    `Komentar kompanije: ${komentar}`,
+    '',
+    `Datum generisanja: ${displayContractDate(new Date())}`,
+    '',
+    'Ovaj izvještaj služi kao potvrda o pohađanju studentske prakse.',
+  ].join('\n');
+
+  const [izvjestaj, created] = await Izvjestaj.findOrCreate({
+    where: { praksaID: praksa.id },
+    defaults: {
+      praksaID: praksa.id,
+      koordinatorID: null,
+      sadrzaj,
+      dokumentUrl: null,
+      datumGenerisanja: new Date(),
+    },
+  });
+
+  if (!created) {
+    await izvjestaj.update({
+      sadrzaj,
+      datumGenerisanja: new Date(),
+    });
+  }
+
+  return {
+    created,
+    izvjestaj,
+    evaluacija,
+    sadrzaj,
+  };
+}
+
+
+async function getPracticeReport(userId, role, practiceId) {
+  let praksa = null;
+
+  if (role === 'STUDENT') {
+    praksa = await getStudentPracticeById(userId, practiceId);
+  }
+
+  if (role === 'COMPANY') {
+    praksa = await getCompanyPracticeById(userId, practiceId);
+  }
+
+  if (!praksa) {
+    throw makeError('Praksa nije pronađena.', 404);
+  }
+
+  const izvjestaj = await Izvjestaj.findOne({
+    where: { praksaID: Number(practiceId) },
+  });
+
+  if (!izvjestaj) {
+    throw makeError('Izvještaj još nije generisan.', 404);
+  }
+
+  const evaluacija = await Evaluacija.findOne({
+    where: {
+      praksaID: Number(practiceId),
+      tipEvaluacije: 'KOMPANIJA_OCJENJUJE_STUDENTA',
+    },
+  });
+
+  return {
+    izvjestaj,
+    evaluacija,
+    sadrzaj: izvjestaj.sadrzaj,
+  };
+}
+
 module.exports = {
   PRACTICE_LIFECYCLE,
   calculatePracticeDates,
@@ -493,6 +737,9 @@ module.exports = {
   getCoordinatorPractices,
   getCoordinatorPracticeSummary,
   backfillAcceptedPractices,
+  completeExpiredPractices,
   createActivity,
   getPracticeActivities,
+  generatePracticeReport,
+  getPracticeReport,
 };
