@@ -130,7 +130,7 @@ export function applicationStageSteps(application) {
     { label: 'Prijava podnesena', state: 'complete' },
     {
       label: 'Koordinator',
-      state: coordinatorRejected ? 'error' : companyReached || finalReached ? 'complete' : 'current',
+      state: coordinatorRejected ? 'error' : status === APPLICATION_STATUS.WITHDRAWN ? 'pending' : companyReached || finalReached ? 'complete' : 'current',
     },
     {
       label: 'Kompanija',
@@ -149,7 +149,7 @@ export function applicationStageSteps(application) {
       state: status === APPLICATION_STATUS.APPROVED
         ? studentDecisionState
         : finalReached
-          ? (coordinatorRejected || companyRejected ? 'error' : 'complete')
+          ? (coordinatorRejected || companyRejected || status === APPLICATION_STATUS.WITHDRAWN ? 'error' : 'complete')
           : 'pending',
     },
   ];

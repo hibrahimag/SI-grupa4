@@ -10,6 +10,7 @@ import {
   createApplication,
   declineApplicationByStudent,
   getMyApplications,
+  withdrawApplication,
 } from '../services/applicationsService';
 import { getMyDocuments, attachDocumentsToOglas, getNotifications, markNotificationRead, markAllNotificationsRead } from '../services/api';
 import { getFavourites, addFavourite, removeFavourite } from '../services/favouritesService';
@@ -30,6 +31,18 @@ import {
   studentApplicationStatusLabel,
   studentApplicationStatusTone,
 } from '../utils/applicationStatus';
+
+const WITHDRAWABLE_STATUSES = new Set([
+  APPLICATION_STATUS.WAITING_COORDINATOR,
+  APPLICATION_STATUS.WAITING_COMPANY,
+  APPLICATION_STATUS.SHORTLISTED,
+  APPLICATION_STATUS.APPROVED,
+  APPLICATION_STATUS.LEGACY_SUBMITTED,
+]);
+
+function canWithdraw(app) {
+  return WITHDRAWABLE_STATUSES.has(app?.status);
+}
 import {
   PRACTICE_FILTERS,
   practiceLifecycleLabel,
@@ -730,10 +743,14 @@ function MyApplicationsPanel({
   decisionProcessingId,
   decisionSuccess,
   finishedPracticeAppIds = new Set(),
+  onWithdraw,
+  withdrawProcessingId,
 }) {
   const [activeFilter, setActiveFilter] = useState(null);
   const [decisionModal, setDecisionModal] = useState(null);
   const [decisionError, setDecisionError] = useState('');
+  const [withdrawModal, setWithdrawModal] = useState(null);
+  const [withdrawError, setWithdrawError] = useState('');
 
   const praksaById = useMemo(() => {
     const m = new Map();
@@ -977,6 +994,20 @@ function MyApplicationsPanel({
                     </div>
                   )}
 
+                  {/* Withdraw button */}
+                  {canWithdraw(app) && (
+                    <div className="sd-student-decision-actions" onClick={e => e.stopPropagation()}>
+                      <button
+                        type="button"
+                        className="sd-btn-danger sd-student-decision-btn"
+                        disabled={withdrawProcessingId === app.id}
+                        onClick={() => { setWithdrawError(''); setWithdrawModal(app); }}
+                      >
+                        Odustani od prijave
+                      </button>
+                    </div>
+                  )}
+
                   {/* FOOTER */}
                   <div className="sd-card-foot">
                     <div className="sd-meta-row">
@@ -1073,6 +1104,57 @@ function MyApplicationsPanel({
                 {decisionProcessingId === decisionModal.application.id
                   ? 'Spremanje...'
                   : decisionModal.decision === 'accept' ? 'Prihvati praksu' : 'Odbij praksu'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {withdrawModal && (
+        <div className="sd-modal-overlay sd-modal-overlay--top" onClick={() => {
+          if (withdrawProcessingId !== withdrawModal.id) setWithdrawModal(null);
+        }}>
+          <div className="sd-confirm-modal" onClick={e => e.stopPropagation()}>
+            <div className="sd-confirm-icon sd-confirm-icon--danger">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="15" y1="9" x2="9" y2="15" />
+                <line x1="9" y1="9" x2="15" y2="15" />
+              </svg>
+            </div>
+            <h3 className="sd-confirm-title">Odustajanje od prijave</h3>
+            <p className="sd-confirm-text">
+              Da li ste sigurni da želite odustati od ove prijave? Ova akcija se ne može poništiti.
+            </p>
+            {withdrawError && (
+              <p className="sd-student-decision-feedback sd-student-decision-feedback--error" role="alert">
+                {withdrawError}
+              </p>
+            )}
+            <div className="sd-confirm-actions">
+              <button
+                type="button"
+                className="sd-btn-secondary"
+                disabled={withdrawProcessingId === withdrawModal.id}
+                onClick={() => setWithdrawModal(null)}
+              >
+                Odustani
+              </button>
+              <button
+                type="button"
+                className="sd-btn-danger"
+                disabled={withdrawProcessingId === withdrawModal.id}
+                onClick={async () => {
+                  const result = await onWithdraw(withdrawModal.id);
+                  if (result.ok) {
+                    setWithdrawModal(null);
+                    setWithdrawError('');
+                  } else {
+                    setWithdrawError(result.message);
+                  }
+                }}
+              >
+                {withdrawProcessingId === withdrawModal.id ? 'Odustajanje...' : 'Potvrdi odustajanje'}
               </button>
             </div>
           </div>
@@ -1642,6 +1724,7 @@ export default function StudentDashboard() {
   const { limit: applicationLimit, activeCount: activeApplicationCount, isAtLimit } = useApplicationLimit(applications);
   const [decisionProcessingId, setDecisionProcessingId] = useState(null);
   const [decisionSuccess, setDecisionSuccess] = useState('');
+  const [withdrawProcessingId, setWithdrawProcessingId] = useState(null);
   const [myPractices, setMyPractices] = useState([]);
   const [myPracticesLoading, setMyPracticesLoading] = useState(false);
   const [myPracticesError, setMyPracticesError] = useState('');
@@ -2023,6 +2106,30 @@ export default function StudentDashboard() {
       setApplyError(err.message || 'Greška pri podnošenju prijave.');
     } finally {
       setApplyLoadingId(null);
+    }
+  }
+
+  async function handleWithdrawApplication(applicationId) {
+    setWithdrawProcessingId(applicationId);
+    try {
+      const result = await withdrawApplication(applicationId);
+      setApplications(current =>
+        current.map(app =>
+          app.id === applicationId
+            ? {
+                ...app,
+                ...(result.application || {}),
+                status: 'ODUSTAO',
+                datumOdustajanja: result.application?.datumOdustajanja || new Date().toISOString(),
+              }
+            : app
+        )
+      );
+      return { ok: true };
+    } catch (err) {
+      return { ok: false, message: err.message || 'Greška pri odustajanju od prijave.' };
+    } finally {
+      setWithdrawProcessingId(null);
     }
   }
 
@@ -2552,6 +2659,8 @@ export default function StudentDashboard() {
               onStudentDecision={handleStudentDecision}
               decisionProcessingId={decisionProcessingId}
               decisionSuccess={decisionSuccess}
+              onWithdraw={handleWithdrawApplication}
+              withdrawProcessingId={withdrawProcessingId}
             />
 
           ) : activeTab === 'moje-prakse' ? (

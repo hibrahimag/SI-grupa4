@@ -35,6 +35,13 @@ router.get(
 );
 
 router.patch(
+  '/:id/withdraw',
+  authenticate,
+  authorizeStudentDecision,
+  applicationsController.withdrawApplication
+);
+
+router.patch(
   '/:id/accept',
   authenticate,
   authorizeStudentDecision,

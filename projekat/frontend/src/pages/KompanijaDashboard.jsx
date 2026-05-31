@@ -8,6 +8,7 @@ import { downloadPracticeContract, generatePracticeContract, getCompanyPractices
 import { checkCompanyDeactivation, deactivateCompanyAccount, deleteMyCompanyAccount } from '../services/userService';
 import { getCompanyReceivedEvaluations } from '../services/evaluationService';
 import EvaluacijaStudenta from '../modules/evaluations/EvaluacijaStudenta';
+import { getNotifications, markNotificationRead, markAllNotificationsRead } from '../services/api';
 import './KompanijaDashboard.css';
 import {
   createListing,
@@ -123,6 +124,10 @@ export default function KompanijaDashboard() {
   const { darkMode, setDarkMode } = useTheme();
   const navigate = useNavigate();
 
+  const [notifications, setNotifications] = useState([]);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const notifRef = useRef(null);
+
   const [editingListing, setEditingListing] = useState(null);
   const [actionProcessingId, setActionProcessingId] = useState(null);
   const [candidateListingId, setCandidateListingId] = useState('');
@@ -137,6 +142,23 @@ export default function KompanijaDashboard() {
       .then(data => setReceivedEvals(data || []))
       .catch(() => { });
   }, [view]);
+
+  useEffect(() => {
+    let active = true;
+    getNotifications()
+      .then(data => { if (active) setNotifications(data || []); })
+      .catch(() => { });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    if (!notifOpen) return;
+    function handleClickOutside(e) {
+      if (notifRef.current && !notifRef.current.contains(e.target)) setNotifOpen(false);
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [notifOpen]);
 
   const companyName = companyProfile?.naziv || user?.institution || user?.ime || 'Kompanija';
 
@@ -353,6 +375,67 @@ export default function KompanijaDashboard() {
           <span className="cd-navbar-title">Dashboard kompanije</span>
         </div>
         <div className="cd-navbar-right">
+          <div className="cd-notif-wrap" ref={notifRef}>
+            <button
+              type="button"
+              className="cd-notif-btn"
+              onClick={() => setNotifOpen(o => !o)}
+              title="Notifikacije"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              </svg>
+              {notifications.filter(n => !n.procitana).length > 0 && (
+                <span className="cd-notif-badge">
+                  {notifications.filter(n => !n.procitana).length > 9 ? '9+' : notifications.filter(n => !n.procitana).length}
+                </span>
+              )}
+            </button>
+            {notifOpen && (
+              <div className="cd-notif-dropdown">
+                <div className="cd-notif-header">
+                  <span className="cd-notif-title">Notifikacije</span>
+                  {notifications.some(n => !n.procitana) && (
+                    <button
+                      className="cd-notif-read-all"
+                      onClick={async () => {
+                        await markAllNotificationsRead().catch(() => { });
+                        setNotifications(prev => prev.map(n => ({ ...n, procitana: true })));
+                      }}
+                    >
+                      Označi sve
+                    </button>
+                  )}
+                </div>
+                <div className="cd-notif-list">
+                  {notifications.length === 0 ? (
+                    <p className="cd-notif-empty">Nema notifikacija.</p>
+                  ) : (
+                    notifications.map(n => (
+                      <div
+                        key={n.id}
+                        className={`cd-notif-item${n.procitana ? '' : ' cd-notif-item--unread'}`}
+                        onClick={async () => {
+                          if (!n.procitana) {
+                            await markNotificationRead(n.id).catch(() => { });
+                            setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, procitana: true } : x));
+                          }
+                        }}
+                      >
+                        <div className={`cd-notif-dot${n.procitana ? ' cd-notif-dot--read' : ''}`} />
+                        <div className="cd-notif-body">
+                          <p className="cd-notif-naslov">{n.naslov}</p>
+                          <p className="cd-notif-poruka">{n.poruka}</p>
+                          <span className="cd-notif-time">{new Date(n.created_at).toLocaleDateString('bs-BA')}</span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
           <button
             type="button"
             className="cd-theme-btn"

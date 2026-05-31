@@ -56,6 +56,12 @@ export async function rejectApplicationByCompany(id) {
   });
 }
 
+export async function withdrawApplication(id) {
+  return apiRequest(`/applications/${id}/withdraw`, {
+    method: 'PATCH',
+  });
+}
+
 export async function getCompanyApplicationDocumentDownloadUrl(id) {
   return apiRequest(`/dokumenti/${id}/company-download`);
 }

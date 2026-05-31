@@ -573,6 +573,70 @@ async function sendEvaluacijaStudentaEmail(to, studentIme, oglasNaziv, ukupnaOcj
   });
 }
 
+async function sendOdustajanjeKompaniji(to, studentName, oglasNaziv) {
+  const safeStudent = escapeHtml(studentName);
+  const safeOglas = escapeHtml(oglasNaziv);
+
+  await brevoSend({
+    to,
+    subject: 'Obavještenje: student odustao od prijave',
+    html: `
+    <div style="margin:0;padding:40px 20px;background-color:#f4f7fb;font-family:Arial,sans-serif;">
+      <div style="max-width:600px;margin:0 auto;background:#ffffff;border-radius:18px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.08);">
+        <div style="background:linear-gradient(135deg,#071b4a,#0f52ba);padding:40px 32px;color:white;">
+          <h1 style="margin:0;font-size:34px;font-weight:700;">PraksaHub</h1>
+          <p style="margin-top:12px;font-size:16px;opacity:0.9;">Platforma za studentske prakse</p>
+        </div>
+        <div style="padding:40px 32px;">
+          <h2 style="margin-top:0;color:#dc2626;font-size:24px;">Student odustao od prijave</h2>
+          <p style="color:#4b5563;font-size:15px;line-height:1.7;">
+            Obavještavamo vas da je student <strong>${safeStudent}</strong> odustao/la
+            od prijave na vašu praksu: <strong>${safeOglas}</strong>.
+          </p>
+          <p style="color:#6b7280;font-size:14px;line-height:1.6;">
+            Možete razmotriti ostale kandidate za navedenu poziciju.
+          </p>
+        </div>
+        <div style="padding:24px;text-align:center;border-top:1px solid #e5e7eb;color:#9ca3af;font-size:12px;">
+          © 2026 PraksaHub. Sva prava zadržana.
+        </div>
+      </div>
+    </div>`,
+  });
+}
+
+async function sendOdustajanjeKoordinatoru(to, studentName, oglasNaziv) {
+  const safeStudent = escapeHtml(studentName);
+  const safeOglas = escapeHtml(oglasNaziv);
+
+  await brevoSend({
+    to,
+    subject: 'Obavještenje: student odustao od prijave',
+    html: `
+    <div style="margin:0;padding:40px 20px;background-color:#f4f7fb;font-family:Arial,sans-serif;">
+      <div style="max-width:600px;margin:0 auto;background:#ffffff;border-radius:18px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.08);">
+        <div style="background:linear-gradient(135deg,#071b4a,#0f52ba);padding:40px 32px;color:white;">
+          <h1 style="margin:0;font-size:34px;font-weight:700;">PraksaHub</h1>
+          <p style="margin-top:12px;font-size:16px;opacity:0.9;">Platforma za studentske prakse</p>
+        </div>
+        <div style="padding:40px 32px;">
+          <h2 style="margin-top:0;color:#dc2626;font-size:24px;">Student odustao od prijave</h2>
+          <p style="color:#4b5563;font-size:15px;line-height:1.7;">
+            Obavještavamo vas da je student <strong>${safeStudent}</strong> odustao/la
+            od prijave na praksu: <strong>${safeOglas}</strong>, za čiji ste koordinator zaduženi.
+          </p>
+          <p style="color:#6b7280;font-size:14px;line-height:1.6;">
+            Molimo uzmite ovo u obzir pri praćenju prijava.
+          </p>
+        </div>
+        <div style="padding:24px;text-align:center;border-top:1px solid #e5e7eb;color:#9ca3af;font-size:12px;">
+          © 2026 PraksaHub. Sva prava zadržana.
+        </div>
+      </div>
+    </div>`,
+  });
+}
+
 module.exports = {
   sendPasswordResetEmail,
   sendEmailVerificationEmail,
@@ -586,4 +650,6 @@ module.exports = {
   sendEvaluacijaStudentaEmail,
   sendPraksaZavrsenaStudentEmail,
   sendPraksaZavrsenaCompanyEmail,
+  sendOdustajanjeKompaniji,
+  sendOdustajanjeKoordinatoru,
 };
