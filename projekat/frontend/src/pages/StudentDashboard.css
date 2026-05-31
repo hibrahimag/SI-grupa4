@@ -1967,6 +1967,29 @@
   color: #f87171;
 }
 
+.sd-btn-neutral {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 11px 22px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  background: #94a3b8;
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.sd-btn-neutral:hover:not(:disabled) {
+  background: #64748b;
+}
+.sd-btn-neutral:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .sd-page.dark .sd-modal-deadline--expired { background: rgba(239,68,68,0.1);  border-color: rgba(239,68,68,0.25); }
 .sd-page.dark .sd-modal-deadline--urgent  { background: rgba(251,146,60,0.1); border-color: rgba(251,146,60,0.25); }
 .sd-page.dark .sd-modal-deadline--soon    { background: rgba(234,179,8,0.1);  border-color: rgba(234,179,8,0.25); }

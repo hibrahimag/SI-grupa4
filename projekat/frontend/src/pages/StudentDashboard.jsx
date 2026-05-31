@@ -31,6 +31,7 @@ import {
   studentApplicationStatusLabel,
   studentApplicationStatusTone,
 } from '../utils/applicationStatus';
+import PrijavniVodic from './PrijavniVodic';
 
 const WITHDRAWABLE_STATUSES = new Set([
   APPLICATION_STATUS.WAITING_COORDINATOR,
@@ -973,38 +974,29 @@ function MyApplicationsPanel({
                   <ApplicationStageIndicator application={app} />
 
                   {/* Student decision buttons */}
-                  {canDecide && (
+                  {(canDecide || canWithdraw(app)) && (
                     <div className="sd-student-decision-actions" onClick={e => e.stopPropagation()}>
-                      <button
-                        type="button"
-                        className="sd-btn-apply sd-student-decision-btn"
-                        disabled={decisionProcessingId === app.id}
-                        onClick={() => openDecisionModal(app, 'accept')}
-                      >
-                        Prihvati praksu
-                      </button>
-                      <button
-                        type="button"
-                        className="sd-btn-danger sd-student-decision-btn"
-                        disabled={decisionProcessingId === app.id}
-                        onClick={() => openDecisionModal(app, 'decline')}
-                      >
-                        Odbij praksu
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Withdraw button */}
-                  {canWithdraw(app) && (
-                    <div className="sd-student-decision-actions" onClick={e => e.stopPropagation()}>
-                      <button
-                        type="button"
-                        className="sd-btn-danger sd-student-decision-btn"
-                        disabled={withdrawProcessingId === app.id}
-                        onClick={() => { setWithdrawError(''); setWithdrawModal(app); }}
-                      >
-                        Odustani od prijave
-                      </button>
+                      {canDecide && (
+                        <button type="button" className="sd-btn-apply sd-student-decision-btn"
+                          disabled={decisionProcessingId === app.id}
+                          onClick={() => openDecisionModal(app, 'accept')}>
+                          Prihvati praksu
+                        </button>
+                      )}
+                      {canDecide && (
+                        <button type="button" className="sd-btn-danger sd-student-decision-btn"
+                          disabled={decisionProcessingId === app.id}
+                          onClick={() => openDecisionModal(app, 'decline')}>
+                          Odbij praksu
+                        </button>
+                      )}
+                      {canWithdraw(app) && (
+                        <button type="button" className="sd-btn-neutral sd-student-decision-btn"
+                          disabled={withdrawProcessingId === app.id}
+                          onClick={() => { setWithdrawError(''); setWithdrawModal(app); }}>
+                          Odustani od prijave
+                        </button>
+                      )}
                     </div>
                   )}
 
@@ -1252,57 +1244,57 @@ function MyPracticesPanel({ practices, loading, error, filter, onFilterChange, e
           {practices.map((praksa) => (
             <article key={praksa.id} className="sd-confirmed-practice-card">
               <div className="sd-confirmed-practice-card-row">
-              <div>
-                <p className="sd-app-card-company">{praksa.kompanija?.naziv || 'Kompanija'}</p>
-                <h3 className="sd-app-card-naziv">{praksa.oglas?.naziv || 'Praksa'}</h3>
-                <p className="sd-app-card-date">
-                  {formatDate(praksa.datumPocetka)} - {formatDate(praksa.datumKraja)}
-                </p>
-              </div>
-              <div className="sd-practice-actions">
-                <span className={`sd-practice-badge sd-practice-badge--${practiceLifecycleTone(praksa.lifecycleStatus)}`}>
-                  {practiceLifecycleLabel(praksa.lifecycleStatus)}
-                </span>
-                <button
-                  type="button"
-                  className="sd-btn-detail sd-practice-contract-btn"
-                  disabled={openingContractId === praksa.id}
-                  onClick={() => openContract(praksa)}
-                >
-                  {openingContractId === praksa.id ? 'Generisanje...' : 'Ugovor'}
-                </button>
-                <button
-                  type="button"
-                  className="sd-btn-detail sd-practice-contract-btn"
-                  onClick={() => openActivities(praksa)}
-                >
-                  Aktivnosti
-                </button>
-              </div>
+                <div>
+                  <p className="sd-app-card-company">{praksa.kompanija?.naziv || 'Kompanija'}</p>
+                  <h3 className="sd-app-card-naziv">{praksa.oglas?.naziv || 'Praksa'}</h3>
+                  <p className="sd-app-card-date">
+                    {formatDate(praksa.datumPocetka)} - {formatDate(praksa.datumKraja)}
+                  </p>
+                </div>
+                <div className="sd-practice-actions">
+                  <span className={`sd-practice-badge sd-practice-badge--${practiceLifecycleTone(praksa.lifecycleStatus)}`}>
+                    {practiceLifecycleLabel(praksa.lifecycleStatus)}
+                  </span>
+                  <button
+                    type="button"
+                    className="sd-btn-detail sd-practice-contract-btn"
+                    disabled={openingContractId === praksa.id}
+                    onClick={() => openContract(praksa)}
+                  >
+                    {openingContractId === praksa.id ? 'Generisanje...' : 'Ugovor'}
+                  </button>
+                  <button
+                    type="button"
+                    className="sd-btn-detail sd-practice-contract-btn"
+                    onClick={() => openActivities(praksa)}
+                  >
+                    Aktivnosti
+                  </button>
+                </div>
               </div>
               {(praksa.lifecycleStatus === 'ZAVRSENA' || new Date(praksa.datumKraja) < new Date()) && (
-                  <div className="sd-eval-section" style={{ marginTop: 0 }}>
-                    {evaluatedAppIds.has(praksa.prijavaID) ? (
-                      <span className="sd-eval-done-badge">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                        Evaluacija poslana
-                      </span>
-                    ) : (
-                      <button
-                        className="sd-eval-btn"
-                        type="button"
-                        onClick={() => onEvaluate(praksa)}
-                      >
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                        </svg>
-                        Evaluiraj kompaniju
-                      </button>
-                    )}
-                  </div>
-                )}
+                <div className="sd-eval-section" style={{ marginTop: 0 }}>
+                  {evaluatedAppIds.has(praksa.prijavaID) ? (
+                    <span className="sd-eval-done-badge">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                      Evaluacija poslana
+                    </span>
+                  ) : (
+                    <button
+                      className="sd-eval-btn"
+                      type="button"
+                      onClick={() => onEvaluate(praksa)}
+                    >
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                      </svg>
+                      Evaluiraj kompaniju
+                    </button>
+                  )}
+                </div>
+              )}
             </article>
           ))}
         </div>
@@ -2117,11 +2109,11 @@ export default function StudentDashboard() {
         current.map(app =>
           app.id === applicationId
             ? {
-                ...app,
-                ...(result.application || {}),
-                status: 'ODUSTAO',
-                datumOdustajanja: result.application?.datumOdustajanja || new Date().toISOString(),
-              }
+              ...app,
+              ...(result.application || {}),
+              status: 'ODUSTAO',
+              datumOdustajanja: result.application?.datumOdustajanja || new Date().toISOString(),
+            }
             : app
         )
       );
@@ -2429,6 +2421,17 @@ export default function StudentDashboard() {
                   <span className="sd-sb-count">{receivedEvaluations.length}</span>
                 )}
               </button>
+              <button
+                className={`sd-sb-tab-btn sd-sb-tab-btn--prijave${activeTab === 'vodic' ? ' active' : ''}`}
+                onClick={() => setActiveTab('vodic')}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+                Kako se prijaviti?
+              </button>
             </div>
 
             {activeTab !== 'prijave' && activeTab !== 'moje-prakse' && (<>
@@ -2690,8 +2693,10 @@ export default function StudentDashboard() {
               search={search}
               onSearchChange={setSearch}
             />
-          ) : activeTab === 'moje-evaluacije' ? (        // ← DODAJ OVO
+          ) : activeTab === 'moje-evaluacije' ? (
             <MojeEvaluacijePanel evaluacije={receivedEvaluations} />
+          ) : activeTab === 'vodic' ? (
+            <PrijavniVodic />
           ) : praksaLoading ? (
             <p className="sd-results-info">Učitavanje oglasa...</p>
           ) : praksaError ? (
