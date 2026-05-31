@@ -2113,13 +2113,18 @@ export default function StudentDashboard() {
     setWithdrawProcessingId(applicationId);
     try {
       const result = await withdrawApplication(applicationId);
-      if (result.application) {
-        setApplications(current =>
-          current.map(app =>
-            app.id === applicationId ? { ...app, status: 'ODUSTAO', datumOdustajanja: new Date().toISOString() } : app
-          )
-        );
-      }
+      setApplications(current =>
+        current.map(app =>
+          app.id === applicationId
+            ? {
+                ...app,
+                ...(result.application || {}),
+                status: 'ODUSTAO',
+                datumOdustajanja: result.application?.datumOdustajanja || new Date().toISOString(),
+              }
+            : app
+        )
+      );
       return { ok: true };
     } catch (err) {
       return { ok: false, message: err.message || 'Greška pri odustajanju od prijave.' };
