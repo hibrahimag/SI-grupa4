@@ -15,6 +15,9 @@ const {
   sendPrijavaStatusEmail,
   sendPraksaZavrsenaStudentEmail,
   sendPraksaZavrsenaCompanyEmail,
+  sendEvaluacijaStudentaEmail,
+  sendOdustajanjeKompaniji,
+  sendOdustajanjeKoordinatoru,
 } = require('../../src/business/services/email.service');
 
 function mockFetchOk() {
@@ -218,5 +221,60 @@ describe('sendPraksaZavrsenaCompanyEmail', () => {
     expect(body.subject).toMatch(/završena/i);
     expect(body.htmlContent).toContain('Amina Begić');
     expect(body.htmlContent).toContain('Backend praksa');
+  });
+});
+
+// ── sendEvaluacijaStudentaEmail ───────────────────────────────────────────────
+describe('sendEvaluacijaStudentaEmail', () => {
+  test('šalje email studentu o evaluaciji', async () => {
+    mockFetchOk();
+    await sendEvaluacijaStudentaEmail('student@test.com', 'Haris Husić', 'Backend Developer', 4);
+    const body = JSON.parse(global.fetch.mock.calls[0][1].body);
+    expect(body.to[0].email).toBe('student@test.com');
+    expect(body.subject).toMatch(/evaluirala|evaluiran/i);
+    expect(body.htmlContent).toContain('Haris Husić');
+    expect(body.htmlContent).toContain('Backend Developer');
+    expect(body.htmlContent).toContain('4');
+  });
+
+  test('ne šalje email kada fetch baci grešku', async () => {
+    mockFetchError(500, 'Server Error');
+    await expect(
+      sendEvaluacijaStudentaEmail('student@test.com', 'Haris', 'Praksa', 5)
+    ).rejects.toThrow();
+  });
+});
+
+// ── sendOdustajanjeKompaniji ──────────────────────────────────────────────────
+describe('sendOdustajanjeKompaniji', () => {
+  test('šalje email kompaniji o odustajanju studenta', async () => {
+    mockFetchOk();
+    await sendOdustajanjeKompaniji('company@test.com', 'Haris Husić', 'Backend Dev');
+    const body = JSON.parse(global.fetch.mock.calls[0][1].body);
+    expect(body.to[0].email).toBe('company@test.com');
+    expect(body.subject).toMatch(/odustao/i);
+    expect(body.htmlContent).toContain('Haris Husić');
+    expect(body.htmlContent).toContain('Backend Dev');
+  });
+
+  test('escapeuje HTML specijalne znakove u imenu', async () => {
+    mockFetchOk();
+    await sendOdustajanjeKompaniji('company@test.com', '<script>alert(1)</script>', 'Test');
+    const body = JSON.parse(global.fetch.mock.calls[0][1].body);
+    expect(body.htmlContent).not.toContain('<script>');
+    expect(body.htmlContent).toContain('&lt;script&gt;');
+  });
+});
+
+// ── sendOdustajanjeKoordinatoru ───────────────────────────────────────────────
+describe('sendOdustajanjeKoordinatoru', () => {
+  test('šalje email koordinatoru o odustajanju studenta', async () => {
+    mockFetchOk();
+    await sendOdustajanjeKoordinatoru('coordinator@test.com', 'Amina Begić', 'Design Praksa');
+    const body = JSON.parse(global.fetch.mock.calls[0][1].body);
+    expect(body.to[0].email).toBe('coordinator@test.com');
+    expect(body.subject).toMatch(/odustao/i);
+    expect(body.htmlContent).toContain('Amina Begić');
+    expect(body.htmlContent).toContain('Design Praksa');
   });
 });

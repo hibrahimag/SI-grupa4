@@ -10,6 +10,10 @@
 > - unit testove za evidenciju aktivnosti,
 > - integracione testove za notifikacije o statusu prakse (US-37, realizovano u Sprintu 9),
 > - unit testove za odustajanje od prakse (US-33),
+> - unit testove za evaluaciju studenta od strane kompanije (US-26),
+> - unit testove za evaluaciju kompanije od strane studenta (US-27),
+> - proširene unit testove za notifications service, prakse controller, applications controller i email service,
+> - ispravku integracionog testa za prijave na praksu (race condition s DB konekcijom),
 > - RBAC i sigurnosne provjere,
 > - ručno UI testiranje i coverage izvještaj.
 
@@ -21,10 +25,10 @@ Ukupna pokrivenost backend testovima ostvarena tokom Sprinta 10 (nakon implement
 
 | Metric | Coverage |
 |---|---|
-| Statements | **97%+** |
-| Branches | **86%+** |
-| Functions | **95%+** |
-| Lines | **98%+** |
+| Statements | **90.94%** (2793/3071) |
+| Branches | **80.49%** (1473/1830) |
+| Functions | **87.93%** (350/398) |
+| Lines | **91.61%** (2700/2947) |
 
 ---
 
@@ -37,13 +41,20 @@ Ukupna pokrivenost backend testovima ostvarena tokom Sprinta 10 (nakon implement
 | Unit | Lifecycle datuma prakse | Jest | 6+ | PASS |
 | Unit | Automatsko završavanje prakse | Jest | 4+ | PASS |
 | Unit | Periodički job završetka | Jest | 3 | PASS |
-| Unit | Email obavijesti o završetku | Jest | 2+ | PASS |
+| Unit | Email obavijesti o završetku | Jest | 14+ | PASS |
 | Unit | Odustajanje od prakse | Jest | 4+ | PASS |
-| Ručno UI | Potvrda prakse i pregled „Moje prakse“ | Preglednik | — | PASS |
+| Unit | Evaluacija studenta od strane kompanije (US-26) | Jest | 15+ | PASS |
+| Unit | Evaluacija kompanije od strane studenta (US-27) | Jest | 12+ | PASS |
+| Unit | Notifikacije (student/company/koordinator) | Jest | 26+ | PASS |
+| Unit | Prakse controller (sve funkcije) | Jest | 22+ | PASS |
+| Unit | Applications controller (sve funkcije) | Jest | 18+ | PASS |
+| Unit | Coordinator profile service | Jest | 8+ | PASS |
+| Integracijsko | Prijave na praksu (CRUD + validacije) | Supertest + Sequelize | 8 | PASS |
+| Ručno UI | Potvrda prakse i pregled „Moje prakse” | Preglednik | — | PASS |
 | Ručno UI | Pregled i preuzimanje ugovora | Preglednik | — | PASS |
 | Ručno UI | Evidencija aktivnosti | Preglednik | — | PASS |
 | Ručno UI | Automatsko završavanje i notifikacije | Preglednik | — | PASS |
-| **Ukupno** | Sprint 10 (implementirane stavke) | Jest + Supertest + Sequelize | **26+ testova** | **PASS** |
+| **Ukupno** | Sprint 10 (sve stavke) | Jest + Supertest + Sequelize | **964 testova** | **PASS** |
 
 ---
 
@@ -62,6 +73,8 @@ Ukupna pokrivenost backend testovima ostvarena tokom Sprinta 10 (nakon implement
 | Periodički job | Unit | Poziv servisa, logiranje, graceful error handling | PASS |
 | Odustajanje od prakse (US-33) | Unit | Ažuriranje statusa, audit log zapis | PASS |
 | Notifikacije o statusu prakse (US-37) | Integracijsko (Sprint 9) | In-app i email notifikacije, bez duplikata | PASS |
+| Evaluacija studenta — kompanija (US-26) | Unit | Submit, duplikat zaštita, notifikacija studenta | PASS |
+| Evaluacija kompanije — student (US-27) | Unit | Submit, duplikat zaštita, pregled primljenih | PASS |
 | RBAC zaštita | Unit | Role check na novim endpointima prakse | PASS |
 | Regresijsko testiranje | Ručno UI | Nema regresija iz Sprinta 9 | PASS |
 
@@ -196,31 +209,93 @@ backend/tests/unit/practiceCompletion.job.test.js
 
 # 11. Ručno UI testiranje
 
-Ručno testiranje obuhvata sljedeće korisničke tokove:
+Pored automatizovanih testova izvršeno je i ručno testiranje korisničkog interfejsa za sve nove funkcionalnosti Sprinta 10.
 
-- prihvatanje ili odbijanje odobrene prakse na student dashboardu,
+Ručno su provjereni:
+
+- prihvatanje i odbijanje odobrene prakse od strane studenta na student dashboardu,
 - pregled potvrđenih praksi po lifecycle filterima (Sve / Aktivne / Nadolazeće / Završene),
-- generisanje i preuzimanje ugovora o praksi (student i kompanija),
-- unos i pregled aktivnosti na praksi (student, kompanija, koordinator),
-- prikaz in-app notifikacije i email obavijesti o završetku prakse,
-- odustajanje od prakse i ažuriranje statusa u pregledima,
-- regresijsko testiranje funkcionalnosti Sprinta 9.
+- generisanje ugovora o praksi i prikaz sadržaja na bosanskom jeziku,
+- preuzimanje digitalne kopije ugovora u PDF formatu,
+- unos aktivnosti tokom aktivne prakse i pregled od strane kompanije i koordinatora,
+- popunjavanje evaluacijskog formulara od strane kompanije za studenta (US-26),
+- popunjavanje evaluacijskog formulara od strane studenta za kompaniju (US-27),
+- pregled primljenih i poslanih evaluacija za obje strane,
+- odustajanje od prijave/prakse i ažuriranje statusa u svim pregledima,
+- automatsko označavanje prakse završenom i prikaz badge-a „Završena”,
+- prikaz in-app notifikacije i provjera da li je email obavijest poslana,
+- regresijsko testiranje svih funkcionalnosti Sprinta 9.
 
 Tokom ručnog testiranja nisu pronađene kritične greške koje blokiraju implementirane funkcionalnosti Sprinta 10.
 
 ---
 
+## US-19 — Potvrda studenta (SB-59)
+
 | ID | Scenarij | Očekivani rezultat | Status |
 |---|---|---|---|
-| UI-201 | Prihvatanje prakse | Praksa kreirana, prikaz u „Moje prakse“ | PASS |
-| UI-202 | Odbijanje prakse | Status ažuriran, praksa nije kreirana | PASS |
-| UI-203 | Pregled lifecycle filtera | Ispravni badge-ovi po datumu | PASS |
-| UI-204 | Generisanje ugovora | Ugovor prikazan na bosanskom | PASS |
-| UI-205 | Preuzimanje PDF ugovora | PDF preuzet uspješno | PASS |
-| UI-206 | Unos aktivnosti | Aktivnost vidljiva kompaniji i koordinatoru | PASS |
-| UI-207 | Automatsko završavanje | Badge „Završena praksa“, notifikacija poslana | PASS |
-| UI-208 | Odustajanje od prakse | Status ODUSTAO u pregledima | PASS |
-| UI-209 | Regresiono UI testiranje | Nema regresija iz Sprinta 9 | PASS |
+| UI-201 | Student prihvata odobrenu praksu | Status prijave ažuriran na PRIHVACENO, praksa kreirana i vidljiva u „Moje prakse” | PASS |
+| UI-202 | Student odbija odobrenu praksu | Status prijave ažuriran na ODBIJENO, praksa nije kreirana | PASS |
+| UI-203 | Student pokušava prihvatiti prijavu koja nije u odobrenom statusu | Dugme za prihvatanje nije dostupno, akcija blokirana | PASS |
+| UI-204 | Kompanija i koordinator primaju obavijest o odluci studenta | In-app notifikacija vidljiva na njihovim dashboardima | PASS |
+
+## US-22 / US-23 — Generisanje i preuzimanje ugovora (SB-60, SB-61)
+
+| ID | Scenarij | Očekivani rezultat | Status |
+|---|---|---|---|
+| UI-205 | Student generira ugovor za potvrđenu praksu | Ugovor prikazan s podacima o studentu, kompaniji, trajanju i datumu | PASS |
+| UI-206 | Sadržaj ugovora je na bosanskom jeziku | Sva polja i tekst na bosanskom, bez engleskih termina | PASS |
+| UI-207 | Student preuzima PDF kopiju ugovora | PDF se preuzima uspješno, sadržaj ispravan | PASS |
+| UI-208 | Kompanija pregleda ugovor za svog studenta | Ugovor dostupan i s kompanijskog prikaza | PASS |
+| UI-209 | Ponovni zahtjev za generisanje ugovora ne kreira duplikat | Isti ugovor vraćen bez kreiranja novog zapisa | PASS |
+
+## US-24 — Evidencija aktivnosti (SB-62)
+
+| ID | Scenarij | Očekivani rezultat | Status |
+|---|---|---|---|
+| UI-210 | Student unosi aktivnost tokom aktivne prakse | Aktivnost sačuvana i vidljiva u listi | PASS |
+| UI-211 | Kompanija pregleda aktivnosti svog studenta | Sve aktivnosti vidljive s datumom i opisom | PASS |
+| UI-212 | Koordinator pregleda aktivnosti studenta | Aktivnosti dostupne i koordinatoru | PASS |
+| UI-213 | Student pokušava unijeti aktivnost za završenu praksu | Unos blokiran, poruka o grešci prikazana | PASS |
+
+## US-26 — Evaluacija studenta (SB-64)
+
+| ID | Scenarij | Očekivani rezultat | Status |
+|---|---|---|---|
+| UI-214 | Kompanija otvara formular za evaluaciju studenta | Formular s ocjenama (1–5) za tehničke vještine, komunikaciju, radnu etiku, inicijativu i timski rad | PASS |
+| UI-215 | Kompanija popunjava i šalje evaluaciju | Evaluacija sačuvana, student prima in-app notifikaciju i email | PASS |
+| UI-216 | Kompanija pokušava ponovo poslati evaluaciju | Poruka da je evaluacija već poslana, ponovni unos blokiran | PASS |
+| UI-217 | Student pregleda primljenu evaluaciju od kompanije | Sve ocjene i komentar vidljivi na student dashboardu | PASS |
+| UI-218 | Kompanija pregleda listu poslanih evaluacija | Evaluacije prikazane s imenom studenta i ukupnom ocjenom | PASS |
+
+## US-27 — Evaluacija kompanije (SB-65)
+
+| ID | Scenarij | Očekivani rezultat | Status |
+|---|---|---|---|
+| UI-219 | Student otvara formular za evaluaciju kompanije | Formular s ocjenama (1–5) za organizaciju, mentorstvo, radno okruženje, relevantnost posla i preporuku | PASS |
+| UI-220 | Student popunjava i šalje evaluaciju kompanije | Evaluacija sačuvana uspješno | PASS |
+| UI-221 | Student pokušava ponovo poslati evaluaciju | Poruka da je evaluacija već poslana, ponovni unos blokiran | PASS |
+| UI-222 | Student pregleda svoje poslane evaluacije kompanija | Lista evaluacija s nazivom kompanije i ocjenama | PASS |
+| UI-223 | Kompanija pregleda evaluacije primljene od studenata | Evaluacije vidljive s imenom studenta i detaljima | PASS |
+
+## US-33 — Odustajanje od prakse (SB-67)
+
+| ID | Scenarij | Očekivani rezultat | Status |
+|---|---|---|---|
+| UI-224 | Student odustaje od prijave koja čeka odobrenje | Status prijave ažuriran na ODUSTAO, praksa nije kreirana | PASS |
+| UI-225 | Student odustaje od odobrene prakse | Status ažuriran, kompanija i koordinator primaju obavijest | PASS |
+| UI-226 | Student pokušava odustati od već završene prakse | Akcija blokirana, odgovarajuća poruka prikazana | PASS |
+| UI-227 | Odustajanje vidljivo u pregledima kompanije i koordinatora | Status prikazan kao ODUSTAO u svim pregledima | PASS |
+
+## US-54 — Automatsko završavanje prakse (SB-69)
+
+| ID | Scenarij | Očekivani rezultat | Status |
+|---|---|---|---|
+| UI-228 | Praksa čiji je datum kraja prošao prikazuje badge „Završena” | Badge ispravno prikazan na student i company dashboardu | PASS |
+| UI-229 | Student prima obavijest o završetku prakse | In-app notifikacija vidljiva, email primljen | PASS |
+| UI-230 | Kompanija prima obavijest o završetku prakse | In-app notifikacija vidljiva, email primljen | PASS |
+| UI-231 | Završena praksa ne dozvoljava unos novih aktivnosti | Dugme za unos aktivnosti onemogućeno | PASS |
+| UI-232 | Regresijsko UI testiranje | Sve funkcionalnosti iz Sprinta 9 rade ispravno, nema regresija | PASS |
 
 ---
 
@@ -241,7 +316,51 @@ npm test -- --testPathPattern="prakse.service|prakse.controller|applications.stu
 ## Coverage report
 
 ```bash
-npm test -- --coverage
+npm run test:coverage
+```
+
+---
+
+# 12b. US-26 — Evaluacija studenta od strane kompanije
+
+## Pokriveni acceptance criteria
+
+| AC | Test koji pokriva | Status |
+|---|---|---|
+| Kompanija može pregledati čekajuće evaluacije završenih praksi | `getPendingStudentEvaluations` — filtriranje po evaluated set | PASS |
+| Kompanija može poslati evaluaciju studenta | `submitStudentEvaluation` — kreiranje EvaluacijaStudenta | PASS |
+| Duple evaluacije za isti prijavaID su spriječene | 409 na ponovljeni submit | PASS |
+| Evaluacija moguća samo nakon završene prakse | 400 kada praksa nije završena | PASS |
+| Kompanija može pregledati poslane evaluacije | `getSubmittedStudentEvaluations` — mapiranje podataka | PASS |
+| Student prima in-app notifikaciju i email o evaluaciji | `createNotification` + `sendEvaluacijaStudentaEmail` pozvani | PASS |
+
+## Relevantni test fajlovi
+
+```text
+backend/tests/unit/evaluation.service.test.js
+backend/tests/unit/evaluation.controller.test.js
+```
+
+---
+
+# 12c. US-27 — Evaluacija kompanije od strane studenta
+
+## Pokriveni acceptance criteria
+
+| AC | Test koji pokriva | Status |
+|---|---|---|
+| Student može pregledati čekajuće evaluacije kompanija | `getPendingCompanyEvaluations` — filtriranje po evaluated set | PASS |
+| Student može poslati evaluaciju kompanije | `submitCompanyEvaluation` — kreiranje EvaluacijaKompanije | PASS |
+| Duple evaluacije spriječene | 409 na ponovljeni submit | PASS |
+| Evaluacija moguća samo nakon završene prakse | 400 kada praksa nije završena | PASS |
+| Student može pregledati poslane i primljene evaluacije | `getStudentSubmittedCompanyEvaluations`, `getStudentReceivedEvaluations` | PASS |
+| Kompanija može pregledati primljene evaluacije od studenata | `getCompanyReceivedEvaluations` | PASS |
+
+## Relevantni test fajlovi
+
+```text
+backend/tests/unit/evaluation.service.test.js
+backend/tests/unit/evaluation.controller.test.js
 ```
 
 ---
@@ -266,6 +385,6 @@ Testirani su ključni korisnički tokovi planirani za Sprint 10:
 - odustajanje od prakse s audit log zapisom (US-33),
 - notifikacije o promjenama statusa prijave (US-37, Sprint 9).
 
-Preostale stavke sprinta (US-25 praćenje prisustva, US-26 evaluacija studenta, US-27 evaluacija kompanije, US-28 izvještaji) planirane su za implementaciju i testiranje u narednoj fazi.
+US-26 (evaluacija studenta od strane kompanije) i US-27 (evaluacija kompanije od strane studenta) su implementirani i u potpunosti pokriveni unit testovima u `evaluation.service.test.js` i `evaluation.controller.test.js`. Preostale stavke (US-25 praćenje prisustva, US-28 izvještaji) planirane su za narednu fazu.
 
 Sistem zadovoljava acceptance kriterije definirane za implementirane stavke Sprinta 10 i održava kompatibilnost s funkcionalnostima Sprintova 8 i 9.

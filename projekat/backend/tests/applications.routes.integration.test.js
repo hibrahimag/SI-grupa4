@@ -8,7 +8,7 @@ const bcrypt = require('bcrypt');
 const { Op } = require('sequelize');
 const app = require('../src/app');
 const {
-  User, Student, Kompanija, Oglas, PrijavaNaPraksu, Fakultet, SystemSetting, sequelize,
+  User, Student, Kompanija, Oglas, PrijavaNaPraksu, Fakultet, SystemSetting, Notifikacija, sequelize,
 } = require('../src/infrastructure/database/models');
 
 const PREFIX = 'test_app_int_';
@@ -21,6 +21,16 @@ let studentToken, otherStudentToken;
 
 beforeAll(async () => {
   // Čistimo ostavljene podatke iz prethodnog pokretanja
+  // Najprije brišemo notifikacije za test korisnike (sprječava NOT NULL constraint error)
+  const testUsers = await User.findAll({ where: { username: { [Op.like]: `${PREFIX}%` } } }).catch(() => []);
+  const testStudents = await Student.findAll({ where: { userID: testUsers.map(u => u.id) } }).catch(() => []);
+  const testKompanije = await Kompanija.findAll({ where: { naziv: { [Op.like]: `${PREFIX}%` } } }).catch(() => []);
+  if (testStudents.length > 0) {
+    await Notifikacija.destroy({ where: { student_id: testStudents.map(s => s.id) } }).catch(() => {});
+  }
+  if (testKompanije.length > 0) {
+    await Notifikacija.destroy({ where: { kompanija_id: testKompanije.map(k => k.id) } }).catch(() => {});
+  }
   await PrijavaNaPraksu.destroy({ where: {}, truncate: false }).catch(() => {});
   await Oglas.destroy({ where: { naziv: { [Op.like]: `${PREFIX}%` } } }).catch(() => {});
   await Kompanija.destroy({ where: { naziv: { [Op.like]: `${PREFIX}%` } } }).catch(() => {});
@@ -78,6 +88,8 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+  if (studentRec) await Notifikacija.destroy({ where: { student_id: studentRec.id } }).catch(() => {});
+  if (companyRec) await Notifikacija.destroy({ where: { kompanija_id: companyRec.id } }).catch(() => {});
   await PrijavaNaPraksu.destroy({ where: {}, truncate: false }).catch(() => {});
   await Oglas.destroy({ where: { naziv: { [Op.like]: `${PREFIX}%` } } }).catch(() => {});
   await Kompanija.destroy({ where: { naziv: { [Op.like]: `${PREFIX}%` } } }).catch(() => {});
@@ -85,7 +97,6 @@ afterAll(async () => {
   await User.destroy({ where: { username: { [Op.like]: `${PREFIX}%` } } }).catch(() => {});
   await Fakultet.destroy({ where: { naziv: { [Op.like]: `${PREFIX}%` } } }).catch(() => {});
   await SystemSetting.destroy({ where: { key: 'max_active_applications' } }).catch(() => {});
-  await sequelize.close();
 });
 
 // ── GET /api/applications/mine ───────────────────────────────────────────────

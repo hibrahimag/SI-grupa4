@@ -102,6 +102,24 @@ describe('createListing', () => {
     expect(db.Oglas.create).toHaveBeenCalledWith(expect.objectContaining({ tehnologije: ['JS'], uslovi: ['Node'] }));
   });
 
+  test('kreira oglas bez opcionih polja oblast, placenaPraksa, lokacija, tip', async () => {
+    await createListing({ naziv: 'X', opis: 'Y', brojMjesta: 1, rokPrijave: '2099-01-01', datumPocetka: '2099-02-01', trajanje: 2 }, 1);
+    expect(db.Oglas.create).toHaveBeenCalledWith(expect.objectContaining({
+      oblast: null,
+      placenaPraksa: false,
+      lokacija: null,
+      tip: 'Onsite',
+    }));
+  });
+
+  test('kreira oglas s praznim objektima za tehnologije i uslovi (ne-niz fallback)', async () => {
+    await createListing({ naziv: 'X', opis: 'Y', brojMjesta: 1, rokPrijave: '2099-01-01', datumPocetka: '2099-02-01', trajanje: 2, tehnologije: 'not-array', uslovi: null }, 1);
+    expect(db.Oglas.create).toHaveBeenCalledWith(expect.objectContaining({
+      tehnologije: [],
+      uslovi: [],
+    }));
+  });
+
   test('baca 400 kada datum početka prakse nije unesen', async () => {
     const err = await createListing({ naziv: 'X', opis: 'Y', brojMjesta: 1, rokPrijave: '2099-01-01', trajanje: 3 }, 1).catch(e => e);
     expect(err.status).toBe(400);

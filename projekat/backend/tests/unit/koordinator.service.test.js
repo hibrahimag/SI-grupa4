@@ -361,6 +361,42 @@ describe('odluciOPrijavi', () => {
 
     expect(result.status).toBe('CEKA_KOMPANIJU');
   });
+
+  test('šalje in-app notifikaciju kada canSendInApp vraća true', async () => {
+    const { canSendInApp } = require('../../src/business/services/notificationPreferences.service');
+    canSendInApp.mockReturnValueOnce(true);
+
+    const prijava = makeMockPrijava({
+      Student: { ...makeMockStudent(), userID: 10 },
+      Oglas: { naziv: 'Dev', Kompanija: { naziv: 'TechCorp' } },
+    });
+    db.PrijavaNaPraksu.findByPk.mockResolvedValue(prijava);
+
+    await odluciOPrijavi(100, 'odobrena', '', 1);
+
+    const { createNotification } = require('../../src/business/services/notifications.service');
+    expect(createNotification).toHaveBeenCalled();
+  });
+
+  test('šalje email notifikaciju kada canSendEmail vraća true', async () => {
+    const { canSendEmail } = require('../../src/business/services/notificationPreferences.service');
+    canSendEmail.mockReturnValueOnce(true);
+
+    const prijava = makeMockPrijava({
+      Student: {
+        ...makeMockStudent(),
+        userID: 10,
+        User: { email: 'student@test.com' },
+      },
+      Oglas: { naziv: 'Dev', Kompanija: { naziv: 'TechCorp' } },
+    });
+    db.PrijavaNaPraksu.findByPk.mockResolvedValue(prijava);
+
+    await odluciOPrijavi(100, 'odobrena', '', 1);
+
+    const { sendPrijavaStatusEmail } = require('../../src/business/services/email.service');
+    expect(sendPrijavaStatusEmail).toHaveBeenCalled();
+  });
 });
 
 // ── getStudenti ───────────────────────────────────────────────────────────────
@@ -397,6 +433,18 @@ describe('getStudenti', () => {
     db.Student.findAll.mockResolvedValue([]);
 
     await getStudenti(1, 'Amina');
+
+    const call = db.Student.findAll.mock.calls[0][0];
+    const userInclude = call.include.find(i => i.model === db.User);
+    const whereKeys = Object.getOwnPropertySymbols(userInclude.where);
+    expect(whereKeys.length).toBeGreaterThan(0);
+  });
+
+  test('pretraga s dvije ili više riječi koristi ime i prezime kombinovano', async () => {
+    db.Koordinator.findOne.mockResolvedValue(makeMockKoordinator());
+    db.Student.findAll.mockResolvedValue([]);
+
+    await getStudenti(1, 'Amina Begić');
 
     const call = db.Student.findAll.mock.calls[0][0];
     const userInclude = call.include.find(i => i.model === db.User);
