@@ -1693,6 +1693,68 @@
   gap: 10px;
 }
 
+.cd-attendance-form {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) minmax(130px, 1fr) minmax(110px, 0.7fr) minmax(180px, 1.3fr) auto;
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 18px;
+}
+
+.cd-attendance-note {
+  min-width: 0;
+}
+
+.cd-attendance-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cd-attendance-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.cd-attendance-row p {
+  margin: 6px 0 0;
+  color: var(--color-muted);
+  font-size: 0.84rem;
+}
+
+.cd-attendance-side {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.cd-attendance-status,
+.cd-attendance-hours {
+  border-radius: 999px;
+  padding: 5px 9px;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.cd-attendance-status--present {
+  background: rgba(14, 158, 110, 0.1);
+  color: #0e9e6e;
+}
+
+.cd-attendance-status--absent {
+  background: rgba(192, 57, 43, 0.1);
+  color: #c0392b;
+}
+
+.cd-attendance-hours {
+  background: var(--color-surface-alt);
+  color: var(--color-muted);
+}
+
 .cd-modal-close {
   position: absolute;
   top: 16px;
@@ -1895,6 +1957,10 @@
 
 @media (max-width: 900px) {
   .cd-stats-panels-row {
+    grid-template-columns: 1fr;
+  }
+
+  .cd-attendance-form {
     grid-template-columns: 1fr;
   }
 }

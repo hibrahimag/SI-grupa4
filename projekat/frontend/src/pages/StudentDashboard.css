@@ -3848,6 +3848,57 @@
   color: var(--color-text-muted);
 }
 
+.sd-attendance-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sd-attendance-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--color-border, #e0edf9);
+}
+
+.sd-attendance-row p {
+  margin: 6px 0 0;
+  color: var(--color-muted, #5a7a9a);
+  font-size: 0.84rem;
+}
+
+.sd-attendance-side {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.sd-attendance-status,
+.sd-attendance-hours {
+  border-radius: 999px;
+  padding: 5px 9px;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.sd-attendance-status--present {
+  background: rgba(14, 158, 110, 0.1);
+  color: #0e9e6e;
+}
+
+.sd-attendance-status--absent {
+  background: rgba(192, 57, 43, 0.1);
+  color: #c0392b;
+}
+
+.sd-attendance-hours {
+  background: var(--color-bg, #f0f6ff);
+  color: var(--color-muted, #5a7a9a);
+}
+
 /* ── Evaluacija kartice ─────────────────────────────────────────── */
 .sd-eval-section {
   margin-top: 12px;

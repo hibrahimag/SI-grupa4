@@ -4,7 +4,14 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { getCompanyProfile } from '../services/companyProfile.service';
-import { downloadPracticeContract, generatePracticeContract, getCompanyPractices } from '../services/prakseService';
+import {
+  downloadPracticeContract,
+  generatePracticeContract,
+  getCompanyPractices,
+  getPracticeActivities,
+  getPracticeAttendance,
+  savePracticeAttendance,
+} from '../services/prakseService';
 import { checkCompanyDeactivation, deactivateCompanyAccount, deleteMyCompanyAccount } from '../services/userService';
 import { getCompanyReceivedEvaluations } from '../services/evaluationService';
 import EvaluacijaStudenta from '../modules/evaluations/EvaluacijaStudenta';
@@ -43,7 +50,6 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import EditOglas from '../modules/listings/EditOglas';
 import { formatDate } from '../data/mockPrakse';
-import { getPracticeActivities } from '../services/prakseService';
 
 const VIEWS = {
   DASHBOARD: 'dashboard',
@@ -1117,6 +1123,17 @@ function PracticesShell() {
   const [activitiesModal, setActivitiesModal] = useState(null);
   const [activities, setActivities] = useState([]);
   const [activitiesLoading, setActivitiesLoading] = useState(false);
+  const [attendanceModal, setAttendanceModal] = useState(null);
+  const [attendance, setAttendance] = useState([]);
+  const [attendanceLoading, setAttendanceLoading] = useState(false);
+  const [attendanceError, setAttendanceError] = useState('');
+  const [attendanceSaving, setAttendanceSaving] = useState(false);
+  const [attendanceForm, setAttendanceForm] = useState({
+    datum: new Date().toISOString().slice(0, 10),
+    status: 'true',
+    brojSati: '8',
+    napomena: '',
+  });
   const [contractError, setContractError] = useState('');
   const [openingContractId, setOpeningContractId] = useState(null);
 
@@ -1165,6 +1182,49 @@ function PracticesShell() {
     }
   }
 
+  async function openAttendance(praksa) {
+    setAttendanceModal(praksa);
+    setAttendanceLoading(true);
+    setAttendanceError('');
+
+    try {
+      const data = await getPracticeAttendance(praksa.id);
+      setAttendance(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setAttendance([]);
+      setAttendanceError(err.message || 'Greška pri učitavanju prisustva.');
+    } finally {
+      setAttendanceLoading(false);
+    }
+  }
+
+  async function submitAttendance(event) {
+    event.preventDefault();
+    if (!attendanceModal) return;
+
+    setAttendanceSaving(true);
+    setAttendanceError('');
+
+    try {
+      const saved = await savePracticeAttendance(attendanceModal.id, {
+        datum: attendanceForm.datum,
+        status: attendanceForm.status === 'true',
+        brojSati: attendanceForm.brojSati,
+        napomena: attendanceForm.napomena,
+      });
+
+      setAttendance((current) => [
+        saved,
+        ...current.filter((item) => item.id !== saved.id),
+      ].sort((a, b) => new Date(b.datum) - new Date(a.datum)));
+      setAttendanceForm((current) => ({ ...current, napomena: '' }));
+    } catch (err) {
+      setAttendanceError(err.message || 'Greška pri evidentiranju prisustva.');
+    } finally {
+      setAttendanceSaving(false);
+    }
+  }
+
   return (
     <div className="cd-content">
       <header className="cd-header">
@@ -1205,6 +1265,7 @@ function PracticesShell() {
                   <th>Odluka studenta</th>
                   <th>Ugovor</th>
                   <th>Aktivnosti</th>
+                  <th>Prisustvo</th>
                 </tr>
               </thead>
               <tbody>
@@ -1241,6 +1302,15 @@ function PracticesShell() {
                         onClick={() => openActivities(praksa)}
                       >
                         Aktivnosti
+                      </button>
+                    </td>
+                    <td>
+                      <button
+                        type="button"
+                        className="cd-candidate-doc-btn"
+                        onClick={() => openAttendance(praksa)}
+                      >
+                        Prisustvo
                       </button>
                     </td>
                   </tr>
@@ -1311,6 +1381,90 @@ function PracticesShell() {
               >
                 Zatvori
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {attendanceModal && (
+        <div className="cd-modal-overlay" role="dialog" aria-modal="true" onClick={() => setAttendanceModal(null)}>
+          <div className="cd-modal-sheet" onClick={(event) => event.stopPropagation()}>
+            <button type="button" className="cd-modal-close" onClick={() => setAttendanceModal(null)} aria-label="Zatvori">
+              &times;
+            </button>
+            <h2 className="cd-contract-title">Prisustvo studenta</h2>
+
+            {attendanceError && <div className="cd-inline-message cd-inline-message--error">{attendanceError}</div>}
+
+            <form className="cd-attendance-form" onSubmit={submitAttendance}>
+              <label className="cd-form-field">
+                <span className="cd-form-label">Datum</span>
+                <input
+                  className="cd-input"
+                  type="date"
+                  value={attendanceForm.datum}
+                  onChange={(event) => setAttendanceForm((current) => ({ ...current, datum: event.target.value }))}
+                  required
+                />
+              </label>
+              <label className="cd-form-field">
+                <span className="cd-form-label">Status</span>
+                <select
+                  className="cd-input"
+                  value={attendanceForm.status}
+                  onChange={(event) => setAttendanceForm((current) => ({ ...current, status: event.target.value }))}
+                >
+                  <option value="true">Prisutan</option>
+                  <option value="false">Odsutan</option>
+                </select>
+              </label>
+              <label className="cd-form-field">
+                <span className="cd-form-label">Broj sati</span>
+                <input
+                  className="cd-input"
+                  type="number"
+                  min="0"
+                  max="24"
+                  value={attendanceForm.brojSati}
+                  onChange={(event) => setAttendanceForm((current) => ({ ...current, brojSati: event.target.value }))}
+                />
+              </label>
+              <label className="cd-form-field cd-attendance-note">
+                <span className="cd-form-label">Napomena</span>
+                <input
+                  className="cd-input"
+                  value={attendanceForm.napomena}
+                  onChange={(event) => setAttendanceForm((current) => ({ ...current, napomena: event.target.value }))}
+                  placeholder="Opcionalno"
+                />
+              </label>
+              <button type="submit" className="cd-btn cd-btn--primary" disabled={attendanceSaving}>
+                {attendanceSaving ? 'Spremanje...' : 'Evidentiraj'}
+              </button>
+            </form>
+
+            <div className="cd-attendance-list">
+              {attendanceLoading ? (
+                <p>Učitavanje prisustva...</p>
+              ) : attendance.length === 0 ? (
+                <p>Nema evidentiranog prisustva.</p>
+              ) : (
+                attendance.map((item) => (
+                  <div key={item.id} className="cd-attendance-row">
+                    <div>
+                      <strong>{new Date(item.datum).toLocaleDateString('bs-BA')}</strong>
+                      {item.napomena && <p>{item.napomena}</p>}
+                    </div>
+                    <div className="cd-attendance-side">
+                      <span className={`cd-attendance-status${item.status ? ' cd-attendance-status--present' : ' cd-attendance-status--absent'}`}>
+                        {item.status ? 'Prisutan' : 'Odsutan'}
+                      </span>
+                      {item.brojSati !== null && item.brojSati !== undefined && (
+                        <span className="cd-attendance-hours">{item.brojSati}h</span>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

@@ -51,6 +51,9 @@ describe('generateContract', () => {
     await generateContract(makeReq(), res);
 
     expect(res.status).toHaveBeenCalledWith(404);
-    expect(res.json).toHaveBeenCalledWith({ message: 'Praksa nije pronađena.' });
+    expect(res.json).toHaveBeenCalledWith({
+      message: 'Praksa nije pronađena.',
+      detail: 'Praksa nije pronađena.',
+    });
   });
 });
