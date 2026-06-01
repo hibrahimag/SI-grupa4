@@ -19,6 +19,7 @@ import {
   generatePracticeContract,
   getMyPractices,
   getPracticeActivities,
+  getPracticeAttendance,
   createPracticeActivity,
 } from '../services/prakseService';
 import {
@@ -1165,6 +1166,10 @@ function MyPracticesPanel({ practices, loading, error, filter, onFilterChange, e
   const [activities, setActivities] = useState([]);
   const [activitiesLoading, setActivitiesLoading] = useState(false);
   const [activitiesError, setActivitiesError] = useState('');
+  const [attendanceModal, setAttendanceModal] = useState(null);
+  const [attendance, setAttendance] = useState([]);
+  const [attendanceLoading, setAttendanceLoading] = useState(false);
+  const [attendanceError, setAttendanceError] = useState('');
 
   async function openContract(praksa) {
     setOpeningContractId(praksa.id);
@@ -1191,6 +1196,22 @@ function MyPracticesPanel({ practices, loading, error, filter, onFilterChange, e
       setActivities([]);
     } finally {
       setActivitiesLoading(false);
+    }
+  }
+
+  async function openAttendance(praksa) {
+    setAttendanceModal(praksa);
+    setAttendanceLoading(true);
+    setAttendanceError('');
+
+    try {
+      const data = await getPracticeAttendance(praksa.id);
+      setAttendance(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setAttendance([]);
+      setAttendanceError(err.message || 'Greška pri učitavanju prisustva.');
+    } finally {
+      setAttendanceLoading(false);
     }
   }
 
@@ -1269,6 +1290,13 @@ function MyPracticesPanel({ practices, loading, error, filter, onFilterChange, e
                     onClick={() => openActivities(praksa)}
                   >
                     Aktivnosti
+                  </button>
+                  <button
+                    type="button"
+                    className="sd-btn-detail sd-practice-contract-btn"
+                    onClick={() => openAttendance(praksa)}
+                  >
+                    Prisustvo
                   </button>
                 </div>
               </div>
@@ -1393,6 +1421,47 @@ function MyPracticesPanel({ practices, loading, error, filter, onFilterChange, e
                     <p>{a.opis}</p>
                   </div>
                 ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {attendanceModal && (
+        <div className="sd-modal-overlay" onClick={() => setAttendanceModal(null)}>
+          <div className="sd-modal" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
+            <div className="sd-modal-header">
+              <h2 className="sd-modal-title">Prisustvo na praksi</h2>
+              <button type="button" className="sd-modal-close" onClick={() => setAttendanceModal(null)}>
+                &times;
+              </button>
+            </div>
+
+            <div className="sd-modal-body">
+              {attendanceError && <div className="sd-error-banner">{attendanceError}</div>}
+              {attendanceLoading ? (
+                <p>Učitavanje prisustva...</p>
+              ) : attendance.length === 0 ? (
+                <p>Nema evidentiranog prisustva.</p>
+              ) : (
+                <div className="sd-attendance-list">
+                  {attendance.map((item) => (
+                    <div key={item.id} className="sd-attendance-row">
+                      <div>
+                        <strong>{new Date(item.datum).toLocaleDateString('bs-BA')}</strong>
+                        {item.napomena && <p>{item.napomena}</p>}
+                      </div>
+                      <div className="sd-attendance-side">
+                        <span className={`sd-attendance-status${item.status ? ' sd-attendance-status--present' : ' sd-attendance-status--absent'}`}>
+                          {item.status ? 'Prisutan' : 'Odsutan'}
+                        </span>
+                        {item.brojSati !== null && item.brojSati !== undefined && (
+                          <span className="sd-attendance-hours">{item.brojSati}h</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           </div>

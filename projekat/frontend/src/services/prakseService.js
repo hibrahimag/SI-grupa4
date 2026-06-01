@@ -202,3 +202,14 @@ export async function createPracticeActivity(praksaId, opis) {
   return res.json();
 }
 
+export async function getPracticeAttendance(praksaId) {
+  return apiRequest(`/prakse/${encodeURIComponent(praksaId)}/prisustva`);
+}
+
+export async function savePracticeAttendance(praksaId, data) {
+  return apiRequest(`/prakse/${encodeURIComponent(praksaId)}/prisustva`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+

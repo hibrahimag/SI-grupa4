@@ -77,6 +77,34 @@ async function getActivities(req, res) {
   }
 }
 
+async function getAttendance(req, res) {
+  try {
+    const prisustva = await prakseService.getPracticeAttendance(
+      req.user.id,
+      req.user.role,
+      req.params.id
+    );
+
+    return res.json(prisustva);
+  } catch (error) {
+    return handleError(res, error);
+  }
+}
+
+async function upsertAttendance(req, res) {
+  try {
+    const result = await prakseService.upsertPracticeAttendance(
+      req.user.id,
+      req.params.id,
+      req.body
+    );
+
+    return res.status(result.created ? 201 : 200).json(result.prisustvo);
+  } catch (error) {
+    return handleError(res, error);
+  }
+}
+
 async function generateReport(req, res) {
   try {
     const result = await prakseService.generatePracticeReport(
@@ -113,6 +141,8 @@ module.exports = {
   generateContract,
   createActivity,
   getActivities,
+  getAttendance,
+  upsertAttendance,
   generateReport,
   getReport,
 };

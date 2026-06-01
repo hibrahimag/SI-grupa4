@@ -17,6 +17,12 @@ router.get(
   prakseController.getActivities
 );
 router.get(
+  '/:id/prisustva',
+  authenticate,
+  authorize('STUDENT', 'COMPANY', 'COORDINATOR'),
+  prakseController.getAttendance
+);
+router.get(
   '/:id/izvjestaj',
   authenticate,
   authorize('STUDENT', 'COMPANY'),
@@ -28,6 +34,13 @@ router.post(
   authenticate,
   authorize('STUDENT'),
   prakseController.createActivity
+);
+
+router.post(
+  '/:id/prisustva',
+  authenticate,
+  authorize('COMPANY'),
+  prakseController.upsertAttendance
 );
 
 router.post(

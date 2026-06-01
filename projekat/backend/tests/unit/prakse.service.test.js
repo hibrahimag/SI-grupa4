@@ -10,6 +10,7 @@ jest.mock('../../src/infrastructure/database/models', () => ({
   PrijavaNaPraksu: { findAll: jest.fn() },
   Praksa: { findOne: jest.fn(), findAll: jest.fn(), create: jest.fn() },
   Ugovor: { findOne: jest.fn(), create: jest.fn() },
+  Prisustvo: { findAll: jest.fn(), findOrCreate: jest.fn() },
 }));
 
 jest.mock('../../src/business/services/coordinatorProfile.service', () => ({
@@ -42,6 +43,8 @@ const {
   completeExpiredPractices,
   getStudentPractices,
   getPracticeContract,
+  getPracticeAttendance,
+  upsertPracticeAttendance,
 } = require('../../src/business/services/prakse.service');
 
 beforeEach(() => jest.clearAllMocks());
@@ -365,5 +368,50 @@ describe('getPracticeContract', () => {
     await expect(getPracticeContract(1, 'STUDENT', 99))
       .rejects.toMatchObject({ message: 'Praksa nije pronađena.', status: 404 });
     expect(db.Ugovor.findOne).not.toHaveBeenCalled();
+  });
+});
+
+describe('practice attendance', () => {
+  test('student moze vidjeti evidentirano prisustvo za svoju praksu', async () => {
+    db.User.findByPk.mockResolvedValue({ id: 1, role: 'STUDENT' });
+    db.Student.findOne.mockResolvedValue({ id: 20 });
+    db.Praksa.findAll.mockResolvedValue([makeConfirmedPracticeRow()]);
+    db.Prisustvo.findAll.mockResolvedValue([{ id: 1, praksaID: 1, status: true }]);
+
+    const result = await getPracticeAttendance(1, 'STUDENT', 1);
+
+    expect(db.Prisustvo.findAll).toHaveBeenCalledWith({
+      where: { praksaID: 1 },
+      order: [['datum', 'DESC']],
+    });
+    expect(result).toEqual([{ id: 1, praksaID: 1, status: true }]);
+  });
+
+  test('kompanija evidentira ili azurira prisustvo tokom aktivne prakse', async () => {
+    const existing = { id: 5, update: jest.fn().mockResolvedValue(undefined) };
+    db.User.findByPk.mockResolvedValue({ id: 2, role: 'COMPANY' });
+    db.Kompanija.findOne.mockResolvedValue({ id: 5 });
+    db.Praksa.findAll.mockResolvedValue([makeConfirmedPracticeRow()]);
+    db.Prisustvo.findOrCreate.mockResolvedValue([existing, false]);
+
+    const result = await upsertPracticeAttendance(2, 1, {
+      datum: '2026-06-01',
+      status: true,
+      brojSati: 8,
+      napomena: 'Redovan dolazak',
+    });
+
+    expect(db.Prisustvo.findOrCreate).toHaveBeenCalledWith(expect.objectContaining({
+      where: {
+        praksaID: 1,
+        datum: new Date('2026-06-01T00:00:00.000Z'),
+      },
+    }));
+    expect(existing.update).toHaveBeenCalledWith({
+      status: true,
+      brojSati: 8,
+      napomena: 'Redovan dolazak',
+    });
+    expect(result).toEqual({ prisustvo: existing, created: false });
   });
 });

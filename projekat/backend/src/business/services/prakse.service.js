@@ -13,6 +13,7 @@ const {
   Ugovor,
   Izvjestaj,
   Evaluacija,
+  Prisustvo,
 } = require('../../infrastructure/database/models');
 const { resolveCoordinatorProfile } = require('./coordinatorProfile.service');
 const { createNotification } = require('./notifications.service');
@@ -598,6 +599,107 @@ async function getPracticeActivities(userId, role, practiceId) {
   });
 }
 
+async function resolvePracticeAccess(userId, role, practiceId) {
+  const parsedPracticeId = Number(practiceId);
+  if (!Number.isInteger(parsedPracticeId) || parsedPracticeId <= 0) {
+    throw makeError('Praksa nije pronađena.', 404);
+  }
+
+  let praksa = null;
+
+  if (role === 'STUDENT') {
+    praksa = await getStudentPracticeById(userId, parsedPracticeId);
+  }
+
+  if (role === 'COMPANY') {
+    praksa = await getCompanyPracticeById(userId, parsedPracticeId);
+  }
+
+  if (role === 'COORDINATOR') {
+    const { prakse } = await getCoordinatorPractices(userId);
+    praksa = prakse.find((item) => item.id === parsedPracticeId);
+  }
+
+  if (!praksa) {
+    throw makeError('Praksa nije pronađena.', 404);
+  }
+
+  return praksa;
+}
+
+function normalizeAttendancePayload(data = {}) {
+  const datum = dateOnly(data.datum);
+  if (!datum) {
+    throw makeError('Datum prisustva je obavezan.');
+  }
+
+  const status = typeof data.status === 'boolean'
+    ? data.status
+    : String(data.status).toLowerCase() !== 'false';
+
+  let brojSati = null;
+  if (data.brojSati !== null && data.brojSati !== undefined && String(data.brojSati).trim() !== '') {
+    brojSati = Number(data.brojSati);
+    if (!Number.isInteger(brojSati) || brojSati < 0 || brojSati > 24) {
+      throw makeError('Broj sati mora biti cijeli broj od 0 do 24.');
+    }
+  }
+
+  return {
+    datum,
+    status,
+    brojSati,
+    napomena: data.napomena ? String(data.napomena).trim() : null,
+  };
+}
+
+async function getPracticeAttendance(userId, role, practiceId) {
+  await resolvePracticeAccess(userId, role, practiceId);
+
+  return Prisustvo.findAll({
+    where: { praksaID: Number(practiceId) },
+    order: [['datum', 'DESC']],
+  });
+}
+
+async function upsertPracticeAttendance(userId, practiceId, data = {}) {
+  const praksa = await resolvePracticeAccess(userId, 'COMPANY', practiceId);
+
+  if (praksa.lifecycleStatus !== PRACTICE_LIFECYCLE.ACTIVE) {
+    throw makeError('Prisustvo se može evidentirati samo tokom aktivne prakse.');
+  }
+
+  const payload = normalizeAttendancePayload(data);
+  if (payload.datum < praksa.datumPocetka || payload.datum > praksa.datumKraja) {
+    throw makeError('Datum prisustva mora biti unutar perioda prakse.');
+  }
+
+  const datum = toUtcDate(payload.datum);
+  const [prisustvo, created] = await Prisustvo.findOrCreate({
+    where: {
+      praksaID: praksa.id,
+      datum,
+    },
+    defaults: {
+      praksaID: praksa.id,
+      datum,
+      status: payload.status,
+      brojSati: payload.brojSati,
+      napomena: payload.napomena,
+    },
+  });
+
+  if (!created) {
+    await prisustvo.update({
+      status: payload.status,
+      brojSati: payload.brojSati,
+      napomena: payload.napomena,
+    });
+  }
+
+  return { prisustvo, created };
+}
+
 
 async function generatePracticeReport(userId, practiceId, data = {}) {
   const praksa = await getCompanyPracticeById(userId, practiceId);
@@ -740,6 +842,8 @@ module.exports = {
   completeExpiredPractices,
   createActivity,
   getPracticeActivities,
+  getPracticeAttendance,
+  upsertPracticeAttendance,
   generatePracticeReport,
   getPracticeReport,
 };
