@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { koordinatorService } from '../../services/koordinatorService';
 import PrijavaDetalji from './PrijavaDetalji';
 import { formatDate } from '../../data/mockPrakse';
+import { studentDecisionLabel } from '../../utils/applicationStatus';
 
 const STATUS_LABELS = {
   CEKA_KOORDINATORA: { label: 'Čeka koordinatora', cls: 'kd-status--cekanje' },
@@ -21,6 +22,18 @@ const STATUS_LABELS = {
 function statusBadge(status) {
   const s = STATUS_LABELS[status] || { label: status, cls: 'kd-status--default' };
   return <span className={`kd-status ${s.cls}`}>{s.label}</span>;
+}
+
+function studentDecisionBadge(status) {
+  const cls = status === 'PRIHVACENO'
+    ? 'kd-status--odobrena'
+    : status === 'ODBIJENO'
+      ? 'kd-status--odbijena'
+      : status === 'NA_CEKANJU'
+        ? 'kd-status--cekanje'
+        : 'kd-status--default';
+
+  return <span className={`kd-status ${cls}`}>{studentDecisionLabel(status)}</span>;
 }
 
 export default function PrijavePregled({ filterStatus = 'CEKA_KOORDINATORA', onOdluka }) {
@@ -110,6 +123,7 @@ export default function PrijavePregled({ filterStatus = 'CEKA_KOORDINATORA', onO
                   <th>Oglas / Kompanija</th>
                   <th>Datum prijave</th>
                   <th>Status</th>
+                  <th>Odluka studenta</th>
                   <th></th>
                 </tr>
               </thead>
@@ -117,7 +131,7 @@ export default function PrijavePregled({ filterStatus = 'CEKA_KOORDINATORA', onO
                 {prijave.map(p => {
                   const student = p.Student;
                   const user    = student?.User;
-                  const oglas   = p.Oglas;
+                  const oglas   = p.Ogla;
                   const komp    = oglas?.Kompanija;
                   const mozeOdluciti = p.status === 'CEKA_KOORDINATORA' || p.status === 'PODNESENA';
                   return (
@@ -135,6 +149,7 @@ export default function PrijavePregled({ filterStatus = 'CEKA_KOORDINATORA', onO
                         {formatDate(p.datumPrijave)}
                       </td>
                       <td>{statusBadge(p.status)}</td>
+                      <td>{studentDecisionBadge(p.studentStatus)}</td>
                       <td>
                         <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                           <button

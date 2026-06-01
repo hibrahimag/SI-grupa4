@@ -4,6 +4,7 @@ const { Op } = require('sequelize');
 const { Oglas, Kompanija, User, PrijavaNaPraksu } = require('../../infrastructure/database/models');
 const { ACTION_TYPES, logAudit } = require('./audit.service');
 const { APPLICATION_STATUS } = require('./applicationStatus.service');
+const { calculatePracticeDates } = require('./prakse.service');
 
 async function createListing(data, userId) {
   const user = await User.findByPk(userId);
@@ -44,6 +45,8 @@ async function createListing(data, userId) {
     err.status = 404;
     throw err;
   }
+
+  calculatePracticeDates(data.datumPocetka, data.trajanje);
 
   const oglas = await Oglas.create({
     naziv: data.naziv,
@@ -136,6 +139,11 @@ async function updateListing(id, data, userId) {
     throw err;
   }
 
+  calculatePracticeDates(
+    typeof data.datumPocetka !== 'undefined' ? data.datumPocetka : oglas.datumPocetka,
+    typeof data.trajanje !== 'undefined' ? data.trajanje : oglas.trajanje
+  );
+
   // Ako mijenjate rok prijave, mora biti u budućnosti
   if (data.rokPrijave && new Date(data.rokPrijave) <= new Date()) {
     const err = new Error('Rok prijave mora biti u budućnosti.');
@@ -166,7 +174,7 @@ async function updateListing(id, data, userId) {
     opis: data.opis ?? oglas.opis,
     brojMjesta: typeof data.brojMjesta !== 'undefined' ? Number(data.brojMjesta) : oglas.brojMjesta,
     rokPrijave: data.rokPrijave ?? oglas.rokPrijave,
-    trajanje: data.trajanje ? String(data.trajanje) : oglas.trajanje,
+    trajanje: typeof data.trajanje !== 'undefined' ? String(data.trajanje) : oglas.trajanje,
     oblast: typeof data.oblast !== 'undefined' ? data.oblast : oglas.oblast,
     placenaPraksa: typeof data.placenaPraksa !== 'undefined' ? !!data.placenaPraksa : oglas.placenaPraksa,
     lokacija: typeof data.lokacija !== 'undefined' ? (data.lokacija?.trim() || null) : oglas.lokacija,

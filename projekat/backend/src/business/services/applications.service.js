@@ -2,20 +2,29 @@
 
 const { Op } = require('sequelize');
 const {
+  sequelize,
   User,
   Student,
   Oglas,
   PrijavaNaPraksu,
+  Praksa,
   Kompanija,
   Dokument,
   Odsjek,
   Fakultet,
+  Koordinator,
 } = require('../../infrastructure/database/models');
-const { createNotification } = require('./notifications.service');
+const {
+  createNotification,
+  createNotificationForKompanija,
+  createNotificationForKoordinator,
+} = require('./notifications.service');
 const {
   sendPrijavaPodnesenaEmail,
   sendPrijavaShortlistedEmail,
   sendPrijavaStatusEmail,
+  sendOdustajanjeKompaniji,
+  sendOdustajanjeKoordinatoru,
 } = require('./email.service');
 const {
   getOrCreatePreferences,
@@ -27,11 +36,17 @@ const {
   APPLICATION_STATUS,
   COORDINATOR_STATUS,
   COMPANY_STATUS,
+  STUDENT_STATUS,
   canCompanyAct,
   canCompanyShortlist,
   isCoordinatorApproved,
   normalizeStatusFilter,
 } = require('./applicationStatus.service');
+const {
+  calculatePracticeDates,
+  ensurePracticeForApplication,
+  getStudentPracticeById,
+} = require('./prakse.service');
 
 function makeError(message, status) {
   const err = new Error(message);
@@ -99,6 +114,8 @@ function mapCompanyApplication(prijava) {
     status: prijava.status,
     koordinatorStatus: prijava.koordinatorStatus,
     kompanijaStatus: prijava.kompanijaStatus,
+    studentStatus: prijava.studentStatus,
+    studentOdlucioAt: prijava.studentOdlucioAt,
     datumPrijave: prijava.datumPrijave,
     oglas: oglas
       ? {
@@ -151,6 +168,20 @@ async function resolveStudentForListing(userId) {
   const student = await Student.findOne({ where: { userID: user.id } });
   if (!student || !isStudentProfileComplete(user, student)) {
     return null;
+  }
+
+  return student;
+}
+
+async function resolveStudentForDecision(userId) {
+  const user = await User.findByPk(userId);
+  if (!user || user.role !== 'STUDENT') {
+    throw makeError('Samo studenti mogu odlučiti o učešću na praksi.', 403);
+  }
+
+  const student = await Student.findOne({ where: { userID: user.id } });
+  if (!student) {
+    throw makeError('Nemate pravo odlučivati o ovoj prijavi.', 403);
   }
 
   return student;
@@ -222,6 +253,8 @@ async function createApplication(userId, data = {}) {
     status: APPLICATION_STATUS.WAITING_COORDINATOR,
     koordinatorStatus: COORDINATOR_STATUS.PENDING,
     kompanijaStatus: COMPANY_STATUS.UNAVAILABLE,
+    studentStatus: STUDENT_STATUS.UNAVAILABLE,
+    studentOdlucioAt: null,
   });
 
   await Dokument.update(
@@ -313,6 +346,8 @@ async function getCompanyApplicationsForListing(userId, oglasId) {
       'status',
       'koordinatorStatus',
       'kompanijaStatus',
+      'studentStatus',
+      'studentOdlucioAt',
       'datumPrijave',
     ],
     include: [
@@ -359,6 +394,8 @@ async function loadCompanyActionContext(userId, applicationId) {
       'status',
       'koordinatorStatus',
       'kompanijaStatus',
+      'studentStatus',
+      'studentOdlucioAt',
       'datumPrijave',
     ],
     include: [
@@ -450,6 +487,8 @@ async function shortlistApplication(userId, applicationId) {
     {
       status: APPLICATION_STATUS.SHORTLISTED,
       kompanijaStatus: COMPANY_STATUS.SHORTLISTED,
+      studentStatus: STUDENT_STATUS.UNAVAILABLE,
+      studentOdlucioAt: null,
     },
     {
       where: {
@@ -505,6 +544,8 @@ async function decideApplicationByCompany(userId, applicationId, odluka) {
     {
       status: nextStatus,
       kompanijaStatus: nextCompanyStatus,
+      studentStatus: approved ? STUDENT_STATUS.PENDING : STUDENT_STATUS.UNAVAILABLE,
+      studentOdlucioAt: null,
     },
     {
       where: {
@@ -521,6 +562,8 @@ async function decideApplicationByCompany(userId, applicationId, odluka) {
 
   prijava.status = nextStatus;
   prijava.kompanijaStatus = nextCompanyStatus;
+  prijava.studentStatus = approved ? STUDENT_STATUS.PENDING : STUDENT_STATUS.UNAVAILABLE;
+  prijava.studentOdlucioAt = null;
 
   await notifyStudent({
     prijava,
@@ -543,6 +586,105 @@ async function approveApplicationByCompany(userId, applicationId) {
 
 async function rejectApplicationByCompany(userId, applicationId) {
   return decideApplicationByCompany(userId, applicationId, 'odbijena');
+}
+
+async function decideApplicationByStudent(userId, applicationId, decision) {
+  const student = await resolveStudentForDecision(userId);
+  const prijavaId = normalizeId(applicationId, 'Prijava nije pronađena.');
+  const accepted = decision === 'accept';
+  const nextStudentStatus = accepted ? STUDENT_STATUS.ACCEPTED : STUDENT_STATUS.DECLINED;
+  const successMessage = accepted
+    ? 'Učešće na praksi je uspješno prihvaćeno.'
+    : 'Učešće na praksi je uspješno odbijeno.';
+  const alreadyMessage = accepted
+    ? 'Učešće na praksi je već prihvaćeno.'
+    : 'Učešće na praksi je već odbijeno.';
+
+  return sequelize.transaction(async (transaction) => {
+    const prijava = await PrijavaNaPraksu.findByPk(prijavaId, {
+      transaction,
+      lock: transaction.LOCK.UPDATE,
+    });
+
+    if (!prijava) {
+      throw makeError('Prijava nije pronađena.', 404);
+    }
+
+    if (Number(prijava.studentID) !== Number(student.id)) {
+      throw makeError('Nemate pravo odlučivati o ovoj prijavi.', 403);
+    }
+
+    const oglas = await Oglas.findByPk(prijava.oglasID, {
+      attributes: ['id', 'datumPocetka', 'trajanje'],
+      transaction,
+    });
+    if (!oglas) {
+      throw makeError('Oglas nije pronađen.', 404);
+    }
+
+    if (prijava.studentStatus === nextStudentStatus) {
+      const existingPractice = accepted
+        ? await ensurePracticeForApplication(prijava, oglas, { transaction })
+        : null;
+      return { message: alreadyMessage, application: prijava, practice: existingPractice };
+    }
+
+    if (
+      prijava.studentStatus === STUDENT_STATUS.ACCEPTED ||
+      prijava.studentStatus === STUDENT_STATUS.DECLINED
+    ) {
+      throw makeError('Odluka o učešću je već evidentirana i nije je moguće promijeniti.', 409);
+    }
+
+    if (
+      prijava.status !== APPLICATION_STATUS.APPROVED ||
+      prijava.koordinatorStatus !== COORDINATOR_STATUS.APPROVED ||
+      prijava.kompanijaStatus !== COMPANY_STATUS.APPROVED ||
+      prijava.studentStatus !== STUDENT_STATUS.PENDING
+    ) {
+      throw makeError(
+        'Praksu nije moguće prihvatiti ili odbiti jer još nije odobrena od koordinatora i kompanije.',
+        400
+      );
+    }
+
+    let practice = null;
+    if (accepted) {
+      // Validacija datuma se izvršava prije odluke, pa greška ne ostavlja prijavu potvrđenom bez prakse.
+      calculatePracticeDates(oglas.datumPocetka, oglas.trajanje);
+      await ensurePracticeForApplication(
+        { ...prijava.get({ plain: true }), studentStatus: STUDENT_STATUS.ACCEPTED },
+        oglas,
+        { transaction }
+      );
+    }
+
+    await prijava.update(
+      {
+        studentStatus: nextStudentStatus,
+        studentOdlucioAt: new Date(),
+      },
+      { transaction }
+    );
+
+    if (accepted) {
+      practice = await Praksa.findOne({ where: { prijavaID: prijava.id }, transaction });
+    }
+
+    return { message: successMessage, application: prijava, practice };
+  });
+}
+
+async function acceptApplicationByStudent(userId, applicationId) {
+  const result = await decideApplicationByStudent(userId, applicationId, 'accept');
+  if (result.practice) {
+    result.practice = await getStudentPracticeById(userId, result.practice.id);
+  }
+  return result;
+}
+
+async function declineApplicationByStudent(userId, applicationId) {
+  return decideApplicationByStudent(userId, applicationId, 'decline');
 }
 
 async function getApplicationStatistics(userId, { fakultetID, odsjekID, godina, status, oglasID } = {}) {
@@ -677,6 +819,98 @@ async function getApplicationStatistics(userId, { fakultetID, odsjekID, godina, 
   };
 }
 
+const WITHDRAWABLE_STATUSES = [
+  APPLICATION_STATUS.WAITING_COORDINATOR,
+  APPLICATION_STATUS.WAITING_COMPANY,
+  APPLICATION_STATUS.SHORTLISTED,
+  APPLICATION_STATUS.APPROVED,
+  APPLICATION_STATUS.LEGACY_SUBMITTED,
+];
+
+async function withdrawApplication(userId, applicationId) {
+  const user = await User.findByPk(userId);
+  if (!user || user.role !== 'STUDENT') {
+    throw makeError('Samo studenti mogu odustati od prijave.', 403);
+  }
+
+  const student = await Student.findOne({ where: { userID: user.id } });
+  if (!student) {
+    throw makeError('Nemate pravo upravljati ovom prijavom.', 403);
+  }
+
+  const prijavaId = normalizeId(applicationId, 'Prijava nije pronađena.');
+
+  return sequelize.transaction(async (transaction) => {
+    const prijava = await PrijavaNaPraksu.findByPk(prijavaId, {
+      transaction,
+      lock: transaction.LOCK.UPDATE,
+    });
+
+    if (!prijava) {
+      throw makeError('Prijava nije pronađena.', 404);
+    }
+
+    if (Number(prijava.studentID) !== Number(student.id)) {
+      throw makeError('Nemate pravo upravljati ovom prijavom.', 403);
+    }
+
+    if (prijava.status === APPLICATION_STATUS.WITHDRAWN) {
+      return { message: 'Već ste odustali od ove prijave.', application: prijava };
+    }
+
+    if (!WITHDRAWABLE_STATUSES.includes(prijava.status)) {
+      throw makeError('Nije moguće odustati od ove prijave.', 400);
+    }
+
+    if (prijava.status === APPLICATION_STATUS.APPROVED) {
+      const praksa = await Praksa.findOne({ where: { prijavaID: prijava.id }, transaction });
+      if (praksa && praksa.datumKraja && new Date(praksa.datumKraja) < new Date()) {
+        throw makeError('Nije moguće odustati od prakse koja je već završena.', 400);
+      }
+    }
+
+    await prijava.update(
+      { status: APPLICATION_STATUS.WITHDRAWN, datumOdustajanja: new Date() },
+      { transaction }
+    );
+
+    const oglas = await Oglas.findByPk(prijava.oglasID, {
+      attributes: ['id', 'naziv', 'kompanijaID'],
+      include: [{ model: Kompanija, attributes: ['id', 'naziv'], include: [{ model: User, attributes: ['email'] }] }],
+    });
+
+    const studentName = `${user.ime || ''} ${user.prezime || ''}`.trim() || 'Student';
+    const oglasNaziv = oglas?.naziv || 'praksu';
+    const kompanijaId = oglas?.Kompanija?.id;
+    const companyEmail = oglas?.Kompanija?.User?.email;
+    const tip = 'PRIJAVA_ODUSTAJANJE';
+    const naslov = 'Student odustao od prijave';
+    const poruka = `Student ${studentName} je odustao/la od prijave na praksu "${oglasNaziv}".`;
+
+    if (kompanijaId) {
+      createNotificationForKompanija(kompanijaId, prijava.id, tip, naslov, poruka).catch(() => {});
+    }
+    if (companyEmail) {
+      sendOdustajanjeKompaniji(companyEmail, studentName, oglasNaziv).catch(() => {});
+    }
+
+    if (prijava.koordinatorID) {
+      const koordinator = await Koordinator.findByPk(prijava.koordinatorID, {
+        include: [{ model: User, attributes: ['email'] }],
+      });
+      createNotificationForKoordinator(
+        prijava.koordinatorID, prijava.id, tip, naslov, poruka
+      ).catch(() => {});
+      const coordEmail = koordinator?.User?.email;
+      if (coordEmail) {
+        sendOdustajanjeKoordinatoru(coordEmail, studentName, oglasNaziv).catch(() => {});
+      }
+    }
+
+    return { message: 'Uspješno ste odustali od prijave.', application: prijava };
+  });
+}
+
 module.exports = {
   createApplication,
   getMyApplications,
@@ -685,4 +919,7 @@ module.exports = {
   shortlistApplication,
   approveApplicationByCompany,
   rejectApplicationByCompany,
+  acceptApplicationByStudent,
+  declineApplicationByStudent,
+  withdrawApplication,
 };

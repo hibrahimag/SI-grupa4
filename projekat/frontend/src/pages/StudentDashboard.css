@@ -1967,6 +1967,29 @@
   color: #f87171;
 }
 
+.sd-btn-neutral {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 11px 22px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  background: #94a3b8;
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.sd-btn-neutral:hover:not(:disabled) {
+  background: #64748b;
+}
+.sd-btn-neutral:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .sd-page.dark .sd-modal-deadline--expired { background: rgba(239,68,68,0.1);  border-color: rgba(239,68,68,0.25); }
 .sd-page.dark .sd-modal-deadline--urgent  { background: rgba(251,146,60,0.1); border-color: rgba(251,146,60,0.25); }
 .sd-page.dark .sd-modal-deadline--soon    { background: rgba(234,179,8,0.1);  border-color: rgba(234,179,8,0.25); }
@@ -2377,6 +2400,11 @@
 .sd-confirm-icon--warn {
   background: var(--color-warning-subtle);
   color: var(--color-warning);
+}
+
+.sd-confirm-icon--success {
+  background: var(--color-success-subtle);
+  color: var(--color-success);
 }
 
 .sd-confirm-title {
@@ -2842,6 +2870,130 @@
   margin-left: auto;
 }
 
+.sd-practices-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+}
+
+.sd-practices-title {
+  margin: 0 0 5px;
+  color: var(--color-text, #0d1f3c);
+  font-size: 1.28rem;
+}
+
+.sd-practices-subtitle {
+  margin: 0;
+  color: var(--color-muted, #5a7a9a);
+  font-size: 0.84rem;
+}
+
+.sd-practice-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.sd-practice-tab {
+  padding: 8px 13px;
+  border: 1px solid var(--color-border, #e0edf9);
+  border-radius: 999px;
+  background: var(--color-surface, #fff);
+  color: var(--color-muted, #5a7a9a);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.sd-practice-tab.active {
+  color: var(--color-primary, #1a6fd4);
+  border-color: rgba(26, 111, 212, 0.34);
+  background: var(--color-primary-subtle, #ddeeff);
+}
+
+.sd-confirmed-practice-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px 22px;
+  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-border, #e0edf9);
+  border-radius: 16px;
+}
+
+.sd-confirmed-practice-card-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.sd-practice-badge {
+  display: inline-flex;
+  padding: 7px 12px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.sd-practice-badge--active {
+  background: var(--color-success-subtle);
+  color: var(--color-success);
+}
+
+.sd-practice-badge--pending {
+  background: var(--color-primary-subtle);
+  color: var(--color-primary);
+}
+
+.sd-practice-badge--finished {
+  background: rgba(124, 58, 237, 0.12);
+  color: #7c3aed;
+}
+
+.sd-practice-badge--withdrawn {
+  background: var(--color-danger-subtle);
+  color: var(--color-danger);
+}
+
+.sd-practice-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sd-practice-contract-btn {
+  padding: 8px 14px;
+  white-space: nowrap;
+}
+
+.sd-contract-modal {
+  max-width: 720px;
+}
+
+.sd-contract-content {
+  margin: 0;
+  padding: 20px;
+  border: 1px solid var(--color-border, #e0edf9);
+  border-radius: 12px;
+  background: var(--color-bg, #f0f6ff);
+  color: var(--color-text, #0d1f3c);
+  font-family: inherit;
+  font-size: 0.88rem;
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+
+.sd-contract-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
 .sd-omiljeni-toggle {
   display: inline-flex;
   gap: 4px;
@@ -3055,6 +3207,40 @@
   margin: 0;
 }
 
+.sd-student-decision-feedback {
+  margin: 0;
+  padding: 11px 14px;
+  border: 1px solid;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.sd-student-decision-feedback--success {
+  border-color: rgba(21, 128, 61, 0.22);
+  background: var(--color-success-subtle);
+  color: var(--color-success);
+}
+
+.sd-student-decision-feedback--error {
+  border-color: rgba(220, 38, 38, 0.22);
+  background: var(--color-danger-subtle);
+  color: var(--color-danger);
+}
+
+.sd-student-decision-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.sd-student-decision-btn,
+.sd-student-confirm-btn {
+  padding: 9px 16px;
+  font-size: 0.82rem;
+}
+
 /* ── Application card list ─────────────────────────────────────────────── */
 .sd-apps-list {
   display: flex;
@@ -3258,6 +3444,11 @@
 .sd-page.dark .sd-apps-stat-value--success { color: #4ade80; }
 .sd-page.dark .sd-apps-stat-value--error { color: #f87171; }
 .sd-page.dark .sd-apps-stat-label { color: #64748b; }
+.sd-page.dark .sd-practices-title { color: #f1f5f9; }
+.sd-page.dark .sd-practice-tab,
+.sd-page.dark .sd-confirmed-practice-card { background: #111827; border-color: #1e2d40; }
+.sd-page.dark .sd-practice-tab.active { background: rgba(96,165,250,0.12); color: #60a5fa; }
+.sd-page.dark .sd-contract-content { background: #161f2e; border-color: #1e2d40; color: #cbd5e1; }
 
 .sd-page.dark .sd-application-stage-step {
   color: #94a3b8;
@@ -3590,6 +3781,7 @@
   line-height: 1.5;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -3621,3 +3813,277 @@
 .sd-page.dark .sd-notif-poruka { color: #94a3b8; }
 .sd-page.dark .sd-notif-empty { color: #475569; }
 
+.sd-error-banner {
+  margin-bottom: 1rem;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: #fff4e5;
+  color: #9a6700;
+  border: 1px solid #f0c36d;
+  font-weight: 500;
+}
+
+.sd-activity-textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 14px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  resize: vertical;
+  margin-bottom: 1rem;
+  transition: all 0.2s ease;
+}
+
+.sd-activity-textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12);
+}
+
+.sd-activity-textarea::placeholder {
+  color: var(--color-text-muted);
+}
+
+.sd-attendance-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sd-attendance-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--color-border, #e0edf9);
+}
+
+.sd-attendance-row p {
+  margin: 6px 0 0;
+  color: var(--color-muted, #5a7a9a);
+  font-size: 0.84rem;
+}
+
+.sd-attendance-side {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.sd-attendance-status,
+.sd-attendance-hours {
+  border-radius: 999px;
+  padding: 5px 9px;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.sd-attendance-status--present {
+  background: rgba(14, 158, 110, 0.1);
+  color: #0e9e6e;
+}
+
+.sd-attendance-status--absent {
+  background: rgba(192, 57, 43, 0.1);
+  color: #c0392b;
+}
+
+.sd-attendance-hours {
+  background: var(--color-bg, #f0f6ff);
+  color: var(--color-muted, #5a7a9a);
+}
+
+/* ── Evaluacija kartice ─────────────────────────────────────────── */
+.sd-eval-section {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border, #e0edf9);
+}
+
+.sd-eval-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  background: rgba(245, 158, 11, 0.08);
+  color: #b45309;
+  font-size: 0.83rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.sd-eval-btn:hover {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.55);
+}
+
+.sd-eval-done-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border-radius: 10px;
+  background: rgba(34, 197, 94, 0.09);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  color: #15803d;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+/* ── Evaluacija kartica (MojeEvaluacijePanel i KompanijaDashboard) ── */
+.sd-eval-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px 24px;
+  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-border, #e0edf9);
+  border-radius: 16px;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+.sd-eval-card:hover {
+  box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+  transform: translateY(-2px);
+}
+
+.sd-eval-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.sd-eval-card-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.sd-eval-card-company {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-muted, #5a7a9a);
+}
+
+.sd-eval-card-oglas {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--color-text, #0d1f3c);
+  margin: 0;
+}
+
+.sd-eval-card-date {
+  font-size: 0.74rem;
+  color: var(--color-faint, #9aabbc);
+  margin-top: 2px;
+}
+
+.sd-eval-stars {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.sd-eval-stars-score {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--color-text, #0d1f3c);
+  margin-left: 6px;
+}
+
+.sd-eval-criteria {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.sd-eval-criteria-item {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 10px 12px;
+  background: var(--color-bg, #f0f6ff);
+  border: 1px solid var(--color-border, #e0edf9);
+  border-radius: 10px;
+}
+
+.sd-eval-criteria-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--color-muted, #5a7a9a);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.sd-eval-criteria-value {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.sd-eval-criteria-num {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--color-text, #0d1f3c);
+}
+
+.sd-eval-criteria-max {
+  font-size: 0.75rem;
+  color: var(--color-muted, #5a7a9a);
+  font-weight: 600;
+}
+
+.sd-eval-comment {
+  padding: 10px 14px;
+  background: var(--color-bg, #f0f6ff);
+  border-left: 3px solid var(--color-border, #e0edf9);
+  border-radius: 0 8px 8px 0;
+  font-size: 0.85rem;
+  font-style: italic;
+  color: var(--color-muted, #5a7a9a);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Dark mode */
+.sd-page.dark .sd-eval-btn {
+  background: rgba(245,158,11,0.1);
+  border-color: rgba(245,158,11,0.3);
+  color: #fbbf24;
+}
+.sd-page.dark .sd-eval-done-badge {
+  background: rgba(74,222,128,0.1);
+  border-color: rgba(74,222,128,0.25);
+  color: #4ade80;
+}
+.sd-page.dark .sd-eval-card {
+  background: #111827;
+  border-color: #1e2d40;
+}
+.sd-page.dark .sd-eval-card-company { color: #64748b; }
+.sd-page.dark .sd-eval-card-oglas { color: #f1f5f9; }
+.sd-page.dark .sd-eval-card-date { color: #475569; }
+.sd-page.dark .sd-eval-stars-score { color: #f1f5f9; }
+.sd-page.dark .sd-eval-criteria-item {
+  background: #161f2e;
+  border-color: #1e2d40;
+}
+.sd-page.dark .sd-eval-criteria-label { color: #64748b; }
+.sd-page.dark .sd-eval-criteria-num { color: #e2e8f0; }
+.sd-page.dark .sd-eval-criteria-max { color: #475569; }
+.sd-page.dark .sd-eval-comment {
+  background: #161f2e;
+  border-color: #334155;
+  color: #94a3b8;
+}

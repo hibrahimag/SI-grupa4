@@ -11,6 +11,18 @@ export async function createApplication(oglasID) {
   });
 }
 
+export async function acceptApplicationByStudent(id) {
+  return apiRequest(`/applications/${id}/accept`, {
+    method: 'PATCH',
+  });
+}
+
+export async function declineApplicationByStudent(id) {
+  return apiRequest(`/applications/${id}/decline`, {
+    method: 'PATCH',
+  });
+}
+
 export async function getApplicationStatistics({ fakultetID, odsjekID, godina, status, oglasID } = {}) {
   const params = new URLSearchParams();
   if (fakultetID) params.set('fakultetID', fakultetID);
@@ -40,6 +52,12 @@ export async function approveApplicationByCompany(id) {
 
 export async function rejectApplicationByCompany(id) {
   return apiRequest(`/applications/${id}/reject`, {
+    method: 'PATCH',
+  });
+}
+
+export async function withdrawApplication(id) {
+  return apiRequest(`/applications/${id}/withdraw`, {
     method: 'PATCH',
   });
 }

@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { koordinatorService } from '../services/koordinatorService';
 import { checkCoordinatorDeactivation, deactivateCoordinatorAccount, deleteMyCoordinatorAccount } from '../services/userService';
+import { getNotifications, markNotificationRead, markAllNotificationsRead } from '../services/api';
 import PrijavePregled from '../modules/koordinator/PrijavePregled';
 import PraksePregled from '../modules/koordinator/PraksePregled';
 import StudentListaPregled from '../modules/koordinator/StudentListaPregled';
@@ -85,6 +86,9 @@ export default function KoordinatorDashboard() {
   const [deleting, setDeleting]                 = useState(false);
   const [deleteError, setDeleteError]           = useState('');
   const profileMenuRef = useRef(null);
+  const [notifications, setNotifications] = useState([]);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const notifRef = useRef(null);
 
   useEffect(() => {
     if (!profileMenuOpen) return;
@@ -96,6 +100,23 @@ export default function KoordinatorDashboard() {
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, [profileMenuOpen]);
+
+  useEffect(() => {
+    let active = true;
+    getNotifications()
+      .then(data => { if (active) setNotifications(data || []); })
+      .catch(() => { });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    if (!notifOpen) return;
+    function handleClickOutside(e) {
+      if (notifRef.current && !notifRef.current.contains(e.target)) setNotifOpen(false);
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [notifOpen]);
 
   const ucitajStats = useCallback(() => {
     setLoadingStats(true);
@@ -169,9 +190,72 @@ export default function KoordinatorDashboard() {
       {/* ── Navbar ─────────────────────────────────────────── */}
       <nav className="kd-navbar">
         <Link to="/" className="kd-navbar-brand" aria-label="Idi na početnu stranicu">PraksaHub</Link>
-        <button className="kd-theme-btn" onClick={() => setDarkMode(!darkMode)} title="Promijeni temu">
-          {darkMode ? <IconSun size={15} /> : <IconMoon size={15} />}
-        </button>
+        <div className="kd-navbar-right">
+          <div className="kd-notif-wrap" ref={notifRef}>
+            <button
+              type="button"
+              className="kd-notif-btn"
+              onClick={() => setNotifOpen(o => !o)}
+              title="Notifikacije"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              </svg>
+              {notifications.filter(n => !n.procitana).length > 0 && (
+                <span className="kd-notif-badge">
+                  {notifications.filter(n => !n.procitana).length > 9 ? '9+' : notifications.filter(n => !n.procitana).length}
+                </span>
+              )}
+            </button>
+            {notifOpen && (
+              <div className="kd-notif-dropdown">
+                <div className="kd-notif-header">
+                  <span className="kd-notif-title">Notifikacije</span>
+                  {notifications.some(n => !n.procitana) && (
+                    <button
+                      className="kd-notif-read-all"
+                      onClick={async () => {
+                        await markAllNotificationsRead().catch(() => { });
+                        setNotifications(prev => prev.map(n => ({ ...n, procitana: true })));
+                      }}
+                    >
+                      Označi sve
+                    </button>
+                  )}
+                </div>
+                <div className="kd-notif-list">
+                  {notifications.length === 0 ? (
+                    <p className="kd-notif-empty">Nema notifikacija.</p>
+                  ) : (
+                    notifications.map(n => (
+                      <div
+                        key={n.id}
+                        className={`kd-notif-item${n.procitana ? '' : ' kd-notif-item--unread'}`}
+                        onClick={async () => {
+                          if (!n.procitana) {
+                            await markNotificationRead(n.id).catch(() => { });
+                            setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, procitana: true } : x));
+                          }
+                        }}
+                      >
+                        <div className={`kd-notif-dot${n.procitana ? ' kd-notif-dot--read' : ''}`} />
+                        <div className="kd-notif-body">
+                          <p className="kd-notif-naslov">{n.naslov}</p>
+                          <p className="kd-notif-poruka">{n.poruka}</p>
+                          <span className="kd-notif-time">{new Date(n.created_at).toLocaleDateString('bs-BA')}</span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+          <button className="kd-theme-btn" onClick={() => setDarkMode(!darkMode)} title="Promijeni temu">
+            {darkMode ? <IconSun size={15} /> : <IconMoon size={15} />}
+          </button>
+        </div>
       </nav>
 
       {/* ── Sidebar ────────────────────────────────────────── */}

@@ -421,17 +421,17 @@ describe('getPrakse', () => {
     );
   });
 
-  // Testira: funkcija filtrira prakse po statusu i konvertuje u uppercase
+  // Testira: lifecycle filter se računa iz datuma umjesto iz pohranjene status kolone
   // Ulaz: status='aktivna' (lowercase), koordinatorUserId=1
-  // Očekivani izlaz: Praksa.findAll pozvan s where: { status: 'AKTIVNA' }
-  test('filtrira prakse po statusu i konvertuje u uppercase', async () => {
+  // Očekivani izlaz: Praksa.findAll ne filtrira po nepostojećem Praksa.status
+  test('primjenjuje lifecycle filter bez pohranjene status kolone', async () => {
     db.Koordinator.findOne.mockResolvedValue(makeMockKoordinator());
     db.Praksa.findAll.mockResolvedValue([]);
 
     await getPrakse('aktivna', 1);
 
     expect(db.Praksa.findAll).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { status: 'AKTIVNA' } })
+      expect.objectContaining({ where: {} })
     );
   });
 

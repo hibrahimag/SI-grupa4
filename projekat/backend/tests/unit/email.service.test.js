@@ -13,6 +13,8 @@ const {
   sendPrijavaPodnesenaEmail,
   sendPrijavaShortlistedEmail,
   sendPrijavaStatusEmail,
+  sendPraksaZavrsenaStudentEmail,
+  sendPraksaZavrsenaCompanyEmail,
 } = require('../../src/business/services/email.service');
 
 function mockFetchOk() {
@@ -189,5 +191,32 @@ describe('sendPrijavaStatusEmail', () => {
     await sendPrijavaStatusEmail('s@t.com', 'Oglas', 'Firma', 'NEKI_STATUS', null);
     const body = JSON.parse(global.fetch.mock.calls[0][1].body);
     expect(body.htmlContent).toContain('azurirana');
+  });
+});
+
+// ── sendPraksaZavrsenaStudentEmail ────────────────────────────────────────────
+describe('sendPraksaZavrsenaStudentEmail', () => {
+  test('šalje email studentu o završetku prakse', async () => {
+    mockFetchOk();
+    await sendPraksaZavrsenaStudentEmail('student@test.com', 'Backend praksa', 'Firma d.o.o.', '25.05.2026.');
+    const body = JSON.parse(global.fetch.mock.calls[0][1].body);
+    expect(body.to[0].email).toBe('student@test.com');
+    expect(body.subject).toMatch(/završena/i);
+    expect(body.htmlContent).toContain('Backend praksa');
+    expect(body.htmlContent).toContain('Firma d.o.o.');
+    expect(body.htmlContent).toContain('25.05.2026.');
+  });
+});
+
+// ── sendPraksaZavrsenaCompanyEmail ────────────────────────────────────────────
+describe('sendPraksaZavrsenaCompanyEmail', () => {
+  test('šalje email kompaniji o završetku prakse', async () => {
+    mockFetchOk();
+    await sendPraksaZavrsenaCompanyEmail('company@test.com', 'Amina Begić', 'Backend praksa', '25.05.2026.');
+    const body = JSON.parse(global.fetch.mock.calls[0][1].body);
+    expect(body.to[0].email).toBe('company@test.com');
+    expect(body.subject).toMatch(/završena/i);
+    expect(body.htmlContent).toContain('Amina Begić');
+    expect(body.htmlContent).toContain('Backend praksa');
   });
 });
