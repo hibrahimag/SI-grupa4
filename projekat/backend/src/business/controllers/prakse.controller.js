@@ -3,7 +3,9 @@
 const prakseService = require('../services/prakse.service');
 
 function handleError(res, error) {
-  console.error('[PRAKSE ERROR]', error);
+  if (!error.status || error.status >= 500) {
+    console.error('[PRAKSE ERROR]', error);
+  }
 
   if (error.message === 'KOORDINATOR_NOT_FOUND') {
     return res.status(404).json({ message: 'Koordinatorski profil nije pronađen.' });

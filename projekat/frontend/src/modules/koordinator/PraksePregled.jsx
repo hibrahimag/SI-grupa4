@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import {
   getCoordinatorPractices,
   getPracticeActivities,
+  getPracticeReport,
+  downloadPracticeContract,
 } from '../../services/prakseService';
 import { formatDate } from '../../data/mockPrakse';
 import {
@@ -35,6 +37,11 @@ export default function PraksePregled() {
   const [activities, setActivities] = useState([]);
   const [activitiesLoading, setActivitiesLoading] = useState(false);
 
+  const [reportModal, setReportModal] = useState(null);
+  const [reportData, setReportData] = useState(null);
+  const [reportLoading, setReportLoading] = useState(false);
+
+
 
   useEffect(() => {
     let mounted = true;
@@ -59,18 +66,32 @@ export default function PraksePregled() {
 
 
   async function openActivities(praksa) {
-  setActivitiesModal(praksa);
-  setActivitiesLoading(true);
+    setActivitiesModal(praksa);
+    setActivitiesLoading(true);
 
-  try {
-    const data = await getPracticeActivities(praksa.id);
-    setActivities(data);
-  } catch {
-    setActivities([]);
-  } finally {
-    setActivitiesLoading(false);
+    try {
+      const data = await getPracticeActivities(praksa.id);
+      setActivities(data);
+    } catch {
+      setActivities([]);
+    } finally {
+      setActivitiesLoading(false);
+    }
   }
-}
+
+  async function openReport(praksa) {
+    setReportModal(praksa);
+    setReportData(null);
+    setReportLoading(true);
+    try {
+      const data = await getPracticeReport(praksa.id);
+      setReportData(data);
+    } catch {
+      setReportData(null);
+    } finally {
+      setReportLoading(false);
+    }
+  }
 
   return (
     <div>
@@ -115,6 +136,7 @@ export default function PraksePregled() {
                 <th>Datum završetka</th>
                 <th>Status</th>
                 <th>Aktivnosti</th>
+                <th>Izvještaj</th>
               </tr>
             </thead>
             <tbody>
@@ -142,14 +164,19 @@ export default function PraksePregled() {
                   <td>{formatDate(praksa.datumKraja)}</td>
                   <td>{lifecycleBadge(praksa.lifecycleStatus)}</td>
                   <td>
-  <button
-    type="button"
-    className="kd-select"
-    onClick={() => openActivities(praksa)}
-  >
-    Aktivnosti
-  </button>
-</td>
+                    <button
+                      type="button"
+                      className="kd-select"
+                      onClick={() => openActivities(praksa)}
+                    >
+                      Aktivnosti
+                    </button>
+                  </td>
+                  <td>
+                    <button type="button" className="kd-select" onClick={() => openReport(praksa)}>
+                      Izvještaj
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -158,29 +185,97 @@ export default function PraksePregled() {
       )}
 
       {activitiesModal && (
-  <div className="cd-modal-overlay" onClick={() => setActivitiesModal(null)}>
-    <div className="cd-modal-sheet" onClick={(e) => e.stopPropagation()}>
-      <h2>Aktivnosti studenta</h2>
+        <div className="cd-modal-overlay" onClick={() => setActivitiesModal(null)}>
+          <div className="cd-modal-sheet" onClick={(e) => e.stopPropagation()}>
+            <h2>Aktivnosti studenta</h2>
 
-      {activitiesLoading ? (
-        <p>Učitavanje aktivnosti...</p>
-      ) : activities.length === 0 ? (
-        <p>Nema evidentiranih aktivnosti.</p>
-      ) : (
-        activities.map((a) => (
-          <div key={a.id} style={{ padding: '12px 0', borderBottom: '1px solid #ddd' }}>
-            <strong>{new Date(a.datum).toLocaleDateString()}</strong>
-            <p>{a.opis}</p>
+            {activitiesLoading ? (
+              <p>Učitavanje aktivnosti...</p>
+            ) : activities.length === 0 ? (
+              <p>Nema evidentiranih aktivnosti.</p>
+            ) : (
+              activities.map((a) => (
+                <div key={a.id} style={{ padding: '12px 0', borderBottom: '1px solid #ddd' }}>
+                  <strong>{new Date(a.datum).toLocaleDateString()}</strong>
+                  <p>{a.opis}</p>
+                </div>
+              ))
+            )}
+
+            <button className="kd-select" onClick={() => setActivitiesModal(null)}>
+              Zatvori
+            </button>
           </div>
-        ))
+        </div>
       )}
+      {reportModal && (
+        <div className="sd-modal-overlay" onClick={() => setReportModal(null)}>
+          <div className="sd-modal sd-contract-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+            <div className="sd-modal-header">
+              <h2 className="sd-modal-title">Izvještaj o praksi</h2>
+              <button type="button" className="sd-modal-close" onClick={() => setReportModal(null)}>
+                &times;
+              </button>
+            </div>
+            <div className="sd-modal-body">
+              {reportLoading ? (
+                <p>Učitavanje izvještaja...</p>
+              ) : !reportData ? (
+                <p>Izvještaj još nije generisan od strane kompanije.</p>
+              ) : (
+                <>
+                  {reportData.evaluacijaStudenta && (
+                    <div style={{ marginBottom: '1.25rem' }}>
+                      <p style={{ fontWeight: 600, marginBottom: '0.5rem', fontSize: '0.875rem' }}>Evaluacija kompanije</p>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '4px 1.5rem', fontSize: '0.875rem' }}>
+                        <span>Tehničke vještine</span><span><strong>{reportData.evaluacijaStudenta.tehnickeVjestine}/5</strong></span>
+                        <span>Komunikacija</span><span><strong>{reportData.evaluacijaStudenta.komunikacija}/5</strong></span>
+                        <span>Radna etika</span><span><strong>{reportData.evaluacijaStudenta.radnaEtika}/5</strong></span>
+                        <span>Inicijativa</span><span><strong>{reportData.evaluacijaStudenta.inicijativa}/5</strong></span>
+                        <span>Timski rad</span><span><strong>{reportData.evaluacijaStudenta.timskiRad}/5</strong></span>
+                        <span>Ukupna ocjena</span><span><strong>{reportData.evaluacijaStudenta.ukupnaOcjena}/5</strong></span>
+                      </div>
+                      {reportData.evaluacijaStudenta.komentar && (
+                        <p style={{ marginTop: '0.5rem', fontSize: '0.875rem' }}>{reportData.evaluacijaStudenta.komentar}</p>
+                      )}
+                    </div>
+                  )}
 
-      <button className="kd-select" onClick={() => setActivitiesModal(null)}>
-        Zatvori
-      </button>
-    </div>
-  </div>
-)}
+                  {reportData.prisustvo && (
+                    <div style={{ marginBottom: '1.25rem', fontSize: '0.875rem' }}>
+                      <p style={{ fontWeight: 600, marginBottom: '0.25rem' }}>Prisustvo</p>
+                      <span>Prisutnih dana: <strong>{reportData.prisustvo.prisutanDana} / {reportData.prisustvo.ukupnoEvidentirano}</strong></span>
+                      {reportData.prisustvo.ukupnoSati > 0 && (
+                        <span style={{ marginLeft: '1rem' }}>Ukupno sati: <strong>{reportData.prisustvo.ukupnoSati}h</strong></span>
+                      )}
+                    </div>
+                  )}
+
+                  <p style={{ fontWeight: 600, marginBottom: '0.5rem', fontSize: '0.875rem' }}>Izvještaj</p>
+                  <pre className="sd-contract-content">{reportData.sadrzaj}</pre>
+                </>
+              )}
+              <div className="sd-contract-actions">
+                <button type="button" className="sd-btn-modal-cancel" onClick={() => setReportModal(null)}>
+                  Zatvori
+                </button>
+                {reportData?.sadrzaj && (
+                  <button
+                    type="button"
+                    className="sd-btn-apply"
+                    onClick={() => downloadPracticeContract({
+                      sadrzaj: reportData.sadrzaj,
+                      ugovor: { broj: `izvjestaj-${reportModal?.id}` }
+                    })}
+                  >
+                    Preuzmi izvještaj (PDF)
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

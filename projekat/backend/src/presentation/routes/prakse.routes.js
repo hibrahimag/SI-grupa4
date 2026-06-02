@@ -25,7 +25,7 @@ router.get(
 router.get(
   '/:id/izvjestaj',
   authenticate,
-  authorize('STUDENT', 'COMPANY'),
+  authorize('STUDENT', 'COMPANY', 'COORDINATOR'),
   prakseController.getReport
 );
 
