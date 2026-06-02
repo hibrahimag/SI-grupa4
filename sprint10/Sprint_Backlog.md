@@ -3,14 +3,14 @@
 | ID | Naziv zadatka | Odgovorna osoba | Status |
 |----|--------------|-----------------|--------|
 | SB-58 | Odbijanje prakse | Amna Glamoč | Done |
-| SB-59 | Potvrda studenta | Haris Tucaković | Done |
+| SB-59 | Potvrda studenta | Haris Husić | Done |
 | SB-60 | Generisanje ugovora | Haris Tucaković | Done |
 | SB-61 | Preuzimanje ugovora | Haris Tucaković | Done |
-| SB-62 | Evidencija aktivnosti | Harun Ibrahimagić | Done |
-| SB-63 | Praćenje prisustva | Irma Lemeš | To Do |
-| SB-64 | Evaluacija studenta | Zerina Pandža | To Do |
-| SB-65 | Evaluacija kompanije | Hana Hodžić | To Do |
-| SB-66 | Izvještaji | Amina Lukovac | To Do |
+| SB-62 | Evidencija aktivnosti | Irma Lemeš | Done |
+| SB-63 | Praćenje prisustva | Zerina Pandža | Done |
+| SB-64 | Evaluacija studenta | Amina Lukovac | Done |
+| SB-65 | Evaluacija kompanije | Amina Lukovac | Done |
+| SB-66 | Izvještaji | Irma Lemeš | Done |
 | SB-67 | Odustajanje od prakse | Haris Husić | Done |
 | SB-68 | Notifikacije o statusu prakse | Haris Husić | Done |
 | SB-69 | Automatsko završavanje prakse | Amna Glamoč | Done |
