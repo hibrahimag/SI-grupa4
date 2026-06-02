@@ -213,3 +213,14 @@ export async function savePracticeAttendance(praksaId, data) {
   });
 }
 
+export async function getPracticeReport(praksaId) {
+  return apiRequest(`/prakse/${encodeURIComponent(praksaId)}/izvjestaj`);
+}
+
+export async function generatePracticeReport(praksaId, data) {
+  return apiRequest(`/prakse/${encodeURIComponent(praksaId)}/izvjestaj`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+

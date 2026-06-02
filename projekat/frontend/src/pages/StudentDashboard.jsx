@@ -21,6 +21,7 @@ import {
   getPracticeActivities,
   getPracticeAttendance,
   createPracticeActivity,
+  getPracticeReport,
 } from '../services/prakseService';
 import {
   formatDate, relativeDate, trajanjeLabel, mjestLabel, deadlineInfo,
@@ -1170,6 +1171,9 @@ function MyPracticesPanel({ practices, loading, error, filter, onFilterChange, e
   const [attendance, setAttendance] = useState([]);
   const [attendanceLoading, setAttendanceLoading] = useState(false);
   const [attendanceError, setAttendanceError] = useState('');
+  const [reportModal, setReportModal] = useState(null);
+  const [reportData, setReportData] = useState(null);
+  const [reportLoading, setReportLoading] = useState(false);
 
   async function openContract(praksa) {
     setOpeningContractId(praksa.id);
@@ -1212,6 +1216,20 @@ function MyPracticesPanel({ practices, loading, error, filter, onFilterChange, e
       setAttendanceError(err.message || 'Greška pri učitavanju prisustva.');
     } finally {
       setAttendanceLoading(false);
+    }
+  }
+
+  async function openReport(praksa) {
+    setReportModal(praksa);
+    setReportData(null);
+    setReportLoading(true);
+    try {
+      const data = await getPracticeReport(praksa.id);
+      setReportData(data);
+    } catch {
+      setReportData(null);
+    } finally {
+      setReportLoading(false);
     }
   }
 
@@ -1297,6 +1315,13 @@ function MyPracticesPanel({ practices, loading, error, filter, onFilterChange, e
                     onClick={() => openAttendance(praksa)}
                   >
                     Prisustvo
+                  </button>
+                  <button
+                    type="button"
+                    className="sd-btn-detail sd-practice-contract-btn"
+                    onClick={() => openReport(praksa)}
+                  >
+                    Izvještaj
                   </button>
                 </div>
               </div>
@@ -1463,6 +1488,41 @@ function MyPracticesPanel({ practices, loading, error, filter, onFilterChange, e
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {reportModal && (
+        <div className="sd-modal-overlay" onClick={() => setReportModal(null)}>
+          <div className="sd-modal sd-contract-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+            <div className="sd-modal-header">
+              <h2 className="sd-modal-title">Izvještaj o praksi</h2>
+              <button type="button" className="sd-modal-close" onClick={() => setReportModal(null)}>
+                &times;
+              </button>
+            </div>
+            <div className="sd-modal-body">
+              {reportLoading ? (
+                <p>Učitavanje izvještaja...</p>
+              ) : !reportData ? (
+                <p>Izvještaj još nije generisan od strane kompanije.</p>
+              ) : (
+                <>
+                  {reportData.evaluacija && (
+                    <div style={{ marginBottom: '1rem' }}>
+                      <strong>Ocjena: </strong>{reportData.evaluacija.ocjena}/5
+                      <p style={{ marginTop: '0.25rem' }}>{reportData.evaluacija.komentar}</p>
+                    </div>
+                  )}
+                  <pre className="sd-contract-content">{reportData.sadrzaj}</pre>
+                </>
+              )}
+              <div className="sd-contract-actions">
+                <button type="button" className="sd-btn-modal-cancel" onClick={() => setReportModal(null)}>
+                  Zatvori
+                </button>
+              </div>
             </div>
           </div>
         </div>

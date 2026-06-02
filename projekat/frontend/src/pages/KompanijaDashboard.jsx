@@ -11,6 +11,8 @@ import {
   getPracticeActivities,
   getPracticeAttendance,
   savePracticeAttendance,
+  getPracticeReport,
+  generatePracticeReport,
 } from '../services/prakseService';
 import { checkCompanyDeactivation, deactivateCompanyAccount, deleteMyCompanyAccount } from '../services/userService';
 import { getCompanyReceivedEvaluations } from '../services/evaluationService';
@@ -1136,6 +1138,12 @@ function PracticesShell() {
   });
   const [contractError, setContractError] = useState('');
   const [openingContractId, setOpeningContractId] = useState(null);
+  const [reportModal, setReportModal] = useState(null);
+  const [reportData, setReportData] = useState(null);
+  const [reportLoading, setReportLoading] = useState(false);
+  const [reportSaving, setReportSaving] = useState(false);
+  const [reportError, setReportError] = useState('');
+  const [reportForm, setReportForm] = useState({ ocjena: '5', komentar: '' });
 
   useEffect(() => {
     let active = true;
@@ -1225,6 +1233,46 @@ function PracticesShell() {
     }
   }
 
+  async function openReport(praksa) {
+    setReportModal(praksa);
+    setReportData(null);
+    setReportError('');
+    setReportForm({ ocjena: '5', komentar: '' });
+    setReportLoading(true);
+    try {
+      const data = await getPracticeReport(praksa.id);
+      setReportData(data);
+      if (data?.evaluacija) {
+        setReportForm({
+          ocjena: String(data.evaluacija.ocjena ?? '5'),
+          komentar: data.evaluacija.komentar ?? '',
+        });
+      }
+    } catch {
+      // no report yet — form stays empty
+    } finally {
+      setReportLoading(false);
+    }
+  }
+
+  async function submitReport(event) {
+    event.preventDefault();
+    if (!reportModal) return;
+    setReportSaving(true);
+    setReportError('');
+    try {
+      const data = await generatePracticeReport(reportModal.id, {
+        ocjena: Number(reportForm.ocjena),
+        komentar: reportForm.komentar,
+      });
+      setReportData(data);
+    } catch (err) {
+      setReportError(err.message || 'Greška pri generisanju izvještaja.');
+    } finally {
+      setReportSaving(false);
+    }
+  }
+
   return (
     <div className="cd-content">
       <header className="cd-header">
@@ -1266,6 +1314,7 @@ function PracticesShell() {
                   <th>Ugovor</th>
                   <th>Aktivnosti</th>
                   <th>Prisustvo</th>
+                  <th>Izvještaj</th>
                 </tr>
               </thead>
               <tbody>
@@ -1311,6 +1360,15 @@ function PracticesShell() {
                         onClick={() => openAttendance(praksa)}
                       >
                         Prisustvo
+                      </button>
+                    </td>
+                    <td>
+                      <button
+                        type="button"
+                        className="cd-candidate-doc-btn"
+                        onClick={() => openReport(praksa)}
+                      >
+                        Izvještaj
                       </button>
                     </td>
                   </tr>
@@ -1466,6 +1524,64 @@ function PracticesShell() {
                 ))
               )}
             </div>
+          </div>
+        </div>
+      )}
+      {reportModal && (
+        <div className="cd-modal-overlay" role="dialog" aria-modal="true" onClick={() => setReportModal(null)}>
+          <div className="cd-modal-sheet" onClick={(e) => e.stopPropagation()}>
+            <button type="button" className="cd-modal-close" onClick={() => setReportModal(null)} aria-label="Zatvori">
+              &times;
+            </button>
+            <h2 className="cd-contract-title">
+              Izvještaj o praksi — {reportModal.student?.ime} {reportModal.student?.prezime}
+            </h2>
+
+            {reportLoading ? (
+              <p>Učitavanje...</p>
+            ) : (
+              <>
+                {reportError && (
+                  <div className="cd-inline-message cd-inline-message--error">{reportError}</div>
+                )}
+
+                <form className="cd-attendance-form" onSubmit={submitReport}>
+                  <label className="cd-form-field">
+                    <span className="cd-form-label">Ocjena (1–5)</span>
+                    <select
+                      className="cd-input"
+                      value={reportForm.ocjena}
+                      onChange={(e) => setReportForm((f) => ({ ...f, ocjena: e.target.value }))}
+                    >
+                      {[1, 2, 3, 4, 5].map((n) => (
+                        <option key={n} value={String(n)}>{n}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="cd-form-field">
+                    <span className="cd-form-label">Komentar</span>
+                    <textarea
+                      className="cd-input"
+                      rows={4}
+                      value={reportForm.komentar}
+                      onChange={(e) => setReportForm((f) => ({ ...f, komentar: e.target.value }))}
+                      placeholder="Unesite komentar o studentu i obavljenoj praksi..."
+                      required
+                    />
+                  </label>
+                  <button type="submit" className="cd-btn cd-btn--primary" disabled={reportSaving}>
+                    {reportSaving ? 'Generisanje...' : reportData ? 'Ažuriraj izvještaj' : 'Generiši izvještaj'}
+                  </button>
+                </form>
+
+                {reportData?.sadrzaj && (
+                  <div style={{ marginTop: '1.5rem' }}>
+                    <h3 style={{ marginBottom: '0.5rem', fontSize: '0.95rem' }}>Generisani izvještaj</h3>
+                    <pre className="cd-contract-content">{reportData.sadrzaj}</pre>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </div>
       )}

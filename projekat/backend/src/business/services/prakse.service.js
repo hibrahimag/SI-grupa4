@@ -10,6 +10,7 @@ const {
   Oglas,
   PrijavaNaPraksu,
   Praksa,
+  Aktivnost,
   Ugovor,
   Izvjestaj,
   Evaluacija,

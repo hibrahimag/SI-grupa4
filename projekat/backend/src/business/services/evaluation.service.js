@@ -334,6 +334,41 @@ async function submitCompanyEvaluation(userID, prijavaID, data) {
         datumEvaluacije: new Date(),
     });
 
+    try {
+        const prijavaZaNotif = await PrijavaNaPraksu.findOne({
+            where: { id: prijavaID },
+            include: [
+                {
+                    model: Oglas,
+                    attributes: ['naziv', 'kompanijaID'],
+                },
+                {
+                    model: Student,
+                    attributes: ['id'],
+                    include: [{ model: User, attributes: ['ime', 'prezime'] }],
+                },
+            ],
+        });
+
+        const kompanijaID = prijavaZaNotif?.Ogla?.kompanijaID;
+        const oglasNaziv = prijavaZaNotif?.Ogla?.naziv || 'praksu';
+        const studentIme = prijavaZaNotif?.Student?.User?.ime || '';
+        const studentPrezime = prijavaZaNotif?.Student?.User?.prezime || '';
+        const studentImePrezime = [studentIme, studentPrezime].filter(Boolean).join(' ') || 'Student';
+
+        if (kompanijaID) {
+            await notifService.createNotificationForKompanija(
+                kompanijaID,
+                prijavaID,
+                'EVALUACIJA',
+                'Student vas je evaluirao',
+                `${studentImePrezime} je popunio/la evaluaciju za praksu: ${oglasNaziv}.`
+            );
+        }
+    } catch (notifErr) {
+        console.error('Greška pri slanju notifikacije kompaniji:', notifErr.message);
+    }
+
     return evaluacija;
 }
 
