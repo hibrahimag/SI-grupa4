@@ -1509,12 +1509,34 @@ function MyPracticesPanel({ practices, loading, error, filter, onFilterChange, e
                 <p>Izvještaj još nije generisan od strane kompanije.</p>
               ) : (
                 <>
-                  {reportData.evaluacija && (
-                    <div style={{ marginBottom: '1rem' }}>
-                      <strong>Ocjena: </strong>{reportData.evaluacija.ocjena}/5
-                      <p style={{ marginTop: '0.25rem' }}>{reportData.evaluacija.komentar}</p>
+                  {reportData.evaluacijaStudenta && (
+                    <div style={{ marginBottom: '1.25rem' }}>
+                      <p style={{ fontWeight: 600, marginBottom: '0.5rem', fontSize: '0.875rem' }}>Evaluacija kompanije</p>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '4px 1.5rem', fontSize: '0.875rem' }}>
+                        <span>Tehničke vještine</span><span><strong>{reportData.evaluacijaStudenta.tehnickeVjestine}/5</strong></span>
+                        <span>Komunikacija</span><span><strong>{reportData.evaluacijaStudenta.komunikacija}/5</strong></span>
+                        <span>Radna etika</span><span><strong>{reportData.evaluacijaStudenta.radnaEtika}/5</strong></span>
+                        <span>Inicijativa</span><span><strong>{reportData.evaluacijaStudenta.inicijativa}/5</strong></span>
+                        <span>Timski rad</span><span><strong>{reportData.evaluacijaStudenta.timskiRad}/5</strong></span>
+                        <span>Ukupna ocjena</span><span><strong>{reportData.evaluacijaStudenta.ukupnaOcjena}/5</strong></span>
+                      </div>
+                      {reportData.evaluacijaStudenta.komentar && (
+                        <p style={{ marginTop: '0.5rem', fontSize: '0.875rem' }}>{reportData.evaluacijaStudenta.komentar}</p>
+                      )}
                     </div>
                   )}
+
+                  {reportData.prisustvo && (
+                    <div style={{ marginBottom: '1.25rem', fontSize: '0.875rem' }}>
+                      <p style={{ fontWeight: 600, marginBottom: '0.25rem' }}>Prisustvo</p>
+                      <span>Prisutnih dana: <strong>{reportData.prisustvo.prisutanDana} / {reportData.prisustvo.ukupnoEvidentirano}</strong></span>
+                      {reportData.prisustvo.ukupnoSati > 0 && (
+                        <span style={{ marginLeft: '1rem' }}>Ukupno sati: <strong>{reportData.prisustvo.ukupnoSati}h</strong></span>
+                      )}
+                    </div>
+                  )}
+
+                  <p style={{ fontWeight: 600, marginBottom: '0.5rem', fontSize: '0.875rem' }}>Izvještaj</p>
                   <pre className="sd-contract-content">{reportData.sadrzaj}</pre>
                 </>
               )}

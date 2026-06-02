@@ -15,6 +15,7 @@ const {
   Izvjestaj,
   Evaluacija,
   Prisustvo,
+  EvaluacijaStudenta,
 } = require('../../infrastructure/database/models');
 const { resolveCoordinatorProfile } = require('./coordinatorProfile.service');
 const { createNotification } = require('./notifications.service');
@@ -707,9 +708,12 @@ async function generatePracticeReport(userId, practiceId, data = {}) {
     throw makeError('Praksa nije pronađena.', 404);
   }
 
-  const ocjena = Number(data.ocjena);
-  if (!Number.isInteger(ocjena) || ocjena < 1 || ocjena > 5) {
-    throw makeError('Ocjena mora biti broj od 1 do 5.');
+  const evalStudenta = await EvaluacijaStudenta.findOne({
+    where: { prijavaID: praksa.prijavaID },
+  });
+
+  if (!evalStudenta) {
+    throw makeError('Morate prvo evaluirati studenta prije generisanja izvještaja.');
   }
 
   const komentar = String(data.komentar || '').trim();
@@ -717,33 +721,22 @@ async function generatePracticeReport(userId, practiceId, data = {}) {
     throw makeError('Komentar je obavezan.');
   }
 
-  const [evaluacija] = await Evaluacija.findOrCreate({
-    where: {
-      praksaID: praksa.id,
-      tipEvaluacije: 'KOMPANIJA_OCJENJUJE_STUDENTA',
-    },
-    defaults: {
-      praksaID: praksa.id,
-      ocjena,
-      komentar,
-      tipEvaluacije: 'KOMPANIJA_OCJENJUJE_STUDENTA',
-      datumEvaluacije: new Date(),
-    },
+  const prisustva = await Prisustvo.findAll({
+    where: { praksaID: praksa.id },
+    order: [['datum', 'ASC']],
   });
 
-  if (!evaluacija.isNewRecord) {
-    await evaluacija.update({
-      ocjena,
-      komentar,
-      datumEvaluacije: new Date(),
-    });
-  }
+  const ukupnoEvidentirano = prisustva.length;
+  const prisutanDana = prisustva.filter((p) => p.status).length;
+  const ukupnoSati = prisustva
+    .filter((p) => p.status && p.brojSati)
+    .reduce((sum, p) => sum + p.brojSati, 0);
 
   const studentName = [praksa.student?.ime, praksa.student?.prezime].filter(Boolean).join(' ') || '-';
   const companyName = praksa.kompanija?.naziv || '-';
   const practiceName = praksa.oglas?.naziv || 'Praksa';
 
-  const sadrzaj = [
+  const sadrzajLinije = [
     'IZVJEŠTAJ O OBAVLJENOJ PRAKSI',
     '',
     `Student: ${studentName}`,
@@ -752,14 +745,41 @@ async function generatePracticeReport(userId, practiceId, data = {}) {
     `Praksa: ${practiceName}`,
     `Period: ${displayContractDate(praksa.datumPocetka)} - ${displayContractDate(praksa.datumKraja)}`,
     '',
+    'PRISUSTVO',
+    `Evidentiranih dana: ${ukupnoEvidentirano}`,
+    `Prisutnih dana: ${prisutanDana} / ${ukupnoEvidentirano}`,
+  ];
+
+  if (ukupnoSati > 0) {
+    sadrzajLinije.push(`Ukupno sati: ${ukupnoSati}`);
+  }
+
+  sadrzajLinije.push(
+    '',
     'EVALUACIJA STUDENTA',
-    `Ocjena: ${ocjena}/5`,
-    `Komentar kompanije: ${komentar}`,
+    `Tehničke vještine: ${evalStudenta.tehnickeVjestine}/5`,
+    `Komunikacija: ${evalStudenta.komunikacija}/5`,
+    `Radna etika: ${evalStudenta.radnaEtika}/5`,
+    `Inicijativa: ${evalStudenta.inicijativa}/5`,
+    `Timski rad: ${evalStudenta.timskiRad}/5`,
+    `Ukupna ocjena: ${evalStudenta.ukupnaOcjena}/5`,
+  );
+
+  if (evalStudenta.komentar) {
+    sadrzajLinije.push(`Komentar evaluacije: ${evalStudenta.komentar}`);
+  }
+
+  sadrzajLinije.push(
+    '',
+    'KOMENTAR KOMPANIJE',
+    komentar,
     '',
     `Datum generisanja: ${displayContractDate(new Date())}`,
     '',
     'Ovaj izvještaj služi kao potvrda o pohađanju studentske prakse.',
-  ].join('\n');
+  );
+
+  const sadrzaj = sadrzajLinije.join('\n');
 
   const [izvjestaj, created] = await Izvjestaj.findOrCreate({
     where: { praksaID: praksa.id },
@@ -773,16 +793,14 @@ async function generatePracticeReport(userId, practiceId, data = {}) {
   });
 
   if (!created) {
-    await izvjestaj.update({
-      sadrzaj,
-      datumGenerisanja: new Date(),
-    });
+    await izvjestaj.update({ sadrzaj, datumGenerisanja: new Date() });
   }
 
   return {
     created,
     izvjestaj,
-    evaluacija,
+    evaluacijaStudenta: evalStudenta,
+    prisustvo: { ukupnoEvidentirano, prisutanDana, ukupnoSati },
     sadrzaj,
   };
 }
@@ -811,16 +829,24 @@ async function getPracticeReport(userId, role, practiceId) {
     throw makeError('Izvještaj još nije generisan.', 404);
   }
 
-  const evaluacija = await Evaluacija.findOne({
-    where: {
-      praksaID: Number(practiceId),
-      tipEvaluacije: 'KOMPANIJA_OCJENJUJE_STUDENTA',
-    },
+  const evaluacijaStudenta = await EvaluacijaStudenta.findOne({
+    where: { prijavaID: praksa.prijavaID },
   });
+
+  const prisustva = await Prisustvo.findAll({
+    where: { praksaID: Number(practiceId) },
+  });
+
+  const ukupnoEvidentirano = prisustva.length;
+  const prisutanDana = prisustva.filter((p) => p.status).length;
+  const ukupnoSati = prisustva
+    .filter((p) => p.status && p.brojSati)
+    .reduce((sum, p) => sum + p.brojSati, 0);
 
   return {
     izvjestaj,
-    evaluacija,
+    evaluacijaStudenta,
+    prisustvo: { ukupnoEvidentirano, prisutanDana, ukupnoSati },
     sadrzaj: izvjestaj.sadrzaj,
   };
 }
