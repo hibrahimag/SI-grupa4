@@ -51,8 +51,6 @@ const FILTER_LIFECYCLE = {
   zavrsena: PRACTICE_LIFECYCLE.FINISHED,
 };
 
-const Aktivnost = require('../../infrastructure/database/models').Aktivnost;
-
 const PRACTICE_COMPLETION_NOTIFICATION_TIP = 'PRAKSA_ZAVRSENA';
 
 function makeError(message, status = 400) {
