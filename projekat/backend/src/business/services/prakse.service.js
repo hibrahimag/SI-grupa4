@@ -223,13 +223,13 @@ function mapPractice(praksa) {
     kompanija: kompanija ? { id: kompanija.id, naziv: kompanija.naziv } : null,
     student: student
       ? {
-          id: student.id,
-          ime: studentUser?.ime || null,
-          prezime: studentUser?.prezime || null,
-          index_number: student.index_number,
-          odsjek: student.Odsjek?.naziv || null,
-          fakultet: student.Fakultet?.naziv || null,
-        }
+        id: student.id,
+        ime: studentUser?.ime || null,
+        prezime: studentUser?.prezime || null,
+        index_number: student.index_number,
+        odsjek: student.Odsjek?.naziv || null,
+        fakultet: student.Fakultet?.naziv || null,
+      }
       : null,
   };
 }
@@ -568,7 +568,7 @@ async function createActivity(userId, practiceId, opis) {
     opis,
     datum: new Date(),
   });
-} 
+}
 
 
 async function getPracticeActivities(userId, role, practiceId) {
@@ -815,6 +815,11 @@ async function getPracticeReport(userId, role, practiceId) {
 
   if (role === 'COMPANY') {
     praksa = await getCompanyPracticeById(userId, practiceId);
+  }
+
+  if (role === 'COORDINATOR') {
+    const { prakse } = await getCoordinatorPractices(userId);
+    praksa = prakse.find((p) => p.id === Number(practiceId));
   }
 
   if (!praksa) {

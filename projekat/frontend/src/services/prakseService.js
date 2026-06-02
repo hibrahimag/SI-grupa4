@@ -165,41 +165,17 @@ export function downloadPracticeContract(contract) {
   URL.revokeObjectURL(url);
 }
 
+// NOVO — koristi apiRequest kao ostatak fajla:
 export async function getPracticeActivities(praksaId) {
-  const token = sessionStorage.getItem('token');
-
-  const res = await fetch(`/api/prakse/${praksaId}/aktivnosti`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw new Error(data.message || 'Greška pri učitavanju aktivnosti.');
-  }
-
-  return res.json();
+  return apiRequest(`/prakse/${encodeURIComponent(praksaId)}/aktivnosti`);
 }
 
+// NOVO:
 export async function createPracticeActivity(praksaId, opis) {
-  const token = sessionStorage.getItem('token');
-
-  const res = await fetch(`/api/prakse/${praksaId}/aktivnosti`, {
+  return apiRequest(`/prakse/${encodeURIComponent(praksaId)}/aktivnosti`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
     body: JSON.stringify({ opis }),
   });
-
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw new Error(data.message || 'Greška pri dodavanju aktivnosti.');
-  }
-
-  return res.json();
 }
 
 export async function getPracticeAttendance(praksaId) {
