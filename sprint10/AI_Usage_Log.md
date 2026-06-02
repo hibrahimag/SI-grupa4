@@ -2129,3 +2129,67 @@ Uklonjeni su svi nekonzistentni inline stilovi sa dugmadi unutar kartica oglasa.
 
 - `Notifikacija.student_id` je bio `NOT NULL` — promjena na `nullable` zahtijeva `ALTER TABLE` koji se izvršava automatski pri `sync({ alter: true })` pri sljedećem pokretanju servera; postoji rizik od kratkog downtime-a na prvom pokretu
 - `cd-listing-actions-wrapper .cd-btn` klasa pojavljuje se dva puta u `KoordinatorDashboard.css` (importovani stil iz drugog modula) — nije uzrokovalo funkcionalni problem, ali treba očistiti
+
+---
+
+## Unos 8 — Praćenje prisustva (PB20)
+
+| Polje | Sadržaj |
+|---|---|
+| **Datum** | 01.06.2026 |
+| **Sprint broj** | 10 |
+| **Alat** | ChatGPT (GPT-4.1) |
+| **Ko je koristio** | zpandza1 |
+| **Svrha korištenja** | Implementacija PB20 — evidentiranje i pregled prisustva studenta na praksi |
+
+**Kratak opis upita:**
+
+> Potrebno je implementirati funkcionalnost kojom kompanija može evidentirati prisustvo studenta na praksi (po danima), uz mogućnost da i student i kompanija imaju uvid u evidenciju prisustva. Student mora imati važeći ugovor i praksa mora biti u toku. Kako modelirati evidenciju prisustva i kontrolisati poslovna pravila?
+
+**Šta je AI predložio ili generisao:**
+
+- Novi entitet/model `Prisustvo` sa poljima:
+  - `id`
+  - `praksaId`
+  - `studentId`
+  - `datum`
+  - `status`
+  - `napomena` (opcionalno)
+- Backend validacije:
+  - Provjera da student ima status `ODOBRENA` ili `AKTIVNA` praksa
+  - Provjera da je trenutni datum unutar intervala `datumPocetka` i `datumKraja`
+  - Onemogućiti unos prisustva za datume u budućnosti
+  - Spriječiti dupli unos za isti datum (unique constraint na `studentId + datum`)
+- Endpointi:
+  - `POST /attendance` — evidentiranje prisustva
+  - `GET /attendance/:praksaId` — pregled prisustva za konkretnu praksu
+- Role-based pristup:
+  - Kompanija može unositi i uređivati prisustvo
+  - Student ima read-only pristup vlastitoj evidenciji
+- Opciju prikaza prisustva u tabelarnom obliku sa sumarnim prikazom (ukupan broj prisutnih dana)
+
+**Šta je tim prihvatio:**
+
+- Poseban entitet za evidenciju prisustva (umjesto čuvanja u okviru prijave)
+- Backend validaciju svih poslovnih pravila (ugovor potpisan, praksa aktivna)
+- Unique constraint za sprječavanje duplog unosa za isti datum
+- Read-only pristup studentu
+
+**Šta je tim izmijenio:**
+
+- Onemogućeno retroaktivno uređivanje prisustva nakon završetka prakse
+
+**Šta je tim odbacio:**
+
+- Evidentiranje prisustva na satnom nivou — odlučeno je da se vodi dnevna evidencija
+- Automatsko generisanje radnih dana (kompanija ručno unosi prisustvo)
+
+**Rizici, problemi ili greške:**
+
+- Potencijalna nekonzistentnost ako kompanija unese prisustvo za pogrešan datum
+- Potreba za dodatnim testiranjem graničnih datuma (prvi i posljednji dan prakse)
+- Zavisnost od PB24 (status i aktivnost prakse moraju biti ispravno implementirani)
+
+**Zaključak:**
+
+AI je korišten kao pomoć pri dizajnu modela podataka, definisanju poslovnih pravila i validacija. Konačna implementacija je prilagođena postojećoj arhitekturi sistema i zavisnostima unutar projekta.
