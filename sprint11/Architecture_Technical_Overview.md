@@ -1,4 +1,4 @@
-# 8. Architecture / Technical Overview — PraksaHub
+# 8. Architecture / Technical Overview - PraksaHub
 
 > Dokument namijenjen osobi koja prvi put gleda projekat i želi razumjeti tehničku strukturu sistema.
 
