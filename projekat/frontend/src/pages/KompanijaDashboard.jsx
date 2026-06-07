@@ -1242,8 +1242,8 @@ function PracticesShell() {
     try {
       const data = await getPracticeReport(praksa.id);
       setReportData(data);
-    } catch {
-      // no report yet — form stays empty
+    } catch (err) {
+      setReportError(err.message || 'Greška pri učitavanju podataka.');
     } finally {
       setReportLoading(false);
     }
@@ -1536,10 +1536,16 @@ function PracticesShell() {
                   <div className="cd-inline-message cd-inline-message--error">{reportError}</div>
                 )}
 
+                {reportData && !reportData.evaluacijaStudenta && (
+                  <div className="cd-inline-message cd-inline-message--error" style={{ marginBottom: '1rem' }}>
+                    Morate prvo evaluirati studenta prije generisanja izvještaja.
+                  </div>
+                )}
+
                 {reportData?.evaluacijaStudenta && (
-                  <div style={{ marginBottom: '1rem' }}>
+                  <div style={{ marginBottom: '1.25rem' }}>
                     <p className="cd-form-label" style={{ marginBottom: '0.5rem' }}>Evaluacija studenta</p>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 1rem', fontSize: '0.875rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '4px 1.5rem', fontSize: '0.875rem' }}>
                       <span>Tehničke vještine</span><span><strong>{reportData.evaluacijaStudenta.tehnickeVjestine}/5</strong></span>
                       <span>Komunikacija</span><span><strong>{reportData.evaluacijaStudenta.komunikacija}/5</strong></span>
                       <span>Radna etika</span><span><strong>{reportData.evaluacijaStudenta.radnaEtika}/5</strong></span>
@@ -1547,42 +1553,45 @@ function PracticesShell() {
                       <span>Timski rad</span><span><strong>{reportData.evaluacijaStudenta.timskiRad}/5</strong></span>
                       <span>Ukupna ocjena</span><span><strong>{reportData.evaluacijaStudenta.ukupnaOcjena}/5</strong></span>
                     </div>
+                    {reportData.evaluacijaStudenta.komentar && (
+                      <p style={{ marginTop: '0.5rem', fontSize: '0.875rem', fontStyle: 'italic' }}>
+                        {reportData.evaluacijaStudenta.komentar}
+                      </p>
+                    )}
                   </div>
                 )}
 
-                {reportData?.prisustvo && (
-                  <div style={{ marginBottom: '1rem' }}>
-                    <p className="cd-form-label" style={{ marginBottom: '0.5rem' }}>Prisustvo</p>
-                    <div style={{ fontSize: '0.875rem' }}>
-                      Prisutnih dana: <strong>{reportData.prisustvo.prisutanDana} / {reportData.prisustvo.ukupnoEvidentirano}</strong>
-                      {reportData.prisustvo.ukupnoSati > 0 && (
-                        <span style={{ marginLeft: '1rem' }}>Sati: <strong>{reportData.prisustvo.ukupnoSati}h</strong></span>
-                      )}
+                {reportData?.prisustvo && reportData.prisustvo.ukupnoEvidentirano > 0 && (
+                  <div style={{ marginBottom: '1.25rem', fontSize: '0.875rem' }}>
+                    <p className="cd-form-label" style={{ marginBottom: '0.25rem' }}>Prisustvo</p>
+                    <span>Prisutnih dana: <strong>{reportData.prisustvo.prisutanDana} / {reportData.prisustvo.ukupnoEvidentirano}</strong></span>
+                    {reportData.prisustvo.ukupnoSati > 0 && (
+                      <span style={{ marginLeft: '1rem' }}>Sati: <strong>{reportData.prisustvo.ukupnoSati}h</strong></span>
+                    )}
+                  </div>
+                )}
+
+                {reportData?.evaluacijaStudenta && (
+                  <form onSubmit={submitReport}>
+                    <label className="cd-form-field">
+                      <span className="cd-form-label">Komentar kompanije</span>
+                      <textarea
+                        className="cd-input"
+                        style={{ width: '100%', minHeight: '2.5rem', resize: 'vertical', boxSizing: 'border-box' }}
+                        rows={1}
+                        value={reportKomentar}
+                        onChange={(e) => setReportKomentar(e.target.value)}
+                        placeholder="Unesite komentar o studentu i obavljenoj praksi..."
+                        required
+                      />
+                    </label>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.75rem' }}>
+                      <button type="submit" className="cd-btn cd-btn--primary" disabled={reportSaving}>
+                        {reportSaving ? 'Generisanje...' : reportData.izvjestaj ? 'Ažuriraj izvještaj' : 'Generiši izvještaj'}
+                      </button>
                     </div>
-                  </div>
+                  </form>
                 )}
-
-                <form className="cd-attendance-form" onSubmit={submitReport}>
-                  <label className="cd-form-field">
-                    <span className="cd-form-label">Komentar kompanije</span>
-                    <textarea
-                      className="cd-input"
-                      rows={4}
-                      value={reportKomentar}
-                      onChange={(e) => setReportKomentar(e.target.value)}
-                      placeholder="Unesite komentar o studentu i obavljenoj praksi..."
-                      required
-                    />
-                  </label>
-                  <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                    <button type="submit" className="cd-btn cd-btn--primary" disabled={reportSaving}>
-                      {reportSaving ? 'Generisanje...' : reportData ? 'Ažuriraj izvještaj' : 'Generiši izvještaj'}
-                    </button>
-                    <button type="button" className="cd-btn cd-btn--secondary" onClick={() => setReportModal(null)}>
-                      Zatvori
-                    </button>
-                  </div>
-                </form>
 
                 {reportData?.sadrzaj && (
                   <div style={{ marginTop: '1.5rem' }}>

@@ -1226,8 +1226,8 @@ function MyPracticesPanel({ practices, loading, error, filter, onFilterChange, e
     try {
       const data = await getPracticeReport(praksa.id);
       setReportData(data);
-    } catch {
-      setReportData(null);
+    } catch (err) {
+      console.error(err);
     } finally {
       setReportLoading(false);
     }
@@ -1506,10 +1506,10 @@ function MyPracticesPanel({ practices, loading, error, filter, onFilterChange, e
               {reportLoading ? (
                 <p>Učitavanje izvještaja...</p>
               ) : !reportData ? (
-                <p>Izvještaj još nije generisan od strane kompanije.</p>
+                <p>Greška pri učitavanju podataka.</p>
               ) : (
                 <>
-                  {reportData.evaluacijaStudenta && (
+                  {reportData.evaluacijaStudenta ? (
                     <div style={{ marginBottom: '1.25rem' }}>
                       <p style={{ fontWeight: 600, marginBottom: '0.5rem', fontSize: '0.875rem' }}>Evaluacija kompanije</p>
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '4px 1.5rem', fontSize: '0.875rem' }}>
@@ -1521,12 +1521,16 @@ function MyPracticesPanel({ practices, loading, error, filter, onFilterChange, e
                         <span>Ukupna ocjena</span><span><strong>{reportData.evaluacijaStudenta.ukupnaOcjena}/5</strong></span>
                       </div>
                       {reportData.evaluacijaStudenta.komentar && (
-                        <p style={{ marginTop: '0.5rem', fontSize: '0.875rem' }}>{reportData.evaluacijaStudenta.komentar}</p>
+                        <p style={{ marginTop: '0.5rem', fontSize: '0.875rem', fontStyle: 'italic' }}>
+                          {reportData.evaluacijaStudenta.komentar}
+                        </p>
                       )}
                     </div>
+                  ) : (
+                    <p style={{ fontSize: '0.875rem', marginBottom: '1rem' }}>Kompanija još nije evaluirala vašu praksu.</p>
                   )}
 
-                  {reportData.prisustvo && (
+                  {reportData.prisustvo && reportData.prisustvo.ukupnoEvidentirano > 0 && (
                     <div style={{ marginBottom: '1.25rem', fontSize: '0.875rem' }}>
                       <p style={{ fontWeight: 600, marginBottom: '0.25rem' }}>Prisustvo</p>
                       <span>Prisutnih dana: <strong>{reportData.prisustvo.prisutanDana} / {reportData.prisustvo.ukupnoEvidentirano}</strong></span>
@@ -1536,8 +1540,14 @@ function MyPracticesPanel({ practices, loading, error, filter, onFilterChange, e
                     </div>
                   )}
 
-                  <p style={{ fontWeight: 600, marginBottom: '0.5rem', fontSize: '0.875rem' }}>Izvještaj</p>
-                  <pre className="sd-contract-content">{reportData.sadrzaj}</pre>
+                  {reportData.sadrzaj ? (
+                    <>
+                      <p style={{ fontWeight: 600, marginBottom: '0.5rem', fontSize: '0.875rem' }}>Generisani izvještaj</p>
+                      <pre className="sd-contract-content">{reportData.sadrzaj}</pre>
+                    </>
+                  ) : (
+                    <p style={{ fontSize: '0.875rem', color: 'var(--color-muted, #888)' }}>Izvještaj još nije generisan od strane kompanije.</p>
+                  )}
                 </>
               )}
               <div className="sd-contract-actions">

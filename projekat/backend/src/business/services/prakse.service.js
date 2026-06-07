@@ -18,7 +18,7 @@ const {
   EvaluacijaStudenta,
 } = require('../../infrastructure/database/models');
 const { resolveCoordinatorProfile } = require('./coordinatorProfile.service');
-const { createNotification } = require('./notifications.service');
+const { createNotification, createNotificationForKoordinator } = require('./notifications.service');
 const {
   getOrCreatePreferences,
   canSendInApp,
@@ -422,6 +422,17 @@ async function getCoordinatorPractices(userId, filter = 'all') {
   return { prakse };
 }
 
+async function getCoordinatorPracticeById(userId, practiceId) {
+  const koordinator = await resolveCoordinatorProfile(userId);
+  if (!koordinator) throw new Error('KOORDINATOR_NOT_FOUND');
+  const prakse = await loadPractices({
+    practiceWhere: { id: practiceId },
+    studentWhere: { fakultetID: koordinator.fakultetID },
+    filter: 'all',
+  });
+  return prakse[0] || null;
+}
+
 async function getCoordinatorPracticeSummary(userId) {
   const { prakse } = await getCoordinatorPractices(userId, 'all');
   return {
@@ -781,11 +792,16 @@ async function generatePracticeReport(userId, practiceId, data = {}) {
 
   const sadrzaj = sadrzajLinije.join('\n');
 
+  const prijava = await PrijavaNaPraksu.findOne({
+    where: { id: praksa.prijavaID },
+    attributes: ['koordinatorID'],
+  });
+
   const [izvjestaj, created] = await Izvjestaj.findOrCreate({
     where: { praksaID: praksa.id },
     defaults: {
       praksaID: praksa.id,
-      koordinatorID: null,
+      koordinatorID: prijava?.koordinatorID,
       sadrzaj,
       dokumentUrl: null,
       datumGenerisanja: new Date(),
@@ -794,6 +810,24 @@ async function generatePracticeReport(userId, practiceId, data = {}) {
 
   if (!created) {
     await izvjestaj.update({ sadrzaj, datumGenerisanja: new Date() });
+  }
+
+  try {
+    const tip = created ? 'IZVJESTAJ' : 'IZVJESTAJ_AZURIRANO';
+    const naslov = created ? 'Izvještaj o praksi je generisan' : 'Izvještaj o praksi je ažuriran';
+    const poruka = created
+      ? `Kompanija ${companyName} je generisala izvještaj za praksu: ${practiceName}.`
+      : `Kompanija ${companyName} je ažurirala izvještaj za praksu: ${practiceName}.`;
+
+    if (praksa.student?.id) {
+      await createNotification(praksa.student.id, praksa.prijavaID, tip, naslov, poruka);
+    }
+
+    if (prijava?.koordinatorID) {
+      await createNotificationForKoordinator(prijava.koordinatorID, praksa.prijavaID, tip, naslov, poruka);
+    }
+  } catch (notifErr) {
+    console.error('Greška pri slanju notifikacije za izvještaj:', notifErr.message);
   }
 
   return {
@@ -817,25 +851,19 @@ async function getPracticeReport(userId, role, practiceId) {
     praksa = await getCompanyPracticeById(userId, practiceId);
   }
 
+  if (role === 'COORDINATOR') {
+    praksa = await getCoordinatorPracticeById(userId, practiceId);
+  }
+
   if (!praksa) {
     throw makeError('Praksa nije pronađena.', 404);
   }
 
-  const izvjestaj = await Izvjestaj.findOne({
-    where: { praksaID: Number(practiceId) },
-  });
-
-  if (!izvjestaj) {
-    throw makeError('Izvještaj još nije generisan.', 404);
-  }
-
-  const evaluacijaStudenta = await EvaluacijaStudenta.findOne({
-    where: { prijavaID: praksa.prijavaID },
-  });
-
-  const prisustva = await Prisustvo.findAll({
-    where: { praksaID: Number(practiceId) },
-  });
+  const [izvjestaj, evaluacijaStudenta, prisustva] = await Promise.all([
+    Izvjestaj.findOne({ where: { praksaID: Number(practiceId) } }),
+    EvaluacijaStudenta.findOne({ where: { prijavaID: praksa.prijavaID } }),
+    Prisustvo.findAll({ where: { praksaID: Number(practiceId) } }),
+  ]);
 
   const ukupnoEvidentirano = prisustva.length;
   const prisutanDana = prisustva.filter((p) => p.status).length;
@@ -844,10 +872,10 @@ async function getPracticeReport(userId, role, practiceId) {
     .reduce((sum, p) => sum + p.brojSati, 0);
 
   return {
-    izvjestaj,
-    evaluacijaStudenta,
+    izvjestaj: izvjestaj || null,
+    evaluacijaStudenta: evaluacijaStudenta || null,
     prisustvo: { ukupnoEvidentirano, prisutanDana, ukupnoSati },
-    sadrzaj: izvjestaj.sadrzaj,
+    sadrzaj: izvjestaj?.sadrzaj || null,
   };
 }
 
@@ -862,6 +890,7 @@ module.exports = {
   getCompanyPracticeById,
   getPracticeContract,
   getCoordinatorPractices,
+  getCoordinatorPracticeById,
   getCoordinatorPracticeSummary,
   backfillAcceptedPractices,
   completeExpiredPractices,

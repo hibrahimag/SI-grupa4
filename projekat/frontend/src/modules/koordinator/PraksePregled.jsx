@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import {
   getCoordinatorPractices,
   getPracticeActivities,
+  getPracticeReport,
 } from '../../services/prakseService';
 import { formatDate } from '../../data/mockPrakse';
 import {
@@ -34,6 +35,9 @@ export default function PraksePregled() {
   const [activitiesModal, setActivitiesModal] = useState(null);
   const [activities, setActivities] = useState([]);
   const [activitiesLoading, setActivitiesLoading] = useState(false);
+  const [reportModal, setReportModal] = useState(null);
+  const [reportData, setReportData] = useState(null);
+  const [reportLoading, setReportLoading] = useState(false);
 
 
   useEffect(() => {
@@ -59,18 +63,31 @@ export default function PraksePregled() {
 
 
   async function openActivities(praksa) {
-  setActivitiesModal(praksa);
-  setActivitiesLoading(true);
-
-  try {
-    const data = await getPracticeActivities(praksa.id);
-    setActivities(data);
-  } catch {
-    setActivities([]);
-  } finally {
-    setActivitiesLoading(false);
+    setActivitiesModal(praksa);
+    setActivitiesLoading(true);
+    try {
+      const data = await getPracticeActivities(praksa.id);
+      setActivities(data);
+    } catch {
+      setActivities([]);
+    } finally {
+      setActivitiesLoading(false);
+    }
   }
-}
+
+  async function openReport(praksa) {
+    setReportModal(praksa);
+    setReportData(null);
+    setReportLoading(true);
+    try {
+      const data = await getPracticeReport(praksa.id);
+      setReportData(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setReportLoading(false);
+    }
+  }
 
   return (
     <div>
@@ -115,6 +132,7 @@ export default function PraksePregled() {
                 <th>Datum završetka</th>
                 <th>Status</th>
                 <th>Aktivnosti</th>
+                <th>Izvještaj</th>
               </tr>
             </thead>
             <tbody>
@@ -142,14 +160,15 @@ export default function PraksePregled() {
                   <td>{formatDate(praksa.datumKraja)}</td>
                   <td>{lifecycleBadge(praksa.lifecycleStatus)}</td>
                   <td>
-  <button
-    type="button"
-    className="kd-select"
-    onClick={() => openActivities(praksa)}
-  >
-    Aktivnosti
-  </button>
-</td>
+                    <button type="button" className="kd-select" onClick={() => openActivities(praksa)}>
+                      Aktivnosti
+                    </button>
+                  </td>
+                  <td>
+                    <button type="button" className="kd-select" onClick={() => openReport(praksa)}>
+                      Izvještaj
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -181,6 +200,67 @@ export default function PraksePregled() {
     </div>
   </div>
 )}
+
+      {reportModal && (
+        <div className="cd-modal-overlay" role="dialog" aria-modal="true" onClick={() => setReportModal(null)}>
+          <div className="cd-modal-sheet" onClick={(e) => e.stopPropagation()}>
+            <button type="button" className="cd-modal-close" onClick={() => setReportModal(null)} aria-label="Zatvori">
+              &times;
+            </button>
+            <h2 className="cd-contract-title">
+              Izvještaj — {reportModal.student?.ime} {reportModal.student?.prezime}
+            </h2>
+
+            {reportLoading ? (
+              <p>Učitavanje...</p>
+            ) : !reportData ? (
+              <p>Greška pri učitavanju podataka.</p>
+            ) : (
+              <>
+                {reportData.evaluacijaStudenta ? (
+                  <div style={{ marginBottom: '1.25rem' }}>
+                    <p className="cd-form-label" style={{ marginBottom: '0.5rem' }}>Evaluacija studenta</p>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '4px 1.5rem', fontSize: '0.875rem' }}>
+                      <span>Tehničke vještine</span><span><strong>{reportData.evaluacijaStudenta.tehnickeVjestine}/5</strong></span>
+                      <span>Komunikacija</span><span><strong>{reportData.evaluacijaStudenta.komunikacija}/5</strong></span>
+                      <span>Radna etika</span><span><strong>{reportData.evaluacijaStudenta.radnaEtika}/5</strong></span>
+                      <span>Inicijativa</span><span><strong>{reportData.evaluacijaStudenta.inicijativa}/5</strong></span>
+                      <span>Timski rad</span><span><strong>{reportData.evaluacijaStudenta.timskiRad}/5</strong></span>
+                      <span>Ukupna ocjena</span><span><strong>{reportData.evaluacijaStudenta.ukupnaOcjena}/5</strong></span>
+                    </div>
+                    {reportData.evaluacijaStudenta.komentar && (
+                      <p style={{ marginTop: '0.5rem', fontSize: '0.875rem', fontStyle: 'italic' }}>
+                        {reportData.evaluacijaStudenta.komentar}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <p style={{ fontSize: '0.875rem', marginBottom: '1rem' }}>Kompanija još nije evaluirala studenta.</p>
+                )}
+
+                {reportData.prisustvo && reportData.prisustvo.ukupnoEvidentirano > 0 && (
+                  <div style={{ marginBottom: '1.25rem', fontSize: '0.875rem' }}>
+                    <p className="cd-form-label" style={{ marginBottom: '0.25rem' }}>Prisustvo</p>
+                    <span>Prisutnih dana: <strong>{reportData.prisustvo.prisutanDana} / {reportData.prisustvo.ukupnoEvidentirano}</strong></span>
+                    {reportData.prisustvo.ukupnoSati > 0 && (
+                      <span style={{ marginLeft: '1rem' }}>Sati: <strong>{reportData.prisustvo.ukupnoSati}h</strong></span>
+                    )}
+                  </div>
+                )}
+
+                {reportData.sadrzaj ? (
+                  <>
+                    <p className="cd-form-label" style={{ marginBottom: '0.5rem' }}>Generisani izvještaj</p>
+                    <pre className="cd-contract-content">{reportData.sadrzaj}</pre>
+                  </>
+                ) : (
+                  <p style={{ fontSize: '0.875rem', color: 'var(--color-muted, #888)' }}>Izvještaj još nije generisan od strane kompanije.</p>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
