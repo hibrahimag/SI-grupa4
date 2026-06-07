@@ -154,9 +154,14 @@ describe('POST /api/applications', () => {
   });
 
   // Testira: dupla prijava na isti oglas vraća 409
-  // Ulaz: POST /api/applications s istim oglasID kao u prethodnom testu
+  // Ulaz: POST /api/applications s istim oglasID dva puta u istom testu
   // Očekivani izlaz: HTTP 409
   test('409 — dupla prijava na isti oglas', async () => {
+    await request(app)
+      .post('/api/applications')
+      .set('Authorization', `Bearer ${studentToken}`)
+      .send({ oglasID: oglas.id });
+
     const res = await request(app)
       .post('/api/applications')
       .set('Authorization', `Bearer ${studentToken}`)
