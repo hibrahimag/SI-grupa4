@@ -219,6 +219,7 @@ function mapPractice(praksa) {
     koordinatorStatus: prijava?.koordinatorStatus || null,
     kompanijaStatus: prijava?.kompanijaStatus || null,
     studentStatus: prijava?.studentStatus || null,
+    koordinatorID: prijava?.koordinatorID || null,
     oglas: oglas ? { id: oglas.id, naziv: oglas.naziv } : null,
     kompanija: kompanija ? { id: kompanija.id, naziv: kompanija.naziv } : null,
     student: student
@@ -289,7 +290,7 @@ async function loadPractices({ practiceWhere = {}, studentWhere = {}, oglasWhere
       model: PrijavaNaPraksu,
       required: true,
       where: approvedAcceptedWhere(),
-      attributes: ['id', 'status', 'koordinatorStatus', 'kompanijaStatus', 'studentStatus'],
+      attributes: ['id', 'status', 'koordinatorID', 'koordinatorStatus', 'kompanijaStatus', 'studentStatus'],
       include: [
         {
           model: Student,
@@ -785,7 +786,7 @@ async function generatePracticeReport(userId, practiceId, data = {}) {
     where: { praksaID: praksa.id },
     defaults: {
       praksaID: praksa.id,
-      koordinatorID: null,
+      koordinatorID: praksa.koordinatorID,
       sadrzaj,
       dokumentUrl: null,
       datumGenerisanja: new Date(),

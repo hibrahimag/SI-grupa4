@@ -201,7 +201,10 @@ async function getClosedListings() {
   // Javni pregled zatvorenih oglasa (ne prikazujemo arhivirane)
   return Oglas.findAll({
     where: {
-      status: 'ZATVOREN',
+      [Op.or]: [
+        { status: 'ZATVOREN' },
+        { status: 'AKTIVAN', rokPrijave: { [Op.lt]: new Date() } },
+      ],
     },
     include: [{
       model: Kompanija,

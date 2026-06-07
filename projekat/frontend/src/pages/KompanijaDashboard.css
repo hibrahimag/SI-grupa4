@@ -1829,8 +1829,9 @@
 /* ── Statistics view ── */
 .cd-stats-grid--stat {
   margin-bottom: var(--space-6);
+  margin-top: var(--space-4);
+  padding: 0 var(--space-4);
 }
-
 .cd-stats-panels {
   display: flex;
   flex-direction: column;
