@@ -3,6 +3,7 @@ import {
   getCoordinatorPractices,
   getPracticeActivities,
   getPracticeReport,
+  downloadPracticeContract,
 } from '../../services/prakseService';
 import { formatDate } from '../../data/mockPrakse';
 import {
@@ -39,7 +40,6 @@ export default function PraksePregled() {
   const [reportData, setReportData] = useState(null);
   const [reportLoading, setReportLoading] = useState(false);
 
-
   useEffect(() => {
     let mounted = true;
     setLoading(true);
@@ -60,7 +60,6 @@ export default function PraksePregled() {
       mounted = false;
     };
   }, [filter]);
-
 
   async function openActivities(praksa) {
     setActivitiesModal(praksa);
@@ -177,29 +176,29 @@ export default function PraksePregled() {
       )}
 
       {activitiesModal && (
-  <div className="cd-modal-overlay" onClick={() => setActivitiesModal(null)}>
-    <div className="cd-modal-sheet" onClick={(e) => e.stopPropagation()}>
-      <h2>Aktivnosti studenta</h2>
+        <div className="cd-modal-overlay" onClick={() => setActivitiesModal(null)}>
+          <div className="cd-modal-sheet" onClick={(e) => e.stopPropagation()}>
+            <h2>Aktivnosti studenta</h2>
 
-      {activitiesLoading ? (
-        <p>Učitavanje aktivnosti...</p>
-      ) : activities.length === 0 ? (
-        <p>Nema evidentiranih aktivnosti.</p>
-      ) : (
-        activities.map((a) => (
-          <div key={a.id} style={{ padding: '12px 0', borderBottom: '1px solid #ddd' }}>
-            <strong>{new Date(a.datum).toLocaleDateString()}</strong>
-            <p>{a.opis}</p>
+            {activitiesLoading ? (
+              <p>Učitavanje aktivnosti...</p>
+            ) : activities.length === 0 ? (
+              <p>Nema evidentiranih aktivnosti.</p>
+            ) : (
+              activities.map((a) => (
+                <div key={a.id} style={{ padding: '12px 0', borderBottom: '1px solid #ddd' }}>
+                  <strong>{new Date(a.datum).toLocaleDateString()}</strong>
+                  <p>{a.opis}</p>
+                </div>
+              ))
+            )}
+
+            <button className="kd-select" onClick={() => setActivitiesModal(null)}>
+              Zatvori
+            </button>
           </div>
-        ))
+        </div>
       )}
-
-      <button className="kd-select" onClick={() => setActivitiesModal(null)}>
-        Zatvori
-      </button>
-    </div>
-  </div>
-)}
 
       {reportModal && (
         <div className="cd-modal-overlay" role="dialog" aria-modal="true" onClick={() => setReportModal(null)}>
@@ -252,6 +251,18 @@ export default function PraksePregled() {
                   <>
                     <p className="cd-form-label" style={{ marginBottom: '0.5rem' }}>Generisani izvještaj</p>
                     <pre className="cd-contract-content">{reportData.sadrzaj}</pre>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
+                      <button
+                        type="button"
+                        className="cd-btn cd-btn--secondary"
+                        onClick={() => downloadPracticeContract({
+                          sadrzaj: reportData.sadrzaj,
+                          ugovor: { broj: `izvjestaj-${reportModal?.id}` }
+                        })}
+                      >
+                        Preuzmi izvještaj (PDF)
+                      </button>
+                    </div>
                   </>
                 ) : (
                   <p style={{ fontSize: '0.875rem', color: 'var(--color-muted, #888)' }}>Izvještaj još nije generisan od strane kompanije.</p>
@@ -277,7 +288,7 @@ function IconEmpty() {
 function IconWarning() {
   return (
     <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--color-warning)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: 8 }}>
-      <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+      <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 00-3.42 0z" />
       <line x1="12" y1="9" x2="12" y2="13" />
       <line x1="12" y1="17" x2="12.01" y2="17" />
     </svg>

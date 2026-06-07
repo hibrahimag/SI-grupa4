@@ -1554,6 +1554,18 @@ function MyPracticesPanel({ practices, loading, error, filter, onFilterChange, e
                 <button type="button" className="sd-btn-modal-cancel" onClick={() => setReportModal(null)}>
                   Zatvori
                 </button>
+                {reportData?.sadrzaj && (
+                  <button
+                    type="button"
+                    className="sd-btn-apply"
+                    onClick={() => downloadPracticeContract({
+                      sadrzaj: reportData.sadrzaj,
+                      ugovor: { broj: `izvjestaj-${reportModal?.id}` }
+                    })}
+                  >
+                    Preuzmi izvještaj (PDF)
+                  </button>
+                )}
               </div>
             </div>
           </div>

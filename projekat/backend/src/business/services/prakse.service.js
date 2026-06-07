@@ -219,17 +219,18 @@ function mapPractice(praksa) {
     koordinatorStatus: prijava?.koordinatorStatus || null,
     kompanijaStatus: prijava?.kompanijaStatus || null,
     studentStatus: prijava?.studentStatus || null,
+    koordinatorID: prijava?.koordinatorID || null,
     oglas: oglas ? { id: oglas.id, naziv: oglas.naziv } : null,
     kompanija: kompanija ? { id: kompanija.id, naziv: kompanija.naziv } : null,
     student: student
       ? {
-          id: student.id,
-          ime: studentUser?.ime || null,
-          prezime: studentUser?.prezime || null,
-          index_number: student.index_number,
-          odsjek: student.Odsjek?.naziv || null,
-          fakultet: student.Fakultet?.naziv || null,
-        }
+        id: student.id,
+        ime: studentUser?.ime || null,
+        prezime: studentUser?.prezime || null,
+        index_number: student.index_number,
+        odsjek: student.Odsjek?.naziv || null,
+        fakultet: student.Fakultet?.naziv || null,
+      }
       : null,
   };
 }
@@ -289,7 +290,7 @@ async function loadPractices({ practiceWhere = {}, studentWhere = {}, oglasWhere
       model: PrijavaNaPraksu,
       required: true,
       where: approvedAcceptedWhere(),
-      attributes: ['id', 'status', 'koordinatorStatus', 'kompanijaStatus', 'studentStatus'],
+      attributes: ['id', 'status', 'koordinatorID', 'koordinatorStatus', 'kompanijaStatus', 'studentStatus'],
       include: [
         {
           model: Student,
@@ -579,7 +580,7 @@ async function createActivity(userId, practiceId, opis) {
     opis,
     datum: new Date(),
   });
-} 
+}
 
 
 async function getPracticeActivities(userId, role, practiceId) {
