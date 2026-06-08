@@ -5,12 +5,6 @@ import { useTheme } from "../context/ThemeContext";
 import "./PublicListingsPage.css";
 import { apiRequest } from "../services/api";
 
-/* ─── Constants ─────────────────────────────────────────────────────── */
-const OBLASTI = [
-  "Programiranje & IT", "Medicina & Zdravstvo", "Biznis & Marketing",
-  "Inženjering", "Dizajn & Kreativa", "Pravo & Uprava", "Ostalo",
-];
-
 /* ─── Helpers ───────────────────────────────────────────────────────── */
 function daysUntil(dateStr) {
   return Math.ceil((new Date(dateStr) - new Date()) / (1000 * 60 * 60 * 24));
@@ -177,14 +171,13 @@ export default function PublicListingsPage() {
   const [showModal, setShowModal] = useState(false);
 
   const [search, setSearch] = useState("");
-  const [oblast, setOblast] = useState([]);
-  const [placena, setPlacena] = useState("");
   const [tip, setTip] = useState([]);
   const [filterTehs, setFilterTehs] = useState([]);
   const [filterTrajanja, setFilterTrajanja] = useState([]);
   const [sortBy, setSortBy] = useState("najnovije");
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
-  const [sectionsOpen, setSectionsOpen] = useState({ oblast: false, tip: false, placena: false, tech: false, duration: false, sort: false });
+  const [sectionsOpen, setSectionsOpen] = useState({ tip: false, tech: false, duration: false, sort: false });
 
   useEffect(() => {
     if (user) { navigate("/listings", { replace: true }); return; }
@@ -205,8 +198,6 @@ export default function PublicListingsPage() {
     const q = search.toLowerCase();
     if (search && !o.naziv?.toLowerCase().includes(q) && !o.opis?.toLowerCase().includes(q)
       && !o.Kompanija?.naziv?.toLowerCase().includes(q)) return false;
-    if (oblast.length && !oblast.includes(o.oblast)) return false;
-    if (placena && !(placena === "da" ? o.placenaPraksa : !o.placenaPraksa)) return false;
     if (tip.length && !tip.includes(o.tip)) return false;
     if (filterTehs.length && !filterTehs.some(t => (o.tehnologije || []).includes(t))) return false;
     if (filterTrajanja.length && !filterTrajanja.some(range => {
@@ -227,8 +218,8 @@ export default function PublicListingsPage() {
     return 0;
   });
 
-  const hasFilters = !!(search || oblast.length || placena || tip.length || filterTehs.length || filterTrajanja.length || sortBy !== 'najnovije');
-  const clear = () => { setSearch(""); setOblast([]); setPlacena(""); setTip([]); setFilterTehs([]); setFilterTrajanja([]); setSortBy("najnovije"); };
+  const hasFilters = !!(search || tip.length || filterTehs.length || filterTrajanja.length || sortBy !== 'najnovije');
+  const clear = () => { setSearch(""); setTip([]); setFilterTehs([]); setFilterTrajanja([]); setSortBy("najnovije"); };
   const toggle = key => setSectionsOpen(p => ({ ...p, [key]: !p[key] }));
 
   return (
@@ -268,8 +259,14 @@ export default function PublicListingsPage() {
       <div className="pl-layout">
 
         {/* ── Always-visible Sidebar ── */}
-        <aside className="pl-sidebar">
+        <aside className={`pl-sidebar${mobileFiltersOpen ? " mobile-open" : ""}`}>
           <div className="pl-sidebar-inner">
+            <button className="pl-mobile-filter-close" onClick={() => setMobileFiltersOpen(false)}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+              Zatvori filtere
+            </button>
             <div className="pl-sidebar-content">
 
               {/* Count */}
@@ -441,9 +438,18 @@ export default function PublicListingsPage() {
                   ? <><strong>{filtered.length}</strong> rezultata za primijenjene filtere</>
                   : <><strong>{filtered.length}</strong> aktivnih oglasa</>}
               </p>
-              {hasFilters && filtered.length !== oglasi.length && (
-                <button className="pl-show-all" onClick={clear}>Prikaži sve</button>
-              )}
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                {hasFilters && filtered.length !== oglasi.length && (
+                  <button className="pl-show-all" onClick={clear}>Prikaži sve</button>
+                )}
+                <button className="pl-mobile-filter-btn" onClick={() => setMobileFiltersOpen(true)}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="4" y1="6" x2="20" y2="6" /><line x1="8" y1="12" x2="16" y2="12" /><line x1="11" y1="18" x2="13" y2="18" />
+                  </svg>
+                  Filteri
+                  {hasFilters && <span className="pl-mobile-filter-btn-badge">{[tip, filterTehs, filterTrajanja].flat().length + (sortBy !== 'najnovije' ? 1 : 0)}</span>}
+                </button>
+              </div>
             </div>
           )}
 
