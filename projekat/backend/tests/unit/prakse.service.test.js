@@ -7,10 +7,13 @@ jest.mock('../../src/infrastructure/database/models', () => ({
   Fakultet: {},
   Odsjek: {},
   Oglas: {},
-  PrijavaNaPraksu: { findAll: jest.fn() },
+  PrijavaNaPraksu: { findAll: jest.fn(), findOne: jest.fn() },
   Praksa: { findOne: jest.fn(), findAll: jest.fn(), create: jest.fn() },
   Ugovor: { findOne: jest.fn(), create: jest.fn() },
   Prisustvo: { findAll: jest.fn(), findOrCreate: jest.fn() },
+  Aktivnost: { create: jest.fn(), findAll: jest.fn() },
+  Izvjestaj: { findOne: jest.fn(), findOrCreate: jest.fn() },
+  EvaluacijaStudenta: { findOne: jest.fn() },
 }));
 
 jest.mock('../../src/business/services/coordinatorProfile.service', () => ({
@@ -19,6 +22,7 @@ jest.mock('../../src/business/services/coordinatorProfile.service', () => ({
 
 jest.mock('../../src/business/services/notifications.service', () => ({
   createNotification: jest.fn(),
+  createNotificationForKoordinator: jest.fn(),
 }));
 
 jest.mock('../../src/business/services/notificationPreferences.service', () => ({
@@ -32,6 +36,7 @@ jest.mock('../../src/business/services/email.service', () => ({
   sendPraksaZavrsenaCompanyEmail: jest.fn(),
 }));
 
+const { resolveCoordinatorProfile } = require('../../src/business/services/coordinatorProfile.service');
 const db = require('../../src/infrastructure/database/models');
 const notifications = require('../../src/business/services/notifications.service');
 const notificationPreferences = require('../../src/business/services/notificationPreferences.service');
@@ -42,9 +47,17 @@ const {
   ensurePracticeForApplication,
   completeExpiredPractices,
   getStudentPractices,
+  getCompanyPractices,
+  getCoordinatorPractices,
+  getCoordinatorPracticeSummary,
+  backfillAcceptedPractices,
   getPracticeContract,
+  createActivity,
+  getPracticeActivities,
   getPracticeAttendance,
   upsertPracticeAttendance,
+  generatePracticeReport,
+  getPracticeReport,
 } = require('../../src/business/services/prakse.service');
 
 beforeEach(() => jest.clearAllMocks());
@@ -369,6 +382,156 @@ describe('getPracticeContract', () => {
       .rejects.toMatchObject({ message: 'Praksa nije pronađena.', status: 404 });
     expect(db.Ugovor.findOne).not.toHaveBeenCalled();
   });
+
+  test('baca 404 za nevalidan ID prakse', async () => {
+    await expect(getPracticeContract(1, 'STUDENT', 'abc'))
+      .rejects.toMatchObject({ message: 'Praksa nije pronađena.', status: 404 });
+  });
+
+  test('baca 403 za nedozvoljenu rolu', async () => {
+    await expect(getPracticeContract(1, 'ADMIN', 1))
+      .rejects.toMatchObject({ message: 'Nemate dozvolu za pristup ovom resursu.', status: 403 });
+  });
+});
+
+describe('getCompanyPractices', () => {
+  test('vraća prakse kompanije', async () => {
+    db.User.findByPk.mockResolvedValue({ id: 2, role: 'COMPANY' });
+    db.Kompanija.findOne.mockResolvedValue({ id: 5 });
+    db.Praksa.findAll.mockResolvedValue([makeConfirmedPracticeRow()]);
+
+    const result = await getCompanyPractices(2, 'all');
+
+    expect(result.prakse).toHaveLength(1);
+    expect(result.prakse[0].kompanija).toMatchObject({ id: 5, naziv: 'Firma d.o.o.' });
+  });
+});
+
+describe('getCoordinatorPractices', () => {
+  test('vraća prakse studenata s fakulteta koordinatora', async () => {
+    resolveCoordinatorProfile.mockResolvedValue({ id: 3, fakultetID: 7 });
+    db.Praksa.findAll.mockResolvedValue([makeConfirmedPracticeRow()]);
+
+    const result = await getCoordinatorPractices(3, 'all');
+
+    expect(result.prakse).toHaveLength(1);
+    expect(resolveCoordinatorProfile).toHaveBeenCalledWith(3);
+  });
+
+  test('baca KOORDINATOR_NOT_FOUND kada profil ne postoji', async () => {
+    resolveCoordinatorProfile.mockResolvedValue(null);
+
+    await expect(getCoordinatorPractices(99))
+      .rejects.toThrow('KOORDINATOR_NOT_FOUND');
+  });
+});
+
+describe('getCoordinatorPracticeSummary', () => {
+  test('broji aktivne i završene prakse', async () => {
+    resolveCoordinatorProfile.mockResolvedValue({ id: 3, fakultetID: 7 });
+    db.Praksa.findAll.mockResolvedValue([
+      {
+        ...makeConfirmedPracticeRow(),
+        datumPocetka: new Date('2026-06-01T00:00:00.000Z'),
+        datumKraja: new Date('2026-06-30T00:00:00.000Z'),
+      },
+      {
+        ...makeConfirmedPracticeRow({ id: 2 }),
+        datumPocetka: new Date('2026-01-01T00:00:00.000Z'),
+        datumKraja: new Date('2026-01-31T00:00:00.000Z'),
+      },
+    ]);
+
+    const result = await getCoordinatorPracticeSummary(3);
+
+    expect(result.aktivnePrakse).toBeGreaterThanOrEqual(0);
+    expect(result.zavrsene).toBeGreaterThanOrEqual(0);
+    expect(result.aktivnePrakse + result.zavrsene).toBe(2);
+  });
+});
+
+describe('backfillAcceptedPractices', () => {
+  test('preskače prijave koje već imaju praksu', async () => {
+    db.PrijavaNaPraksu.findAll.mockResolvedValue([
+      {
+        id: 9,
+        Praksa: { id: 7 },
+        Oglas: { datumPocetka: '2026-06-01', trajanje: 1 },
+      },
+    ]);
+
+    await backfillAcceptedPractices();
+
+    expect(db.Praksa.create).not.toHaveBeenCalled();
+  });
+
+  test('kreira praksu za prihvaćenu prijavu bez postojeće prakse', async () => {
+    db.PrijavaNaPraksu.findAll.mockResolvedValue([
+      {
+        id: 9,
+        Praksa: null,
+        Oglas: { datumPocetka: '2026-06-01', trajanje: 1 },
+      },
+    ]);
+    db.Praksa.findOne.mockResolvedValue(null);
+    db.Praksa.create.mockResolvedValue({ id: 11, prijavaID: 9 });
+
+    await backfillAcceptedPractices();
+
+    expect(db.Praksa.create).toHaveBeenCalled();
+  });
+});
+
+describe('createActivity', () => {
+  test('kreira aktivnost za aktivnu praksu studenta', async () => {
+    db.User.findByPk.mockResolvedValue({ id: 1, role: 'STUDENT' });
+    db.Student.findOne.mockResolvedValue({ id: 20 });
+    db.Praksa.findAll.mockResolvedValue([makeConfirmedPracticeRow()]);
+    db.Aktivnost.create.mockResolvedValue({ id: 1, opis: 'Rad na API-ju' });
+
+    const result = await createActivity(1, 1, 'Rad na API-ju');
+
+    expect(db.Aktivnost.create).toHaveBeenCalledWith(expect.objectContaining({
+      praksaID: 1,
+      opis: 'Rad na API-ju',
+    }));
+    expect(result).toMatchObject({ id: 1, opis: 'Rad na API-ju' });
+  });
+
+  test('baca grešku kada praksa nije aktivna', async () => {
+    db.User.findByPk.mockResolvedValue({ id: 1, role: 'STUDENT' });
+    db.Student.findOne.mockResolvedValue({ id: 20 });
+    db.Praksa.findAll.mockResolvedValue([{
+      ...makeConfirmedPracticeRow(),
+      datumPocetka: new Date('2020-01-01T00:00:00.000Z'),
+      datumKraja: new Date('2020-01-31T00:00:00.000Z'),
+    }]);
+
+    await expect(createActivity(1, 1, 'Opis'))
+      .rejects.toMatchObject({ message: 'Aktivnosti se mogu unositi samo tokom aktivne prakse.' });
+  });
+
+  test('baca 404 kada praksa ne postoji', async () => {
+    db.User.findByPk.mockResolvedValue({ id: 1, role: 'STUDENT' });
+    db.Student.findOne.mockResolvedValue({ id: 20 });
+    db.Praksa.findAll.mockResolvedValue([]);
+
+    await expect(createActivity(1, 99, 'Opis'))
+      .rejects.toMatchObject({ message: 'Praksa nije pronađena.', status: 404 });
+  });
+});
+
+describe('getPracticeActivities', () => {
+  test('vraća aktivnosti kompaniji za njenu praksu', async () => {
+    db.User.findByPk.mockResolvedValue({ id: 2, role: 'COMPANY' });
+    db.Kompanija.findOne.mockResolvedValue({ id: 5 });
+    db.Praksa.findAll.mockResolvedValue([makeConfirmedPracticeRow()]);
+    db.Aktivnost.findAll.mockResolvedValue([{ id: 1, opis: 'Sastanak' }]);
+
+    const result = await getPracticeActivities(2, 'COMPANY', 1);
+
+    expect(result).toEqual([{ id: 1, opis: 'Sastanak' }]);
+  });
 });
 
 describe('practice attendance', () => {
@@ -413,5 +576,122 @@ describe('practice attendance', () => {
       napomena: 'Redovan dolazak',
     });
     expect(result).toEqual({ prisustvo: existing, created: false });
+  });
+
+  test('baca grešku kada datum prisustva nedostaje', async () => {
+    db.User.findByPk.mockResolvedValue({ id: 2, role: 'COMPANY' });
+    db.Kompanija.findOne.mockResolvedValue({ id: 5 });
+    db.Praksa.findAll.mockResolvedValue([makeConfirmedPracticeRow()]);
+
+    await expect(upsertPracticeAttendance(2, 1, { status: true }))
+      .rejects.toMatchObject({ message: 'Datum prisustva je obavezan.' });
+  });
+
+  test('baca grešku za nevalidan broj sati', async () => {
+    db.User.findByPk.mockResolvedValue({ id: 2, role: 'COMPANY' });
+    db.Kompanija.findOne.mockResolvedValue({ id: 5 });
+    db.Praksa.findAll.mockResolvedValue([makeConfirmedPracticeRow()]);
+
+    await expect(upsertPracticeAttendance(2, 1, { datum: '2026-06-01', brojSati: 25 }))
+      .rejects.toMatchObject({ message: 'Broj sati mora biti cijeli broj od 0 do 24.' });
+  });
+
+  test('baca grešku kada datum nije u periodu prakse', async () => {
+    db.User.findByPk.mockResolvedValue({ id: 2, role: 'COMPANY' });
+    db.Kompanija.findOne.mockResolvedValue({ id: 5 });
+    db.Praksa.findAll.mockResolvedValue([makeConfirmedPracticeRow()]);
+
+    await expect(upsertPracticeAttendance(2, 1, { datum: '2026-07-01', status: true }))
+      .rejects.toMatchObject({ message: 'Datum prisustva mora biti unutar perioda prakse.' });
+  });
+
+  test('kreira novo prisustvo kada zapis ne postoji', async () => {
+    const created = { id: 9, praksaID: 1, status: true };
+    db.User.findByPk.mockResolvedValue({ id: 2, role: 'COMPANY' });
+    db.Kompanija.findOne.mockResolvedValue({ id: 5 });
+    db.Praksa.findAll.mockResolvedValue([makeConfirmedPracticeRow()]);
+    db.Prisustvo.findOrCreate.mockResolvedValue([created, true]);
+
+    const result = await upsertPracticeAttendance(2, 1, { datum: '2026-06-15', status: 'false' });
+
+    expect(result).toEqual({ prisustvo: created, created: true });
+  });
+});
+
+describe('generatePracticeReport', () => {
+  test('generiše izvještaj kada postoji evaluacija studenta', async () => {
+    db.User.findByPk.mockResolvedValue({ id: 2, role: 'COMPANY' });
+    db.Kompanija.findOne.mockResolvedValue({ id: 5 });
+    db.Praksa.findAll.mockResolvedValue([makeConfirmedPracticeRow()]);
+    db.EvaluacijaStudenta.findOne.mockResolvedValue({
+      tehnickeVjestine: 5,
+      komunikacija: 4,
+      radnaEtika: 5,
+      inicijativa: 4,
+      timskiRad: 5,
+      ukupnaOcjena: 5,
+      komentar: 'Odličan rad',
+    });
+    db.Prisustvo.findAll.mockResolvedValue([
+      { status: true, brojSati: 8 },
+      { status: false, brojSati: null },
+    ]);
+    db.PrijavaNaPraksu.findOne.mockResolvedValue({ koordinatorID: 3 });
+    const izvjestaj = { id: 1, update: jest.fn().mockResolvedValue(undefined) };
+    db.Izvjestaj.findOrCreate.mockResolvedValue([izvjestaj, true]);
+    notifications.createNotification.mockResolvedValue(undefined);
+    notifications.createNotificationForKoordinator.mockResolvedValue(undefined);
+
+    const result = await generatePracticeReport(2, 1, { komentar: 'Student je završio sve zadatke.' });
+
+    expect(result.created).toBe(true);
+    expect(result.sadrzaj).toContain('IZVJEŠTAJ O OBAVLJENOJ PRAKSI');
+    expect(result.sadrzaj).toContain('Student je završio sve zadatke.');
+    expect(result.prisustvo).toMatchObject({ ukupnoEvidentirano: 2, prisutanDana: 1, ukupnoSati: 8 });
+  });
+
+  test('baca grešku kada evaluacija studenta ne postoji', async () => {
+    db.User.findByPk.mockResolvedValue({ id: 2, role: 'COMPANY' });
+    db.Kompanija.findOne.mockResolvedValue({ id: 5 });
+    db.Praksa.findAll.mockResolvedValue([makeConfirmedPracticeRow()]);
+    db.EvaluacijaStudenta.findOne.mockResolvedValue(null);
+
+    await expect(generatePracticeReport(2, 1, { komentar: 'Test' }))
+      .rejects.toMatchObject({ message: 'Morate prvo evaluirati studenta prije generisanja izvještaja.' });
+  });
+
+  test('baca grešku kada komentar nedostaje', async () => {
+    db.User.findByPk.mockResolvedValue({ id: 2, role: 'COMPANY' });
+    db.Kompanija.findOne.mockResolvedValue({ id: 5 });
+    db.Praksa.findAll.mockResolvedValue([makeConfirmedPracticeRow()]);
+    db.EvaluacijaStudenta.findOne.mockResolvedValue({ ukupnaOcjena: 5 });
+
+    await expect(generatePracticeReport(2, 1, { komentar: '   ' }))
+      .rejects.toMatchObject({ message: 'Komentar je obavezan.' });
+  });
+});
+
+describe('getPracticeReport', () => {
+  test('vraća izvještaj studentu za njegovu praksu', async () => {
+    db.User.findByPk.mockResolvedValue({ id: 1, role: 'STUDENT' });
+    db.Student.findOne.mockResolvedValue({ id: 20 });
+    db.Praksa.findAll.mockResolvedValue([makeConfirmedPracticeRow()]);
+    db.Izvjestaj.findOne.mockResolvedValue({ id: 1, sadrzaj: 'Izvještaj tekst' });
+    db.EvaluacijaStudenta.findOne.mockResolvedValue({ ukupnaOcjena: 5 });
+    db.Prisustvo.findAll.mockResolvedValue([{ status: true, brojSati: 8 }]);
+
+    const result = await getPracticeReport(1, 'STUDENT', 1);
+
+    expect(result.sadrzaj).toBe('Izvještaj tekst');
+    expect(result.prisustvo).toMatchObject({ ukupnoEvidentirano: 1, prisutanDana: 1, ukupnoSati: 8 });
+  });
+
+  test('baca 404 kada praksa nije dostupna korisniku', async () => {
+    db.User.findByPk.mockResolvedValue({ id: 1, role: 'STUDENT' });
+    db.Student.findOne.mockResolvedValue({ id: 20 });
+    db.Praksa.findAll.mockResolvedValue([]);
+
+    await expect(getPracticeReport(1, 'STUDENT', 99))
+      .rejects.toMatchObject({ message: 'Praksa nije pronađena.', status: 404 });
   });
 });

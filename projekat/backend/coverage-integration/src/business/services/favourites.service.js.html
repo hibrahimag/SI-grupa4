@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">66.66% </span>
+                <span class="strong">64.7% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>20/30</span>
+                <span class='fraction'>22/34</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">70% </span>
+                <span class="strong">66.66% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>7/10</span>
+                <span class='fraction'>8/12</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">67.85% </span>
+                <span class="strong">64.51% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>19/28</span>
+                <span class='fraction'>20/31</span>
             </div>
         
             
@@ -116,7 +116,20 @@
 <a name='L51'></a><a href='#L51'>51</a>
 <a name='L52'></a><a href='#L52'>52</a>
 <a name='L53'></a><a href='#L53'>53</a>
-<a name='L54'></a><a href='#L54'>54</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L54'></a><a href='#L54'>54</a>
+<a name='L55'></a><a href='#L55'>55</a>
+<a name='L56'></a><a href='#L56'>56</a>
+<a name='L57'></a><a href='#L57'>57</a>
+<a name='L58'></a><a href='#L58'>58</a>
+<a name='L59'></a><a href='#L59'>59</a>
+<a name='L60'></a><a href='#L60'>60</a>
+<a name='L61'></a><a href='#L61'>61</a>
+<a name='L62'></a><a href='#L62'>62</a>
+<a name='L63'></a><a href='#L63'>63</a>
+<a name='L64'></a><a href='#L64'>64</a>
+<a name='L65'></a><a href='#L65'>65</a>
+<a name='L66'></a><a href='#L66'>66</a>
+<a name='L67'></a><a href='#L67'>67</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">8x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -166,12 +179,25 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">8x</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">'use strict';
 &nbsp;
-const { OmiljeniOglas, Student, Oglas } = require('../../infrastructure/database/models');
+const { OmiljeniOglas, Student, Oglas, Kompanija, User } = require('../../infrastructure/database/models');
 &nbsp;
 async function addFavourite(userId, oglasId) {
   const student = await Student.findOne({ where: { userID: userId } });
@@ -218,7 +244,20 @@ async function getFavourites(userId) {
   }
 &nbsp;
   const rows = await OmiljeniOglas.findAll({ where: { studentID: student.id } });
-  return rows.map(<span class="fstat-no" title="function not covered" >r </span>=&gt; <span class="cstat-no" title="statement not covered" >r.oglasID)</span>;
+  const ids = rows.map(<span class="fstat-no" title="function not covered" >r </span>=&gt; <span class="cstat-no" title="statement not covered" >r.oglasID)</span>;
+&nbsp;
+  <span class="missing-if-branch" title="else path not taken" >E</span>if (ids.length === 0) return { ids: [], listings: [] };
+&nbsp;
+  const listings = <span class="cstat-no" title="statement not covered" >await Oglas.findAll({</span>
+    where: { id: ids },
+    include: [{
+      model: Kompanija,
+      attributes: ['id', 'naziv', 'kontaktOsoba'],
+      include: [{ model: User, attributes: ['email'] }],
+    }],
+  });
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  return { ids, listings };</span>
 }
 &nbsp;
 module.exports = { addFavourite, removeFavourite, getFavourites };
@@ -229,7 +268,7 @@ module.exports = { addFavourite, removeFavourite, getFavourites };
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-05-20T10:31:10.091Z
+                at 2026-06-08T22:26:14.361Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

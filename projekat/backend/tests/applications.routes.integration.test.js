@@ -17,7 +17,7 @@ const FUTURE = new Date('2099-12-31');
 
 let studentUser, studentRec, fakultet;
 let companyUser, companyRec, oglas;
-let studentToken, otherStudentToken;
+let studentToken, otherStudentToken, companyToken;
 
 beforeAll(async () => {
   // Čistimo ostavljene podatke iz prethodnog pokretanja
@@ -85,6 +85,7 @@ beforeAll(async () => {
   otherStudentToken = jwt.sign({ id: otherUser.id, role: 'STUDENT' }, JWT_SECRET, { expiresIn: '1h' });
 
   studentToken = jwt.sign({ id: studentUser.id, role: 'STUDENT' }, JWT_SECRET, { expiresIn: '1h' });
+  companyToken = jwt.sign({ id: companyUser.id, role: 'COMPANY' }, JWT_SECRET, { expiresIn: '1h' });
 });
 
 afterAll(async () => {
@@ -201,5 +202,50 @@ describe('POST /api/applications', () => {
   test('401 — odbija zahtjev bez tokena', async () => {
     const res = await request(app).post('/api/applications').send({ oglasID: oglas.id });
     expect(res.status).toBe(401);
+  });
+});
+
+// ── PATCH /api/applications/:id/withdraw ─────────────────────────────────────
+describe('PATCH /api/applications/:id/withdraw', () => {
+  test('200 — student uspješno odustaje od prijave', async () => {
+    const prijava = await PrijavaNaPraksu.findOne({
+      where: { studentID: studentRec.id, oglasID: oglas.id },
+    });
+    expect(prijava).toBeTruthy();
+
+    const res = await request(app)
+      .patch(`/api/applications/${prijava.id}/withdraw`)
+      .set('Authorization', `Bearer ${studentToken}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.message).toMatch(/odustali/i);
+    expect(res.body.application.status).toBe('ODUSTAO');
+  });
+
+  test('403 — kompanija ne može odustati od prijave', async () => {
+    const oglas2 = await Oglas.create({
+      naziv: `${PREFIX}OglasWithdraw`,
+      opis: 'Oglas za withdraw 403 test',
+      brojMjesta: 5,
+      rokPrijave: FUTURE,
+      status: 'AKTIVAN',
+      kompanijaID: companyRec.id,
+      tehnologije: [],
+      uslovi: [],
+    });
+
+    const createRes = await request(app)
+      .post('/api/applications')
+      .set('Authorization', `Bearer ${studentToken}`)
+      .send({ oglasID: oglas2.id });
+
+    expect(createRes.status).toBe(201);
+
+    const res = await request(app)
+      .patch(`/api/applications/${createRes.body.application.id}/withdraw`)
+      .set('Authorization', `Bearer ${companyToken}`);
+
+    expect(res.status).toBe(403);
+    expect(res.body.message).toMatch(/Samo studenti/);
   });
 });
