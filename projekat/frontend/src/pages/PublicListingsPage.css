@@ -34,7 +34,7 @@
   text-decoration: none;
 }
 .pl-nav-logo {
-  height: 32px;
+  height: 42px;
   width: auto;
 }
 .pl-nav-right {
@@ -82,12 +82,15 @@
 
 /* ── Sidebar ── */
 .pl-sidebar {
-  width: 260px;
-  flex-shrink: 0;
-  position: sticky;
+  position: fixed;
   top: 60px;
+  left: 70px;
+
+  width: 260px;
   height: calc(100vh - 60px);
+
   overflow-y: auto;
+
   border-right: 1px solid var(--color-border);
   background: var(--color-surface);
 }
@@ -268,6 +271,7 @@
 .pl-main {
   flex: 1;
   min-width: 0;
+  margin-left: 260px;
   padding: 24px 28px 48px;
 }
 .pl-results-row {
@@ -424,7 +428,118 @@
 .pl-modal-dismiss:hover { color: var(--color-dark); }
 
 /* ── Responsive ── */
+
+/* Tablet */
+@media (max-width: 1024px) {
+  .pl-sidebar {
+    width: 220px;
+    left: 0;
+  }
+  .pl-main {
+    margin-left: 220px;
+  }
+}
+
+/* Mobile — sidebar se sakriva, dodaje se filter drawer */
 @media (max-width: 768px) {
-  .pl-sidebar { display: none; }
-  .pl-main { padding: 16px; }
+  .pl-sidebar {
+    display: none;
+  }
+  .pl-sidebar.mobile-open {
+    display: flex;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 200;
+    background: var(--color-surface);
+    overflow-y: auto;
+    padding-top: 60px;
+  }
+  .pl-main {
+    margin-left: 0;
+    padding: 12px 16px 48px;
+  }
+  .pl-mobile-filter-btn {
+    display: flex !important;
+  }
+  .pl-mobile-filter-close {
+    display: flex !important;
+  }
+  .pl-nav-btn-outline {
+    display: none;
+  }
+  .pl-results-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+}
+
+/* Mobile filter toggle button — skriveno na desktopu */
+.pl-mobile-filter-btn {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-dark);
+  font-size: 0.83rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+.pl-mobile-filter-btn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+.pl-mobile-filter-btn-badge {
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 999px;
+}
+
+/* Close button unutar drawer-a — skriveno na desktopu */
+.pl-mobile-filter-close {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  margin: 0 16px 12px;
+  padding: 8px 14px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: none;
+  color: var(--color-dark);
+  font-size: 0.83rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  width: calc(100% - 32px);
+  justify-content: center;
+}
+.pl-mobile-filter-close:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+@media (max-width: 480px) {
+  /* Navbar — sakrij "Prijavi se" outline dugme, ostavi samo "Registruj se" */
+  .pl-nav-btn-outline {
+    display: none;
+  }
+
+  /* Results row — složi vertikalno */
+  .pl-results-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* Filteri dugme — uvijek vidljivo na mobilnom */
+  .pl-mobile-filter-btn {
+    order: -1;
+  }
 }
