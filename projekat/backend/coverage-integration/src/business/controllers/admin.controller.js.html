@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">34.56% </span>
+                <span class="strong">32.94% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>28/81</span>
+                <span class='fraction'>28/85</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">25.92% </span>
+                <span class="strong">25% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>14/54</span>
+                <span class='fraction'>14/56</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">27.27% </span>
+                <span class="strong">25% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>3/11</span>
+                <span class='fraction'>3/12</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">34.56% </span>
+                <span class="strong">32.94% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>28/81</span>
+                <span class='fraction'>28/85</span>
             </div>
         
             
@@ -218,7 +218,19 @@
 <a name='L153'></a><a href='#L153'>153</a>
 <a name='L154'></a><a href='#L154'>154</a>
 <a name='L155'></a><a href='#L155'>155</a>
-<a name='L156'></a><a href='#L156'>156</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L156'></a><a href='#L156'>156</a>
+<a name='L157'></a><a href='#L157'>157</a>
+<a name='L158'></a><a href='#L158'>158</a>
+<a name='L159'></a><a href='#L159'>159</a>
+<a name='L160'></a><a href='#L160'>160</a>
+<a name='L161'></a><a href='#L161'>161</a>
+<a name='L162'></a><a href='#L162'>162</a>
+<a name='L163'></a><a href='#L163'>163</a>
+<a name='L164'></a><a href='#L164'>164</a>
+<a name='L165'></a><a href='#L165'>165</a>
+<a name='L166'></a><a href='#L166'>166</a>
+<a name='L167'></a><a href='#L167'>167</a>
+<a name='L168'></a><a href='#L168'>168</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">8x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -366,6 +378,18 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -422,7 +446,7 @@ async function updateUserStatus(req, res) {
       return res.status(400).json({ message: 'Field "status" is required.' });
     }
 &nbsp;
-    const user = await adminService.updateUserStatus(numericId, status.toUpperCase());
+    const user = await adminService.updateUserStatus(numericId, status.toUpperCase(), req.user.id);
     res.json({ message: `Status updated to ${user.status}.`, user });
   } catch (err) {
     res.status(err.status || <span class="branch-1 cbranch-no" title="branch not covered" >500)</span>.json({ message: err.message });
@@ -520,14 +544,26 @@ async function <span class="fstat-no" title="function not covered" >deleteUser(<
 <span class="cstat-no" title="statement not covered" >    if (!Number.isInteger(numericId) || numericId &lt;= 0) {</span>
 <span class="cstat-no" title="statement not covered" >      return res.status(400).json({ message: 'Valid user id is required.' });</span>
     }
-<span class="cstat-no" title="statement not covered" >    await adminService.deleteUser(numericId);</span>
+<span class="cstat-no" title="statement not covered" >    await adminService.deleteUser(numericId, req.user.id);</span>
 <span class="cstat-no" title="statement not covered" >    res.json({ message: 'User deleted successfully.' });</span>
   } catch (err) {
 <span class="cstat-no" title="statement not covered" >    res.status(err.status || 500).json({ message: err.message });</span>
   }
 }
 &nbsp;
-module.exports = { getUsers, updateUserRole, updateUserStatus, deleteUser, getFaculties, createFaculty, updateFaculty, deleteFaculty, getOdsjeci, createOdsjek, deleteOdsjek };
+async function <span class="fstat-no" title="function not covered" >getAuditLogs(</span>req, res) {
+<span class="cstat-no" title="statement not covered" >  try {</span>
+    const logs = <span class="cstat-no" title="statement not covered" >await adminService.getAuditLogs({</span>
+      actionType: req.query.actionType,
+      limit: req.query.limit,
+    });
+<span class="cstat-no" title="statement not covered" >    res.json(logs);</span>
+  } catch (err) {
+<span class="cstat-no" title="statement not covered" >    res.status(err.status || 500).json({ message: err.message });</span>
+  }
+}
+&nbsp;
+module.exports = { getUsers, updateUserRole, updateUserStatus, deleteUser, getFaculties, createFaculty, updateFaculty, deleteFaculty, getOdsjeci, createOdsjek, deleteOdsjek, getAuditLogs };
 &nbsp;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -535,7 +571,7 @@ module.exports = { getUsers, updateUserRole, updateUserStatus, deleteUser, getFa
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-05-20T10:31:10.091Z
+                at 2026-06-08T22:26:14.361Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

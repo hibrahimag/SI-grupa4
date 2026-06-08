@@ -10,3 +10,7 @@ frontend/dist/
 backend/node_modules/
 backend/dist/
 uploads/
+frontend/test-results/
+frontend/playwright-report/
+frontend/blob-report/
+frontend/playwright/.cache/

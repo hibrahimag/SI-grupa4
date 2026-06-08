@@ -5,7 +5,7 @@ jest.mock('../../src/business/services/prakse.service', () => ({
 }));
 
 const prakseService = require('../../src/business/services/prakse.service');
-const { runPracticeCompletionJob } = require('../../src/jobs/practiceCompletion.job');
+const { runPracticeCompletionJob, startPracticeCompletionJob } = require('../../src/jobs/practiceCompletion.job');
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -42,5 +42,29 @@ describe('runPracticeCompletionJob', () => {
     await runPracticeCompletionJob();
 
     expect(console.error).toHaveBeenCalledWith('[practiceCompletion] Greška:', 'DB nedostupna');
+  });
+});
+
+describe('startPracticeCompletionJob', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  test('pokreće job nakon početnog kašnjenja i ponavlja na intervalu', async () => {
+    prakseService.completeExpiredPractices.mockResolvedValue({ processed: 1, errors: [] });
+
+    startPracticeCompletionJob();
+
+    expect(prakseService.completeExpiredPractices).not.toHaveBeenCalled();
+
+    await jest.advanceTimersByTimeAsync(60 * 1000);
+    expect(prakseService.completeExpiredPractices).toHaveBeenCalledTimes(1);
+
+    await jest.advanceTimersByTimeAsync(24 * 60 * 60 * 1000);
+    expect(prakseService.completeExpiredPractices).toHaveBeenCalledTimes(2);
   });
 });
