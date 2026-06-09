@@ -152,14 +152,7 @@ Ovo je namjerno ograničenje, ali korisnici koji kasno provjere email (npr. spam
 
 ## 4. Nedovršene funkcionalnosti
 
-Sljedeće funkcionalnosti su planirane ali nisu implementirane u finalnoj verziji:
-
-| Funkcionalnost | Status | Napomena |
-|---|---|---|
-| Multi-jezik podrška | Nije implementirano | Sistem je na bosanskom/hrvatskom |
-| Napredne statistike i grafikoni | Djelimično | Osnovni grafikoni implementirani |
-| Automatsko generisanje ugovora (bez ručnog triggerovanja) | Nije implementirano | Kompanija mora ručno pokrenuti |
-
+Sve planirane funkcionalnosti su implementirane.
 ---
 
 ## 5. Pretpostavke koje sistem pravi

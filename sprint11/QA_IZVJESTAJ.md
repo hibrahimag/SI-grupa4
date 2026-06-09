@@ -395,6 +395,18 @@ Lines        : 95.00% ( 2836/2985 )
 
 ### Screenshotovi 
 
+**Coverage izvještaj — backend (HTML report)**
+
+![Coverage izvještaj](slike_report/Screenshot%202026-06-09%20130809.png)
+
+**Integracijski testovi — terminal output**
+
+![Integracijski testovi](slike_report/Screenshot%202026-06-09%20130930.png)
+
+**E2E smoke testovi — Playwright HTML report**
+
+![E2E smoke testovi](slike_report/Screenshot%202026-06-09%20131933.png)
+
 ---
 
 ## 9. Proof of Testing po sprintovima

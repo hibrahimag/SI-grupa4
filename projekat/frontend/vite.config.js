@@ -11,4 +11,15 @@ export default defineConfig({
       },
     },
   },
+  test: {
+    environment: 'jsdom',
+    exclude: ['e2e/**', 'node_modules/**'],
+    passWithNoTests: true,
+    coverage: {
+      provider: 'v8',
+      include: ['src/**'],
+      exclude: ['src/main.jsx'],
+      reporter: ['text', 'html'],
+    },
+  },
 });
