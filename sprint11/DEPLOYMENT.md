@@ -78,6 +78,16 @@ Za lokalno pokretanje sistema potrebno je imati instalirano:
 - Pristup Supabase projektu (connection string i service role key)
 - Pristup Brevo accountu (API ključ i sender email)
 
+#### Kreiranje Brevo accounta i dobijanje API ključa
+
+1. Otvoriti https://app.brevo.com i registrovati se (besplatno)
+2. Nakon verifikacije email adrese, prijaviti se na dashboard
+3. U gornjem desnom uglu kliknuti na ime accounta → **SMTP & API**
+4. Odabrati tab **API Keys** → kliknuti **Generate a new API key**
+5. Unijeti naziv ključa (npr. `praksahub-local`) i kopirati generirani ključ — prikazuje se samo jednom
+6. Taj ključ upisati kao `BREVO_API_KEY` u `.env`
+7. Za `BREVO_SENDER_EMAIL` koristiti email adresu kojom ste se registrovali na Brevo (mora biti verifikovana)
+
 Provjera instaliranih verzija:
 ```bash
 node --version
@@ -403,7 +413,7 @@ Frontend se spaja na backend putem `VITE_API_URL` varijable koja je postavljena 
 
 | Servis | URL |
 |---|---|
-| **Aplikacija (frontend)** | https://si-grupa4-1.onrender.com |
+| **Aplikacija (frontend)** | https://si-grupa4-1-3biq.onrender.com/|
 | **Backend API** | https://si-grupa4-xfx9.onrender.com |
 | **GitHub repozitorij** | https://github.com/hibrahimag/SI-grupa4 |
 | **GitHub Actions** | https://github.com/hibrahimag/SI-grupa4/actions |
